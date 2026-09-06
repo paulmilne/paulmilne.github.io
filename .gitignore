@@ -16,3 +16,6 @@
 /dl/
 
 .DS_Store
+
+# knitr chunk caches (regenerable, can get large; use _freeze/ for reproducibility instead)
+*_cache/
