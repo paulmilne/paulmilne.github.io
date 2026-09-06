@@ -1,5 +1,6 @@
 ---
 title: "Welcome To My Blog"
+description: "An introduction to this blog: math, statistics, and machine learning explored through code and paper reproductions."
 author: "Paul Milne"
 date: "2026-06-10"
 categories: [news]

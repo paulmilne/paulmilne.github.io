@@ -1,9 +1,20 @@
 ---
 title: "Instrumenting Agent Cybernetics"
 subtitle: "Open-World Estimation of Requisite Variety in Deployed Agents"
+description: "An open-world instrument for Ashby's requisite variety in deployed AI agents: the Enumeration Elasticity Theorem, a feedback-blindness test, and a prompt-injection susceptibility measure."
 author: "Paul Milne"
 date: "2026-07-13"
 categories: [agents, cybernetics, information-theory]
+format:
+  html:
+    include-in-header:
+      text: |
+        <meta name="citation_title" content="Instrumenting Agent Cybernetics: Open-World Estimation of Requisite Variety in Deployed Agents">
+        <meta name="citation_author" content="Milne, Paul">
+        <meta name="citation_publication_date" content="2026/07/13">
+        <meta name="citation_online_date" content="2026/07/13">
+        <meta name="citation_pdf_url" content="https://paulmilne.github.io/papers/instrumenting-agent-cybernetics/milne-2026-instrumenting-agent-cybernetics.pdf">
+        <meta name="citation_abstract_html_url" content="https://paulmilne.github.io/papers/instrumenting-agent-cybernetics/">
 ---
 
 ## Abstract

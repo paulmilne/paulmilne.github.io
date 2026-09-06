@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="description" content="Paper reproductions, math explainers, and original research from Paul Milne.">
 
 <title>math-blog</title>
 <style>
@@ -130,6 +131,14 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="math-blog">
+<meta property="og:description" content="Paper reproductions, math explainers, and original research from Paul Milne.">
+<meta property="og:image" content="https://paulmilne.github.io/posts/diffusion-phase-transition/images/grid_thumbnail.jpg">
+<meta property="og:site_name" content="math-blog">
+<meta name="twitter:title" content="math-blog">
+<meta name="twitter:description" content="Paper reproductions, math explainers, and original research from Paul Milne.">
+<meta name="twitter:image" content="https://paulmilne.github.io/posts/diffusion-phase-transition/images/grid_thumbnail.jpg">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -189,7 +198,12 @@ window.Quarto = {
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-page-left">
       <h1 class="title">math-blog</h1>
-                      </div>
+                  <div>
+        <div class="description">
+          Paper reproductions, math explainers, and original research from Paul Milne.
+        </div>
+      </div>
+                </div>
   </div>
     
   
@@ -220,7 +234,7 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="ZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZyUyQ3JlcHJvZHVjdGlvbg==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788685523025" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="9" data-listing-word-count-sort="1606">
+<div class="quarto-post image-right" data-index="0" data-categories="ZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZyUyQ3JlcHJvZHVjdGlvbg==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788694528679" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="9" data-listing-word-count-sort="1606">
 <div class="thumbnail"><a href="./posts/diffusion-phase-transition/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/diffusion-phase-transition/images/grid_thumbnail.jpg" class="thumbnail-image">
@@ -240,7 +254,7 @@ window.Quarto = {
 
 </div>
 <div class="delink listing-description"><a href="./posts/diffusion-phase-transition/index.html" class="no-external">
-Sclocchi, Favero and Wyart’s <em>A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data</em> <span class="citation" data-cites="sclocchi2024phase">(Sclocchi, Favero, and Wyart 2024)</span> makes a simple, sharp claim…<em></em><span class="math inline"></span><em></em><span class="math inline"></span><span class="math inline"></span><span class="math inline"></span><em></em>
+<p>Reproducing ‘A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data’ (Sclocchi, Favero &amp; Wyart 2024) locally on Apple Silicon.</p>
 </a></div>
 </div>
 <div class="metadata">
@@ -254,7 +268,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="bmV3cw==" data-listing-date-sort="1781046000000" data-listing-file-modified-sort="1788689718404" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="91">
+<div class="quarto-post image-right" data-index="1" data-categories="bmV3cw==" data-listing-date-sort="1781046000000" data-listing-file-modified-sort="1788694523145" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="91">
 <div class="thumbnail"><a href="./posts/welcome/index.html" class="no-external">
 
 <p class="card-img-top"><img src="posts/welcome/thumbnail.jpg"  class="thumbnail-image card-img"/></p>
@@ -270,7 +284,7 @@ Paul Milne
 
 </div>
 <div class="delink listing-description"><a href="./posts/welcome/index.html" class="no-external">
-Welcome! This blog is where I write up things I’m exploring in math, statistics, and machine learning — usually starting from a paper or an idea I want to understand better…
+<p>An introduction to this blog: math, statistics, and machine learning explored through code and paper reproductions.</p>
 </a></div>
 </div>
 <div class="metadata">
@@ -359,7 +373,7 @@ Paul Milne
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

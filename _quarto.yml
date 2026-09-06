@@ -13,6 +13,10 @@ project:
 
 website:
   title: "math-blog"
+  site-url: "https://paulmilne.github.io"
+  description: "Paul Milne's blog on math, statistics, and machine learning: paper reproductions, math explainers, and original research."
+  open-graph: true
+  twitter-card: true
   navbar:
     left:
       - href: index.qmd

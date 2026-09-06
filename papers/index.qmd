@@ -1,5 +1,6 @@
 ---
 title: "Papers"
+description: "Original research papers by Paul Milne."
 listing:
   contents: .
   sort: "date desc"

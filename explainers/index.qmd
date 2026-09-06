@@ -1,5 +1,6 @@
 ---
 title: "Explainers"
+description: "Background explanations of the math and stats concepts behind the paper-reproduction posts."
 listing:
   contents: .
   sort: "date desc"

@@ -1,5 +1,6 @@
 ---
 title: "About"
+description: "About Paul Milne."
 image: profile.jpg
 about:
   template: jolla

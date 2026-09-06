@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="description" content="Original research papers by Paul Milne.">
 
 <title>Papers – math-blog</title>
 <style>
@@ -130,6 +131,12 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../styles.css">
+<meta property="og:title" content="Papers – math-blog">
+<meta property="og:description" content="Original research papers by Paul Milne.">
+<meta property="og:site_name" content="math-blog">
+<meta name="twitter:title" content="Papers – math-blog">
+<meta name="twitter:description" content="Original research papers by Paul Milne.">
+<meta name="twitter:card" content="summary">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -189,7 +196,12 @@ window.Quarto = {
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-page-left">
       <h1 class="title">Papers</h1>
-                      </div>
+                  <div>
+        <div class="description">
+          Original research papers by Paul Milne.
+        </div>
+      </div>
+                </div>
   </div>
     
   
@@ -221,7 +233,7 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="YWdlbnRzJTJDY3liZXJuZXRpY3MlMkNpbmZvcm1hdGlvbi10aGVvcnk=" data-listing-date-sort="1783897200000" data-listing-file-modified-sort="1788691464564" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="731">
+<div class="quarto-post image-right" data-index="0" data-categories="YWdlbnRzJTJDY3liZXJuZXRpY3MlMkNpbmZvcm1hdGlvbi10aGVvcnk=" data-listing-date-sort="1783897200000" data-listing-file-modified-sort="1788694552382" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="731">
 <div class="thumbnail"><a href="../papers/instrumenting-agent-cybernetics/index.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -244,7 +256,7 @@ window.Quarto = {
 
 </div>
 <div class="delink listing-description"><a href="../papers/instrumenting-agent-cybernetics/index.html" class="no-external">
-Wang et al.&nbsp;(2026) argue that cybernetics supplies the missing theoretical scaffold for foundation agents, and derive six design principles from six classical laws. Their…<span class="math inline"></span><span class="math inline"></span><em></em>
+<p>An open-world instrument for Ashby’s requisite variety in deployed AI agents: the Enumeration Elasticity Theorem, a feedback-blindness test, and a prompt-injection susceptibility measure.</p>
 </a></div>
 </div>
 <div class="metadata">
@@ -258,7 +270,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="c3RhdGlzdGljYWwtbWVjaGFuaWNzJTJDcmVub3JtYWxpemF0aW9uLWdyb3VwJTJDZmluYW5jZQ==" data-listing-date-sort="1654038000000" data-listing-file-modified-sort="1788693079659" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="195">
+<div class="quarto-post image-right" data-index="1" data-categories="c3RhdGlzdGljYWwtbWVjaGFuaWNzJTJDcmVub3JtYWxpemF0aW9uLWdyb3VwJTJDZmluYW5jZQ==" data-listing-date-sort="1654038000000" data-listing-file-modified-sort="1788694567869" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="195">
 <div class="thumbnail"><a href="../papers/rg-critical-phenomena/index.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -281,7 +293,7 @@ Paul Milne
 
 </div>
 <div class="delink listing-description"><a href="../papers/rg-critical-phenomena/index.html" class="no-external">
-The paper considers the subject of critical phenomena in the physical world of thermodynamics and its analog in the economic world and the formation of bubbles in financial…
+<p>A comparison of statistical-mechanics and functional-equation approaches to critical phenomena, applied to thermodynamics and financial market bubbles.</p>
 </a></div>
 </div>
 <div class="metadata">
@@ -370,7 +382,7 @@ Paul Milne
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

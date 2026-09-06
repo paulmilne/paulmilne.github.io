@@ -1,5 +1,6 @@
 ---
 title: "A Phase Transition in Diffusion Models"
+description: "Reproducing 'A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data' (Sclocchi, Favero & Wyart 2024) locally on Apple Silicon."
 author: "Paul Milne"
 date: "2026-09-06"
 categories: [diffusion, deep-learning, reproduction]

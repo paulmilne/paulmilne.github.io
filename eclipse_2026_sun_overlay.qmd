@@ -1,5 +1,6 @@
 ---
 title: "Projecting the sun's path for the 12 August 2026 UK partial solar eclipse"
+description: "Projecting the sun's path and overlaying eclipse geometry onto street-view and terrain imagery for the 12 August 2026 UK partial solar eclipse."
 ---
 
 ::: {.callout-note}

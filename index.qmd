@@ -1,5 +1,6 @@
 ---
 title: "math-blog"
+description: "Paper reproductions, math explainers, and original research from Paul Milne."
 listing:
   contents: posts
   sort: "date desc"
