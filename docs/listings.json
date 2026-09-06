@@ -9,5 +9,11 @@
   {
     "listing": "/explainers/index.html",
     "items": []
+  },
+  {
+    "listing": "/papers/index.html",
+    "items": [
+      "/papers/instrumenting-agent-cybernetics/index.html"
+    ]
   }
 ]
