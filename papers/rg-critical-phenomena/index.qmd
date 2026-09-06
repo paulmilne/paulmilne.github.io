@@ -2,7 +2,8 @@
 title: "RG Functional Equations & Critical Phenomena"
 subtitle: "in Thermodynamics and Financial Markets"
 author: "Paul Milne"
-date: "2026-03-31"
+date: "2022-06-01"
+date-format: "MMMM YYYY"
 categories: [statistical-mechanics, renormalization-group, finance]
 ---
 
@@ -12,21 +13,22 @@ The paper considers the subject of critical phenomena in the physical world of t
 
 *M840 Dissertation in Mathematics, The Open University.*
 
-[Download the PDF](milne-2026-rg-functional-equations-critical-phenomena.pdf)
+[Download the PDF](milne-2022-rg-functional-equations-critical-phenomena.pdf)
 
 ## Read it here
 
 ```{=html}
-<iframe src="milne-2026-rg-functional-equations-critical-phenomena.pdf" width="100%" height="900" style="border: 1px solid var(--bs-border-color, #ddd); border-radius: 4px;"></iframe>
+<iframe src="milne-2022-rg-functional-equations-critical-phenomena.pdf" width="100%" height="900" style="border: 1px solid var(--bs-border-color, #ddd); border-radius: 4px;"></iframe>
 ```
 
 ## Cite this paper
 
 ```bibtex
-@mastersthesis{milne2026rg,
+@mastersthesis{milne2022rg,
   title        = {RG Functional Equations \& Critical Phenomena in Thermodynamics and Financial Markets},
   author       = {Milne, Paul},
-  year         = {2026},
+  year         = {2022},
+  month        = jun,
   school       = {The Open University},
   note         = {M840 Dissertation}
 }
