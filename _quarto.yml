@@ -3,6 +3,7 @@ project:
   output-dir: docs          # GitHub Pages: serve from /docs on the main branch
   resources:
     - .nojekyll             # keep this copied into docs/ on every render (disables Jekyll)
+    - google4c03b5aad3fcd4a0.html  # Google Search Console ownership verification
   render:
     - "*.qmd"
     - "posts/**"
