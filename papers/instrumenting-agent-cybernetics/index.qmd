@@ -15,6 +15,7 @@ format:
         <meta name="citation_online_date" content="2026/07/13">
         <meta name="citation_pdf_url" content="https://paulmilne.github.io/papers/instrumenting-agent-cybernetics/milne-2026-instrumenting-agent-cybernetics.pdf">
         <meta name="citation_abstract_html_url" content="https://paulmilne.github.io/papers/instrumenting-agent-cybernetics/">
+        <meta name="citation_doi" content="10.13140/RG.2.2.32031.11681">
 ---
 
 ## Abstract
@@ -33,6 +34,8 @@ Finally, the same interventional machinery yields an adversarial instrument: **s
 
 We package these as a **variety ledger**: a versioned registry of essential variables, disturbance classes, response repertoire, and channel specifications, recomputed from telemetry and enforced as a CI gate. §6 exercises the full ledger on a semi-synthetic benchmark with known ground truth — including a graded outcome signal that makes the partition-refinement gates non-vacuous, an interventional feedback-blindness measurement, and an end-to-end prompt-poisoning susceptibility measurement — and reports one incident: a latent regulatory defect that inverted the dithering measurement until it was found and fixed, which is itself the clearest available demonstration of why §4.5's canary discipline is not optional.
 
+**DOI:** [10.13140/RG.2.2.32031.11681](https://doi.org/10.13140/RG.2.2.32031.11681)
+
 [Download the PDF](milne-2026-instrumenting-agent-cybernetics.pdf)
 
 ## Read it here
@@ -48,6 +51,7 @@ We package these as a **variety ledger**: a versioned registry of essential vari
   title        = {Instrumenting Agent Cybernetics: Open-World Estimation of Requisite Variety in Deployed Agents},
   author       = {Milne, Paul},
   year         = {2026},
+  doi          = {10.13140/RG.2.2.32031.11681},
   note         = {Independent researcher}
 }
 ```

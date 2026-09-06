@@ -111,6 +111,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <meta name="citation_online_date" content="2026/07/13">
 <meta name="citation_pdf_url" content="https://paulmilne.github.io/papers/instrumenting-agent-cybernetics/milne-2026-instrumenting-agent-cybernetics.pdf">
 <meta name="citation_abstract_html_url" content="https://paulmilne.github.io/papers/instrumenting-agent-cybernetics/">
+<meta name="citation_doi" content="10.13140/RG.2.2.32031.11681">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -263,6 +264,7 @@ window.Quarto = {
 <p>We also identify a hazard in our own instrument: attenuation lowers measured <span class="math inline">\(\beta\)</span>, so the treatment we recommend improves the diagnostic whether or not it improves the system. We give the mitigation and do not claim to resolve it.</p>
 <p>Finally, the same interventional machinery yields an adversarial instrument: <strong>susceptibility</strong> <span class="math inline">\(\Sigma\)</span>, the probability that an agent complies with an instruction injected into its <em>observation</em> channel (indirect prompt poisoning). Measured end-to-end through an agent’s real data-input tools — file read, RAG retrieval, web fetch — against a matched clean control (<span class="math inline">\(\Sigma_{\text{clean}} = 0\)</span>), <span class="math inline">\(\Sigma\)</span> is strongly attack-class-dependent (0.83 for a blunt instruction-override, 0.00 for a system-prompt-exfiltration attempt) and inversely tracks content-sensitivity <span class="math inline">\(\Phi\)</span> across vectors, the direction §5.2 predicts: an agent that treats tool output as evidence to be checked, not an instruction to obey, is harder to hijack through that output, while a feedback-blind one passes an injected payload straight through.</p>
 <p>We package these as a <strong>variety ledger</strong>: a versioned registry of essential variables, disturbance classes, response repertoire, and channel specifications, recomputed from telemetry and enforced as a CI gate. §6 exercises the full ledger on a semi-synthetic benchmark with known ground truth — including a graded outcome signal that makes the partition-refinement gates non-vacuous, an interventional feedback-blindness measurement, and an end-to-end prompt-poisoning susceptibility measurement — and reports one incident: a latent regulatory defect that inverted the dithering measurement until it was found and fixed, which is itself the clearest available demonstration of why §4.5’s canary discipline is not optional.</p>
+<p><strong>DOI:</strong> <a href="https://doi.org/10.13140/RG.2.2.32031.11681">10.13140/RG.2.2.32031.11681</a></p>
 <p><a href="milne-2026-instrumenting-agent-cybernetics.pdf">Download the PDF</a></p>
 </section>
 <section id="read-it-here" class="level2">
@@ -275,8 +277,9 @@ window.Quarto = {
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span>        = {Instrumenting Agent Cybernetics: Open-World Estimation of Requisite Variety in Deployed Agents},</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">author</span>       = {Milne, Paul},</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">year</span>         = {2026},</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">note</span>         = {Independent researcher}</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">doi</span>          = {10.13140/RG.2.2.32031.11681},</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">note</span>         = {Independent researcher}</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
 </section>
