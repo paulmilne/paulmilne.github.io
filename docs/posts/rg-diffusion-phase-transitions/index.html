@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-09-06">
+<meta name="description" content="Implementing in R the two central bifurcation maps that connect Kadanoff block-spin renormalization group theory to belief propagation in hierarchical diffusion models.">
+
+<title>Fixed Points, Phase Transitions, and Diffusion Models – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Fixed Points, Phase Transitions, and Diffusion Models – math-blog">
+<meta property="og:description" content="Implementing in R the two central bifurcation maps that connect Kadanoff block-spin renormalization group theory to belief propagation in hierarchical diffusion models.">
+<meta property="og:image" content="https://paulmilne.github.io/posts/rg-diffusion-phase-transitions/index_files/figure-html/fig-rg-cobweb-1.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="960">
+<meta property="og:image:width" content="1344">
+<meta name="twitter:title" content="Fixed Points, Phase Transitions, and Diffusion Models – math-blog">
+<meta name="twitter:description" content="Implementing in R the two central bifurcation maps that connect Kadanoff block-spin renormalization group theory to belief propagation in hierarchical diffusion models.">
+<meta name="twitter:image" content="https://paulmilne.github.io/posts/rg-diffusion-phase-transitions/index_files/figure-html/fig-rg-cobweb-1.png">
+<meta name="twitter:image-height" content="960">
+<meta name="twitter:image-width" content="1344">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Fixed Points, Phase Transitions, and Diffusion Models</h1>
+            <p class="subtitle lead">A functional-equation bridge between renormalization-group critical phenomena and the hierarchical structure of denoising diffusion</p>
+                  <div>
+        <div class="description">
+          Implementing in R the two central bifurcation maps that connect Kadanoff block-spin renormalization group theory to belief propagation in hierarchical diffusion models.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">diffusion</div>
+                <div class="quarto-category">deep-learning</div>
+                <div class="quarto-category">statistical-mechanics</div>
+                <div class="quarto-category">renormalization-group</div>
+                <div class="quarto-category">reproduction</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 6, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#two-hierarchies-one-structure" id="toc-two-hierarchies-one-structure" class="nav-link active" data-scroll-target="#two-hierarchies-one-structure">Two hierarchies, one structure</a></li>
+  <li><a href="#the-rg-side-kadanoff-decimation-and-the-critical-coupling" id="toc-the-rg-side-kadanoff-decimation-and-the-critical-coupling" class="nav-link" data-scroll-target="#the-rg-side-kadanoff-decimation-and-the-critical-coupling">The RG side: Kadanoff decimation and the critical coupling</a></li>
+  <li><a href="#the-diffusion-side-belief-propagation-and-the-class-transition" id="toc-the-diffusion-side-belief-propagation-and-the-class-transition" class="nav-link" data-scroll-target="#the-diffusion-side-belief-propagation-and-the-class-transition">The diffusion side: belief propagation and the class transition</a></li>
+  <li><a href="#same-bifurcation-two-dictionaries" id="toc-same-bifurcation-two-dictionaries" class="nav-link" data-scroll-target="#same-bifurcation-two-dictionaries">Same bifurcation, two dictionaries</a></li>
+  <li><a href="#schröders-equation-the-linearizing-bridge" id="toc-schröders-equation-the-linearizing-bridge" class="nav-link" data-scroll-target="#schröders-equation-the-linearizing-bridge">Schröder’s equation: the linearizing bridge</a>
+  <ul class="collapse">
+  <li><a href="#a-brief-aside-the-johansenledoitsornette-crash-model" id="toc-a-brief-aside-the-johansenledoitsornette-crash-model" class="nav-link" data-scroll-target="#a-brief-aside-the-johansenledoitsornette-crash-model">A brief aside: the Johansen–Ledoit–Sornette crash model</a></li>
+  </ul></li>
+  <li><a href="#where-the-analogy-breaks-scale-invariance" id="toc-where-the-analogy-breaks-scale-invariance" class="nav-link" data-scroll-target="#where-the-analogy-breaks-scale-invariance">Where the analogy breaks: scale invariance</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This post’s comparative framing was originally drafted by an AI research assistant under my general direction, synthesizing my own 2022 dissertation and Sclocchi et al.&nbsp;(2024). The mathematics has been independently re-derived and computed in R below, rather than simply reproduced from that draft.</p>
+</div>
+</div>
+<p>Two pieces of work on this blog turn out to share more mathematics than their subject headings suggest. <a href="../../papers/rg-critical-phenomena/">My 2022 dissertation</a> <span class="citation" data-cites="milne2022rg">(<a href="#ref-milne2022rg" role="doc-biblioref">Milne 2022</a>)</span> uses the renormalization group (RG) to describe critical phenomena in thermodynamics and financial markets. <a href="../../posts/diffusion-phase-transition/">An earlier post</a> reproduces Sclocchi, Favero &amp; Wyart’s (2024) result <span class="citation" data-cites="sclocchi2024phase">(<a href="#ref-sclocchi2024phase" role="doc-biblioref">Sclocchi, Favero, and Wyart 2024</a>)</span> that denoising diffusion models undergo a sharp, hierarchy-dependent phase transition. Both are, underneath, the same story: a discrete iterated map, a critical parameter, and an unstable fixed point that separates two very different fates for the system.</p>
+<p>This post makes that bridge concrete rather than just asserting it — implementing both maps in R, finding their fixed points numerically, and plotting the resulting cobweb diagrams side by side.</p>
+<section id="two-hierarchies-one-structure" class="level2">
+<h2 class="anchored" data-anchor-id="two-hierarchies-one-structure">Two hierarchies, one structure</h2>
+<p>Both frameworks simplify a high-dimensional system into a multi-scale tree. In statistical mechanics, a 2D spin lattice is grouped recursively into blocks, each decimated down to a single block-spin variable — Kadanoff’s original coarse-graining move. In Sclocchi et al.’s Random Hierarchy Model (RHM), the same tree runs the other way: a class label at the root branches down through latent features to the pixels at the leaves. The parameters line up directly:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistical mechanics &amp; RG</th>
+<th>Hierarchical diffusion (RHM)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Microscopic spin configuration <span class="math inline">\(s_i \in \{-1, 1\}\)</span></td>
+<td>Leaf / input variables <span class="math inline">\(X_i^{(0)}\)</span></td>
+</tr>
+<tr class="even">
+<td>Block-spin variable at level <span class="math inline">\(\ell\)</span></td>
+<td>Latent feature node <span class="math inline">\(X_i^{(\ell)}\)</span></td>
+</tr>
+<tr class="odd">
+<td>Lattice spacing / scale length</td>
+<td>Tree branching factor <span class="math inline">\(s\)</span></td>
+</tr>
+<tr class="even">
+<td>Correlation length <span class="math inline">\(\xi\)</span></td>
+<td>Correct reconstruction depth</td>
+</tr>
+<tr class="odd">
+<td>Potts state dimension <span class="math inline">\(Q\)</span></td>
+<td>Alphabet size <span class="math inline">\(v\)</span></td>
+</tr>
+<tr class="even">
+<td>Coupling strength <span class="math inline">\(K = J/kT\)</span></td>
+<td>Belief in correct sequence <span class="math inline">\(p = 1 - \epsilon + \epsilon/v\)</span></td>
+</tr>
+<tr class="odd">
+<td>Bond recursion under decimation</td>
+<td>Production-rule density <span class="math inline">\(f\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>In both, one parameter controls order versus disorder: <span class="math inline">\(K\)</span> above a critical value <span class="math inline">\(K_c\)</span> gives spontaneous magnetic alignment; <span class="math inline">\(f &lt; 1\)</span> in the RHM gives structured, hierarchically-correlated data rather than unstructured noise.</p>
+</section>
+<section id="the-rg-side-kadanoff-decimation-and-the-critical-coupling" class="level2">
+<h2 class="anchored" data-anchor-id="the-rg-side-kadanoff-decimation-and-the-critical-coupling">The RG side: Kadanoff decimation and the critical coupling</h2>
+<p>For the Potts model on a hierarchical diamond lattice, decimating spin sites under a scale transformation gives an exact recurrence for the coupling strength <span class="math inline">\(K\)</span>:</p>
+<p><span class="math display">\[
+K_{\ell-1} = \phi(K_\ell) \equiv \left( \frac{K_\ell^2 + Q - 1}{2K_\ell + Q - 2} \right)^2
+\]</span></p>
+<p>The physical critical point — where the correlation length diverges — is the <em>unstable</em> fixed point of this map, <span class="math inline">\(K_c = \phi(K_c)\)</span>. I’ll use <span class="math inline">\(Q=3\)</span> (a three-state Potts model): it avoids a singularity in the denominator that shows up at <span class="math inline">\(Q=2\)</span>, and it happens to give a clean, exact critical point.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>phi <span class="ot">&lt;-</span> <span class="cf">function</span>(K, Q) ((K<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> Q <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> K <span class="sc">+</span> Q <span class="sc">-</span> <span class="dv">2</span>))<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Q <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>Kc <span class="ot">&lt;-</span> <span class="fu">uniroot</span>(<span class="cf">function</span>(K) <span class="fu">phi</span>(K, Q) <span class="sc">-</span> K, <span class="at">interval =</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="dv">10</span>))<span class="sc">$</span>root</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fl">1e-6</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>dphi <span class="ot">&lt;-</span> <span class="cf">function</span>(K) (<span class="fu">phi</span>(K <span class="sc">+</span> h, Q) <span class="sc">-</span> <span class="fu">phi</span>(K <span class="sc">-</span> h, Q)) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> h)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>curve_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">K =</span> <span class="fu">seq</span>(<span class="fl">0.5</span>, <span class="dv">6</span>, <span class="at">length.out =</span> <span class="dv">400</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phiK =</span> <span class="fu">phi</span>(K, Q))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>fixed_points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">K =</span> <span class="fu">c</span>(<span class="dv">1</span>, Kc),</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">stability =</span> <span class="fu">c</span>(<span class="st">"stable"</span>, <span class="st">"unstable"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>cb_below <span class="ot">&lt;-</span> <span class="fu">cobweb_path</span>(phi, <span class="at">x0 =</span> <span class="fl">3.9</span>, <span class="at">n =</span> <span class="dv">12</span>, <span class="at">Q =</span> Q) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">traj =</span> <span class="st">"K0 = 3.9"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>cb_above <span class="ot">&lt;-</span> <span class="fu">cobweb_path</span>(phi, <span class="at">x0 =</span> <span class="fl">4.1</span>, <span class="at">n =</span> <span class="dv">6</span>, <span class="at">Q =</span> Q) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">traj =</span> <span class="st">"K0 = 4.1"</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>cobweb_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(cb_below, cb_above)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> curve_df, <span class="fu">aes</span>(K, phiK), <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>(<span class="at">data =</span> cobweb_df, <span class="fu">aes</span>(x, y, <span class="at">group =</span> traj, <span class="at">colour =</span> traj), <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> fixed_points, <span class="fu">aes</span>(K, K, <span class="at">shape =</span> stability, <span class="at">colour =</span> stability),</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">3</span>, <span class="at">show.legend =</span> <span class="fu">c</span>(<span class="at">shape =</span> <span class="cn">TRUE</span>, <span class="at">colour =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_shape_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">stable =</span> <span class="dv">16</span>, <span class="at">unstable =</span> <span class="dv">4</span>)) <span class="sc">+</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="dv">6</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="dv">6</span>)) <span class="sc">+</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(K[ell]), <span class="at">y =</span> <span class="fu">expression</span>(K[ell <span class="sc">-</span> <span class="dv">1</span>] <span class="sc">==</span> <span class="fu">phi</span>(K[ell])),</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="st">"trajectory"</span>, <span class="at">shape =</span> <span class="st">"fixed point"</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Kadanoff-Potts RG recursion (Q = 3)"</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-rg-cobweb" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-rg-cobweb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-rg-cobweb-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-rg-cobweb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Kadanoff-Potts RG recursion (Q = 3). The unstable critical coupling sits at K_c = 4; trajectories starting on either side flow away from it toward one of two very different fates.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Solving numerically: <span class="math inline">\(K_c = 4\)</span>, with derivative <span class="math inline">\(\phi'(K_c) \approx 1.778\)</span> — greater than 1, confirming it’s unstable. A trajectory starting just below <span class="math inline">\(K_c\)</span> (green line, <span class="math inline">\(K_0=3.9\)</span>) flows down; one starting just above (orange, <span class="math inline">\(K_0=4.1\)</span>) flows up and diverges.</p>
+<p>One correction to the source material is worth flagging here. The original synthesis described the disordered basin as flowing toward <span class="math inline">\(K \to 0\)</span>. Checking the map directly: <span class="math inline">\(\phi(0, 3) = 4\)</span>, not <span class="math inline">\(0\)</span> — so <span class="math inline">\(K=0\)</span> isn’t a fixed point of this recursion at all. The actual trivial fixed point, true for <em>every</em> <span class="math inline">\(Q\)</span>, is <span class="math inline">\(K=1\)</span>: <span class="math inline">\(\phi(1, Q) \equiv 1\)</span> identically, since numerator and denominator both reduce to <span class="math inline">\(Q\)</span>. It’s also superstable (<span class="math inline">\(\phi'(1) = 0\)</span>), which is why the “K0 = 3.9” trajectory above collapses onto it so fast.</p>
+</section>
+<section id="the-diffusion-side-belief-propagation-and-the-class-transition" class="level2">
+<h2 class="anchored" data-anchor-id="the-diffusion-side-belief-propagation-and-the-class-transition">The diffusion side: belief propagation and the class transition</h2>
+<p>Sclocchi et al.&nbsp;solve the optimal denoising dynamics for the RHM with belief propagation, tracking the probability <span class="math inline">\(p\)</span> of correctly reconstructing a feature at layer <span class="math inline">\(\ell\)</span>:</p>
+<p><span class="math display">\[
+p' = F(p) \equiv \frac{p^s + f\,\frac{m-1}{mv-1}(1 - p^s)}{p^s + f(1 - p^s)}
+\]</span></p>
+<p><span class="math inline">\(p^*=1\)</span> (perfect reconstruction) and <span class="math inline">\(p^*=1/v\)</span> (chance level) are the two trivial regimes. Whether <span class="math inline">\(p^*=1\)</span> is <em>attractive</em> or <em>repulsive</em> depends on the product <span class="math inline">\(sf\)</span> through <span class="math inline">\(F'(1) \approx sf\)</span> — and that’s the whole ballgame: below the threshold, denoising can recover the class; above it, it can’t.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>F_bp <span class="ot">&lt;-</span> <span class="cf">function</span>(p, s, f, m, v) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  c_ <span class="ot">&lt;-</span> (m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">/</span> (m <span class="sc">*</span> v <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  (p<span class="sc">^</span>s <span class="sc">+</span> f <span class="sc">*</span> c_ <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> p<span class="sc">^</span>s)) <span class="sc">/</span> (p<span class="sc">^</span>s <span class="sc">+</span> f <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> p<span class="sc">^</span>s))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>v <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>phases <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">phase =</span> <span class="fu">c</span>(<span class="st">"Order phase (f = 0.3)"</span>, <span class="st">"Disorder phase (f = 0.8)"</span>),</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">f =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.8</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>find_fp <span class="ot">&lt;-</span> <span class="cf">function</span>(f) {</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="cf">function</span>(p) <span class="fu">F_bp</span>(p, s, f, m, v) <span class="sc">-</span> p</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">1e-4</span>, <span class="dv">1</span> <span class="sc">-</span> <span class="fl">1e-6</span>, <span class="at">length.out =</span> <span class="dv">4000</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  vals <span class="ot">&lt;-</span> <span class="fu">vapply</span>(grid, g, <span class="fu">numeric</span>(<span class="dv">1</span>))</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  idx <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">diff</span>(<span class="fu">sign</span>(vals)) <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  roots <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">length</span>(idx) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">vapply</span>(idx, <span class="cf">function</span>(i) <span class="fu">uniroot</span>(g, grid[i<span class="sc">:</span>(i <span class="sc">+</span> <span class="dv">1</span>)])<span class="sc">$</span>root, <span class="fu">numeric</span>(<span class="dv">1</span>))</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">numeric</span>(<span class="dv">0</span>)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sort</span>(<span class="fu">unique</span>(<span class="fu">round</span>(<span class="fu">c</span>(roots, <span class="dv">1</span>), <span class="dv">6</span>)))</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>stability_of <span class="ot">&lt;-</span> <span class="cf">function</span>(p, f) {</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  hh <span class="ot">&lt;-</span> <span class="fl">1e-6</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> (<span class="fu">F_bp</span>(<span class="fu">min</span>(p <span class="sc">+</span> hh, <span class="dv">1</span> <span class="sc">-</span> <span class="fl">1e-9</span>), s, f, m, v) <span class="sc">-</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">F_bp</span>(<span class="fu">max</span>(p <span class="sc">-</span> hh, <span class="fl">1e-9</span>), s, f, m, v)) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> hh)</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ifelse</span>(d <span class="sc">&gt;</span> <span class="dv">1</span>, <span class="st">"unstable"</span>, <span class="st">"stable"</span>)</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>p_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.001</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">400</span>)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>curve_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(<span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(phases)), <span class="cf">function</span>(i) {</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">p =</span> p_grid, <span class="at">Fp =</span> <span class="fu">F_bp</span>(p_grid, s, phases<span class="sc">$</span>f[i], m, v),</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">phase =</span> phases<span class="sc">$</span>phase[i]</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>}))</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>fp_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(<span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(phases)), <span class="cf">function</span>(i) {</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>  roots <span class="ot">&lt;-</span> <span class="fu">find_fp</span>(phases<span class="sc">$</span>f[i])</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">p =</span> roots, <span class="at">stability =</span> <span class="fu">sapply</span>(roots, stability_of, <span class="at">f =</span> phases<span class="sc">$</span>f[i]),</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">phase =</span> phases<span class="sc">$</span>phase[i]</span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>}))</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>cobweb_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cobweb_path</span>(F_bp, <span class="fl">0.20</span>, <span class="at">s =</span> s, <span class="at">f =</span> <span class="fl">0.3</span>, <span class="at">m =</span> m, <span class="at">v =</span> v) <span class="sc">|&gt;</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">traj =</span> <span class="st">"p0 = 0.20"</span>, <span class="at">phase =</span> phases<span class="sc">$</span>phase[<span class="dv">1</span>]),</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cobweb_path</span>(F_bp, <span class="fl">0.50</span>, <span class="at">s =</span> s, <span class="at">f =</span> <span class="fl">0.3</span>, <span class="at">m =</span> m, <span class="at">v =</span> v) <span class="sc">|&gt;</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">traj =</span> <span class="st">"p0 = 0.50"</span>, <span class="at">phase =</span> phases<span class="sc">$</span>phase[<span class="dv">1</span>]),</span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cobweb_path</span>(F_bp, <span class="fl">0.95</span>, <span class="at">s =</span> s, <span class="at">f =</span> <span class="fl">0.8</span>, <span class="at">m =</span> m, <span class="at">v =</span> v) <span class="sc">|&gt;</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">traj =</span> <span class="st">"p0 = 0.95"</span>, <span class="at">phase =</span> phases<span class="sc">$</span>phase[<span class="dv">2</span>]),</span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cobweb_path</span>(F_bp, <span class="fl">0.50</span>, <span class="at">s =</span> s, <span class="at">f =</span> <span class="fl">0.8</span>, <span class="at">m =</span> m, <span class="at">v =</span> v) <span class="sc">|&gt;</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">traj =</span> <span class="st">"p0 = 0.50"</span>, <span class="at">phase =</span> phases<span class="sc">$</span>phase[<span class="dv">2</span>])</span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>curve_df <span class="ot">&lt;-</span> curve_df <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">phase =</span> <span class="fu">factor</span>(phase, <span class="at">levels =</span> phases<span class="sc">$</span>phase))</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>fp_df <span class="ot">&lt;-</span> fp_df <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">phase =</span> <span class="fu">factor</span>(phase, <span class="at">levels =</span> phases<span class="sc">$</span>phase))</span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>cobweb_df <span class="ot">&lt;-</span> cobweb_df <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">phase =</span> <span class="fu">factor</span>(phase, <span class="at">levels =</span> phases<span class="sc">$</span>phase))</span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> curve_df, <span class="fu">aes</span>(p, Fp), <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>(<span class="at">data =</span> cobweb_df, <span class="fu">aes</span>(x, y, <span class="at">group =</span> traj), <span class="at">colour =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> fp_df, <span class="fu">aes</span>(p, p, <span class="at">shape =</span> stability, <span class="at">colour =</span> stability), <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_shape_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">stable =</span> <span class="dv">16</span>, <span class="at">unstable =</span> <span class="dv">4</span>)) <span class="sc">+</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">stable =</span> <span class="st">"#2C7FB8"</span>, <span class="at">unstable =</span> <span class="st">"#D95F02"</span>)) <span class="sc">+</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>phase) <span class="sc">+</span></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Probability p at layer l"</span>, <span class="at">y =</span> <span class="st">"Probability p' at layer l+1"</span>, <span class="at">colour =</span> <span class="st">"fixed point"</span>, <span class="at">shape =</span> <span class="st">"fixed point"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-bp-cobweb" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-bp-cobweb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-bp-cobweb-1.png" class="img-fluid figure-img" width="864">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-bp-cobweb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Belief-propagation map F(p). Order phase: an unstable fixed point separates two stable attractors – a sharp phase transition in noise space. Disorder phase: the noiseless state itself becomes unstable, and every trajectory decays to the noise floor.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>With <span class="math inline">\(s=2\)</span>, <span class="math inline">\(m=3\)</span>, <span class="math inline">\(v=10\)</span>: the order phase (<span class="math inline">\(f=0.3\)</span>) has fixed points at <span class="math inline">\(p \approx 0.098\)</span> (stable), <span class="math inline">\(p_c \approx 0.301\)</span> (unstable), and <span class="math inline">\(p=1\)</span> (stable) — a genuine bifurcation. Push <span class="math inline">\(f\)</span> up to <span class="math inline">\(0.8\)</span> and <span class="math inline">\(p=1\)</span> flips to unstable, leaving only the noise floor at <span class="math inline">\(p \approx 0.076\)</span>: every trajectory, however close to perfect reconstruction it starts, decays away.</p>
+<p>Two honesty notes. First, <span class="math inline">\(p=1/v=0.1\)</span> isn’t an exact algebraic root of <span class="math inline">\(F\)</span> for arbitrary parameters — I checked this numerically rather than assuming it, and it only holds exactly for special relationships between <span class="math inline">\(m\)</span>, <span class="math inline">\(v\)</span>, <span class="math inline">\(s\)</span>, <span class="math inline">\(f\)</span>. The stable floor above (<span class="math inline">\(\approx 0.098\)</span> / <span class="math inline">\(\approx 0.076\)</span>) sits close to <span class="math inline">\(1/v\)</span> but isn’t pinned to it. Second, <span class="math inline">\(F'(1) \approx sf\)</span> is itself an approximation: the exact derivative carries a prefactor <span class="math inline">\(\frac{m(v-1)}{mv-1}\)</span>, which here is <span class="math inline">\(0.931\)</span> — so the true values are <span class="math inline">\(0.559\)</span> and <span class="math inline">\(1.49\)</span> rather than exactly <span class="math inline">\(0.6\)</span> and <span class="math inline">\(1.6\)</span>. Both still land on the correct side of <span class="math inline">\(1\)</span>, which is all the theory actually needs.</p>
+<p><span class="math inline">\(s\)</span>, <span class="math inline">\(m\)</span>, and <span class="math inline">\(v\)</span> here were chosen to land close to the illustrative numbers in the original comparison, not pulled from Sclocchi et al.’s own experiments — treat them as a worked example of the <em>mechanism</em>, not a replication of their measured parameters.</p>
+</section>
+<section id="same-bifurcation-two-dictionaries" class="level2">
+<h2 class="anchored" data-anchor-id="same-bifurcation-two-dictionaries">Same bifurcation, two dictionaries</h2>
+<p>Both maps are governed by the identical mechanism: a system crosses the basin boundary set by an unstable fixed point of a nonlinear discrete map, and the outcome on the other side is qualitatively different from where it started. A magnet losing its alignment, a market crashing, and a diffusion model’s reconstructed class flipping to something else entirely are, in this sense, the same event described in three different vocabularies.</p>
+</section>
+<section id="schröders-equation-the-linearizing-bridge" class="level2">
+<h2 class="anchored" data-anchor-id="schröders-equation-the-linearizing-bridge">Schröder’s equation: the linearizing bridge</h2>
+<p>Both works lean on the same piece of machinery for handling these maps analytically: Schröder’s functional equation,</p>
+<p><span class="math display">\[
+\psi(\phi(x)) = \lambda\, \psi(x)
+\]</span></p>
+<p>where <span class="math inline">\(\lambda = \phi'(x^*)\)</span> is the eigenvalue at a fixed point and <span class="math inline">\(\psi\)</span> is the (unknown) conjugating function. It linearizes the messy nonlinear dynamics of <span class="math inline">\(\phi\)</span> into simple scaling by <span class="math inline">\(\lambda\)</span> near <span class="math inline">\(x^*\)</span> — which is what lets you extend a discrete iteration into a continuous-time trajectory, <span class="math inline">\(x(t) = \psi^{-1}(\lambda^t \psi(x))\)</span>.</p>
+<section id="a-brief-aside-the-johansenledoitsornette-crash-model" class="level3">
+<h3 class="anchored" data-anchor-id="a-brief-aside-the-johansenledoitsornette-crash-model">A brief aside: the Johansen–Ledoit–Sornette crash model</h3>
+<p>In my dissertation, applying this to the Johansen-Ledoit-Sornette model of financial bubbles — where the scaling factor <span class="math inline">\(\lambda\)</span> is complex rather than real — gives the Log-Periodic Power Law:</p>
+<p><span class="math display">\[
+F(x) = x^\beta\, G(\omega \log x)
+\]</span></p>
+<p>with <span class="math inline">\(G\)</span> periodic and <span class="math inline">\(x = |t_c - t|\)</span> the distance from the crash time <span class="math inline">\(t_c\)</span> <span class="citation" data-cites="johansen1998crashes">(<a href="#ref-johansen1998crashes" role="doc-biblioref">Johansen, Ledoit, and Sornette 1998</a>)</span>. The oscillations get faster (in <span class="math inline">\(x\)</span>) as the crash approaches, which is the model’s signature prediction of accelerating, log-periodic herding behaviour before a crash.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lppl <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">beta =</span> <span class="fl">0.3</span>, <span class="at">A =</span> <span class="dv">1</span>, <span class="at">B =</span> <span class="fl">0.3</span>, <span class="at">omega =</span> <span class="dv">6</span>, <span class="at">phase =</span> <span class="dv">0</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  x<span class="sc">^</span>beta <span class="sc">*</span> (A <span class="sc">+</span> B <span class="sc">*</span> <span class="fu">cos</span>(omega <span class="sc">*</span> <span class="fu">log</span>(x) <span class="sc">+</span> phase))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">seq</span>(<span class="fl">0.001</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">2000</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Fx =</span> <span class="fu">lppl</span>(x)) <span class="sc">|&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(x, Fx)) <span class="sc">+</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_reverse</span>() <span class="sc">+</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(<span class="st">"|"</span> <span class="sc">*</span> t[c] <span class="sc">-</span> t <span class="sc">*</span> <span class="st">"|"</span> <span class="sc">~</span> <span class="st">"(time to crash, decreasing rightward)"</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"F(x)  (illustrative index level)"</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-lppl" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lppl-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-lppl-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lppl-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Illustrative log-periodic power law approaching a critical time – not fitted to real market data, just the functional form.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Sclocchi et al.&nbsp;don’t solve an analogue of this — but they make a structural observation that plays a similar bridging role. The convolutional U-Net used for denoising naturally approximates belief propagation: the encoder path acts as the upward BP pass (coarse-graining noisy pixels into abstract features), and the decoder path with its skip connections acts as the downward pass, mixing global class belief back down with local detail to reconstruct clean pixels.</p>
+</section>
+</section>
+<section id="where-the-analogy-breaks-scale-invariance" class="level2">
+<h2 class="anchored" data-anchor-id="where-the-analogy-breaks-scale-invariance">Where the analogy breaks: scale invariance</h2>
+<p>The two frameworks diverge on one point worth stating plainly rather than glossing over. In the RG picture, criticality brings <em>true</em> continuous scale invariance: the correlation length diverges, the lattice spacing becomes irrelevant, and the system is fractally self-similar — which is exactly why wildly different physical materials fall into the same universality class.</p>
+<p>Diffusion models don’t have this. Scale invariance is <em>broken</em> during denoising: the macroscopic scale (the class label) undergoes a sharp, discontinuous transition at a critical noise level, while the microscopic scale (fine texture) changes smoothly and continuously straight through that transition — sometimes composing pieces of the old class with the new one (a wolf generated with leopard eyes, in Sclocchi et al.’s example). That’s a time-scale separation reflecting the discrete, compositional structure of real data, not the continuous scale invariance of a system at a genuine critical point. The mathematics of the fixed point is shared; the physical picture it’s describing isn’t quite the same.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Kadanoff’s block-spin decimation and Sclocchi et al.’s belief propagation on the Random Hierarchy Model turn out to be the same functional-equation machinery pointed at two different problems — one asking how magnetic order emerges from a spin lattice, the other how a diffusion model recovers (or loses) a semantic class from noise. See <a href="../../papers/rg-critical-phenomena/">the dissertation</a> for the full RG derivation, and <a href="../../posts/diffusion-phase-transition/">the earlier post</a> for the diffusion side reproduced end to end on real images.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-johansen1998crashes" class="csl-entry" role="listitem">
+Johansen, Anders, Olivier Ledoit, and Didier Sornette. 1998. <span>“Crashes as Critical Points.”</span> <em>arXiv Preprint Cond-Mat/9810071</em>.
+</div>
+<div id="ref-milne2022rg" class="csl-entry" role="listitem">
+Milne, Paul. 2022. <span>“RG Functional Equations &amp; Critical Phenomena in Thermodynamics and Financial Markets.”</span> Master’s thesis, The Open University.
+</div>
+<div id="ref-sclocchi2024phase" class="csl-entry" role="listitem">
+Sclocchi, Antonio, Alessandro Favero, and Matthieu Wyart. 2024. <span>“A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data.”</span> <em>arXiv Preprint arXiv:2402.16991</em>.
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

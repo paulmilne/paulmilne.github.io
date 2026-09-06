@@ -80,9 +80,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
+      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -220,7 +220,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZGVlcC1sZWFybmluZw==">deep-learning <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZGlmZnVzaW9u">diffusion <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bmV3cw==">news <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cmVwcm9kdWN0aW9u">reproduction <span class="quarto-category-count">(1)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(3)</span></div><div class="category" data-category="ZGVlcC1sZWFybmluZw==">deep-learning <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZGlmZnVzaW9u">diffusion <span class="quarto-category-count">(2)</span></div><div class="category" data-category="bmV3cw==">news <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cmVub3JtYWxpemF0aW9uLWdyb3Vw">renormalization-group <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cmVwcm9kdWN0aW9u">reproduction <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c3RhdGlzdGljYWwtbWVjaGFuaWNz">statistical-mechanics <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -234,7 +234,7 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="ZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZyUyQ3JlcHJvZHVjdGlvbg==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788694528679" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="9" data-listing-word-count-sort="1606">
+<div class="quarto-post image-right" data-index="0" data-categories="ZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZyUyQ3JlcHJvZHVjdGlvbg==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788697682780" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="9" data-listing-word-count-sort="1628">
 <div class="thumbnail"><a href="./posts/diffusion-phase-transition/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/diffusion-phase-transition/images/grid_thumbnail.jpg" class="thumbnail-image">
@@ -244,6 +244,9 @@ window.Quarto = {
 <h3 class="no-anchor listing-title">
 <a href="./posts/diffusion-phase-transition/index.html" class="no-external">A Phase Transition in Diffusion Models</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/diffusion-phase-transition/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
@@ -268,7 +271,48 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="bmV3cw==" data-listing-date-sort="1781046000000" data-listing-file-modified-sort="1788694523145" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="91">
+<div class="quarto-post image-right" data-index="1" data-categories="ZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZyUyQ3N0YXRpc3RpY2FsLW1lY2hhbmljcyUyQ3Jlbm9ybWFsaXphdGlvbi1ncm91cCUyQ3JlcHJvZHVjdGlvbg==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788697649438" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="13" data-listing-word-count-sort="2445">
+<div class="thumbnail"><a href="./posts/rg-diffusion-phase-transitions/index.html" class="no-external">
+
+<p class="card-img-top"><img src="posts/rg-diffusion-phase-transitions/index_files/figure-html/fig-rg-cobweb-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/rg-diffusion-phase-transitions/index.html" class="no-external">Fixed Points, Phase Transitions, and Diffusion Models</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/rg-diffusion-phase-transitions/index.html" class="no-external">A functional-equation bridge between renormalization-group critical phenomena and the hierarchical structure of denoising diffusion</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGVlcC1sZWFybmluZw=='); return false;">deep-learning</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c3RhdGlzdGljYWwtbWVjaGFuaWNz'); return false;">statistical-mechanics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cmVub3JtYWxpemF0aW9uLWdyb3Vw'); return false;">renormalization-group</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cmVwcm9kdWN0aW9u'); return false;">reproduction</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/rg-diffusion-phase-transitions/index.html" class="no-external">
+<p>Implementing in R the two central bifurcation maps that connect Kadanoff block-spin renormalization group theory to belief propagation in hierarchical diffusion models.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/rg-diffusion-phase-transitions/index.html" class="no-external">
+<div class="listing-date">
+Sep 6, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="bmV3cw==" data-listing-date-sort="1781046000000" data-listing-file-modified-sort="1788694523145" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="91">
 <div class="thumbnail"><a href="./posts/welcome/index.html" class="no-external">
 
 <p class="card-img-top"><img src="posts/welcome/thumbnail.jpg"  class="thumbnail-image card-img"/></p>
@@ -278,6 +322,9 @@ Paul Milne
 <h3 class="no-anchor listing-title">
 <a href="./posts/welcome/index.html" class="no-external">Welcome To My Blog</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/welcome/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('bmV3cw=='); return false;">news</div>

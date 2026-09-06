@@ -26,6 +26,8 @@ The paper considers the subject of critical phenomena in the physical world of t
 
 [Download the PDF](milne-2022-rg-functional-equations-critical-phenomena.pdf)
 
+**Related:** [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/) connects this dissertation's renormalization-group critical phenomena to the phase transitions found in hierarchical diffusion models.
+
 ## Read it here
 
 ```{=html}
