@@ -1,5 +1,13 @@
 project:
   type: website
+  output-dir: docs          # GitHub Pages: serve from /docs on the main branch
+  resources:
+    - .nojekyll             # keep this copied into docs/ on every render (disables Jekyll)
+  render:
+    - "*.qmd"
+    - "posts/**"
+    - "!dl/"                # research working tree, not a site page
+    - "!GEMINI.md"          # assistant notes, not a site page
 
 website:
   title: "math-blog"
