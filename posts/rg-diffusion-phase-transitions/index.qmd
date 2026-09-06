@@ -223,7 +223,7 @@ Both maps are governed by the identical mechanism: a system crosses the basin bo
 
 ## Schröder's equation: the linearizing bridge
 
-Both works lean on the same piece of machinery for handling these maps analytically: Schröder's functional equation,
+Both works lean on the same piece of machinery for handling these maps analytically: Schröder's functional equation [@curtright2011rg],
 
 $$
 \psi(\phi(x)) = \lambda\, \psi(x)
