@@ -1,0 +1,32 @@
+{
+  "permission": {
+    "edit": {
+      "*.qmd": "allow",
+      "*.R": "allow"
+    },
+    "executeCode": {
+      "*": "allow"
+    },
+    "bash": {
+      "printenv *": "allow",
+      "echo *": "allow",
+      "cat *": "allow",
+      "grep *": "allow",
+      "Rscript *": "allow",
+      "ls *": "allow",
+      "env *": "allow",
+      "which *": "allow",
+      "brew list *": "allow",
+      "head *": "allow",
+      "cd *": "allow",
+      "quarto render *": "allow",
+      "tail *": "allow",
+      "find *": "allow",
+      "xargs *": "allow",
+      "sed *": "allow"
+    },
+    "external_directory": {
+      "/Users/paul/Dev/pricing-lab/*": "allow"
+    }
+  }
+}

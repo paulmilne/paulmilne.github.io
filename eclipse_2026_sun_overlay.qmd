@@ -1,0 +1,611 @@
+---
+title: "Projecting the sun's path for the 12 August 2026 UK partial solar eclipse"
+---
+
+::: {.callout-note}
+This report was generated using AI under general human direction. At the time of generation, the contents have not been comprehensively reviewed by a human analyst.
+:::
+
+## Overview
+
+This report projects the sun's calculated azimuth/altitude path during the 12 August 2026 partial solar eclipse onto two images taken near 52.8936°N, 1.2659°W (Nottinghamshire/Lincolnshire border, UK), and separately visualizes the local terrain to give context on nearby high ground:
+
+1. A Google Street View image, aimed toward the sun's position at peak eclipse.
+2. A photo taken with the Theodolite app, whose EXIF/XMP metadata records the camera's GPS position, compass heading, and pitch.
+3. A 3D terrain surface of the surrounding 10-mile radius, with nearby named hills labeled and the local river network draped over the relief.
+
+Both overlays use the same sun-path calculation and a small-angle (linear) projection from angular offset to pixel offset around the camera's heading/pitch — not a true perspective projection. This is a reasonable approximation over the modest angular ranges involved here, but it is not exact, especially toward the edges of a wide field of view.
+
+```{r}
+#| label: load-packages
+library(suncalc)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(jpeg)
+library(httr)
+library(exiftoolr)
+library(sf)
+library(terra)
+library(elevatr)
+library(osmdata)
+library(plotly)
+library(rayshader)
+library(curl)
+```
+
+## Eclipse context and sun path
+
+```{r}
+#| label: eclipse-setup
+lat <- 52.893608
+lon <- -1.265934
+date <- as.Date("2026-08-12")
+
+# Eclipse locally runs roughly 18:00-20:00 BST (17:00-19:00 UTC);
+# widen slightly either side to give context on the sun's path
+times <- seq(
+  from = as.POSIXct(paste(date, "16:30:00"), tz = "UTC"),
+  to   = as.POSIXct(paste(date, "19:15:00"), tz = "UTC"),
+  by   = "1 min"
+)
+
+sun_path <- getSunlightPosition(date = times, lat = lat, lon = lon) |>
+  mutate(
+    # Convert azimuth (radians south-to-west) to compass degrees (0-360 from North)
+    azimuth_deg = (azimuth * 180 / pi + 180) %% 360,
+    altitude_deg = altitude * 180 / pi,
+    time_bst = format(with_tz(date, "Europe/London"), "%H:%M")
+  )
+
+# Reported UK-wide maximum eclipse is ~19:05-19:13 BST (18:05-18:13 UTC);
+# pick the row closest to 19:09 BST (18:09 UTC) for this longitude
+peak_time <- as.POSIXct(paste(date, "18:09:00"), tz = "UTC")
+peak_sun <- sun_path[which.min(abs(sun_path$date - peak_time)), ]
+```
+
+At peak eclipse (`{r} peak_sun$time_bst` BST), the sun is at an azimuth of `{r} round(peak_sun$azimuth_deg, 1)`° and an altitude of `{r} round(peak_sun$altitude_deg, 1)`°. Across the wider window shown here (16:30-19:15 UTC / 17:30-20:15 BST), azimuth ranges from `{r} round(min(sun_path$azimuth_deg), 1)`° to `{r} round(max(sun_path$azimuth_deg), 1)`°, and altitude from `{r} round(min(sun_path$altitude_deg), 1)`° to `{r} round(max(sun_path$altitude_deg), 1)`°.
+
+A shared helper converts an azimuth/altitude offset from a camera's heading/pitch into pixel coordinates, given the image size and field of view:
+
+```{r}
+#| label: projection-helper
+wrap180 <- function(x) ((x + 180) %% 360) - 180
+
+project_sun <- function(az, alt, heading, pitch, fov_h, fov_v, img_w, img_h) {
+  delta_az <- wrap180(az - heading)
+  delta_alt <- alt - pitch
+  data.frame(
+    x = img_w / 2 + (delta_az / (fov_h / 2)) * (img_w / 2),
+    y = img_h / 2 + (delta_alt / (fov_v / 2)) * (img_h / 2),
+    delta_az = delta_az,
+    delta_alt = delta_alt
+  )
+}
+```
+
+## Street View overlay
+
+The Street View camera is pointed toward the sun's position at peak eclipse (heading `{r} round(peak_sun$azimuth_deg, 1)`°, pitch `{r} round(peak_sun$altitude_deg, 1)`°), using the default 90° horizontal field of view for a square image.
+
+```{r}
+#| label: streetview-download
+# Cache network responses on disk so repeated re-renders (e.g. while
+# iterating on this document) don't repeatedly hit external APIs and risk
+# tripping their rate limits.
+cache_dir <- ".cache"
+dir.create(cache_dir, showWarnings = FALSE)
+
+sv_size <- c(640, 640)
+sv_fov <- 90
+sv_heading <- peak_sun$azimuth_deg
+sv_pitch <- peak_sun$altitude_deg
+
+sv_cache_file <- file.path(
+  cache_dir,
+  sprintf("streetview_%s_%s_h%.1f_p%.1f_f%d_%dx%d.jpg",
+          lat, lon, sv_heading, sv_pitch, sv_fov, sv_size[1], sv_size[2])
+)
+
+if (!file.exists(sv_cache_file)) {
+  api_key <- Sys.getenv("GOOGLE_MAPS_KEY")
+
+  sv_url <- modify_url(
+    "https://maps.googleapis.com/maps/api/streetview",
+    query = list(
+      location = paste(lat, lon, sep = ","),
+      size     = paste(sv_size, collapse = "x"),
+      heading  = sv_heading,
+      fov      = sv_fov,
+      pitch    = sv_pitch,
+      key      = api_key
+    )
+  )
+
+  sv_resp <- GET(sv_url, write_disk(sv_cache_file, overwrite = TRUE))
+  stop_for_status(sv_resp)
+}
+
+streetview_img <- readJPEG(sv_cache_file)
+```
+
+```{r}
+#| label: streetview-project
+sv_w <- sv_size[1]
+sv_h <- sv_size[2]
+
+sv_projected <- cbind(
+  sun_path,
+  project_sun(sun_path$azimuth_deg, sun_path$altitude_deg,
+              sv_heading, sv_pitch, sv_fov, sv_fov, sv_w, sv_h)
+) |>
+  filter(abs(delta_az) <= sv_fov / 2, abs(delta_alt) <= sv_fov / 2)
+
+sv_peak_projected <- sv_projected |> filter(date == peak_sun$date)
+```
+
+```{r}
+#| label: fig-streetview-overlay
+#| fig-cap: "Sun's path during the 12 Aug 2026 partial solar eclipse, projected onto a Street View image"
+ggplot() +
+  annotation_raster(streetview_img, xmin = 0, xmax = sv_w, ymin = 0, ymax = sv_h) +
+  geom_path(data = sv_projected, aes(x = x, y = y), color = "yellow", linewidth = 1) +
+  geom_point(data = sv_peak_projected, aes(x = x, y = y), color = "red", size = 3) +
+  geom_text(data = sv_peak_projected, aes(x = x, y = y, label = time_bst),
+             color = "red", vjust = -1) +
+  coord_fixed(xlim = c(0, sv_w), ylim = c(0, sv_h), expand = FALSE) +
+  labs(
+    title = "Sun's path during the 12 Aug 2026 partial solar eclipse",
+    subtitle = paste0("Camera heading ", round(sv_heading, 1), "°, pitch ",
+                       round(sv_pitch, 1), "° — near Nottinghamshire/Lincolnshire border"),
+    x = NULL, y = NULL
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(color = "white"),
+    plot.subtitle = element_text(color = "white"),
+    plot.background = element_rect(fill = "black")
+  )
+```
+
+## Photo overlay
+
+This photo was taken with the Theodolite app on an iPhone, which records GPS position and `GPSImgDirection` (true compass heading) in EXIF, and the camera's vertical/horizontal inclination (`vert_angle_deg` / `horiz_angle_deg`) in the image caption. We treat `vert_angle_deg` as pitch and treat roll (`horiz_angle_deg`) as negligible.
+
+```{r}
+#| label: photo-metadata
+photo_path <- "/Users/paul/Downloads/TH000003.JPG"
+
+meta <- exif_read(photo_path)
+
+photo_lat <- meta$GPSLatitude
+photo_lon <- meta$GPSLongitude
+heading   <- meta$GPSImgDirection
+pitch     <- as.numeric(sub(".*vert_angle_deg=([0-9.\\-]+).*", "\\1", meta$ImageDescription))
+
+photo_time_local <- as.POSIXct(
+  paste(gsub(":", "-", substr(meta$DateTimeOriginal, 1, 10)), substr(meta$DateTimeOriginal, 12, 19)),
+  tz = "UTC"
+) - hours(as.numeric(substr(meta$OffsetTimeOriginal, 1, 3)))
+
+img_w <- meta$ImageWidth
+img_h <- meta$ImageHeight
+```
+
+The photo's field of view is estimated from its 35mm-equivalent focal length, rescaled to the actual saved crop dimensions assuming the native ultra-wide sensor is 4032x3024 pixels (iPhone 13 Pro Max ultra-wide camera) and a rectilinear (tangent-plane) projection. This is an approximation — the lens's true optical FOV may differ from this 35mm-equivalent estimate.
+
+```{r}
+#| label: photo-fov
+native_w <- 4032
+f35 <- meta$FocalLengthIn35mmFormat
+fov_h_native <- 2 * atan(18 / f35) * 180 / pi
+fov_h <- 2 * atan(tan(fov_h_native / 2 * pi / 180) * (img_w / native_w)) * 180 / pi
+fov_v <- 2 * atan((img_h / img_w) * tan(fov_h / 2 * pi / 180)) * 180 / pi
+```
+
+Camera heading `{r} round(heading, 1)`°, pitch `{r} round(pitch, 1)`°, estimated field of view `{r} round(fov_h, 0)`° x `{r} round(fov_v, 0)`°, captured `{r} format(photo_time_local, "%H:%M UTC")`.
+
+```{r}
+#| label: photo-sunpositions
+sun_path_photo <- getSunlightPosition(date = times, lat = photo_lat, lon = photo_lon) |>
+  mutate(
+    azimuth_deg = (azimuth * 180 / pi + 180) %% 360,
+    altitude_deg = altitude * 180 / pi,
+    time_bst = format(with_tz(date, "Europe/London"), "%H:%M")
+  )
+
+capture_sun <- getSunlightPosition(date = photo_time_local, lat = photo_lat, lon = photo_lon) |>
+  mutate(
+    azimuth_deg = (azimuth * 180 / pi + 180) %% 360,
+    altitude_deg = altitude * 180 / pi
+  )
+```
+
+```{r}
+#| label: photo-project
+sun_projected <- cbind(
+  sun_path_photo,
+  project_sun(sun_path_photo$azimuth_deg, sun_path_photo$altitude_deg,
+              heading, pitch, fov_h, fov_v, img_w, img_h)
+)
+capture_projected <- cbind(
+  capture_sun,
+  project_sun(capture_sun$azimuth_deg, capture_sun$altitude_deg,
+              heading, pitch, fov_h, fov_v, img_w, img_h)
+)
+
+in_frame <- function(x, y) x >= 0 & x <= img_w & y >= 0 & y <= img_h
+
+path_in_frame <- sun_projected |> filter(in_frame(x, y))
+capture_in_frame <- in_frame(capture_projected$x[1], capture_projected$y[1])
+
+path_ticks <- path_in_frame |> filter(minute(date) %% 15 == 0)
+
+photo_img <- readJPEG(photo_path)
+```
+
+```{r}
+#| label: fig-photo-overlay
+#| fig-cap: "Eclipse sun path projected onto the Theodolite photo"
+p_photo <- ggplot() +
+  annotation_raster(photo_img, xmin = 0, xmax = img_w, ymin = 0, ymax = img_h) +
+  coord_fixed(xlim = c(0, img_w), ylim = c(0, img_h), expand = FALSE) +
+  theme_void() +
+  labs(
+    title = "Eclipse sun path projected onto photo",
+    subtitle = paste0(
+      "Heading ", round(heading, 1), "°, pitch ", round(pitch, 1),
+      "°, est. FOV ", round(fov_h, 0), "°x", round(fov_v, 0),
+      "°, captured ", format(photo_time_local, "%H:%M UTC")
+    ),
+    x = NULL, y = NULL
+  ) +
+  theme(
+    plot.title = element_text(color = "white", size = 11),
+    plot.subtitle = element_text(color = "white", size = 9),
+    plot.background = element_rect(fill = "black")
+  )
+
+if (nrow(path_in_frame) > 0) {
+  p_photo <- p_photo +
+    geom_path(data = path_in_frame, aes(x = x, y = y), color = "yellow", linewidth = 1) +
+    geom_point(data = path_ticks, aes(x = x, y = y), color = "yellow", size = 2) +
+    geom_label(
+      data = path_ticks, aes(x = x, y = y, label = time_bst),
+      color = "black", fill = "yellow", alpha = 0.8, size = 2.8,
+      linewidth = 0, label.padding = unit(0.12, "lines"), vjust = -0.5
+    )
+}
+
+if (isTRUE(capture_in_frame)) {
+  p_photo <- p_photo +
+    geom_point(data = capture_projected, aes(x = x, y = y), color = "red", size = 3) +
+    geom_label(data = capture_projected, aes(x = x, y = y, label = "sun at capture"),
+               color = "red", fill = "white", alpha = 0.8, linewidth = 0, vjust = -0.7)
+} else {
+  cx <- pmin(pmax(capture_projected$x, 0), img_w)
+  cy <- pmin(pmax(capture_projected$y, 0), img_h)
+  offframe_label <- sprintf(
+    "Sun at capture (%s) is %.0f° off-frame\n(Az %.0f°, Alt %.0f° vs heading %.0f°, pitch %.0f°)",
+    format(photo_time_local, "%H:%M UTC"),
+    sqrt(capture_projected$delta_az^2 + capture_projected$delta_alt^2),
+    capture_sun$azimuth_deg, capture_sun$altitude_deg, heading, pitch
+  )
+  p_photo <- p_photo +
+    annotate("segment", x = img_w / 2, y = img_h / 2, xend = cx, yend = cy,
+             arrow = arrow(length = unit(0.3, "cm")), color = "red", linewidth = 1) +
+    annotate("label", x = img_w * 0.02, y = img_h * 0.02, label = offframe_label,
+             color = "red", fill = "white", alpha = 0.85, size = 3, hjust = 0, vjust = 0,
+             linewidth = 0)
+}
+
+if (nrow(path_in_frame) == 0) {
+  p_photo <- p_photo +
+    annotate("label", x = img_w * 0.02, y = img_h * 0.98,
+             label = "Eclipse sun path (16:30-19:15 UTC) never enters this frame",
+             color = "black", fill = "yellow", alpha = 0.85, size = 3, hjust = 0, vjust = 1,
+             linewidth = 0)
+}
+
+p_photo
+```
+
+## Terrain and named peaks within 10 miles
+
+To give context on nearby high ground that could obstruct a low-altitude view of the eclipse, this section builds a 3D terrain surface for a 10-mile radius around the viewing location and labels the named hills found in OpenStreetMap within that area.
+
+```{r}
+#| label: terrain-dem
+miles_to_deg_lat <- 10 / 69.0
+miles_to_deg_lon <- 10 / (69.0 * cos(lat * pi / 180))
+
+bbox_sf <- st_as_sf(
+  data.frame(
+    lon = c(lon - miles_to_deg_lon, lon + miles_to_deg_lon),
+    lat = c(lat - miles_to_deg_lat, lat + miles_to_deg_lat)
+  ),
+  coords = c("lon", "lat"), crs = 4326
+)
+
+# Cache as a GeoTIFF (rather than saveRDS) so the raster's values are
+# guaranteed to round-trip regardless of in-memory vs. file-backed state.
+elev_cache_file <- file.path(
+  cache_dir, sprintf("elev_raster_%s_%s_z10.tif", lat, lon)
+)
+
+if (file.exists(elev_cache_file)) {
+  elev_raster <- raster::raster(elev_cache_file)
+} else {
+  elev_raster <- get_elev_raster(bbox_sf, z = 10, src = "aws")
+  raster::writeRaster(elev_raster, elev_cache_file, overwrite = TRUE)
+}
+
+# Reproject to British National Grid so grid cells are isotropic (equal
+# distance in x and y), which raw lat/lon degrees are not at this latitude
+r_bng <- terra::project(terra::rast(elev_raster), "EPSG:27700", method = "bilinear", res = 30)
+```
+
+```{r}
+#| label: terrain-peaks
+# osmdata's default Overpass mirror can vary and has been observed rate-
+# limiting/blocking repeated requests from this machine (surfacing as a
+# 429/420-style error after a long retry backoff). Pin to the main
+# overpass-api.de instance, which has been confirmed reachable.
+set_overpass_url("https://overpass-api.de/api/interpreter")
+
+bbox_num <- c(lon - miles_to_deg_lon, lat - miles_to_deg_lat, lon + miles_to_deg_lon, lat + miles_to_deg_lat)
+
+peaks_cache_file <- file.path(cache_dir, sprintf("osm_peaks_%s_%s.rds", lat, lon))
+
+if (file.exists(peaks_cache_file)) {
+  peaks <- readRDS(peaks_cache_file)
+} else {
+  peaks <- opq(bbox = bbox_num, timeout = 120) |>
+    add_osm_feature(key = "natural", value = "peak") |>
+    osmdata_sf()
+  saveRDS(peaks, peaks_cache_file)
+}
+
+peak_named <- peaks$osm_points |> filter(!is.na(name))
+
+peak_named_bng <- st_transform(peak_named, 27700)
+peak_coords <- st_coordinates(peak_named_bng)
+
+peak_df <- data.frame(
+  name = peak_named_bng$name,
+  easting = peak_coords[, "X"],
+  northing = peak_coords[, "Y"]
+) |>
+  distinct(name, .keep_all = TRUE)
+
+# Look up each peak's elevation from the DEM rather than relying on
+# (frequently missing) OSM elevation tags
+peak_df$elev_dem <- terra::extract(r_bng, as.matrix(peak_df[, c("easting", "northing")]))[, 1]
+peak_df <- peak_df |> arrange(desc(elev_dem))
+
+top_peaks <- head(peak_df, 8)
+
+# The eclipse-viewing location itself (Long Eaton), for reference on the map
+viewing_point_bng <- st_transform(st_sfc(st_point(c(lon, lat)), crs = 4326), 27700)
+viewing_coords <- st_coordinates(viewing_point_bng)
+viewing_point <- data.frame(
+  name = "Long Eaton",
+  easting = viewing_coords[, "X"],
+  northing = viewing_coords[, "Y"]
+)
+viewing_point$elev_dem <- terra::extract(r_bng, viewing_coords)[, 1]
+
+# The DEM's highest point can sit outside any *named* OSM peak - here it's
+# ~25km from the nearest tagged peak (Drum Hill), so it's real high ground
+# (likely Peak District/Pennine foothills at the edge of the 10-mile-radius
+# bounding box, whose corners reach ~14 miles out) rather than an OSM gap
+dem_vals <- terra::values(r_bng)[, 1]
+dem_xy <- terra::xyFromCell(r_bng, seq_along(dem_vals))
+max_idx <- which.max(dem_vals)
+high_point <- data.frame(
+  name = "Unnamed high ground",
+  easting = dem_xy[max_idx, 1],
+  northing = dem_xy[max_idx, 2],
+  elev_dem = dem_vals[max_idx]
+)
+```
+
+Within this radius, `{r} nrow(peak_df)` named hills are tagged in OpenStreetMap, ranging from `{r} round(min(peak_df$elev_dem))` m to `{r} round(max(peak_df$elev_dem))` m; the eight highest are labeled below, along with the eclipse-viewing location (Long Eaton, at the centre) and the single highest point in the DEM overall (`{r} round(high_point$elev_dem)` m), which falls outside the named-peaks dataset and sits at the edge of the frame.
+
+```{r}
+#| label: terrain-matrix
+# NOTE: raster_to_matrix() transposes the raster - its first matrix
+# dimension indexes eastings (raster columns), its second indexes
+# northings (raster rows, north-to-south)
+elmat <- raster_to_matrix(r_bng)
+
+ext_bng <- terra::ext(r_bng)
+eastings_full <- seq(ext_bng[1], ext_bng[2], length.out = ncol(r_bng))
+northings_full <- seq(ext_bng[4], ext_bng[3], length.out = nrow(r_bng))
+
+# Downsample for a responsive interactive plot
+step <- 3
+i_seq <- seq(1, nrow(elmat), by = step)
+j_seq <- seq(1, ncol(elmat), by = step)
+elmat_ds <- elmat[i_seq, j_seq]
+eastings_ds <- eastings_full[i_seq]
+northings_ds <- northings_full[j_seq]
+
+# plotly's z matrix rows -> y axis, cols -> x axis
+z_mat <- t(elmat_ds)
+```
+
+```{r}
+#| label: fig-terrain-peaks
+#| fig-cap: "Terrain within 10 miles of the eclipse-viewing location, with the highest named hills labeled"
+peak_hover <- sprintf("%s<br>%d m", top_peaks$name, round(top_peaks$elev_dem))
+viewing_hover <- sprintf("%s<br>%d m", viewing_point$name, round(viewing_point$elev_dem))
+high_point_hover <- sprintf("%s<br>%d m", high_point$name, round(high_point$elev_dem))
+
+plot_ly() |>
+  add_surface(x = eastings_ds, y = northings_ds, z = z_mat,
+              colorscale = "Earth", showscale = FALSE) |>
+  add_trace(
+    type = "scatter3d", mode = "markers+text",
+    x = top_peaks$easting, y = top_peaks$northing, z = top_peaks$elev_dem + 15,
+    text = top_peaks$name, textposition = "top center",
+    marker = list(color = "red", size = 4),
+    textfont = list(color = "black", size = 11),
+    hovertext = peak_hover, hoverinfo = "text",
+    showlegend = FALSE
+  ) |>
+  add_trace(
+    type = "scatter3d", mode = "markers+text",
+    x = viewing_point$easting, y = viewing_point$northing, z = viewing_point$elev_dem + 15,
+    text = viewing_point$name, textposition = "top center",
+    marker = list(color = "blue", size = 5, symbol = "diamond"),
+    textfont = list(color = "black", size = 11),
+    hovertext = viewing_hover, hoverinfo = "text",
+    showlegend = FALSE
+  ) |>
+  add_trace(
+    type = "scatter3d", mode = "markers+text",
+    x = high_point$easting, y = high_point$northing, z = high_point$elev_dem + 15,
+    text = high_point$name, textposition = "top center",
+    marker = list(color = "darkorange", size = 4),
+    textfont = list(color = "black", size = 11),
+    hovertext = high_point_hover, hoverinfo = "text",
+    showlegend = FALSE
+  ) |>
+  layout(
+    title = "Terrain within 10 miles of the eclipse-viewing location",
+    scene = list(
+      xaxis = list(title = "Easting (m, BNG)"),
+      yaxis = list(title = "Northing (m, BNG)"),
+      zaxis = list(title = "Elevation (m)"),
+      aspectmode = "manual",
+      aspectratio = list(x = 1, y = diff(range(northings_ds)) / diff(range(eastings_ds)), z = 0.25)
+    )
+  )
+```
+
+## River network and 3D rendering
+
+To add geographic context beyond bare terrain, the local river/canal network is draped over a full-resolution rayshader hillshade and rendered as a 3D scene. Watercourse geometry comes from Ordnance Survey's **OS Open Rivers** dataset rather than OpenStreetMap, since public Overpass API mirrors proved unreliable (repeated 504 timeouts) when queried for `waterway` features.
+
+```{r}
+#| label: rivers-download
+# OS Open Rivers (OGL/Crown copyright, free via OS Data Hub) - downloaded once
+# and cached, since Overpass mirrors were unreliable for `waterway` queries.
+rivers_zip <- file.path(cache_dir, "os_open_rivers_gb.gpkg")
+rivers_extract_dir <- file.path(cache_dir, "os_open_rivers_extracted")
+rivers_gpkg <- file.path(rivers_extract_dir, "Data", "oprvrs_gb.gpkg")
+
+if (!file.exists(rivers_gpkg)) {
+  if (!file.exists(rivers_zip)) {
+    # download.file()/libcurl can trip sandboxes that block reading ~/.netrc;
+    # disabling netrc lookup on the curl handle avoids that
+    h <- curl::new_handle(netrc = 0, followlocation = TRUE, timeout = 600)
+    curl::curl_download(
+      "https://api.os.uk/downloads/v1/products/OpenRivers/downloads?area=GB&format=GeoPackage&redirect",
+      destfile = rivers_zip, handle = h
+    )
+  }
+  # The download is actually a zip containing the real .gpkg plus licence/readme docs
+  unzip(rivers_zip, exdir = rivers_extract_dir)
+}
+```
+
+```{r}
+#| label: rivers-clip
+#| cache: true
+bbox_bng <- st_bbox(st_transform(bbox_sf, 27700))
+
+rivers_bng <- st_read(
+  rivers_gpkg, layer = "watercourse_link",
+  wkt_filter = st_as_text(st_as_sfc(bbox_bng)),
+  quiet = TRUE
+)
+```
+
+Within the same 10-mile radius, `{r} nrow(rivers_bng)` watercourse segments are found, including named rivers and canals such as `{r} rivers_bng |> st_drop_geometry() |> count(watercourse_name, sort = TRUE) |> filter(!is.na(watercourse_name)) |> slice(1) |> pull(watercourse_name)`.
+
+```{r}
+#| label: terrain-hillshade
+#| cache: true
+# Full-resolution shading (not the downsampled elmat_ds used for the plotly
+# surface), since this feeds the 3D rayshader render below
+hillshade <- elmat |>
+  sphere_shade(texture = "imhof1") |>
+  add_shadow(ray_shade(elmat, zscale = 30, multicore = TRUE), max_darken = 0.5) |>
+  add_shadow(ambient_shade(elmat, zscale = 30), max_darken = 0.5)
+
+river_overlay <- generate_line_overlay(
+  rivers_bng, extent = ext_bng, heightmap = elmat,
+  color = "steelblue4", linewidth = 3
+)
+
+hillshade_rivers <- add_overlay(hillshade, river_overlay)
+```
+
+```{r}
+#| label: fig-terrain-3d-rivers
+#| cache: true
+#| fig-cap: "3D terrain rendering (5x vertical exaggeration) with the river network, named peaks, the eclipse-viewing location, and the highest (unnamed) point in the frame labeled"
+snapshot_file <- file.path(cache_dir, "terrain_3d_rivers_snapshot.png")
+
+rgl::close3d()
+# zscale = 30 (cell size) / 5 exaggeration; at true scale (zscale = 30) or
+# even 2x (zscale = 15) the ~415 m relief across a 30 km extent reads as
+# nearly flat, so a stronger exaggeration and lower, more oblique phi make
+# the terrain (and the rivers following its valleys) legible
+plot_3d(
+  hillshade_rivers, elmat,
+  zscale = 6, windowsize = c(1000, 800),
+  phi = 25, theta = 45, zoom = 0.6,
+  solid = FALSE, shadowdepth = -50
+)
+
+zscale_3d <- 6
+
+for (i in seq_len(nrow(top_peaks))) {
+  # altitude is relative to the *local* terrain height (relativez = TRUE) and
+  # gets stretched by zscale, so a modest +40 m keeps labels near the surface
+  render_label(
+    elmat, extent = ext_bng, zscale = zscale_3d,
+    lat = top_peaks$northing[i], long = top_peaks$easting[i],
+    altitude = 40, offset = 0,
+    text = top_peaks$name[i], textsize = 1.1, linewidth = 2,
+    clear_previous = (i == 1)
+  )
+}
+
+render_label(
+  elmat, extent = ext_bng, zscale = zscale_3d,
+  lat = viewing_point$northing, long = viewing_point$easting,
+  altitude = 50, offset = 0,
+  text = viewing_point$name, textsize = 1.3, linewidth = 2,
+  textcolor = "darkblue", linecolor = "darkblue"
+)
+
+render_label(
+  elmat, extent = ext_bng, zscale = zscale_3d,
+  lat = high_point$northing, long = high_point$easting,
+  altitude = 40, offset = 0,
+  text = sprintf("%s (%d m)", high_point$name, round(high_point$elev_dem)),
+  textsize = 1.1, linewidth = 2,
+  textcolor = "darkorange4", linecolor = "darkorange4"
+)
+
+Sys.sleep(3)
+render_snapshot(filename = snapshot_file)
+rgl::close3d()
+
+knitr::include_graphics(snapshot_file)
+```
+
+## Notes and caveats
+
+- Both photo overlays use a **small-angle/linear projection** from angular offset to pixel offset around the camera's heading and pitch, rather than a true perspective (gnomonic) projection. This is a reasonable approximation for the field-of-view sizes and angular ranges involved here, but introduces increasing distortion toward the edges of wide fields of view.
+- The Street View camera's field of view is assumed to be 90° both horizontally and vertically (the API default for a square image); the true vertical field of view for the Street View panorama projection may differ.
+- The photo's field of view is estimated from its 35mm-equivalent focal length and an assumed native sensor resolution (4032x3024 for the iPhone 13 Pro Max ultra-wide camera), rescaled to the actual saved crop size. This is not a verified optical specification.
+- The photo's pitch is taken directly from the Theodolite app's `vert_angle_deg` caption field, and roll (`horiz_angle_deg`) is assumed negligible and not corrected for.
+- The terrain elevation data comes from AWS Terrain Tiles (~30m resolution) via `elevatr`. Named peaks are whichever `natural=peak` features happen to be tagged in OpenStreetMap within the radius — this list may be incomplete, and their elevations are read from the DEM at each point's coordinates rather than from (often-missing) OSM elevation tags.
+- The river network is watercourse-link geometry from **OS Open Rivers**. Contains OS data © Crown copyright and database right, available under the [Open Government Licence](https://www.ordnancesurvey.co.uk/business-government/licensing-agreements/os-opendata-licence). It is a generalised network, not a detailed hydrography product, and roughly 200 of the segments in this radius carry no `watercourse_name` (minor streams/ditches).
+- Reprojecting the elevation raster from WGS84 to British National Grid leaves a small fraction (~2%) of edge cells as `NA`, visible as a faint ragged border in the 3D render.
+- The bounding box is built as a square in degrees (±10 miles in latitude and longitude), so its corners reach roughly 14 miles from the viewing location — farther than the stated 10-mile radius. The highest point in the frame (~381 m) falls in one such corner and is ~25 km from the nearest *named* OSM peak, so it is almost certainly real high ground (plausibly Peak District/Pennine foothills) rather than a labeling gap — OSM just has no `natural=peak` point there.

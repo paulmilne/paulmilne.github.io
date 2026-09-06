@@ -1,0 +1,18 @@
+.cache/
+
+/.quarto/
+
+# rendered site output (regenerate with `quarto render`)
+/_site/
+
+# RStudio / R session artifacts
+.Rproj.user/
+.Rhistory
+.RData
+.RDataTmp
+
+# self-contained research working tree with its own git repo, model
+# checkpoints, datasets, and a Python venv -- not blog content
+/dl/
+
+.DS_Store
