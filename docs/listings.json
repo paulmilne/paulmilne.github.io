@@ -2,10 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/post-with-code/macro-econ-example.html",
       "/posts/diffusion-phase-transition/index.html",
-      "/posts/post-with-code/index.html",
-      "/posts/post-with-code/simple-slider.html",
       "/posts/welcome/index.html"
     ]
   }

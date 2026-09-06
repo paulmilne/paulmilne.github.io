@@ -1,12 +1,14 @@
 ---
 title: "Welcome To My Blog"
-author: "Tristan O'Malley"
+author: "Paul Milne"
 date: "2026-06-10"
 categories: [news]
 ---
 
-This is the first post in a Quarto blog. Welcome!
+Welcome! This blog is where I write up things I'm exploring in math, statistics, and machine learning — usually starting from a paper or an idea I want to understand better, and working through it in code until it's concrete.
+
+Expect a mix of interactive explainers, reproductions of results from papers I find interesting, and the occasional deep dive into a dataset or method. Posts will lean toward showing the work rather than just stating conclusions, so there's often code, data, and plots alongside the writing.
 
 ![](thumbnail.jpg)
 
-Since this post doesn't specify an explicit `image`, the first image in the post will be used in the listing page of posts.
+Thanks for stopping by — more soon.
