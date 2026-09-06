@@ -1,0 +1,162 @@
+---
+title: "Markov Chains, Concretely"
+subtitle: "The backbone of diffusion models — first of a three-part refresher series"
+description: "A worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks."
+author: "Paul Milne"
+date: "2026-09-06"
+categories: [explainer, diffusion, deep-learning]
+engine: knitr
+bibliography: references.bib
+format:
+  html:
+    toc: true
+---
+
+This is the first of three short refreshers behind two earlier posts — [Reproducing a Phase Transition in Diffusion Models](/posts/diffusion-phase-transition/) and [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/) — both of which lean on ideas from Sclocchi, Favero & Wyart (2024) [@sclocchi2024phase] that are easy to gloss over if you haven't seen them recently. This one covers Markov chains; the next two cover mean-field analysis and the generative diffusion process itself.
+
+```{r}
+#| label: setup
+#| include: false
+library(ggplot2)
+library(dplyr)
+theme_set(theme_minimal(base_size = 12))
+```
+
+## What makes a process "Markov"
+
+A process is Markov if its next state depends only on its *current* state — not on the path that got it there. Formally, $P(x_{t+1} \mid x_t, x_{t-1}, \dots, x_0) = P(x_{t+1} \mid x_t)$. That's it; the entire history collapses into whatever's true right now.
+
+A simple weather model makes this concrete: three states, and a transition matrix giving the probability of tomorrow's weather given today's.
+
+```{r}
+#| label: fig-weather-path
+#| fig-cap: "A 200-step simulated path through the weather chain, colour-coded by state."
+states <- c("Sunny", "Cloudy", "Rainy")
+P <- matrix(
+  c(0.7, 0.2, 0.1,
+    0.3, 0.4, 0.3,
+    0.2, 0.3, 0.5),
+  nrow = 3, byrow = TRUE, dimnames = list(states, states)
+)
+
+set.seed(1)
+n_steps <- 200
+path <- integer(n_steps)
+path[1] <- 1L
+for (t in 2:n_steps) path[t] <- sample.int(3, 1, prob = P[path[t - 1], ])
+
+data.frame(step = seq_len(n_steps), state = factor(states[path], levels = states)) |>
+  ggplot(aes(step, state, colour = state)) +
+  geom_point(size = 1.5) +
+  labs(x = "step", y = NULL, colour = NULL, title = "Simulated weather path") +
+  theme(legend.position = "top")
+```
+
+Knowing today is Sunny tells you everything relevant about tomorrow; knowing it was also Sunny for the last five days adds nothing. That's the whole idea, and it's what makes chains like this tractable to analyze — no exploding state space of "all possible histories" to track.
+
+## Where does it settle? Two ways to find out
+
+Run the chain long enough and the fraction of time spent in each state converges to a fixed *stationary distribution* $\pi$, satisfying $\pi P = \pi$ — a left eigenvector of $P$ with eigenvalue 1. Two independent ways to find it should agree:
+
+```{r}
+#| label: fig-stationary
+#| fig-cap: "Stationary distribution via eigen-decomposition vs. a long simulated path's empirical frequencies."
+eig <- eigen(t(P))
+pi_stat <- Re(eig$vectors[, which.min(abs(eig$values - 1))])
+pi_stat <- pi_stat / sum(pi_stat)
+names(pi_stat) <- states
+
+n_long <- 5000
+path_long <- integer(n_long)
+path_long[1] <- 1L
+for (t in 2:n_long) path_long[t] <- sample.int(3, 1, prob = P[path_long[t - 1], ])
+pi_empirical <- table(factor(states[path_long], levels = states)) / n_long
+
+df <- data.frame(
+  state = rep(states, 2),
+  probability = c(pi_stat, as.numeric(pi_empirical)),
+  method = rep(c("eigenvector", "5000-step simulation"), each = 3)
+)
+
+ggplot(df, aes(state, probability, fill = method)) +
+  geom_col(position = "dodge") +
+  labs(x = NULL, y = "probability", fill = NULL)
+```
+
+Eigenvector: Sunny `r round(pi_stat["Sunny"], 3)`, Cloudy `r round(pi_stat["Cloudy"], 3)`, Rainy `r round(pi_stat["Rainy"], 3)`. A long simulated path lands close to the same numbers — the chain has "forgotten" where it started and settled into its long-run behaviour. This idea — a distribution that's a *fixed point* of an update rule — will come back in the next post, where a self-consistency equation plays exactly the same role.
+
+## DDPM's actual Markov chain
+
+Diffusion models run a Markov chain too, just with a continuous state and Gaussian transition kernels rather than a lookup table. The forward (noising) process is defined, exactly as in Ho, Jain & Abbeel (2020) [@ho2020denoising], by:
+
+$$
+q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(\sqrt{1-\beta_t}\, x_{t-1},\ \beta_t I\right)
+$$
+
+Each step nudges $x_{t-1}$ slightly toward the origin and adds a little Gaussian noise, with $\beta_t$ controlling how much. This is precisely the recurrence used in `guided_diffusion/gaussian_diffusion.py`, the codebase reproduced in [the diffusion-phase-transition post](/posts/diffusion-phase-transition/).
+
+```{r}
+#| label: fig-gaussian-chain
+#| fig-cap: "Eight sample trajectories of the scalar Gaussian chain, starting from x0=2, collapsing into the N(0,1) envelope (shaded bands at +-1, +-2 sd) under the real Ho et al. (2020) schedule."
+T_steps <- 1000
+beta <- seq(1e-4, 0.02, length.out = T_steps)
+alpha <- 1 - beta
+alpha_bar <- cumprod(alpha)
+
+x0 <- 2.0
+n_traj <- 8
+set.seed(2)
+traj <- matrix(NA_real_, T_steps + 1, n_traj)
+traj[1, ] <- x0
+for (t in 1:T_steps) {
+  eps <- rnorm(n_traj)
+  traj[t + 1, ] <- sqrt(alpha[t]) * traj[t, ] + sqrt(beta[t]) * eps
+}
+
+traj_df <- as.data.frame(traj) |>
+  mutate(step = 0:T_steps) |>
+  tidyr::pivot_longer(-step, names_to = "trajectory", values_to = "x")
+
+band_df <- data.frame(step = 0:T_steps, sd = sqrt(1 - alpha_bar[c(1, seq_len(T_steps))]))
+
+ggplot() +
+  geom_ribbon(data = band_df, aes(step, ymin = -2 * sd, ymax = 2 * sd), fill = "grey85") +
+  geom_ribbon(data = band_df, aes(step, ymin = -sd, ymax = sd), fill = "grey70") +
+  geom_line(data = traj_df, aes(step, x, group = trajectory), colour = "steelblue", linewidth = 0.4) +
+  labs(x = "t", y = expression(x[t]), title = "Forward chain trajectories vs. their theoretical envelope")
+```
+
+## The closed-form jump
+
+Simulating 1000 sequential steps every time you need a noisy sample would be wasteful, and because each step's kernel is Gaussian, it's also unnecessary: the composition of $t$ Gaussian steps is itself Gaussian, in closed form:
+
+$$
+q(x_t \mid x_0) = \mathcal{N}\!\left(\sqrt{\bar\alpha_t}\, x_0,\ (1-\bar\alpha_t) I\right), \qquad \bar\alpha_t = \prod_{s \le t}(1-\beta_s)
+$$
+
+You can jump straight from $x_0$ to any $x_t$ in one draw. This is exactly `q_sample` in the reproduced code, and it's what makes the "forward-diffuse-partway-then-reverse" experiment in [the diffusion-phase-transition post](/posts/diffusion-phase-transition/) practical on real images. Worth actually checking it's true rather than taking it on faith:
+
+```{r}
+#| label: closed-form-check
+check_t <- 30
+n_mc <- 200000
+set.seed(3)
+x_stepwise <- rep(x0, n_mc)
+for (t in 1:check_t) {
+  eps <- rnorm(n_mc)
+  x_stepwise <- sqrt(alpha[t]) * x_stepwise + sqrt(beta[t]) * eps
+}
+mean_cf <- sqrt(alpha_bar[check_t]) * x0
+var_cf <- 1 - alpha_bar[check_t]
+```
+
+At $t=`r check_t`$, 200,000 step-by-step Monte Carlo draws give mean `r round(mean(x_stepwise), 4)` and variance `r round(var(x_stepwise), 5)`; the closed form predicts mean `r round(mean_cf, 4)` and variance `r round(var_cf, 5)` — matching to within Monte Carlo noise.
+
+## The reverse chain
+
+The reverse process $p_\theta(x_{t-1} \mid x_t)$ is modelled the same way — Markov, approximately Gaussian for small $\beta_t$ — but its mean isn't known in closed form for real data; that's what a neural network is trained to approximate. [The next explainer](/explainers/mean-field-annealed-disorder/) is a detour into a different piece of machinery this paper needs (mean-field analysis); [the third](/explainers/toy-diffusion-model/) comes back to build a toy reverse chain where, unusually, the right answer *is* known exactly.
+
+## References
+
+::: {#refs}
+:::

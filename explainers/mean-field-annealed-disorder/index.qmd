@@ -1,0 +1,97 @@
+---
+title: "Mean-Field Theory and Annealed Disorder"
+subtitle: "From Curie-Weiss to belief propagation — second of a three-part refresher series"
+description: "How replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model."
+author: "Paul Milne"
+date: "2026-09-06"
+categories: [explainer, statistical-mechanics, renormalization-group]
+engine: knitr
+bibliography: references.bib
+format:
+  html:
+    toc: true
+---
+
+Second of three short refreshers behind [Reproducing a Phase Transition in Diffusion Models](/posts/diffusion-phase-transition/) and [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/). [The first](/explainers/markov-chains-diffusion/) covered Markov chains; read it first only if that material feels unfamiliar — this one stands alone.
+
+```{r}
+#| label: setup
+#| include: false
+library(ggplot2)
+theme_set(theme_minimal(base_size = 12))
+```
+
+## The problem mean-field theory solves
+
+A ferromagnet is a lattice of interacting spins: each one wants to align with its neighbours, but the neighbours are themselves fluctuating, coupled to *their* neighbours, and so on. Tracking the full joint distribution over every spin is intractable for anything but tiny systems.
+
+The mean-field trick: replace each spin's actual, fluctuating neighbours with their *average* value. A many-body problem becomes a single spin sitting in an effective field set by everybody else's average behaviour — and that's tractable, at the cost of ignoring fluctuation correlations between neighbours. Sclocchi et al. (2024) [@sclocchi2024phase] use exactly this move — under a different name, "annealed" approximation — to get a closed-form description of belief propagation on their Random Hierarchy Model, and it's worth seeing the classical version first.
+
+## Curie-Weiss, derived
+
+Give each spin $z$ neighbours, coupling strength $J$, at inverse temperature $\beta$. Averaging over its neighbours' fluctuations, a spin's effective field is proportional to the *mean* magnetization $m$, and self-consistency (the average spin must reproduce the magnetization that produced its own field) gives:
+
+$$
+m = \tanh(Km), \qquad K \equiv \beta J z
+$$
+
+Folding $\beta$, $J$, $z$ into the single parameter $K$ is the standard textbook reduction — the actual critical temperature is $\beta_c = 1/(Jz)$, i.e. $K=1$ exactly. Below $K=1$ the only solution is $m=0$ (paramagnetic: no net alignment); above it, two new nonzero solutions appear (ferromagnetic: spontaneous alignment, sign chosen by symmetry breaking).
+
+## Solving it
+
+$m=0$ satisfies $\tanh(K \cdot 0) = 0$ for *every* $K$ — it's always a trivial root, present whether or not the interesting nonzero one exists. Searching for the nonzero branch means excluding it explicitly: bracket `uniroot` away from zero.
+
+```{r}
+#| label: fig-curie-weiss
+#| fig-cap: "Curie-Weiss magnetization vs. K. The nonzero branch only exists above the critical point K=1."
+nontrivial_root <- function(K, lower = 1e-6, upper = 1 - 1e-9) {
+  if (K <= 1) return(0)
+  self_consist_gap <- function(m) tanh(K * m) - m
+  if (sign(self_consist_gap(lower)) == sign(self_consist_gap(upper))) return(NA_real_)
+  uniroot(self_consist_gap, c(lower, upper))$root
+}
+
+Ks <- seq(0.05, 3, by = 0.01)
+df <- data.frame(K = Ks)
+df$m_stable <- sapply(Ks, nontrivial_root)
+
+ggplot(df, aes(K)) +
+  geom_hline(yintercept = 0, colour = "grey60", linetype = "dashed") +
+  geom_line(aes(y = m_stable), colour = "firebrick", linewidth = 1, na.rm = TRUE) +
+  geom_line(aes(y = -m_stable), colour = "firebrick", linewidth = 1, na.rm = TRUE) +
+  geom_vline(xintercept = 1, linetype = "dotted") +
+  labs(x = expression(K == beta * J * z), y = "magnetization m",
+       title = "Order emerges above the critical point")
+```
+
+```{r}
+#| include: false
+m_at_2 <- nontrivial_root(2)
+m_fp <- 0.5
+for (i in 1:1000) m_fp <- tanh(2 * m_fp)
+m_near_crit <- nontrivial_root(1.01)
+asymp_near_crit <- sqrt(3 * 0.01)
+```
+
+Below $K=1$, only $m=0$; above it, a genuine phase transition. Three independent checks on the nonzero branch agree: at $K=2$, `uniroot` gives $m=`r round(m_at_2, 4)`$, and simply iterating $m \leftarrow \tanh(2m)$ a thousand times from $m=0.5$ converges to $`r round(m_fp, 6)`$ — the same fixed point found two different ways. Near the critical point, mean-field theory predicts $m \approx \sqrt{3(K-1)}$; at $K=1.01$ that asymptotic gives $`r round(asymp_near_crit, 4)`$ against `uniroot`'s $`r round(m_near_crit, 4)`$ — agreement to about 1%, which is the classical mean-field critical exponent $\beta=1/2$ showing up numerically.
+
+## The same move, in belief propagation
+
+The Random Hierarchy Model's disordered production rules play the role of the Ising model's disordered neighbour spins. Tracking every possible realization of the hierarchy's rules exactly is just as intractable as tracking every spin's actual neighbours. Sclocchi et al. take the identical shortcut: average over the ensemble of rule realizations (the "annealed" approximation) rather than conditioning on one specific (quenched) realization, and a complicated random recursion collapses into the single deterministic belief-propagation map
+
+$$
+p' = F(p)
+$$
+
+already implemented and solved in [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/) — same recipe (disorder → ensemble average → deterministic self-consistency map), same qualitative payoff (a clean, analyzable bifurcation), different physical dressing. That post doesn't re-derive the annealed approximation; this is the missing piece that justifies why $F(p)$ is allowed to be written down as a plain deterministic function at all.
+
+The same self-consistency structure — and the same $\sqrt{K-1}$-type critical scaling — also shows up throughout [my own dissertation on renormalization-group critical phenomena](/papers/rg-critical-phenomena/), where the RG fixed point plays the role $K=1$ plays here.
+
+## What's next
+
+[The final post in this series](/explainers/toy-diffusion-model/) builds a complete toy diffusion model from scratch — forward noising, the score function, and exact reverse sampling — using the closed-form Markov chain from [the first post](/explainers/markov-chains-diffusion/).
+
+## References
+
+::: {#refs}
+:::

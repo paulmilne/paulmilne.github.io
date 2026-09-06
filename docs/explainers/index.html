@@ -80,9 +80,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-categories"],
+      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -218,7 +218,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(0)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(3)</span></div><div class="category" data-category="ZGVlcC1sZWFybmluZw==">deep-learning <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZGlmZnVzaW9u">diffusion <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZXhwbGFpbmVy">explainer <span class="quarto-category-count">(3)</span></div><div class="category" data-category="cmVub3JtYWxpemF0aW9uLWdyb3Vw">renormalization-group <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c3RhdGlzdGljYWwtbWVjaGFuaWNz">statistical-mechanics <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -233,7 +233,117 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="ZXhwbGFpbmVyJTJDZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZw==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788698981970" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1007">
+<div class="thumbnail"><a href="../explainers/markov-chains-diffusion/index.html" class="no-external">
 
+<p class="card-img-top"><img src="markov-chains-diffusion/index_files/figure-html/fig-weather-path-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../explainers/markov-chains-diffusion/index.html" class="no-external">Markov Chains, Concretely</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../explainers/markov-chains-diffusion/index.html" class="no-external">The backbone of diffusion models — first of a three-part refresher series</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZXhwbGFpbmVy'); return false;">explainer</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGVlcC1sZWFybmluZw=='); return false;">deep-learning</div>
+
+</div>
+<div class="delink listing-description"><a href="../explainers/markov-chains-diffusion/index.html" class="no-external">
+<p>A worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../explainers/markov-chains-diffusion/index.html" class="no-external">
+<div class="listing-date">
+Sep 6, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="ZXhwbGFpbmVyJTJDc3RhdGlzdGljYWwtbWVjaGFuaWNzJTJDcmVub3JtYWxpemF0aW9uLWdyb3Vw" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788699047528" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="775">
+<div class="thumbnail"><a href="../explainers/mean-field-annealed-disorder/index.html" class="no-external">
+
+<p class="card-img-top"><img src="mean-field-annealed-disorder/index_files/figure-html/fig-curie-weiss-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../explainers/mean-field-annealed-disorder/index.html" class="no-external">Mean-Field Theory and Annealed Disorder</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../explainers/mean-field-annealed-disorder/index.html" class="no-external">From Curie-Weiss to belief propagation — second of a three-part refresher series</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZXhwbGFpbmVy'); return false;">explainer</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c3RhdGlzdGljYWwtbWVjaGFuaWNz'); return false;">statistical-mechanics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cmVub3JtYWxpemF0aW9uLWdyb3Vw'); return false;">renormalization-group</div>
+
+</div>
+<div class="delink listing-description"><a href="../explainers/mean-field-annealed-disorder/index.html" class="no-external">
+<p>How replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../explainers/mean-field-annealed-disorder/index.html" class="no-external">
+<div class="listing-date">
+Sep 6, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="ZXhwbGFpbmVyJTJDZGlmZnVzaW9uJTJDZGVlcC1sZWFybmluZw==" data-listing-date-sort="1788649200000" data-listing-file-modified-sort="1788699118436" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1079">
+<div class="thumbnail"><a href="../explainers/toy-diffusion-model/index.html" class="no-external">
+
+<p class="card-img-top"><img src="toy-diffusion-model/index_files/figure-html/fig-forward-collapse-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../explainers/toy-diffusion-model/index.html" class="no-external">A Diffusion Model You Can Actually Solve</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../explainers/toy-diffusion-model/index.html" class="no-external">Forward noise, the score function, and exact reverse sampling — third of a three-part refresher series</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZXhwbGFpbmVy'); return false;">explainer</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGVlcC1sZWFybmluZw=='); return false;">deep-learning</div>
+
+</div>
+<div class="delink listing-description"><a href="../explainers/toy-diffusion-model/index.html" class="no-external">
+<p>Building the smallest possible working diffusion model, a two-component 1D Gaussian mixture with an exact closed-form score, to make forward noising, Tweedie’s formula, and reverse ancestral sampling fully concrete and verifiable.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../explainers/toy-diffusion-model/index.html" class="no-external">
+<div class="listing-date">
+Sep 6, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
 </div>
 <div class="listing-no-matching d-none">No matching items</div>
 </div></main> <!-- /main -->

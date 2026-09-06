@@ -9,7 +9,11 @@
   },
   {
     "listing": "/explainers/index.html",
-    "items": []
+    "items": [
+      "/explainers/markov-chains-diffusion/index.html",
+      "/explainers/mean-field-annealed-disorder/index.html",
+      "/explainers/toy-diffusion-model/index.html"
+    ]
   },
   {
     "listing": "/papers/index.html",

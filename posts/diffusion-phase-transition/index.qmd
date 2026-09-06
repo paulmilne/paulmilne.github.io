@@ -193,7 +193,7 @@ The paper's released code isn't quite runnable as committed, and separately, not
 
 None of this changes the paper's method — it's the same forward-then-partial-backward diffusion process, the same classifier, the same activation-comparison logic. The fixes just make the released code actually executable, and executable somewhere other than a CUDA cluster.
 
-**Related:** [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/) connects this paper's belief-propagation phase transition to the renormalization-group critical phenomena in my own dissertation.
+**Related:** [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/) connects this paper's belief-propagation phase transition to the renormalization-group critical phenomena in my own dissertation · if any of the underlying math felt assumed rather than explained, [Markov Chains, Concretely](/explainers/markov-chains-diffusion/) and [A Diffusion Model You Can Actually Solve](/explainers/toy-diffusion-model/) are refreshers written to fill exactly that gap.
 
 ## References
 

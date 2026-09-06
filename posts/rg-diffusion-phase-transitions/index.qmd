@@ -270,6 +270,8 @@ Diffusion models don't have this. Scale invariance is *broken* during denoising:
 
 Kadanoff's block-spin decimation and Sclocchi et al.'s belief propagation on the Random Hierarchy Model turn out to be the same functional-equation machinery pointed at two different problems — one asking how magnetic order emerges from a spin lattice, the other how a diffusion model recovers (or loses) a semantic class from noise. See [the dissertation](/papers/rg-critical-phenomena/) for the full RG derivation, and [the earlier post](/posts/diffusion-phase-transition/) for the diffusion side reproduced end to end on real images.
 
+**Related:** [Mean-Field Theory and Annealed Disorder](/explainers/mean-field-annealed-disorder/) is a refresher on the annealed approximation this post's belief-propagation map relies on, worked through the classical Curie-Weiss ferromagnet.
+
 ## References
 
 ::: {#refs}

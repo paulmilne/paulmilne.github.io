@@ -46,7 +46,7 @@
     "href": "posts/diffusion-phase-transition/index.html#what-actually-broke-in-the-code-and-how-i-fixed-it",
     "title": "A Phase Transition in Diffusion Models",
     "section": "What actually broke in the code, and how I fixed it",
-    "text": "What actually broke in the code, and how I fixed it\nThe paper’s released code isn’t quite runnable as committed, and separately, nothing about it was written with Apple’s MPS backend in mind. Four fixes were needed:\n\nA broken relative import. guided_diffusion/image_datasets.py did from ..datasets.imagenet_classes import IMAGENET_CLASSES, a relative import that reaches outside the installed guided_diffusion package. It fails immediately with ImportError: attempted relative import beyond top-level package — every one of the repo’s three custom scripts imports this module, so nothing in the repo could run at all. Fixed by making datasets its own installable package (setup.py) and importing it absolutely.\nTwo sampling methods that don’t exist. The actual forward-backward experiment script calls diffusion.p_sample_loop_forw_back and diffusion.ddim_sample_loop_forw_back — methods that appear nowhere in gaussian_diffusion.py, and never have, across the entire git history. I implemented both, as variants of the existing p_sample_loop_progressive / ddim_sample_loop_progressive that start the reverse process at a given timestep instead of at pure noise.\nfloat64 on MPS. _extract_into_tensor moved the diffusion schedule’s coefficients — stored as float64 numpy arrays — directly onto the compute device. MPS doesn’t support float64 at all, so this crashed on first use; fixed by casting to float32 before the device transfer.\ntorch.distributed collectives on an MPS tensor. The scripts use dist.all_reduce/all_gather (inherited from the original multi-GPU design) even for a single-process laptop run. Those collectives run over the gloo backend here (no CUDA means no NCCL), and gloo only understands CPU tensors — so the handful of tensors that cross a collective call needed to be routed to CPU rather than MPS, while leaving NCCL’s CUDA path untouched for the cluster case.\n\nNone of this changes the paper’s method — it’s the same forward-then-partial-backward diffusion process, the same classifier, the same activation-comparison logic. The fixes just make the released code actually executable, and executable somewhere other than a CUDA cluster.\nRelated: Fixed Points, Phase Transitions, and Diffusion Models connects this paper’s belief-propagation phase transition to the renormalization-group critical phenomena in my own dissertation."
+    "text": "What actually broke in the code, and how I fixed it\nThe paper’s released code isn’t quite runnable as committed, and separately, nothing about it was written with Apple’s MPS backend in mind. Four fixes were needed:\n\nA broken relative import. guided_diffusion/image_datasets.py did from ..datasets.imagenet_classes import IMAGENET_CLASSES, a relative import that reaches outside the installed guided_diffusion package. It fails immediately with ImportError: attempted relative import beyond top-level package — every one of the repo’s three custom scripts imports this module, so nothing in the repo could run at all. Fixed by making datasets its own installable package (setup.py) and importing it absolutely.\nTwo sampling methods that don’t exist. The actual forward-backward experiment script calls diffusion.p_sample_loop_forw_back and diffusion.ddim_sample_loop_forw_back — methods that appear nowhere in gaussian_diffusion.py, and never have, across the entire git history. I implemented both, as variants of the existing p_sample_loop_progressive / ddim_sample_loop_progressive that start the reverse process at a given timestep instead of at pure noise.\nfloat64 on MPS. _extract_into_tensor moved the diffusion schedule’s coefficients — stored as float64 numpy arrays — directly onto the compute device. MPS doesn’t support float64 at all, so this crashed on first use; fixed by casting to float32 before the device transfer.\ntorch.distributed collectives on an MPS tensor. The scripts use dist.all_reduce/all_gather (inherited from the original multi-GPU design) even for a single-process laptop run. Those collectives run over the gloo backend here (no CUDA means no NCCL), and gloo only understands CPU tensors — so the handful of tensors that cross a collective call needed to be routed to CPU rather than MPS, while leaving NCCL’s CUDA path untouched for the cluster case.\n\nNone of this changes the paper’s method — it’s the same forward-then-partial-backward diffusion process, the same classifier, the same activation-comparison logic. The fixes just make the released code actually executable, and executable somewhere other than a CUDA cluster.\nRelated: Fixed Points, Phase Transitions, and Diffusion Models connects this paper’s belief-propagation phase transition to the renormalization-group critical phenomena in my own dissertation · if any of the underlying math felt assumed rather than explained, Markov Chains, Concretely and A Diffusion Model You Can Actually Solve are refreshers written to fill exactly that gap."
   },
   {
     "objectID": "posts/diffusion-phase-transition/index.html#references",
@@ -89,6 +89,69 @@
     "title": "math-blog",
     "section": "",
     "text": "A Phase Transition in Diffusion Models\n\n\n\n\n\n\ndiffusion\n\ndeep-learning\n\nreproduction\n\n\n\nReproducing ‘A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data’ (Sclocchi, Favero & Wyart 2024) locally on Apple Silicon.\n\n\n\n\n\nSep 6, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nFixed Points, Phase Transitions, and Diffusion Models\n\n\nA functional-equation bridge between renormalization-group critical phenomena and the hierarchical structure of denoising diffusion\n\n\n\ndiffusion\n\ndeep-learning\n\nstatistical-mechanics\n\nrenormalization-group\n\nreproduction\n\n\n\nImplementing in R the two central bifurcation maps that connect Kadanoff block-spin renormalization group theory to belief propagation in hierarchical diffusion models.\n\n\n\n\n\nSep 6, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\nnews\n\n\n\nAn introduction to this blog: math, statistics, and machine learning explored through code and paper reproductions.\n\n\n\n\n\nJun 10, 2026\n\n\nPaul Milne\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html",
+    "href": "explainers/mean-field-annealed-disorder/index.html",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "",
+    "text": "Second of three short refreshers behind Reproducing a Phase Transition in Diffusion Models and Fixed Points, Phase Transitions, and Diffusion Models. The first covered Markov chains; read it first only if that material feels unfamiliar — this one stands alone."
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html#the-problem-mean-field-theory-solves",
+    "href": "explainers/mean-field-annealed-disorder/index.html#the-problem-mean-field-theory-solves",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "The problem mean-field theory solves",
+    "text": "The problem mean-field theory solves\nA ferromagnet is a lattice of interacting spins: each one wants to align with its neighbours, but the neighbours are themselves fluctuating, coupled to their neighbours, and so on. Tracking the full joint distribution over every spin is intractable for anything but tiny systems.\nThe mean-field trick: replace each spin’s actual, fluctuating neighbours with their average value. A many-body problem becomes a single spin sitting in an effective field set by everybody else’s average behaviour — and that’s tractable, at the cost of ignoring fluctuation correlations between neighbours. Sclocchi et al. (2024) (Sclocchi, Favero, and Wyart 2024) use exactly this move — under a different name, “annealed” approximation — to get a closed-form description of belief propagation on their Random Hierarchy Model, and it’s worth seeing the classical version first."
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html#curie-weiss-derived",
+    "href": "explainers/mean-field-annealed-disorder/index.html#curie-weiss-derived",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "Curie-Weiss, derived",
+    "text": "Curie-Weiss, derived\nGive each spin \\(z\\) neighbours, coupling strength \\(J\\), at inverse temperature \\(\\beta\\). Averaging over its neighbours’ fluctuations, a spin’s effective field is proportional to the mean magnetization \\(m\\), and self-consistency (the average spin must reproduce the magnetization that produced its own field) gives:\n\\[\nm = \\tanh(Km), \\qquad K \\equiv \\beta J z\n\\]\nFolding \\(\\beta\\), \\(J\\), \\(z\\) into the single parameter \\(K\\) is the standard textbook reduction — the actual critical temperature is \\(\\beta_c = 1/(Jz)\\), i.e. \\(K=1\\) exactly. Below \\(K=1\\) the only solution is \\(m=0\\) (paramagnetic: no net alignment); above it, two new nonzero solutions appear (ferromagnetic: spontaneous alignment, sign chosen by symmetry breaking)."
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html#solving-it",
+    "href": "explainers/mean-field-annealed-disorder/index.html#solving-it",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "Solving it",
+    "text": "Solving it\n\\(m=0\\) satisfies \\(\\tanh(K \\cdot 0) = 0\\) for every \\(K\\) — it’s always a trivial root, present whether or not the interesting nonzero one exists. Searching for the nonzero branch means excluding it explicitly: bracket uniroot away from zero.\n\nnontrivial_root &lt;- function(K, lower = 1e-6, upper = 1 - 1e-9) {\n  if (K &lt;= 1) return(0)\n  self_consist_gap &lt;- function(m) tanh(K * m) - m\n  if (sign(self_consist_gap(lower)) == sign(self_consist_gap(upper))) return(NA_real_)\n  uniroot(self_consist_gap, c(lower, upper))$root\n}\n\nKs &lt;- seq(0.05, 3, by = 0.01)\ndf &lt;- data.frame(K = Ks)\ndf$m_stable &lt;- sapply(Ks, nontrivial_root)\n\nggplot(df, aes(K)) +\n  geom_hline(yintercept = 0, colour = \"grey60\", linetype = \"dashed\") +\n  geom_line(aes(y = m_stable), colour = \"firebrick\", linewidth = 1, na.rm = TRUE) +\n  geom_line(aes(y = -m_stable), colour = \"firebrick\", linewidth = 1, na.rm = TRUE) +\n  geom_vline(xintercept = 1, linetype = \"dotted\") +\n  labs(x = expression(K == beta * J * z), y = \"magnetization m\",\n       title = \"Order emerges above the critical point\")\n\n\n\n\n\n\n\nFigure 1: Curie-Weiss magnetization vs. K. The nonzero branch only exists above the critical point K=1.\n\n\n\n\n\nBelow \\(K=1\\), only \\(m=0\\); above it, a genuine phase transition. Three independent checks on the nonzero branch agree: at \\(K=2\\), uniroot gives \\(m=0.9575\\), and simply iterating \\(m \\leftarrow \\tanh(2m)\\) a thousand times from \\(m=0.5\\) converges to \\(0.957504\\) — the same fixed point found two different ways. Near the critical point, mean-field theory predicts \\(m \\approx \\sqrt{3(K-1)}\\); at \\(K=1.01\\) that asymptotic gives \\(0.1732\\) against uniroot’s \\(0.1717\\) — agreement to about 1%, which is the classical mean-field critical exponent \\(\\beta=1/2\\) showing up numerically."
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html#the-same-move-in-belief-propagation",
+    "href": "explainers/mean-field-annealed-disorder/index.html#the-same-move-in-belief-propagation",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "The same move, in belief propagation",
+    "text": "The same move, in belief propagation\nThe Random Hierarchy Model’s disordered production rules play the role of the Ising model’s disordered neighbour spins. Tracking every possible realization of the hierarchy’s rules exactly is just as intractable as tracking every spin’s actual neighbours. Sclocchi et al. take the identical shortcut: average over the ensemble of rule realizations (the “annealed” approximation) rather than conditioning on one specific (quenched) realization, and a complicated random recursion collapses into the single deterministic belief-propagation map\n\\[\np' = F(p)\n\\]\nalready implemented and solved in Fixed Points, Phase Transitions, and Diffusion Models — same recipe (disorder → ensemble average → deterministic self-consistency map), same qualitative payoff (a clean, analyzable bifurcation), different physical dressing. That post doesn’t re-derive the annealed approximation; this is the missing piece that justifies why \\(F(p)\\) is allowed to be written down as a plain deterministic function at all.\nThe same self-consistency structure — and the same \\(\\sqrt{K-1}\\)-type critical scaling — also shows up throughout my own dissertation on renormalization-group critical phenomena, where the RG fixed point plays the role \\(K=1\\) plays here."
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html#whats-next",
+    "href": "explainers/mean-field-annealed-disorder/index.html#whats-next",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "What’s next",
+    "text": "What’s next\nThe final post in this series builds a complete toy diffusion model from scratch — forward noising, the score function, and exact reverse sampling — using the closed-form Markov chain from the first post."
+  },
+  {
+    "objectID": "explainers/mean-field-annealed-disorder/index.html#references",
+    "href": "explainers/mean-field-annealed-disorder/index.html#references",
+    "title": "Mean-Field Theory and Annealed Disorder",
+    "section": "References",
+    "text": "References\n\n\nSclocchi, Antonio, Alessandro Favero, and Matthieu Wyart. 2024. “A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data.” arXiv Preprint arXiv:2402.16991."
+  },
+  {
+    "objectID": "explainers/index.html",
+    "href": "explainers/index.html",
+    "title": "Explainers",
+    "section": "",
+    "text": "Background explanations of the math and stats concepts that come up in the paper-reproduction posts — the kind of thing you’d want a refresher on before the main post assumes it.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nMarkov Chains, Concretely\n\n\nThe backbone of diffusion models — first of a three-part refresher series\n\n\n\nexplainer\n\ndiffusion\n\ndeep-learning\n\n\n\nA worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks.\n\n\n\n\n\nSep 6, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nMean-Field Theory and Annealed Disorder\n\n\nFrom Curie-Weiss to belief propagation — second of a three-part refresher series\n\n\n\nexplainer\n\nstatistical-mechanics\n\nrenormalization-group\n\n\n\nHow replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model.\n\n\n\n\n\nSep 6, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nA Diffusion Model You Can Actually Solve\n\n\nForward noise, the score function, and exact reverse sampling — third of a three-part refresher series\n\n\n\nexplainer\n\ndiffusion\n\ndeep-learning\n\n\n\nBuilding the smallest possible working diffusion model, a two-component 1D Gaussian mixture with an exact closed-form score, to make forward noising, Tweedie’s formula, and reverse ancestral sampling fully concrete and verifiable.\n\n\n\n\n\nSep 6, 2026\n\n\nPaul Milne\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this blog"
   },
   {
     "objectID": "eclipse_2026_sun_overlay.html",
@@ -147,18 +210,109 @@
     "text": "Notes and caveats\n\nBoth photo overlays use a small-angle/linear projection from angular offset to pixel offset around the camera’s heading and pitch, rather than a true perspective (gnomonic) projection. This is a reasonable approximation for the field-of-view sizes and angular ranges involved here, but introduces increasing distortion toward the edges of wide fields of view.\nThe Street View camera’s field of view is assumed to be 90° both horizontally and vertically (the API default for a square image); the true vertical field of view for the Street View panorama projection may differ.\nThe photo’s field of view is estimated from its 35mm-equivalent focal length and an assumed native sensor resolution (4032x3024 for the iPhone 13 Pro Max ultra-wide camera), rescaled to the actual saved crop size. This is not a verified optical specification.\nThe photo’s pitch is taken directly from the Theodolite app’s vert_angle_deg caption field, and roll (horiz_angle_deg) is assumed negligible and not corrected for.\nThe terrain elevation data comes from AWS Terrain Tiles (~30m resolution) via elevatr. Named peaks are whichever natural=peak features happen to be tagged in OpenStreetMap within the radius — this list may be incomplete, and their elevations are read from the DEM at each point’s coordinates rather than from (often-missing) OSM elevation tags.\nThe river network is watercourse-link geometry from OS Open Rivers. Contains OS data © Crown copyright and database right, available under the Open Government Licence. It is a generalised network, not a detailed hydrography product, and roughly 200 of the segments in this radius carry no watercourse_name (minor streams/ditches).\nReprojecting the elevation raster from WGS84 to British National Grid leaves a small fraction (~2%) of edge cells as NA, visible as a faint ragged border in the 3D render.\nThe bounding box is built as a square in degrees (±10 miles in latitude and longitude), so its corners reach roughly 14 miles from the viewing location — farther than the stated 10-mile radius. The highest point in the frame (~381 m) falls in one such corner and is ~25 km from the nearest named OSM peak, so it is almost certainly real high ground (plausibly Peak District/Pennine foothills) rather than a labeling gap — OSM just has no natural=peak point there."
   },
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
+    "objectID": "explainers/markov-chains-diffusion/index.html",
+    "href": "explainers/markov-chains-diffusion/index.html",
+    "title": "Markov Chains, Concretely",
     "section": "",
-    "text": "About this blog"
+    "text": "This is the first of three short refreshers behind two earlier posts — Reproducing a Phase Transition in Diffusion Models and Fixed Points, Phase Transitions, and Diffusion Models — both of which lean on ideas from Sclocchi, Favero & Wyart (2024) (Sclocchi, Favero, and Wyart 2024) that are easy to gloss over if you haven’t seen them recently. This one covers Markov chains; the next two cover mean-field analysis and the generative diffusion process itself."
   },
   {
-    "objectID": "explainers/index.html",
-    "href": "explainers/index.html",
-    "title": "Explainers",
+    "objectID": "explainers/markov-chains-diffusion/index.html#what-makes-a-process-markov",
+    "href": "explainers/markov-chains-diffusion/index.html#what-makes-a-process-markov",
+    "title": "Markov Chains, Concretely",
+    "section": "What makes a process “Markov”",
+    "text": "What makes a process “Markov”\nA process is Markov if its next state depends only on its current state — not on the path that got it there. Formally, \\(P(x_{t+1} \\mid x_t, x_{t-1}, \\dots, x_0) = P(x_{t+1} \\mid x_t)\\). That’s it; the entire history collapses into whatever’s true right now.\nA simple weather model makes this concrete: three states, and a transition matrix giving the probability of tomorrow’s weather given today’s.\n\nstates &lt;- c(\"Sunny\", \"Cloudy\", \"Rainy\")\nP &lt;- matrix(\n  c(0.7, 0.2, 0.1,\n    0.3, 0.4, 0.3,\n    0.2, 0.3, 0.5),\n  nrow = 3, byrow = TRUE, dimnames = list(states, states)\n)\n\nset.seed(1)\nn_steps &lt;- 200\npath &lt;- integer(n_steps)\npath[1] &lt;- 1L\nfor (t in 2:n_steps) path[t] &lt;- sample.int(3, 1, prob = P[path[t - 1], ])\n\ndata.frame(step = seq_len(n_steps), state = factor(states[path], levels = states)) |&gt;\n  ggplot(aes(step, state, colour = state)) +\n  geom_point(size = 1.5) +\n  labs(x = \"step\", y = NULL, colour = NULL, title = \"Simulated weather path\") +\n  theme(legend.position = \"top\")\n\n\n\n\n\n\n\nFigure 1: A 200-step simulated path through the weather chain, colour-coded by state.\n\n\n\n\n\nKnowing today is Sunny tells you everything relevant about tomorrow; knowing it was also Sunny for the last five days adds nothing. That’s the whole idea, and it’s what makes chains like this tractable to analyze — no exploding state space of “all possible histories” to track."
+  },
+  {
+    "objectID": "explainers/markov-chains-diffusion/index.html#where-does-it-settle-two-ways-to-find-out",
+    "href": "explainers/markov-chains-diffusion/index.html#where-does-it-settle-two-ways-to-find-out",
+    "title": "Markov Chains, Concretely",
+    "section": "Where does it settle? Two ways to find out",
+    "text": "Where does it settle? Two ways to find out\nRun the chain long enough and the fraction of time spent in each state converges to a fixed stationary distribution \\(\\pi\\), satisfying \\(\\pi P = \\pi\\) — a left eigenvector of \\(P\\) with eigenvalue 1. Two independent ways to find it should agree:\n\neig &lt;- eigen(t(P))\npi_stat &lt;- Re(eig$vectors[, which.min(abs(eig$values - 1))])\npi_stat &lt;- pi_stat / sum(pi_stat)\nnames(pi_stat) &lt;- states\n\nn_long &lt;- 5000\npath_long &lt;- integer(n_long)\npath_long[1] &lt;- 1L\nfor (t in 2:n_long) path_long[t] &lt;- sample.int(3, 1, prob = P[path_long[t - 1], ])\npi_empirical &lt;- table(factor(states[path_long], levels = states)) / n_long\n\ndf &lt;- data.frame(\n  state = rep(states, 2),\n  probability = c(pi_stat, as.numeric(pi_empirical)),\n  method = rep(c(\"eigenvector\", \"5000-step simulation\"), each = 3)\n)\n\nggplot(df, aes(state, probability, fill = method)) +\n  geom_col(position = \"dodge\") +\n  labs(x = NULL, y = \"probability\", fill = NULL)\n\n\n\n\n\n\n\nFigure 2: Stationary distribution via eigen-decomposition vs. a long simulated path’s empirical frequencies.\n\n\n\n\n\nEigenvector: Sunny 0.457, Cloudy 0.283, Rainy 0.261. A long simulated path lands close to the same numbers — the chain has “forgotten” where it started and settled into its long-run behaviour. This idea — a distribution that’s a fixed point of an update rule — will come back in the next post, where a self-consistency equation plays exactly the same role."
+  },
+  {
+    "objectID": "explainers/markov-chains-diffusion/index.html#ddpms-actual-markov-chain",
+    "href": "explainers/markov-chains-diffusion/index.html#ddpms-actual-markov-chain",
+    "title": "Markov Chains, Concretely",
+    "section": "DDPM’s actual Markov chain",
+    "text": "DDPM’s actual Markov chain\nDiffusion models run a Markov chain too, just with a continuous state and Gaussian transition kernels rather than a lookup table. The forward (noising) process is defined, exactly as in Ho, Jain & Abbeel (2020) (Ho, Jain, and Abbeel 2020), by:\n\\[\nq(x_t \\mid x_{t-1}) = \\mathcal{N}\\!\\left(\\sqrt{1-\\beta_t}\\, x_{t-1},\\ \\beta_t I\\right)\n\\]\nEach step nudges \\(x_{t-1}\\) slightly toward the origin and adds a little Gaussian noise, with \\(\\beta_t\\) controlling how much. This is precisely the recurrence used in guided_diffusion/gaussian_diffusion.py, the codebase reproduced in the diffusion-phase-transition post.\n\nT_steps &lt;- 1000\nbeta &lt;- seq(1e-4, 0.02, length.out = T_steps)\nalpha &lt;- 1 - beta\nalpha_bar &lt;- cumprod(alpha)\n\nx0 &lt;- 2.0\nn_traj &lt;- 8\nset.seed(2)\ntraj &lt;- matrix(NA_real_, T_steps + 1, n_traj)\ntraj[1, ] &lt;- x0\nfor (t in 1:T_steps) {\n  eps &lt;- rnorm(n_traj)\n  traj[t + 1, ] &lt;- sqrt(alpha[t]) * traj[t, ] + sqrt(beta[t]) * eps\n}\n\ntraj_df &lt;- as.data.frame(traj) |&gt;\n  mutate(step = 0:T_steps) |&gt;\n  tidyr::pivot_longer(-step, names_to = \"trajectory\", values_to = \"x\")\n\nband_df &lt;- data.frame(step = 0:T_steps, sd = sqrt(1 - alpha_bar[c(1, seq_len(T_steps))]))\n\nggplot() +\n  geom_ribbon(data = band_df, aes(step, ymin = -2 * sd, ymax = 2 * sd), fill = \"grey85\") +\n  geom_ribbon(data = band_df, aes(step, ymin = -sd, ymax = sd), fill = \"grey70\") +\n  geom_line(data = traj_df, aes(step, x, group = trajectory), colour = \"steelblue\", linewidth = 0.4) +\n  labs(x = \"t\", y = expression(x[t]), title = \"Forward chain trajectories vs. their theoretical envelope\")\n\n\n\n\n\n\n\nFigure 3: Eight sample trajectories of the scalar Gaussian chain, starting from x0=2, collapsing into the N(0,1) envelope (shaded bands at +-1, +-2 sd) under the real Ho et al. (2020) schedule."
+  },
+  {
+    "objectID": "explainers/markov-chains-diffusion/index.html#the-closed-form-jump",
+    "href": "explainers/markov-chains-diffusion/index.html#the-closed-form-jump",
+    "title": "Markov Chains, Concretely",
+    "section": "The closed-form jump",
+    "text": "The closed-form jump\nSimulating 1000 sequential steps every time you need a noisy sample would be wasteful, and because each step’s kernel is Gaussian, it’s also unnecessary: the composition of \\(t\\) Gaussian steps is itself Gaussian, in closed form:\n\\[\nq(x_t \\mid x_0) = \\mathcal{N}\\!\\left(\\sqrt{\\bar\\alpha_t}\\, x_0,\\ (1-\\bar\\alpha_t) I\\right), \\qquad \\bar\\alpha_t = \\prod_{s \\le t}(1-\\beta_s)\n\\]\nYou can jump straight from \\(x_0\\) to any \\(x_t\\) in one draw. This is exactly q_sample in the reproduced code, and it’s what makes the “forward-diffuse-partway-then-reverse” experiment in the diffusion-phase-transition post practical on real images. Worth actually checking it’s true rather than taking it on faith:\n\ncheck_t &lt;- 30\nn_mc &lt;- 200000\nset.seed(3)\nx_stepwise &lt;- rep(x0, n_mc)\nfor (t in 1:check_t) {\n  eps &lt;- rnorm(n_mc)\n  x_stepwise &lt;- sqrt(alpha[t]) * x_stepwise + sqrt(beta[t]) * eps\n}\nmean_cf &lt;- sqrt(alpha_bar[check_t]) * x0\nvar_cf &lt;- 1 - alpha_bar[check_t]\n\nAt \\(t=30\\), 200,000 step-by-step Monte Carlo draws give mean 1.9885 and variance 0.01163; the closed form predicts mean 1.9884 and variance 0.0116 — matching to within Monte Carlo noise."
+  },
+  {
+    "objectID": "explainers/markov-chains-diffusion/index.html#the-reverse-chain",
+    "href": "explainers/markov-chains-diffusion/index.html#the-reverse-chain",
+    "title": "Markov Chains, Concretely",
+    "section": "The reverse chain",
+    "text": "The reverse chain\nThe reverse process \\(p_\\theta(x_{t-1} \\mid x_t)\\) is modelled the same way — Markov, approximately Gaussian for small \\(\\beta_t\\) — but its mean isn’t known in closed form for real data; that’s what a neural network is trained to approximate. The next explainer is a detour into a different piece of machinery this paper needs (mean-field analysis); the third comes back to build a toy reverse chain where, unusually, the right answer is known exactly."
+  },
+  {
+    "objectID": "explainers/markov-chains-diffusion/index.html#references",
+    "href": "explainers/markov-chains-diffusion/index.html#references",
+    "title": "Markov Chains, Concretely",
+    "section": "References",
+    "text": "References\n\n\nHo, Jonathan, Ajay Jain, and Pieter Abbeel. 2020. “Denoising Diffusion Probabilistic Models.” arXiv Preprint arXiv:2006.11239.\n\n\nSclocchi, Antonio, Alessandro Favero, and Matthieu Wyart. 2024. “A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data.” arXiv Preprint arXiv:2402.16991."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html",
+    "href": "explainers/toy-diffusion-model/index.html",
+    "title": "A Diffusion Model You Can Actually Solve",
     "section": "",
-    "text": "Background explanations of the math and stats concepts that come up in the paper-reproduction posts — the kind of thing you’d want a refresher on before the main post assumes it.\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "Third and final part of a series behind Reproducing a Phase Transition in Diffusion Models and Fixed Points, Phase Transitions, and Diffusion Models. This one assumes the first post’s closed-form jump \\(q(x_t\\mid x_0)\\); the second is a self-contained detour and isn’t needed here."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#noising-a-whole-distribution",
+    "href": "explainers/toy-diffusion-model/index.html#noising-a-whole-distribution",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "Noising a whole distribution",
+    "text": "Noising a whole distribution\nThe first post applied the forward chain to a single starting point, \\(x_0=2\\). Real data isn’t a point, it’s a distribution — so apply the same closed-form jump to a batch of samples instead. Take something with actual structure to destroy: a two-component mixture, two bumps at \\(-2\\) and \\(+2\\).\n\nmu1 &lt;- -2; mu2 &lt;- 2; sd0 &lt;- 0.4; w1 &lt;- 0.5; w2 &lt;- 0.5\nr_data &lt;- function(n) {\n  is_mode2 &lt;- rbinom(n, 1, w2)\n  ifelse(is_mode2 == 1, rnorm(n, mu2, sd0), rnorm(n, mu1, sd0))\n}\n\nset.seed(7)\nn &lt;- 4000\nx0_data &lt;- r_data(n)\n\nT_steps &lt;- 400\nbeta &lt;- seq(1e-4, 0.02, length.out = T_steps)\nalpha &lt;- 1 - beta\nalpha_bar &lt;- cumprod(alpha)\n\nnoise_to_t &lt;- function(x0_vec, t) {\n  sqrt(alpha_bar[t]) * x0_vec + sqrt(1 - alpha_bar[t]) * rnorm(length(x0_vec))\n}\nx_mid &lt;- noise_to_t(x0_data, T_steps %/% 2)\nx_T &lt;- noise_to_t(x0_data, T_steps)\n\ndata.frame(\n  x = c(x0_data, x_mid, x_T),\n  t = factor(rep(c(\"t = 0\", paste0(\"t = \", T_steps %/% 2), paste0(\"t = \", T_steps)),\n                 each = n),\n             levels = c(\"t = 0\", paste0(\"t = \", T_steps %/% 2), paste0(\"t = \", T_steps)))\n) |&gt;\n  ggplot(aes(x, fill = t)) +\n  geom_histogram(aes(y = after_stat(density)), bins = 60, alpha = 0.7, position = \"identity\") +\n  facet_wrap(~t, ncol = 1) +\n  labs(y = \"density\", fill = NULL) +\n  theme(legend.position = \"none\")\n\n\n\n\n\n\n\nFigure 1: The bimodal starting distribution collapsing to N(0,1) as t increases, under the same schedule shape as Ho et al. (2020).\n\n\n\n\n\nBy \\(t=400\\), mean \\(-0.0108\\) and sd \\(1.0414\\) — the two bumps have merged into plain \\(\\mathcal{N}(0,1)\\), no trace of where they started."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#what-a-denoiser-actually-needs-the-score",
+    "href": "explainers/toy-diffusion-model/index.html#what-a-denoiser-actually-needs-the-score",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "What a denoiser actually needs: the score",
+    "text": "What a denoiser actually needs: the score\nReversing this requires knowing which direction “more like the data” is, at every noise level. That direction is the score, \\(\\nabla_x \\log p_t(x)\\) — the gradient of the log-density of the noisy marginal at time \\(t\\). Tweedie’s formula relates it directly to the optimal denoiser: the best single-step estimate of the clean signal given a noisy \\(x_t\\) is a simple function of the score. This is the modern way to think about what a diffusion model’s network is trained to produce — not “the clean image” directly, but a time-indexed family of score estimates, one per noise level."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#the-one-case-you-dont-need-a-network-for",
+    "href": "explainers/toy-diffusion-model/index.html#the-one-case-you-dont-need-a-network-for",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "The one case you don’t need a network for",
+    "text": "The one case you don’t need a network for\nFor almost any real data distribution, the score has no closed form and has to be learned. But a Gaussian mixture is a rare exception: convolving a Gaussian mixture with Gaussian noise gives another Gaussian mixture, so the noised marginal at every \\(t\\) — and hence its score — stays exactly computable:\n\\[\np_t(x) = \\sum_k w_k\\, \\mathcal{N}\\!\\left(x;\\ \\sqrt{\\bar\\alpha_t}\\,\\mu_k,\\ \\ \\bar\\alpha_t \\sigma_0^2 + (1-\\bar\\alpha_t)\\right)\n\\]\n\nexact_score &lt;- function(x, t) {\n  abar &lt;- alpha_bar[t]\n  v &lt;- abar * sd0^2 + (1 - abar)\n  m1 &lt;- sqrt(abar) * mu1\n  m2 &lt;- sqrt(abar) * mu2\n  d1 &lt;- dnorm(x, m1, sqrt(v))\n  d2 &lt;- dnorm(x, m2, sqrt(v))\n  p &lt;- w1 * d1 + w2 * d2\n  (w1 * d1 * (-(x - m1) / v) + w2 * d2 * (-(x - m2) / v)) / p\n}\n\nlog_p_t &lt;- function(x, t) {\n  abar &lt;- alpha_bar[t]\n  v &lt;- abar * sd0^2 + (1 - abar)\n  m1 &lt;- sqrt(abar) * mu1\n  m2 &lt;- sqrt(abar) * mu2\n  log(w1 * dnorm(x, m1, sqrt(v)) + w2 * dnorm(x, m2, sqrt(v)))\n}\n\nh &lt;- 1e-5\ntest_x &lt;- c(-1, 0, 0.5, 1.5)\nnumeric_score &lt;- (log_p_t(test_x + h, 100) - log_p_t(test_x - h, 100)) / (2 * h)\nanalytic_score &lt;- exact_score(test_x, 100)\n\nChecked against a numerical derivative of \\(\\log p_t(x)\\) at \\(t=100\\), four test points: numeric gives -2.16329, 0, 3.52389, 0.7375, the closed form gives -2.16329, 0, 3.52389, 0.7375 — matching to the precision shown."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#reversing-it-exactly",
+    "href": "explainers/toy-diffusion-model/index.html#reversing-it-exactly",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "Reversing it, exactly",
+    "text": "Reversing it, exactly\nThe ancestral-sampling reverse update, written in terms of the score:\n\\[\nx_{t-1} = \\frac{1}{\\sqrt{\\alpha_t}}\\Big(x_t + \\beta_t\\, \\nabla_x \\log p_t(x_t)\\Big) + \\sqrt{\\beta_t}\\, z, \\qquad z \\sim \\mathcal{N}(0, I) \\text{ for } t&gt;1\n\\]\nOrdinarily \\(\\nabla_x \\log p_t\\) is what a trained network approximates. Here it’s the closed form from the previous section — nothing learned, nothing approximate.\n\nn_gen &lt;- 4000\nset.seed(11)\nx_gen &lt;- rnorm(n_gen)\nfor (t in T_steps:1) {\n  score_val &lt;- exact_score(x_gen, t)\n  noise_term &lt;- if (t &gt; 1) rnorm(n_gen) else 0\n  x_gen &lt;- (x_gen + beta[t] * score_val) / sqrt(alpha[t]) + sqrt(beta[t]) * noise_term\n}\n\nks_result &lt;- ks.test(x0_data, x_gen)\n\ndata.frame(x = c(x0_data, x_gen), source = rep(c(\"original data\", \"reverse-generated\"), each = n)) |&gt;\n  ggplot(aes(x, fill = source)) +\n  geom_histogram(aes(y = after_stat(density)), bins = 60, alpha = 0.55, position = \"identity\") +\n  labs(y = \"density\", fill = NULL)\n\n\n\n\n\n\n\nFigure 2: Samples generated by reverse diffusion from pure noise, using only the exact score, against the true starting distribution.\n\n\n\n\n\nGeneration recovers both modes: mean/sd of the lower cluster \\(-1.9774\\) / \\(0.3953\\) against a true \\(-2\\)/\\(0.4\\), and the upper cluster \\(1.9727\\) / \\(0.3994\\) against a true \\(2\\)/\\(0.4\\). A two-sample Kolmogorov-Smirnov test against the original data gives \\(D=0.023\\), \\(p=0.241\\) — nowhere near rejecting “same distribution.”"
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#what-this-stands-in-for",
+    "href": "explainers/toy-diffusion-model/index.html#what-this-stands-in-for",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "What this stands in for",
+    "text": "What this stands in for\nThe diffusion-phase-transition post does exactly this same procedure — forward-diffuse partway, then reverse — but on real ImageNet images, with a trained U-Net standing in for the score computed here in closed form (Ho, Jain, and Abbeel 2020). The abrupt class-flip reported there is a direct consequence of how that (learned, not closed-form) score behaves across noise levels for hierarchically-structured data — the same mechanics as this toy, just with a far richer \\(p_0\\) than two Gaussian bumps (Sclocchi, Favero, and Wyart 2024)."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#series-wrap-up",
+    "href": "explainers/toy-diffusion-model/index.html#series-wrap-up",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "Series wrap-up",
+    "text": "Series wrap-up\nThree explainers, one underlying machine: a Markov chain moves data toward noise and, run in reverse with the right score function, moves noise back toward data; mean-field/annealed averaging is how you get a tractable equation for when that reversal preserves the “shape” of the data versus loses it; and the toy model here makes both pieces concrete enough to check by hand. With all three in place, Reproducing a Phase Transition in Diffusion Models and Fixed Points, Phase Transitions, and Diffusion Models should read as engineering and analysis built on genuinely solid ground, rather than machinery taken on faith."
+  },
+  {
+    "objectID": "explainers/toy-diffusion-model/index.html#references",
+    "href": "explainers/toy-diffusion-model/index.html#references",
+    "title": "A Diffusion Model You Can Actually Solve",
+    "section": "References",
+    "text": "References\n\n\nHo, Jonathan, Ajay Jain, and Pieter Abbeel. 2020. “Denoising Diffusion Probabilistic Models.” arXiv Preprint arXiv:2006.11239.\n\n\nSclocchi, Antonio, Alessandro Favero, and Matthieu Wyart. 2024. “A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data.” arXiv Preprint arXiv:2402.16991."
   },
   {
     "objectID": "papers/index.html",
@@ -172,14 +326,14 @@
     "href": "papers/rg-critical-phenomena/index.html",
     "title": "RG Functional Equations & Critical Phenomena",
     "section": "",
-    "text": "The paper considers the subject of critical phenomena in the physical world of thermodynamics and its analog in the economic world and the formation of bubbles in financial markets. Providing a review and comparison of a “bottom-up” approach based on statistical mechanics with a more “top-down” construction using iterative solutions to functional equations, both of which exhibit the required scale invariance (power laws) and fractal qualities seen near the critical points, and where the renormalization group theory provides a “bridge” between these two approaches both in a physical and mathematical sense.\nM840 Dissertation in Mathematics, The Open University.\nDownload the PDF\nRelated: Fixed Points, Phase Transitions, and Diffusion Models connects this dissertation’s renormalization-group critical phenomena to the phase transitions found in hierarchical diffusion models."
+    "text": "The paper considers the subject of critical phenomena in the physical world of thermodynamics and its analog in the economic world and the formation of bubbles in financial markets. Providing a review and comparison of a “bottom-up” approach based on statistical mechanics with a more “top-down” construction using iterative solutions to functional equations, both of which exhibit the required scale invariance (power laws) and fractal qualities seen near the critical points, and where the renormalization group theory provides a “bridge” between these two approaches both in a physical and mathematical sense.\nM840 Dissertation in Mathematics, The Open University.\nDownload the PDF\nRelated: Fixed Points, Phase Transitions, and Diffusion Models connects this dissertation’s renormalization-group critical phenomena to the phase transitions found in hierarchical diffusion models · Mean-Field Theory and Annealed Disorder walks through the Curie-Weiss mean-field derivation and its critical exponents."
   },
   {
     "objectID": "papers/rg-critical-phenomena/index.html#abstract",
     "href": "papers/rg-critical-phenomena/index.html#abstract",
     "title": "RG Functional Equations & Critical Phenomena",
     "section": "",
-    "text": "The paper considers the subject of critical phenomena in the physical world of thermodynamics and its analog in the economic world and the formation of bubbles in financial markets. Providing a review and comparison of a “bottom-up” approach based on statistical mechanics with a more “top-down” construction using iterative solutions to functional equations, both of which exhibit the required scale invariance (power laws) and fractal qualities seen near the critical points, and where the renormalization group theory provides a “bridge” between these two approaches both in a physical and mathematical sense.\nM840 Dissertation in Mathematics, The Open University.\nDownload the PDF\nRelated: Fixed Points, Phase Transitions, and Diffusion Models connects this dissertation’s renormalization-group critical phenomena to the phase transitions found in hierarchical diffusion models."
+    "text": "The paper considers the subject of critical phenomena in the physical world of thermodynamics and its analog in the economic world and the formation of bubbles in financial markets. Providing a review and comparison of a “bottom-up” approach based on statistical mechanics with a more “top-down” construction using iterative solutions to functional equations, both of which exhibit the required scale invariance (power laws) and fractal qualities seen near the critical points, and where the renormalization group theory provides a “bridge” between these two approaches both in a physical and mathematical sense.\nM840 Dissertation in Mathematics, The Open University.\nDownload the PDF\nRelated: Fixed Points, Phase Transitions, and Diffusion Models connects this dissertation’s renormalization-group critical phenomena to the phase transitions found in hierarchical diffusion models · Mean-Field Theory and Annealed Disorder walks through the Curie-Weiss mean-field derivation and its critical exponents."
   },
   {
     "objectID": "papers/rg-critical-phenomena/index.html#read-it-here",
@@ -249,7 +403,7 @@
     "href": "posts/rg-diffusion-phase-transitions/index.html#conclusion",
     "title": "Fixed Points, Phase Transitions, and Diffusion Models",
     "section": "Conclusion",
-    "text": "Conclusion\nKadanoff’s block-spin decimation and Sclocchi et al.’s belief propagation on the Random Hierarchy Model turn out to be the same functional-equation machinery pointed at two different problems — one asking how magnetic order emerges from a spin lattice, the other how a diffusion model recovers (or loses) a semantic class from noise. See the dissertation for the full RG derivation, and the earlier post for the diffusion side reproduced end to end on real images."
+    "text": "Conclusion\nKadanoff’s block-spin decimation and Sclocchi et al.’s belief propagation on the Random Hierarchy Model turn out to be the same functional-equation machinery pointed at two different problems — one asking how magnetic order emerges from a spin lattice, the other how a diffusion model recovers (or loses) a semantic class from noise. See the dissertation for the full RG derivation, and the earlier post for the diffusion side reproduced end to end on real images.\nRelated: Mean-Field Theory and Annealed Disorder is a refresher on the annealed approximation this post’s belief-propagation map relies on, worked through the classical Curie-Weiss ferromagnet."
   },
   {
     "objectID": "posts/rg-diffusion-phase-transitions/index.html#references",

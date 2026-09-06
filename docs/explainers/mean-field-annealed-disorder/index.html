@@ -7,9 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Paul Milne">
-<meta name="description" content="A comparison of statistical-mechanics and functional-equation approaches to critical phenomena, applied to thermodynamics and financial market bubbles.">
+<meta name="dcterms.date" content="2026-09-06">
+<meta name="description" content="How replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model.">
 
-<title>RG Functional Equations &amp; Critical Phenomena – math-blog</title>
+<title>Mean-Field Theory and Annealed Disorder – math-blog</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -57,7 +58,27 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -104,24 +125,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
-<meta name="citation_title" content="RG Functional Equations &amp; Critical Phenomena in Thermodynamics and Financial Markets">
-<meta name="citation_author" content="Milne, Paul">
-<meta name="citation_publication_date" content="2022/06">
-<meta name="citation_dissertation_institution" content="The Open University">
-<meta name="citation_pdf_url" content="https://paulmilne.github.io/papers/rg-critical-phenomena/milne-2022-rg-functional-equations-critical-phenomena.pdf">
-<meta name="citation_abstract_html_url" content="https://paulmilne.github.io/papers/rg-critical-phenomena/">
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="RG Functional Equations &amp; Critical Phenomena – math-blog">
-<meta property="og:description" content="A comparison of statistical-mechanics and functional-equation approaches to critical phenomena, applied to thermodynamics and financial market bubbles.">
+<meta property="og:title" content="Mean-Field Theory and Annealed Disorder – math-blog">
+<meta property="og:description" content="How replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/mean-field-annealed-disorder/index_files/figure-html/fig-curie-weiss-1.png">
 <meta property="og:site_name" content="math-blog">
-<meta name="twitter:title" content="RG Functional Equations &amp; Critical Phenomena – math-blog">
-<meta name="twitter:description" content="A comparison of statistical-mechanics and functional-equation approaches to critical phenomena, applied to thermodynamics and financial market bubbles.">
-<meta name="twitter:card" content="summary">
+<meta property="og:image:height" content="960">
+<meta property="og:image:width" content="1344">
+<meta name="twitter:title" content="Mean-Field Theory and Annealed Disorder – math-blog">
+<meta name="twitter:description" content="How replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/mean-field-annealed-disorder/index_files/figure-html/fig-curie-weiss-1.png">
+<meta name="twitter:image-height" content="960">
+<meta name="twitter:image-width" content="1344">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
-<body class="nav-fixed fullcontent quarto-light">
+<body class="nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
@@ -177,17 +227,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">RG Functional Equations &amp; Critical Phenomena</h1>
-            <p class="subtitle lead">in Thermodynamics and Financial Markets</p>
+      <h1 class="title">Mean-Field Theory and Annealed Disorder</h1>
+            <p class="subtitle lead">From Curie-Weiss to belief propagation — second of a three-part refresher series</p>
                   <div>
         <div class="description">
-          A comparison of statistical-mechanics and functional-equation approaches to critical phenomena, applied to thermodynamics and financial market bubbles.
+          How replacing a disordered quantity by its ensemble average turns an intractable many-body problem into a solvable self-consistency equation, worked through the classic Curie-Weiss ferromagnet and connected to belief propagation on the Random Hierarchy Model.
         </div>
       </div>
                           <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
                 <div class="quarto-category">statistical-mechanics</div>
                 <div class="quarto-category">renormalization-group</div>
-                <div class="quarto-category">finance</div>
               </div>
                   </div>
   </div>
@@ -205,7 +255,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">June 2022</p>
+        <p class="date">September 6, 2026</p>
       </div>
     </div>
     
@@ -216,7 +266,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-problem-mean-field-theory-solves" id="toc-the-problem-mean-field-theory-solves" class="nav-link active" data-scroll-target="#the-problem-mean-field-theory-solves">The problem mean-field theory solves</a></li>
+  <li><a href="#curie-weiss-derived" id="toc-curie-weiss-derived" class="nav-link" data-scroll-target="#curie-weiss-derived">Curie-Weiss, derived</a></li>
+  <li><a href="#solving-it" id="toc-solving-it" class="nav-link" data-scroll-target="#solving-it">Solving it</a></li>
+  <li><a href="#the-same-move-in-belief-propagation" id="toc-the-same-move-in-belief-propagation" class="nav-link" data-scroll-target="#the-same-move-in-belief-propagation">The same move, in belief propagation</a></li>
+  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s next</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
 
@@ -224,27 +287,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="abstract" class="level2">
-<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
-<p>The paper considers the subject of critical phenomena in the physical world of thermodynamics and its analog in the economic world and the formation of bubbles in financial markets. Providing a review and comparison of a “bottom-up” approach based on statistical mechanics with a more “top-down” construction using iterative solutions to functional equations, both of which exhibit the required scale invariance (power laws) and fractal qualities seen near the critical points, and where the renormalization group theory provides a “bridge” between these two approaches both in a physical and mathematical sense.</p>
-<p><em>M840 Dissertation in Mathematics, The Open University.</em></p>
-<p><a href="milne-2022-rg-functional-equations-critical-phenomena.pdf">Download the PDF</a></p>
-<p><strong>Related:</strong> <a href="../../posts/rg-diffusion-phase-transitions/">Fixed Points, Phase Transitions, and Diffusion Models</a> connects this dissertation’s renormalization-group critical phenomena to the phase transitions found in hierarchical diffusion models · <a href="../../explainers/mean-field-annealed-disorder/">Mean-Field Theory and Annealed Disorder</a> walks through the Curie-Weiss mean-field derivation and its critical exponents.</p>
+<p>Second of three short refreshers behind <a href="../../posts/diffusion-phase-transition/">Reproducing a Phase Transition in Diffusion Models</a> and <a href="../../posts/rg-diffusion-phase-transitions/">Fixed Points, Phase Transitions, and Diffusion Models</a>. <a href="../../explainers/markov-chains-diffusion/">The first</a> covered Markov chains; read it first only if that material feels unfamiliar — this one stands alone.</p>
+<section id="the-problem-mean-field-theory-solves" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-mean-field-theory-solves">The problem mean-field theory solves</h2>
+<p>A ferromagnet is a lattice of interacting spins: each one wants to align with its neighbours, but the neighbours are themselves fluctuating, coupled to <em>their</em> neighbours, and so on. Tracking the full joint distribution over every spin is intractable for anything but tiny systems.</p>
+<p>The mean-field trick: replace each spin’s actual, fluctuating neighbours with their <em>average</em> value. A many-body problem becomes a single spin sitting in an effective field set by everybody else’s average behaviour — and that’s tractable, at the cost of ignoring fluctuation correlations between neighbours. Sclocchi et al.&nbsp;(2024) <span class="citation" data-cites="sclocchi2024phase">(<a href="#ref-sclocchi2024phase" role="doc-biblioref">Sclocchi, Favero, and Wyart 2024</a>)</span> use exactly this move — under a different name, “annealed” approximation — to get a closed-form description of belief propagation on their Random Hierarchy Model, and it’s worth seeing the classical version first.</p>
 </section>
-<section id="read-it-here" class="level2">
-<h2 class="anchored" data-anchor-id="read-it-here">Read it here</h2>
-<iframe src="milne-2022-rg-functional-equations-critical-phenomena.pdf" width="100%" height="900" style="border: 1px solid var(--bs-border-color, #ddd); border-radius: 4px;"></iframe>
+<section id="curie-weiss-derived" class="level2">
+<h2 class="anchored" data-anchor-id="curie-weiss-derived">Curie-Weiss, derived</h2>
+<p>Give each spin <span class="math inline">\(z\)</span> neighbours, coupling strength <span class="math inline">\(J\)</span>, at inverse temperature <span class="math inline">\(\beta\)</span>. Averaging over its neighbours’ fluctuations, a spin’s effective field is proportional to the <em>mean</em> magnetization <span class="math inline">\(m\)</span>, and self-consistency (the average spin must reproduce the magnetization that produced its own field) gives:</p>
+<p><span class="math display">\[
+m = \tanh(Km), \qquad K \equiv \beta J z
+\]</span></p>
+<p>Folding <span class="math inline">\(\beta\)</span>, <span class="math inline">\(J\)</span>, <span class="math inline">\(z\)</span> into the single parameter <span class="math inline">\(K\)</span> is the standard textbook reduction — the actual critical temperature is <span class="math inline">\(\beta_c = 1/(Jz)\)</span>, i.e.&nbsp;<span class="math inline">\(K=1\)</span> exactly. Below <span class="math inline">\(K=1\)</span> the only solution is <span class="math inline">\(m=0\)</span> (paramagnetic: no net alignment); above it, two new nonzero solutions appear (ferromagnetic: spontaneous alignment, sign chosen by symmetry breaking).</p>
 </section>
-<section id="cite-this-paper" class="level2">
-<h2 class="anchored" data-anchor-id="cite-this-paper">Cite this paper</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bibtex code-with-copy"><code class="sourceCode bibtex"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">@mastersthesis</span>{<span class="ot">milne2022rg</span>,</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span>        = {RG Functional Equations <span class="ch">\&amp;</span> Critical Phenomena in Thermodynamics and Financial Markets},</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">author</span>       = {Milne, Paul},</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">year</span>         = {2022},</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">month</span>        = <span class="st">jun</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">school</span>       = {The Open University},</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">note</span>         = {M840 Dissertation}</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="solving-it" class="level2">
+<h2 class="anchored" data-anchor-id="solving-it">Solving it</h2>
+<p><span class="math inline">\(m=0\)</span> satisfies <span class="math inline">\(\tanh(K \cdot 0) = 0\)</span> for <em>every</em> <span class="math inline">\(K\)</span> — it’s always a trivial root, present whether or not the interesting nonzero one exists. Searching for the nonzero branch means excluding it explicitly: bracket <code>uniroot</code> away from zero.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>nontrivial_root <span class="ot">&lt;-</span> <span class="cf">function</span>(K, <span class="at">lower =</span> <span class="fl">1e-6</span>, <span class="at">upper =</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fl">1e-9</span>) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (K <span class="sc">&lt;=</span> <span class="dv">1</span>) <span class="fu">return</span>(<span class="dv">0</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  self_consist_gap <span class="ot">&lt;-</span> <span class="cf">function</span>(m) <span class="fu">tanh</span>(K <span class="sc">*</span> m) <span class="sc">-</span> m</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">sign</span>(<span class="fu">self_consist_gap</span>(lower)) <span class="sc">==</span> <span class="fu">sign</span>(<span class="fu">self_consist_gap</span>(upper))) <span class="fu">return</span>(<span class="cn">NA_real_</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">uniroot</span>(self_consist_gap, <span class="fu">c</span>(lower, upper))<span class="sc">$</span>root</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>Ks <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.05</span>, <span class="dv">3</span>, <span class="at">by =</span> <span class="fl">0.01</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">K =</span> Ks)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>m_stable <span class="ot">&lt;-</span> <span class="fu">sapply</span>(Ks, nontrivial_root)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(K)) <span class="sc">+</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">colour =</span> <span class="st">"grey60"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> m_stable), <span class="at">colour =</span> <span class="st">"firebrick"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="sc">-</span>m_stable), <span class="at">colour =</span> <span class="st">"firebrick"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dotted"</span>) <span class="sc">+</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="fu">expression</span>(K <span class="sc">==</span> beta <span class="sc">*</span> J <span class="sc">*</span> z), <span class="at">y =</span> <span class="st">"magnetization m"</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Order emerges above the critical point"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-curie-weiss" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-curie-weiss-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-curie-weiss-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-curie-weiss-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Curie-Weiss magnetization vs.&nbsp;K. The nonzero branch only exists above the critical point K=1.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Below <span class="math inline">\(K=1\)</span>, only <span class="math inline">\(m=0\)</span>; above it, a genuine phase transition. Three independent checks on the nonzero branch agree: at <span class="math inline">\(K=2\)</span>, <code>uniroot</code> gives <span class="math inline">\(m=0.9575\)</span>, and simply iterating <span class="math inline">\(m \leftarrow \tanh(2m)\)</span> a thousand times from <span class="math inline">\(m=0.5\)</span> converges to <span class="math inline">\(0.957504\)</span> — the same fixed point found two different ways. Near the critical point, mean-field theory predicts <span class="math inline">\(m \approx \sqrt{3(K-1)}\)</span>; at <span class="math inline">\(K=1.01\)</span> that asymptotic gives <span class="math inline">\(0.1732\)</span> against <code>uniroot</code>’s <span class="math inline">\(0.1717\)</span> — agreement to about 1%, which is the classical mean-field critical exponent <span class="math inline">\(\beta=1/2\)</span> showing up numerically.</p>
+</section>
+<section id="the-same-move-in-belief-propagation" class="level2">
+<h2 class="anchored" data-anchor-id="the-same-move-in-belief-propagation">The same move, in belief propagation</h2>
+<p>The Random Hierarchy Model’s disordered production rules play the role of the Ising model’s disordered neighbour spins. Tracking every possible realization of the hierarchy’s rules exactly is just as intractable as tracking every spin’s actual neighbours. Sclocchi et al.&nbsp;take the identical shortcut: average over the ensemble of rule realizations (the “annealed” approximation) rather than conditioning on one specific (quenched) realization, and a complicated random recursion collapses into the single deterministic belief-propagation map</p>
+<p><span class="math display">\[
+p' = F(p)
+\]</span></p>
+<p>already implemented and solved in <a href="../../posts/rg-diffusion-phase-transitions/">Fixed Points, Phase Transitions, and Diffusion Models</a> — same recipe (disorder → ensemble average → deterministic self-consistency map), same qualitative payoff (a clean, analyzable bifurcation), different physical dressing. That post doesn’t re-derive the annealed approximation; this is the missing piece that justifies why <span class="math inline">\(F(p)\)</span> is allowed to be written down as a plain deterministic function at all.</p>
+<p>The same self-consistency structure — and the same <span class="math inline">\(\sqrt{K-1}\)</span>-type critical scaling — also shows up throughout <a href="../../papers/rg-critical-phenomena/">my own dissertation on renormalization-group critical phenomena</a>, where the RG fixed point plays the role <span class="math inline">\(K=1\)</span> plays here.</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s next</h2>
+<p><a href="../../explainers/toy-diffusion-model/">The final post in this series</a> builds a complete toy diffusion model from scratch — forward noising, the score function, and exact reverse sampling — using the closed-form Markov chain from <a href="../../explainers/markov-chains-diffusion/">the first post</a>.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-sclocchi2024phase" class="csl-entry" role="listitem">
+Sclocchi, Antonio, Alessandro Favero, and Matthieu Wyart. 2024. <span>“A Phase Transition in Diffusion Models Reveals the Hierarchical Nature of Data.”</span> <em>arXiv Preprint arXiv:2402.16991</em>.
+</div>
+</div>
 
 
 </section>

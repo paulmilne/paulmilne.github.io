@@ -1,0 +1,161 @@
+---
+title: "A Diffusion Model You Can Actually Solve"
+subtitle: "Forward noise, the score function, and exact reverse sampling — third of a three-part refresher series"
+description: "Building the smallest possible working diffusion model, a two-component 1D Gaussian mixture with an exact closed-form score, to make forward noising, Tweedie's formula, and reverse ancestral sampling fully concrete and verifiable."
+author: "Paul Milne"
+date: "2026-09-06"
+categories: [explainer, diffusion, deep-learning]
+engine: knitr
+bibliography: references.bib
+format:
+  html:
+    toc: true
+---
+
+Third and final part of a series behind [Reproducing a Phase Transition in Diffusion Models](/posts/diffusion-phase-transition/) and [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/). This one assumes [the first post's](/explainers/markov-chains-diffusion/) closed-form jump $q(x_t\mid x_0)$; [the second](/explainers/mean-field-annealed-disorder/) is a self-contained detour and isn't needed here.
+
+```{r}
+#| label: setup
+#| include: false
+library(ggplot2)
+library(dplyr)
+theme_set(theme_minimal(base_size = 12))
+```
+
+## Noising a whole distribution
+
+The first post applied the forward chain to a single starting point, $x_0=2$. Real data isn't a point, it's a distribution — so apply the same closed-form jump to a batch of samples instead. Take something with actual structure to destroy: a two-component mixture, two bumps at $-2$ and $+2$.
+
+```{r}
+#| label: fig-forward-collapse
+#| fig-cap: "The bimodal starting distribution collapsing to N(0,1) as t increases, under the same schedule shape as Ho et al. (2020)."
+mu1 <- -2; mu2 <- 2; sd0 <- 0.4; w1 <- 0.5; w2 <- 0.5
+r_data <- function(n) {
+  is_mode2 <- rbinom(n, 1, w2)
+  ifelse(is_mode2 == 1, rnorm(n, mu2, sd0), rnorm(n, mu1, sd0))
+}
+
+set.seed(7)
+n <- 4000
+x0_data <- r_data(n)
+
+T_steps <- 400
+beta <- seq(1e-4, 0.02, length.out = T_steps)
+alpha <- 1 - beta
+alpha_bar <- cumprod(alpha)
+
+noise_to_t <- function(x0_vec, t) {
+  sqrt(alpha_bar[t]) * x0_vec + sqrt(1 - alpha_bar[t]) * rnorm(length(x0_vec))
+}
+x_mid <- noise_to_t(x0_data, T_steps %/% 2)
+x_T <- noise_to_t(x0_data, T_steps)
+
+data.frame(
+  x = c(x0_data, x_mid, x_T),
+  t = factor(rep(c("t = 0", paste0("t = ", T_steps %/% 2), paste0("t = ", T_steps)),
+                 each = n),
+             levels = c("t = 0", paste0("t = ", T_steps %/% 2), paste0("t = ", T_steps)))
+) |>
+  ggplot(aes(x, fill = t)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 60, alpha = 0.7, position = "identity") +
+  facet_wrap(~t, ncol = 1) +
+  labs(y = "density", fill = NULL) +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| include: false
+xT_mean <- mean(x_T); xT_sd <- sd(x_T)
+```
+
+By $t=`r T_steps`$, mean $`r round(xT_mean, 4)`$ and sd $`r round(xT_sd, 4)`$ — the two bumps have merged into plain $\mathcal{N}(0,1)$, no trace of where they started.
+
+## What a denoiser actually needs: the score
+
+Reversing this requires knowing which direction "more like the data" is, at every noise level. That direction is the **score**, $\nabla_x \log p_t(x)$ — the gradient of the log-density of the noisy marginal at time $t$. Tweedie's formula relates it directly to the optimal denoiser: the best single-step estimate of the clean signal given a noisy $x_t$ is a simple function of the score. This is the modern way to think about what a diffusion model's network is trained to produce — not "the clean image" directly, but a time-indexed family of score estimates, one per noise level.
+
+## The one case you don't need a network for
+
+For almost any real data distribution, the score has no closed form and has to be learned. But a Gaussian mixture is a rare exception: convolving a Gaussian mixture with Gaussian noise gives *another* Gaussian mixture, so the noised marginal at every $t$ — and hence its score — stays exactly computable:
+
+$$
+p_t(x) = \sum_k w_k\, \mathcal{N}\!\left(x;\ \sqrt{\bar\alpha_t}\,\mu_k,\ \ \bar\alpha_t \sigma_0^2 + (1-\bar\alpha_t)\right)
+$$
+
+```{r}
+exact_score <- function(x, t) {
+  abar <- alpha_bar[t]
+  v <- abar * sd0^2 + (1 - abar)
+  m1 <- sqrt(abar) * mu1
+  m2 <- sqrt(abar) * mu2
+  d1 <- dnorm(x, m1, sqrt(v))
+  d2 <- dnorm(x, m2, sqrt(v))
+  p <- w1 * d1 + w2 * d2
+  (w1 * d1 * (-(x - m1) / v) + w2 * d2 * (-(x - m2) / v)) / p
+}
+
+log_p_t <- function(x, t) {
+  abar <- alpha_bar[t]
+  v <- abar * sd0^2 + (1 - abar)
+  m1 <- sqrt(abar) * mu1
+  m2 <- sqrt(abar) * mu2
+  log(w1 * dnorm(x, m1, sqrt(v)) + w2 * dnorm(x, m2, sqrt(v)))
+}
+
+h <- 1e-5
+test_x <- c(-1, 0, 0.5, 1.5)
+numeric_score <- (log_p_t(test_x + h, 100) - log_p_t(test_x - h, 100)) / (2 * h)
+analytic_score <- exact_score(test_x, 100)
+```
+
+Checked against a numerical derivative of $\log p_t(x)$ at $t=100$, four test points: numeric gives `r round(numeric_score, 5)`, the closed form gives `r round(analytic_score, 5)` — matching to the precision shown.
+
+## Reversing it, exactly
+
+The ancestral-sampling reverse update, written in terms of the score:
+
+$$
+x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\Big(x_t + \beta_t\, \nabla_x \log p_t(x_t)\Big) + \sqrt{\beta_t}\, z, \qquad z \sim \mathcal{N}(0, I) \text{ for } t>1
+$$
+
+Ordinarily $\nabla_x \log p_t$ is what a trained network approximates. Here it's the closed form from the previous section — nothing learned, nothing approximate.
+
+```{r}
+#| label: fig-reverse-samples
+#| fig-cap: "Samples generated by reverse diffusion from pure noise, using only the exact score, against the true starting distribution."
+n_gen <- 4000
+set.seed(11)
+x_gen <- rnorm(n_gen)
+for (t in T_steps:1) {
+  score_val <- exact_score(x_gen, t)
+  noise_term <- if (t > 1) rnorm(n_gen) else 0
+  x_gen <- (x_gen + beta[t] * score_val) / sqrt(alpha[t]) + sqrt(beta[t]) * noise_term
+}
+
+ks_result <- ks.test(x0_data, x_gen)
+
+data.frame(x = c(x0_data, x_gen), source = rep(c("original data", "reverse-generated"), each = n)) |>
+  ggplot(aes(x, fill = source)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 60, alpha = 0.55, position = "identity") +
+  labs(y = "density", fill = NULL)
+```
+
+```{r}
+#| include: false
+mode1_true <- x_gen[x_gen < 0]; mode2_true <- x_gen[x_gen >= 0]
+```
+
+Generation recovers both modes: mean/sd of the lower cluster $`r round(mean(mode1_true), 4)`$ / $`r round(sd(mode1_true), 4)`$ against a true $-2$/$0.4$, and the upper cluster $`r round(mean(mode2_true), 4)`$ / $`r round(sd(mode2_true), 4)`$ against a true $2$/$0.4$. A two-sample Kolmogorov-Smirnov test against the original data gives $D=`r round(ks_result$statistic, 4)`$, $p=`r round(ks_result$p.value, 3)`$ — nowhere near rejecting "same distribution."
+
+## What this stands in for
+
+[The diffusion-phase-transition post](/posts/diffusion-phase-transition/) does exactly this same procedure — forward-diffuse partway, then reverse — but on real ImageNet images, with a trained U-Net standing in for the score computed here in closed form [@ho2020denoising]. The abrupt class-flip reported there is a direct consequence of how that (learned, not closed-form) score behaves across noise levels for hierarchically-structured data — the same mechanics as this toy, just with a far richer $p_0$ than two Gaussian bumps [@sclocchi2024phase].
+
+## Series wrap-up
+
+Three explainers, one underlying machine: a Markov chain moves data toward noise and, run in reverse with the right score function, moves noise back toward data; mean-field/annealed averaging is how you get a tractable equation for when that reversal preserves the "shape" of the data versus loses it; and the toy model here makes both pieces concrete enough to check by hand. With all three in place, [Reproducing a Phase Transition in Diffusion Models](/posts/diffusion-phase-transition/) and [Fixed Points, Phase Transitions, and Diffusion Models](/posts/rg-diffusion-phase-transitions/) should read as engineering and analysis built on genuinely solid ground, rather than machinery taken on faith.
+
+## References
+
+::: {#refs}
+:::
