@@ -6,12 +6,18 @@ project:
   render:
     - "*.qmd"
     - "posts/**"
+    - "explainers/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
 
 website:
   title: "math-blog"
   navbar:
+    left:
+      - href: index.qmd
+        text: Posts
+      - href: explainers/index.qmd
+        text: Explainers
     right:
       - about.qmd
       - icon: github

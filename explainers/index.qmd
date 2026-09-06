@@ -1,0 +1,14 @@
+---
+title: "Explainers"
+listing:
+  contents: .
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---
+
+Background explanations of the math and stats concepts that come up in the paper-reproduction posts — the kind of thing you'd want a refresher on before the main post assumes it.

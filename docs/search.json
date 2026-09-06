@@ -14,13 +14,6 @@
     "text": "A Phase Transition in Diffusion Models\n\n\n\ndiffusion\n\ndeep-learning\n\nreproduction\n\n\n\n\n\n\n\n\n\nSep 6, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\n\n\nJun 10, 2026\n\n\nPaul Milne\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "About this blog"
-  },
-  {
     "objectID": "eclipse_2026_sun_overlay.html",
     "href": "eclipse_2026_sun_overlay.html",
     "title": "Projecting the sun’s path for the 12 August 2026 UK partial solar eclipse",
@@ -75,6 +68,20 @@
     "title": "Projecting the sun’s path for the 12 August 2026 UK partial solar eclipse",
     "section": "Notes and caveats",
     "text": "Notes and caveats\n\nBoth photo overlays use a small-angle/linear projection from angular offset to pixel offset around the camera’s heading and pitch, rather than a true perspective (gnomonic) projection. This is a reasonable approximation for the field-of-view sizes and angular ranges involved here, but introduces increasing distortion toward the edges of wide fields of view.\nThe Street View camera’s field of view is assumed to be 90° both horizontally and vertically (the API default for a square image); the true vertical field of view for the Street View panorama projection may differ.\nThe photo’s field of view is estimated from its 35mm-equivalent focal length and an assumed native sensor resolution (4032x3024 for the iPhone 13 Pro Max ultra-wide camera), rescaled to the actual saved crop size. This is not a verified optical specification.\nThe photo’s pitch is taken directly from the Theodolite app’s vert_angle_deg caption field, and roll (horiz_angle_deg) is assumed negligible and not corrected for.\nThe terrain elevation data comes from AWS Terrain Tiles (~30m resolution) via elevatr. Named peaks are whichever natural=peak features happen to be tagged in OpenStreetMap within the radius — this list may be incomplete, and their elevations are read from the DEM at each point’s coordinates rather than from (often-missing) OSM elevation tags.\nThe river network is watercourse-link geometry from OS Open Rivers. Contains OS data © Crown copyright and database right, available under the Open Government Licence. It is a generalised network, not a detailed hydrography product, and roughly 200 of the segments in this radius carry no watercourse_name (minor streams/ditches).\nReprojecting the elevation raster from WGS84 to British National Grid leaves a small fraction (~2%) of edge cells as NA, visible as a faint ragged border in the 3D render.\nThe bounding box is built as a square in degrees (±10 miles in latitude and longitude), so its corners reach roughly 14 miles from the viewing location — farther than the stated 10-mile radius. The highest point in the frame (~381 m) falls in one such corner and is ~25 km from the nearest named OSM peak, so it is almost certainly real high ground (plausibly Peak District/Pennine foothills) rather than a labeling gap — OSM just has no natural=peak point there."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this blog"
+  },
+  {
+    "objectID": "explainers/index.html",
+    "href": "explainers/index.html",
+    "title": "Explainers",
+    "section": "",
+    "text": "Background explanations of the math and stats concepts that come up in the paper-reproduction posts — the kind of thing you’d want a refresher on before the main post assumes it.\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/diffusion-phase-transition/index.html",

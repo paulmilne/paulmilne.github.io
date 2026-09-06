@@ -5,5 +5,9 @@
       "/posts/diffusion-phase-transition/index.html",
       "/posts/welcome/index.html"
     ]
+  },
+  {
+    "listing": "/explainers/index.html",
+    "items": []
   }
 ]
