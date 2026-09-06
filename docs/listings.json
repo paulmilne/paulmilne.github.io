@@ -1,9 +1,9 @@
 [
   {
-    "listing": "/index.html",
+    "listing": "/papers/index.html",
     "items": [
-      "/posts/diffusion-phase-transition/index.html",
-      "/posts/welcome/index.html"
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   },
   {
@@ -11,9 +11,10 @@
     "items": []
   },
   {
-    "listing": "/papers/index.html",
+    "listing": "/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html"
+      "/posts/diffusion-phase-transition/index.html",
+      "/posts/welcome/index.html"
     ]
   }
 ]

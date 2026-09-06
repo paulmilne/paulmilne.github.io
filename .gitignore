@@ -19,3 +19,6 @@
 
 # knitr chunk caches (regenerable, can get large; use _freeze/ for reproducibility instead)
 *_cache/
+
+# source PDF dropped at repo root before being organized under papers/
+/M840-Dissertation-Paul_Milne-Final.pdf
