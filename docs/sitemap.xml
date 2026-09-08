@@ -34,7 +34,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/markov-chains-diffusion/index.html</loc>
-    <lastmod>2026-09-06T12:49:41.970Z</lastmod>
+    <lastmod>2026-09-08T06:19:25.795Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/toy-diffusion-model/index.html</loc>
@@ -51,5 +51,9 @@
   <url>
     <loc>https://paulmilne.github.io/posts/rg-diffusion-phase-transitions/index.html</loc>
     <lastmod>2026-09-06T12:53:18.648Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/explainers/bifurcation-vs-langevin/index.html</loc>
+    <lastmod>2026-09-07T08:05:58.031Z</lastmod>
   </url>
 </urlset>

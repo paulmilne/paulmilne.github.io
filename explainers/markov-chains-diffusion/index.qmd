@@ -1,5 +1,5 @@
 ---
-title: "Markov Chains, Concretely"
+title: "Markov Chains"
 subtitle: "The backbone of diffusion models — first of a three-part refresher series"
 description: "A worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks."
 author: "Paul Milne"
@@ -52,6 +52,33 @@ data.frame(step = seq_len(n_steps), state = factor(states[path], levels = states
   theme(legend.position = "top")
 ```
 
+The same transition matrix, drawn as a state diagram, makes the "only today matters" structure visually explicit — every arrow starts from a single current state, with no memory of how the chain got there:
+
+```{tikz}
+%| label: fig-weather-states
+%| fig-cap: "State diagram for the three-state weather chain. Edge labels are transition probabilities from the current state."
+\usetikzlibrary{automata,positioning,arrows}
+\begin{tikzpicture}[
+  ->, >=stealth', auto, thick, node distance=4.4cm,
+  state/.style={circle, draw, minimum size=1.5cm, font=\small}
+]
+  \node[state] (S) {Sunny};
+  \node[state, below left=of S]  (C) {Cloudy};
+  \node[state, below right=of S] (R) {Rainy};
+
+  \path
+    (S) edge[loop above] node {0.7} (S)
+    (C) edge[loop left]  node {0.4} (C)
+    (R) edge[loop right] node {0.5} (R)
+    (S) edge[bend left=15]  node {0.2} (C)
+    (C) edge[bend left=15]  node {0.3} (S)
+    (C) edge[bend right=32] node {0.3} (R)
+    (R) edge[bend left=10]  node[swap] {0.3} (C)
+    (R) edge[bend left=15]  node {0.2} (S)
+    (S) edge[bend left=15]  node {0.1} (R);
+\end{tikzpicture}
+```
+
 Knowing today is Sunny tells you everything relevant about tomorrow; knowing it was also Sunny for the last five days adds nothing. That's the whole idea, and it's what makes chains like this tractable to analyze — no exploding state space of "all possible histories" to track.
 
 ## Where does it settle? Two ways to find out
@@ -85,15 +112,76 @@ ggplot(df, aes(state, probability, fill = method)) +
 
 Eigenvector: Sunny `r round(pi_stat["Sunny"], 3)`, Cloudy `r round(pi_stat["Cloudy"], 3)`, Rainy `r round(pi_stat["Rainy"], 3)`. A long simulated path lands close to the same numbers — the chain has "forgotten" where it started and settled into its long-run behaviour. This idea — a distribution that's a *fixed point* of an update rule — will come back in the next post, where a self-consistency equation plays exactly the same role.
 
+## Why an eigenvector, and how `eigen()` actually gets it
+
+The stationary condition $\pi P = \pi$ treats $\pi$ as a *row* vector multiplying $P$ from the left — a left eigenvector of $P$ with eigenvalue 1. Transposing both sides turns it into an ordinary right-eigenvector problem: $P^\top \pi^\top = \pi^\top$. That's why the code above calls `eigen(t(P))` rather than `eigen(P)` — R's `eigen()` only ever returns right eigenvectors, so finding a left eigenvector of $P$ means first transposing.
+
+An eigenvalue-1 solution is guaranteed to exist. Every row of $P$ sums to 1, so $P\mathbf{1} = \mathbf{1}$: the all-ones vector is a right eigenvector of $P$ with eigenvalue 1. $P$ and $P^\top$ share the same eigenvalues (they have the same characteristic polynomial, since $\det(P^\top - \lambda I) = \det((P - \lambda I)^\top) = \det(P - \lambda I)$), so 1 is also an eigenvalue of $P^\top$ — guaranteeing a $\pi$ satisfying $\pi P = \pi$ exists, though not automatically that it's unique or non-negative (that extra guarantee comes from Perron–Frobenius, since every entry of $P$ here is strictly positive).
+
+Under the hood, `eigen()` finds *all three* eigenvalues of $P^\top$ as the roots of $\det(P^\top - \lambda I) = 0$, then for each eigenvalue $\lambda_i$ finds a vector spanning the null space of $(P^\top - \lambda_i I)$ — solved numerically via matrix decomposition rather than by hand, but conceptually just "solve $(P^\top - \lambda_i I)v = 0$." Doing that null-space step explicitly for $\lambda = 1$, independently of `eigen()`'s eigenvector output, should recover the same $\pi$ up to scale:
+
+```{r}
+#| label: eigen-manual-check
+eig$values
+
+A <- t(P) - diag(3)
+qr(A)$rank
+pi_manual <- svd(A)$v[, 3]
+pi_manual <- pi_manual / sum(pi_manual)
+names(pi_manual) <- states
+pi_manual
+```
+
+`eig$values` shows one eigenvalue at 1 and two others strictly smaller in modulus — consistent with the all-ones-vector argument above and with a unique stationary distribution. `A` has rank `r qr(A)$rank` out of 3, meaning $(P^\top - I)$ has a 1-dimensional null space — exactly one free direction, which `svd()` extracts as the singular vector paired with a (numerically) zero singular value. `pi_manual` matches `pi_stat` from `eigen()` up to floating-point noise, since both are just different numerical routes to the same null space.
+
+Those two smaller eigenvalues aren't wasted information either: the second-largest one in modulus governs how fast the chain forgets its starting state and converges to $\pi$ — larger gap to 1, faster mixing. That's a thread this post won't pull further, but it's the same kind of "look at the eigenvalues away from the fixed point" reasoning that shows up when analyzing stability in the mean-field post next.
+
 ## DDPM's actual Markov chain
 
-Diffusion models run a Markov chain too, just with a continuous state and Gaussian transition kernels rather than a lookup table. The forward (noising) process is defined, exactly as in Ho, Jain & Abbeel (2020) [@ho2020denoising], by:
+Diffusion models run a Markov chain too, just with a continuous state and Gaussian transition kernels rather than a lookup table. Forward and reverse processes run along the same chain of latents $x_0, x_1, \dots, x_T$, in opposite directions:
+
+Each $x_t$ is a **latent variable** — same shape as the data (an image's pixel array, say), but not itself an observed data point except at the two ends of the chain. $x_0$ is a real, clean data sample; $x_T$ is (by construction, after enough steps) indistinguishable from pure Gaussian noise; everything in between, $x_1, \dots, x_{T-1}$, is a progressively noisier, unobserved intermediate version of $x_0$ that only exists as a mathematical construct — you never have a "true" $x_t$ for $0 < t < T$ the way you have a genuine image or a genuine noise sample. "Latent" here just means: a random variable in the model that generative code manipulates and a network learns to reverse, but that's never seen directly in the training data. The subscript $t$ indexes position along the chain (equivalently, how much noise has accumulated), not real time.
+
+```{tikz}
+%| label: fig-ddpm-chain
+%| fig-cap: "The DDPM Markov chain. Forward (noising) transitions q run left to right and are fixed; reverse (denoising) transitions p_theta run right to left and are learned."
+\usetikzlibrary{positioning,arrows}
+\begin{tikzpicture}[
+  ->, >=stealth', thick, node distance=3.1cm,
+  state/.style={circle, draw, minimum size=1.15cm, font=\normalsize},
+  dots/.style={font=\normalsize}
+]
+  \node[state] (x0) {$x_0$};
+  \node[state, right=of x0] (x1) {$x_1$};
+  \node[dots, right=of x1] (d1) {$\cdots$};
+  \node[state, right=of d1] (xtm1) {$x_{t-1}$};
+  \node[state, right=of xtm1] (xt) {$x_t$};
+  \node[dots, right=of xt] (d2) {$\cdots$};
+  \node[state, right=of d2] (xT) {$x_T$};
+
+  \path
+    (x0)   edge node[above] {$q(x_1|x_0)$} (x1)
+    (x1)   edge (d1)
+    (d1)   edge (xtm1)
+    (xtm1) edge node[above] {$q(x_t|x_{t-1})$} (xt)
+    (xt)   edge (d2)
+    (d2)   edge (xT);
+
+  \path[dashed]
+    (x1) edge[bend left=35] node[below] {$p_\theta(x_0|x_1)$} (x0)
+    (xt) edge[bend left=35] node[below] {$p_\theta(x_{t-1}|x_t)$} (xtm1);
+\end{tikzpicture}
+```
+
+The forward (noising) process is fixed by construction, defined, exactly as in Ho, Jain & Abbeel (2020) [@ho2020denoising], by:
 
 $$
 q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(\sqrt{1-\beta_t}\, x_{t-1},\ \beta_t I\right)
 $$
 
 Each step nudges $x_{t-1}$ slightly toward the origin and adds a little Gaussian noise, with $\beta_t$ controlling how much. This is precisely the recurrence used in `guided_diffusion/gaussian_diffusion.py`, the codebase reproduced in [the diffusion-phase-transition post](/posts/diffusion-phase-transition/).
+
+$\beta_t \in (0, 1)$ is the **noise schedule** — a small, hand-chosen number per step (Ho et al.'s schedule ramps it linearly from $10^{-4}$ at $t=1$ to $0.02$ at $t=T$) fixing how much variance gets injected at step $t$. It's not learned; it's a fixed hyperparameter sequence chosen before training even starts. $\alpha_t := 1 - \beta_t$ is just a convenient rename — close to 1 when $\beta_t$ is small — so that the update reads $x_t = \sqrt{\alpha_t}\, x_{t-1} + \sqrt{1-\alpha_t}\,\epsilon$: shrink the previous state slightly, add noise to make up the variance budget. Their product across steps, $\bar\alpha_t := \prod_{s \le t} \alpha_s$, is what actually appears in the closed-form jump below — it tracks how much of the *original* signal $x_0$ survives after $t$ compounded steps, and it's what decays toward 0 as $t \to T$ in @fig-gaussian-chain, driving $x_t$ toward pure $\mathcal{N}(0, I)$ noise.
 
 ```{r}
 #| label: fig-gaussian-chain

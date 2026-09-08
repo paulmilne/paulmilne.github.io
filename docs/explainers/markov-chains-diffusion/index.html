@@ -10,7 +10,7 @@
 <meta name="dcterms.date" content="2026-09-06">
 <meta name="description" content="A worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks.">
 
-<title>Markov Chains, Concretely – math-blog</title>
+<title>Markov Chains – math-blog</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -157,13 +157,13 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="Markov Chains, Concretely – math-blog">
+<meta property="og:title" content="Markov Chains – math-blog">
 <meta property="og:description" content="A worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks.">
 <meta property="og:image" content="https://paulmilne.github.io/explainers/markov-chains-diffusion/index_files/figure-html/fig-weather-path-1.png">
 <meta property="og:site_name" content="math-blog">
 <meta property="og:image:height" content="960">
 <meta property="og:image:width" content="1344">
-<meta name="twitter:title" content="Markov Chains, Concretely – math-blog">
+<meta name="twitter:title" content="Markov Chains – math-blog">
 <meta name="twitter:description" content="A worked introduction to Markov chains — transition matrices, stationary distributions, and the Gaussian forward chain at the heart of DDPM — verified with R simulation and closed-form checks.">
 <meta name="twitter:image" content="https://paulmilne.github.io/explainers/markov-chains-diffusion/index_files/figure-html/fig-weather-path-1.png">
 <meta name="twitter:image-height" content="960">
@@ -227,7 +227,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Markov Chains, Concretely</h1>
+      <h1 class="title">Markov Chains</h1>
             <p class="subtitle lead">The backbone of diffusion models — first of a three-part refresher series</p>
                   <div>
         <div class="description">
@@ -273,6 +273,7 @@ window.Quarto = {
   <ul>
   <li><a href="#what-makes-a-process-markov" id="toc-what-makes-a-process-markov" class="nav-link active" data-scroll-target="#what-makes-a-process-markov">What makes a process “Markov”</a></li>
   <li><a href="#where-does-it-settle-two-ways-to-find-out" id="toc-where-does-it-settle-two-ways-to-find-out" class="nav-link" data-scroll-target="#where-does-it-settle-two-ways-to-find-out">Where does it settle? Two ways to find out</a></li>
+  <li><a href="#why-an-eigenvector-and-how-eigen-actually-gets-it" id="toc-why-an-eigenvector-and-how-eigen-actually-gets-it" class="nav-link" data-scroll-target="#why-an-eigenvector-and-how-eigen-actually-gets-it">Why an eigenvector, and how <code>eigen()</code> actually gets it</a></li>
   <li><a href="#ddpms-actual-markov-chain" id="toc-ddpms-actual-markov-chain" class="nav-link" data-scroll-target="#ddpms-actual-markov-chain">DDPM’s actual Markov chain</a></li>
   <li><a href="#the-closed-form-jump" id="toc-the-closed-form-jump" class="nav-link" data-scroll-target="#the-closed-form-jump">The closed-form jump</a></li>
   <li><a href="#the-reverse-chain" id="toc-the-reverse-chain" class="nav-link" data-scroll-target="#the-reverse-chain">The reverse chain</a></li>
@@ -325,32 +326,67 @@ Figure&nbsp;1: A 200-step simulated path through the weather chain, colour-coded
 </div>
 </div>
 </div>
+<p>The same transition matrix, drawn as a state diagram, makes the “only today matters” structure visually explicit — every arrow starts from a single current state, with no memory of how the chain got there:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode tex code-with-copy"><code class="sourceCode latex"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">\usetikzlibrary</span>{automata,positioning,arrows}</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">\begin</span>{<span class="ex">tikzpicture</span>}[</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  -&gt;, &gt;=stealth', auto, thick, node distance=4.4cm,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  state/.style={circle, draw, minimum size=1.5cm, font=<span class="fu">\small</span>}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state] (S) {Sunny};</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state, below left=of S]  (C) {Cloudy};</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state, below right=of S] (R) {Rainy};</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\path</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    (S) edge[loop above] node {0.7} (S)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    (C) edge[loop left]  node {0.4} (C)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    (R) edge[loop right] node {0.5} (R)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    (S) edge[bend left=15]  node {0.2} (C)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    (C) edge[bend left=15]  node {0.3} (S)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    (C) edge[bend right=32] node {0.3} (R)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    (R) edge[bend left=10]  node[swap] {0.3} (C)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    (R) edge[bend left=15]  node {0.2} (S)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    (S) edge[bend left=15]  node {0.1} (R);</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="kw">\end</span>{<span class="ex">tikzpicture</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-weather-states" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-weather-states-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-weather-states-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-weather-states-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: State diagram for the three-state weather chain. Edge labels are transition probabilities from the current state.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
 <p>Knowing today is Sunny tells you everything relevant about tomorrow; knowing it was also Sunny for the last five days adds nothing. That’s the whole idea, and it’s what makes chains like this tractable to analyze — no exploding state space of “all possible histories” to track.</p>
 </section>
 <section id="where-does-it-settle-two-ways-to-find-out" class="level2">
 <h2 class="anchored" data-anchor-id="where-does-it-settle-two-ways-to-find-out">Where does it settle? Two ways to find out</h2>
 <p>Run the chain long enough and the fraction of time spent in each state converges to a fixed <em>stationary distribution</em> <span class="math inline">\(\pi\)</span>, satisfying <span class="math inline">\(\pi P = \pi\)</span> — a left eigenvector of <span class="math inline">\(P\)</span> with eigenvalue 1. Two independent ways to find it should agree:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>eig <span class="ot">&lt;-</span> <span class="fu">eigen</span>(<span class="fu">t</span>(P))</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>pi_stat <span class="ot">&lt;-</span> <span class="fu">Re</span>(eig<span class="sc">$</span>vectors[, <span class="fu">which.min</span>(<span class="fu">abs</span>(eig<span class="sc">$</span>values <span class="sc">-</span> <span class="dv">1</span>))])</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>pi_stat <span class="ot">&lt;-</span> pi_stat <span class="sc">/</span> <span class="fu">sum</span>(pi_stat)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(pi_stat) <span class="ot">&lt;-</span> states</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>n_long <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>path_long <span class="ot">&lt;-</span> <span class="fu">integer</span>(n_long)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>path_long[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">1</span>L</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>n_long) path_long[t] <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(<span class="dv">3</span>, <span class="dv">1</span>, <span class="at">prob =</span> P[path_long[t <span class="sc">-</span> <span class="dv">1</span>], ])</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>pi_empirical <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="fu">factor</span>(states[path_long], <span class="at">levels =</span> states)) <span class="sc">/</span> n_long</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="fu">rep</span>(states, <span class="dv">2</span>),</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">probability =</span> <span class="fu">c</span>(pi_stat, <span class="fu">as.numeric</span>(pi_empirical)),</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"eigenvector"</span>, <span class="st">"5000-step simulation"</span>), <span class="at">each =</span> <span class="dv">3</span>)</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(state, probability, <span class="at">fill =</span> method)) <span class="sc">+</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"probability"</span>, <span class="at">fill =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>eig <span class="ot">&lt;-</span> <span class="fu">eigen</span>(<span class="fu">t</span>(P))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>pi_stat <span class="ot">&lt;-</span> <span class="fu">Re</span>(eig<span class="sc">$</span>vectors[, <span class="fu">which.min</span>(<span class="fu">abs</span>(eig<span class="sc">$</span>values <span class="sc">-</span> <span class="dv">1</span>))])</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>pi_stat <span class="ot">&lt;-</span> pi_stat <span class="sc">/</span> <span class="fu">sum</span>(pi_stat)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(pi_stat) <span class="ot">&lt;-</span> states</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>n_long <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>path_long <span class="ot">&lt;-</span> <span class="fu">integer</span>(n_long)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>path_long[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">1</span>L</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>n_long) path_long[t] <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(<span class="dv">3</span>, <span class="dv">1</span>, <span class="at">prob =</span> P[path_long[t <span class="sc">-</span> <span class="dv">1</span>], ])</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>pi_empirical <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="fu">factor</span>(states[path_long], <span class="at">levels =</span> states)) <span class="sc">/</span> n_long</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="fu">rep</span>(states, <span class="dv">2</span>),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">probability =</span> <span class="fu">c</span>(pi_stat, <span class="fu">as.numeric</span>(pi_empirical)),</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"eigenvector"</span>, <span class="st">"5000-step simulation"</span>), <span class="at">each =</span> <span class="dv">3</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(state, probability, <span class="at">fill =</span> method)) <span class="sc">+</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"probability"</span>, <span class="at">fill =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div id="fig-stationary" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -358,7 +394,7 @@ Figure&nbsp;1: A 200-step simulated path through the weather chain, colour-coded
 <img src="index_files/figure-html/fig-stationary-1.png" class="img-fluid figure-img" width="672">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-stationary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Stationary distribution via eigen-decomposition vs.&nbsp;a long simulated path’s empirical frequencies.
+Figure&nbsp;3: Stationary distribution via eigen-decomposition vs.&nbsp;a long simulated path’s empirical frequencies.
 </figcaption>
 </figure>
 </div>
@@ -366,40 +402,110 @@ Figure&nbsp;2: Stationary distribution via eigen-decomposition vs.&nbsp;a long s
 </div>
 <p>Eigenvector: Sunny 0.457, Cloudy 0.283, Rainy 0.261. A long simulated path lands close to the same numbers — the chain has “forgotten” where it started and settled into its long-run behaviour. This idea — a distribution that’s a <em>fixed point</em> of an update rule — will come back in the next post, where a self-consistency equation plays exactly the same role.</p>
 </section>
+<section id="why-an-eigenvector-and-how-eigen-actually-gets-it" class="level2">
+<h2 class="anchored" data-anchor-id="why-an-eigenvector-and-how-eigen-actually-gets-it">Why an eigenvector, and how <code>eigen()</code> actually gets it</h2>
+<p>The stationary condition <span class="math inline">\(\pi P = \pi\)</span> treats <span class="math inline">\(\pi\)</span> as a <em>row</em> vector multiplying <span class="math inline">\(P\)</span> from the left — a left eigenvector of <span class="math inline">\(P\)</span> with eigenvalue 1. Transposing both sides turns it into an ordinary right-eigenvector problem: <span class="math inline">\(P^\top \pi^\top = \pi^\top\)</span>. That’s why the code above calls <code>eigen(t(P))</code> rather than <code>eigen(P)</code> — R’s <code>eigen()</code> only ever returns right eigenvectors, so finding a left eigenvector of <span class="math inline">\(P\)</span> means first transposing.</p>
+<p>An eigenvalue-1 solution is guaranteed to exist. Every row of <span class="math inline">\(P\)</span> sums to 1, so <span class="math inline">\(P\mathbf{1} = \mathbf{1}\)</span>: the all-ones vector is a right eigenvector of <span class="math inline">\(P\)</span> with eigenvalue 1. <span class="math inline">\(P\)</span> and <span class="math inline">\(P^\top\)</span> share the same eigenvalues (they have the same characteristic polynomial, since <span class="math inline">\(\det(P^\top - \lambda I) = \det((P - \lambda I)^\top) = \det(P - \lambda I)\)</span>), so 1 is also an eigenvalue of <span class="math inline">\(P^\top\)</span> — guaranteeing a <span class="math inline">\(\pi\)</span> satisfying <span class="math inline">\(\pi P = \pi\)</span> exists, though not automatically that it’s unique or non-negative (that extra guarantee comes from Perron–Frobenius, since every entry of <span class="math inline">\(P\)</span> here is strictly positive).</p>
+<p>Under the hood, <code>eigen()</code> finds <em>all three</em> eigenvalues of <span class="math inline">\(P^\top\)</span> as the roots of <span class="math inline">\(\det(P^\top - \lambda I) = 0\)</span>, then for each eigenvalue <span class="math inline">\(\lambda_i\)</span> finds a vector spanning the null space of <span class="math inline">\((P^\top - \lambda_i I)\)</span> — solved numerically via matrix decomposition rather than by hand, but conceptually just “solve <span class="math inline">\((P^\top - \lambda_i I)v = 0\)</span>.” Doing that null-space step explicitly for <span class="math inline">\(\lambda = 1\)</span>, independently of <code>eigen()</code>’s eigenvector output, should recover the same <span class="math inline">\(\pi\)</span> up to scale:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>eig<span class="sc">$</span>values</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1.0000000 0.4732051 0.1267949</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">t</span>(P) <span class="sc">-</span> <span class="fu">diag</span>(<span class="dv">3</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">qr</span>(A)<span class="sc">$</span>rank</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>pi_manual <span class="ot">&lt;-</span> <span class="fu">svd</span>(A)<span class="sc">$</span>v[, <span class="dv">3</span>]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>pi_manual <span class="ot">&lt;-</span> pi_manual <span class="sc">/</span> <span class="fu">sum</span>(pi_manual)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(pi_manual) <span class="ot">&lt;-</span> states</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>pi_manual</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Sunny    Cloudy     Rainy 
+0.4565217 0.2826087 0.2608696 </code></pre>
+</div>
+</div>
+<p><code>eig$values</code> shows one eigenvalue at 1 and two others strictly smaller in modulus — consistent with the all-ones-vector argument above and with a unique stationary distribution. <code>A</code> has rank 2 out of 3, meaning <span class="math inline">\((P^\top - I)\)</span> has a 1-dimensional null space — exactly one free direction, which <code>svd()</code> extracts as the singular vector paired with a (numerically) zero singular value. <code>pi_manual</code> matches <code>pi_stat</code> from <code>eigen()</code> up to floating-point noise, since both are just different numerical routes to the same null space.</p>
+<p>Those two smaller eigenvalues aren’t wasted information either: the second-largest one in modulus governs how fast the chain forgets its starting state and converges to <span class="math inline">\(\pi\)</span> — larger gap to 1, faster mixing. That’s a thread this post won’t pull further, but it’s the same kind of “look at the eigenvalues away from the fixed point” reasoning that shows up when analyzing stability in the mean-field post next.</p>
+</section>
 <section id="ddpms-actual-markov-chain" class="level2">
 <h2 class="anchored" data-anchor-id="ddpms-actual-markov-chain">DDPM’s actual Markov chain</h2>
-<p>Diffusion models run a Markov chain too, just with a continuous state and Gaussian transition kernels rather than a lookup table. The forward (noising) process is defined, exactly as in Ho, Jain &amp; Abbeel (2020) <span class="citation" data-cites="ho2020denoising">(<a href="#ref-ho2020denoising" role="doc-biblioref">Ho, Jain, and Abbeel 2020</a>)</span>, by:</p>
+<p>Diffusion models run a Markov chain too, just with a continuous state and Gaussian transition kernels rather than a lookup table. Forward and reverse processes run along the same chain of latents <span class="math inline">\(x_0, x_1, \dots, x_T\)</span>, in opposite directions:</p>
+<p>Each <span class="math inline">\(x_t\)</span> is a <strong>latent variable</strong> — same shape as the data (an image’s pixel array, say), but not itself an observed data point except at the two ends of the chain. <span class="math inline">\(x_0\)</span> is a real, clean data sample; <span class="math inline">\(x_T\)</span> is (by construction, after enough steps) indistinguishable from pure Gaussian noise; everything in between, <span class="math inline">\(x_1, \dots, x_{T-1}\)</span>, is a progressively noisier, unobserved intermediate version of <span class="math inline">\(x_0\)</span> that only exists as a mathematical construct — you never have a “true” <span class="math inline">\(x_t\)</span> for <span class="math inline">\(0 &lt; t &lt; T\)</span> the way you have a genuine image or a genuine noise sample. “Latent” here just means: a random variable in the model that generative code manipulates and a network learns to reverse, but that’s never seen directly in the training data. The subscript <span class="math inline">\(t\)</span> indexes position along the chain (equivalently, how much noise has accumulated), not real time.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode tex code-with-copy"><code class="sourceCode latex"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">\usetikzlibrary</span>{positioning,arrows}</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">\begin</span>{<span class="ex">tikzpicture</span>}[</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  -&gt;, &gt;=stealth', thick, node distance=3.1cm,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  state/.style={circle, draw, minimum size=1.15cm, font=<span class="fu">\normalsize</span>},</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  dots/.style={font=<span class="fu">\normalsize</span>}</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state] (x0) {<span class="ss">$x_0$</span>};</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state, right=of x0] (x1) {<span class="ss">$x_1$</span>};</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[dots, right=of x1] (d1) {<span class="ss">$</span><span class="sc">\cdots</span><span class="ss">$</span>};</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state, right=of d1] (xtm1) {<span class="ss">$x_{t-1}$</span>};</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state, right=of xtm1] (xt) {<span class="ss">$x_t$</span>};</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[dots, right=of xt] (d2) {<span class="ss">$</span><span class="sc">\cdots</span><span class="ss">$</span>};</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\node</span>[state, right=of d2] (xT) {<span class="ss">$x_T$</span>};</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\path</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    (x0)   edge node[above] {<span class="ss">$q(x_1|x_0)$</span>} (x1)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    (x1)   edge (d1)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    (d1)   edge (xtm1)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    (xtm1) edge node[above] {<span class="ss">$q(x_t|x_{t-1})$</span>} (xt)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    (xt)   edge (d2)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    (d2)   edge (xT);</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">\path</span>[dashed]</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    (x1) edge[bend left=35] node[below] {<span class="ss">$p_</span><span class="sc">\theta</span><span class="ss">(x_0|x_1)$</span>} (x0)</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    (xt) edge[bend left=35] node[below] {<span class="ss">$p_</span><span class="sc">\theta</span><span class="ss">(x_{t-1}|x_t)$</span>} (xtm1);</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="kw">\end</span>{<span class="ex">tikzpicture</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-ddpm-chain" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ddpm-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-ddpm-chain-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ddpm-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: The DDPM Markov chain. Forward (noising) transitions q run left to right and are fixed; reverse (denoising) transitions p_theta run right to left and are learned.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The forward (noising) process is fixed by construction, defined, exactly as in Ho, Jain &amp; Abbeel (2020) <span class="citation" data-cites="ho2020denoising">(<a href="#ref-ho2020denoising" role="doc-biblioref">Ho, Jain, and Abbeel 2020</a>)</span>, by:</p>
 <p><span class="math display">\[
 q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(\sqrt{1-\beta_t}\, x_{t-1},\ \beta_t I\right)
 \]</span></p>
 <p>Each step nudges <span class="math inline">\(x_{t-1}\)</span> slightly toward the origin and adds a little Gaussian noise, with <span class="math inline">\(\beta_t\)</span> controlling how much. This is precisely the recurrence used in <code>guided_diffusion/gaussian_diffusion.py</code>, the codebase reproduced in <a href="../../posts/diffusion-phase-transition/">the diffusion-phase-transition post</a>.</p>
+<p><span class="math inline">\(\beta_t \in (0, 1)\)</span> is the <strong>noise schedule</strong> — a small, hand-chosen number per step (Ho et al.’s schedule ramps it linearly from <span class="math inline">\(10^{-4}\)</span> at <span class="math inline">\(t=1\)</span> to <span class="math inline">\(0.02\)</span> at <span class="math inline">\(t=T\)</span>) fixing how much variance gets injected at step <span class="math inline">\(t\)</span>. It’s not learned; it’s a fixed hyperparameter sequence chosen before training even starts. <span class="math inline">\(\alpha_t := 1 - \beta_t\)</span> is just a convenient rename — close to 1 when <span class="math inline">\(\beta_t\)</span> is small — so that the update reads <span class="math inline">\(x_t = \sqrt{\alpha_t}\, x_{t-1} + \sqrt{1-\alpha_t}\,\epsilon\)</span>: shrink the previous state slightly, add noise to make up the variance budget. Their product across steps, <span class="math inline">\(\bar\alpha_t := \prod_{s \le t} \alpha_s\)</span>, is what actually appears in the closed-form jump below — it tracks how much of the <em>original</em> signal <span class="math inline">\(x_0\)</span> survives after <span class="math inline">\(t\)</span> compounded steps, and it’s what decays toward 0 as <span class="math inline">\(t \to T\)</span> in <a href="#fig-gaussian-chain" class="quarto-xref">Figure&nbsp;5</a>, driving <span class="math inline">\(x_t\)</span> toward pure <span class="math inline">\(\mathcal{N}(0, I)\)</span> noise.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>T_steps <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">1e-4</span>, <span class="fl">0.02</span>, <span class="at">length.out =</span> T_steps)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> beta</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>alpha_bar <span class="ot">&lt;-</span> <span class="fu">cumprod</span>(alpha)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>x0 <span class="ot">&lt;-</span> <span class="fl">2.0</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>n_traj <span class="ot">&lt;-</span> <span class="dv">8</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>traj <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, T_steps <span class="sc">+</span> <span class="dv">1</span>, n_traj)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>traj[<span class="dv">1</span>, ] <span class="ot">&lt;-</span> x0</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>T_steps) {</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_traj)</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  traj[t <span class="sc">+</span> <span class="dv">1</span>, ] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(alpha[t]) <span class="sc">*</span> traj[t, ] <span class="sc">+</span> <span class="fu">sqrt</span>(beta[t]) <span class="sc">*</span> eps</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>traj_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(traj) <span class="sc">|&gt;</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">step =</span> <span class="dv">0</span><span class="sc">:</span>T_steps) <span class="sc">|&gt;</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>step, <span class="at">names_to =</span> <span class="st">"trajectory"</span>, <span class="at">values_to =</span> <span class="st">"x"</span>)</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>band_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">step =</span> <span class="dv">0</span><span class="sc">:</span>T_steps, <span class="at">sd =</span> <span class="fu">sqrt</span>(<span class="dv">1</span> <span class="sc">-</span> alpha_bar[<span class="fu">c</span>(<span class="dv">1</span>, <span class="fu">seq_len</span>(T_steps))]))</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> band_df, <span class="fu">aes</span>(step, <span class="at">ymin =</span> <span class="sc">-</span><span class="dv">2</span> <span class="sc">*</span> sd, <span class="at">ymax =</span> <span class="dv">2</span> <span class="sc">*</span> sd), <span class="at">fill =</span> <span class="st">"grey85"</span>) <span class="sc">+</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> band_df, <span class="fu">aes</span>(step, <span class="at">ymin =</span> <span class="sc">-</span>sd, <span class="at">ymax =</span> sd), <span class="at">fill =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> traj_df, <span class="fu">aes</span>(step, x, <span class="at">group =</span> trajectory), <span class="at">colour =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"t"</span>, <span class="at">y =</span> <span class="fu">expression</span>(x[t]), <span class="at">title =</span> <span class="st">"Forward chain trajectories vs. their theoretical envelope"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>T_steps <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">1e-4</span>, <span class="fl">0.02</span>, <span class="at">length.out =</span> T_steps)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> beta</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>alpha_bar <span class="ot">&lt;-</span> <span class="fu">cumprod</span>(alpha)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>x0 <span class="ot">&lt;-</span> <span class="fl">2.0</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>n_traj <span class="ot">&lt;-</span> <span class="dv">8</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>traj <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, T_steps <span class="sc">+</span> <span class="dv">1</span>, n_traj)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>traj[<span class="dv">1</span>, ] <span class="ot">&lt;-</span> x0</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>T_steps) {</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_traj)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  traj[t <span class="sc">+</span> <span class="dv">1</span>, ] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(alpha[t]) <span class="sc">*</span> traj[t, ] <span class="sc">+</span> <span class="fu">sqrt</span>(beta[t]) <span class="sc">*</span> eps</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>traj_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(traj) <span class="sc">|&gt;</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">step =</span> <span class="dv">0</span><span class="sc">:</span>T_steps) <span class="sc">|&gt;</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>step, <span class="at">names_to =</span> <span class="st">"trajectory"</span>, <span class="at">values_to =</span> <span class="st">"x"</span>)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>band_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">step =</span> <span class="dv">0</span><span class="sc">:</span>T_steps, <span class="at">sd =</span> <span class="fu">sqrt</span>(<span class="dv">1</span> <span class="sc">-</span> alpha_bar[<span class="fu">c</span>(<span class="dv">1</span>, <span class="fu">seq_len</span>(T_steps))]))</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> band_df, <span class="fu">aes</span>(step, <span class="at">ymin =</span> <span class="sc">-</span><span class="dv">2</span> <span class="sc">*</span> sd, <span class="at">ymax =</span> <span class="dv">2</span> <span class="sc">*</span> sd), <span class="at">fill =</span> <span class="st">"grey85"</span>) <span class="sc">+</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="at">data =</span> band_df, <span class="fu">aes</span>(step, <span class="at">ymin =</span> <span class="sc">-</span>sd, <span class="at">ymax =</span> sd), <span class="at">fill =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> traj_df, <span class="fu">aes</span>(step, x, <span class="at">group =</span> trajectory), <span class="at">colour =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"t"</span>, <span class="at">y =</span> <span class="fu">expression</span>(x[t]), <span class="at">title =</span> <span class="st">"Forward chain trajectories vs. their theoretical envelope"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div id="fig-gaussian-chain" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -407,7 +513,7 @@ q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(\sqrt{1-\beta_t}\, x_{t-1},\ \beta_t I\
 <img src="index_files/figure-html/fig-gaussian-chain-1.png" class="img-fluid figure-img" width="672">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-gaussian-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;3: Eight sample trajectories of the scalar Gaussian chain, starting from x0=2, collapsing into the N(0,1) envelope (shaded bands at +-1, +-2 sd) under the real Ho et al.&nbsp;(2020) schedule.
+Figure&nbsp;5: Eight sample trajectories of the scalar Gaussian chain, starting from x0=2, collapsing into the N(0,1) envelope (shaded bands at +-1, +-2 sd) under the real Ho et al.&nbsp;(2020) schedule.
 </figcaption>
 </figure>
 </div>
@@ -422,16 +528,16 @@ q(x_t \mid x_0) = \mathcal{N}\!\left(\sqrt{\bar\alpha_t}\, x_0,\ (1-\bar\alpha_t
 \]</span></p>
 <p>You can jump straight from <span class="math inline">\(x_0\)</span> to any <span class="math inline">\(x_t\)</span> in one draw. This is exactly <code>q_sample</code> in the reproduced code, and it’s what makes the “forward-diffuse-partway-then-reverse” experiment in <a href="../../posts/diffusion-phase-transition/">the diffusion-phase-transition post</a> practical on real images. Worth actually checking it’s true rather than taking it on faith:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>check_t <span class="ot">&lt;-</span> <span class="dv">30</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>n_mc <span class="ot">&lt;-</span> <span class="dv">200000</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">3</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>x_stepwise <span class="ot">&lt;-</span> <span class="fu">rep</span>(x0, n_mc)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>check_t) {</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_mc)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  x_stepwise <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(alpha[t]) <span class="sc">*</span> x_stepwise <span class="sc">+</span> <span class="fu">sqrt</span>(beta[t]) <span class="sc">*</span> eps</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>mean_cf <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(alpha_bar[check_t]) <span class="sc">*</span> x0</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>var_cf <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> alpha_bar[check_t]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>check_t <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>n_mc <span class="ot">&lt;-</span> <span class="dv">200000</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">3</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>x_stepwise <span class="ot">&lt;-</span> <span class="fu">rep</span>(x0, n_mc)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>check_t) {</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_mc)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  x_stepwise <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(alpha[t]) <span class="sc">*</span> x_stepwise <span class="sc">+</span> <span class="fu">sqrt</span>(beta[t]) <span class="sc">*</span> eps</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>mean_cf <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(alpha_bar[check_t]) <span class="sc">*</span> x0</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>var_cf <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> alpha_bar[check_t]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>At <span class="math inline">\(t=30\)</span>, 200,000 step-by-step Monte Carlo draws give mean 1.9885 and variance 0.01163; the closed form predicts mean 1.9884 and variance 0.0116 — matching to within Monte Carlo noise.</p>
 </section>
