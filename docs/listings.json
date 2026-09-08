@@ -10,6 +10,7 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/bifurcation-vs-langevin/index.html",
       "/explainers/markov-chains-diffusion/index.html",
       "/explainers/mean-field-annealed-disorder/index.html",
       "/explainers/toy-diffusion-model/index.html"

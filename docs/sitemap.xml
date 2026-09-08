@@ -25,12 +25,16 @@
     <lastmod>2026-09-06T11:35:33.871Z</lastmod>
   </url>
   <url>
+    <loc>https://paulmilne.github.io/eclipse_2026_sun_overlay.html</loc>
+    <lastmod>2026-09-06T11:35:18.256Z</lastmod>
+  </url>
+  <url>
     <loc>https://paulmilne.github.io/about.html</loc>
     <lastmod>2026-09-06T11:58:54.399Z</lastmod>
   </url>
   <url>
-    <loc>https://paulmilne.github.io/eclipse_2026_sun_overlay.html</loc>
-    <lastmod>2026-09-06T11:35:18.256Z</lastmod>
+    <loc>https://paulmilne.github.io/explainers/bifurcation-vs-langevin/index.html</loc>
+    <lastmod>2026-09-07T08:05:58.031Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/markov-chains-diffusion/index.html</loc>
@@ -51,9 +55,5 @@
   <url>
     <loc>https://paulmilne.github.io/posts/rg-diffusion-phase-transitions/index.html</loc>
     <lastmod>2026-09-06T12:53:18.648Z</lastmod>
-  </url>
-  <url>
-    <loc>https://paulmilne.github.io/explainers/bifurcation-vs-langevin/index.html</loc>
-    <lastmod>2026-09-07T08:05:58.031Z</lastmod>
   </url>
 </urlset>
