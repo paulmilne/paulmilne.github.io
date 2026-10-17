@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-18">
+<meta name="description" content="A worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett’s life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today’s leading advocates, and how it differs from the multiverse of Martin Rees.">
+
+<title>The Many-Worlds Interpretation – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Many-Worlds Interpretation – math-blog">
+<meta property="og:description" content="A worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett’s life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today’s leading advocates, and how it differs from the multiverse of Martin Rees.">
+<meta property="og:image" content="https://paulmilne.github.io/cosmology/many-worlds/index_files/figure-html/fig-decoherence-1.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="806">
+<meta property="og:image:width" content="1344">
+<meta name="twitter:title" content="The Many-Worlds Interpretation – math-blog">
+<meta name="twitter:description" content="A worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett’s life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today’s leading advocates, and how it differs from the multiverse of Martin Rees.">
+<meta name="twitter:image" content="https://paulmilne.github.io/cosmology/many-worlds/index_files/figure-html/fig-decoherence-1.png">
+<meta name="twitter:image-height" content="806">
+<meta name="twitter:image-width" content="1344">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Many-Worlds Interpretation</h1>
+            <p class="subtitle lead">Hugh Everett’s relative-state idea, decoherence, and the problem of probability</p>
+                  <div>
+        <div class="description">
+          A worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett’s life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today’s leading advocates, and how it differs from the multiverse of Martin Rees.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cosmology</div>
+                <div class="quarto-category">quantum-mechanics</div>
+                <div class="quarto-category">history-of-science</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 18, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-problem-everett-was-trying-to-solve" id="toc-the-problem-everett-was-trying-to-solve" class="nav-link active" data-scroll-target="#the-problem-everett-was-trying-to-solve">The problem Everett was trying to solve</a></li>
+  <li><a href="#hugh-everett-iii" id="toc-hugh-everett-iii" class="nav-link" data-scroll-target="#hugh-everett-iii">Hugh Everett III</a></li>
+  <li><a href="#the-mathematics-how-branches-appear" id="toc-the-mathematics-how-branches-appear" class="nav-link" data-scroll-target="#the-mathematics-how-branches-appear">The mathematics: how branches appear</a>
+  <ul class="collapse">
+  <li><a href="#measurement-as-entanglement" id="toc-measurement-as-entanglement" class="nav-link" data-scroll-target="#measurement-as-entanglement">Measurement as entanglement</a></li>
+  <li><a href="#why-branches-dont-interfere-decoherence" id="toc-why-branches-dont-interfere-decoherence" class="nav-link" data-scroll-target="#why-branches-dont-interfere-decoherence">Why branches don’t interfere: decoherence</a></li>
+  </ul></li>
+  <li><a href="#the-hard-part-where-do-the-probabilities-come-from" id="toc-the-hard-part-where-do-the-probabilities-come-from" class="nav-link" data-scroll-target="#the-hard-part-where-do-the-probabilities-come-from">The hard part: where do the probabilities come from?</a></li>
+  <li><a href="#who-defends-it-today" id="toc-who-defends-it-today" class="nav-link" data-scroll-target="#who-defends-it-today">Who defends it today?</a></li>
+  <li><a href="#how-it-connects-to-cosmology" id="toc-how-it-connects-to-cosmology" class="nav-link" data-scroll-target="#how-it-connects-to-cosmology">How it connects to cosmology</a></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>When people say “the multiverse” they can mean two quite different things. One is cosmological: the idea, which Martin Rees takes seriously in the <a href="../../cosmology/rees-six-numbers/">six-numbers post</a>, that there may be many regions or universes with different values of constants such as <span class="math inline">\(N\)</span>, <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(Q\)</span>. The other comes from quantum mechanics: the <strong>many-worlds interpretation</strong> (MWI), which holds that the equations of quantum theory describe reality exactly as written, with no collapse, so that every possible outcome of a quantum measurement really occurs, each in its own branch of one enormous wave function.</p>
+<p>This post is about the second. It covers who proposed it and why, the mathematics that makes it hang together (entanglement and decoherence, computed explicitly), the difficulty of recovering probabilities, who defends the idea today, and how it relates to the cosmological multiverse.</p>
+<section id="the-problem-everett-was-trying-to-solve" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-everett-was-trying-to-solve">The problem Everett was trying to solve</h2>
+<p>Quantum mechanics has two rules for how a state changes. Between measurements, the state evolves <strong>smoothly and deterministically</strong> under the Schrödinger equation, <span class="math inline">\(i\hbar\,\partial_t|\psi\rangle = \hat H|\psi\rangle\)</span>. At a measurement, the textbook (Copenhagen) account adds a second rule: the state <strong>collapses</strong> at random to one of the possible outcomes, with probability given by the Born rule, <span class="math inline">\(p_i = |\langle i|\psi\rangle|^2\)</span>.</p>
+<p>The trouble is that the second rule never says what counts as a “measurement”. A measuring device is made of atoms that themselves obey quantum mechanics, so why should a detector, a physicist, or a cat be exempt from the smooth evolution? Schrödinger’s cat (1935) and Wigner’s friend (1961) were designed to expose exactly this tension.</p>
+<p>Everett’s answer was radical in its simplicity: <strong>drop the second rule</strong>. Keep only the Schrödinger equation, apply it to everything including the observer, and see what it predicts.</p>
+</section>
+<section id="hugh-everett-iii" class="level2">
+<h2 class="anchored" data-anchor-id="hugh-everett-iii">Hugh Everett III</h2>
+<p><strong>Hugh Everett III</strong> (1930–1982) was born in Washington, D.C., and studied chemical engineering at the Catholic University of America before moving to Princeton in 1953, where he turned to mathematics and physics. At Princeton he studied under <strong>John Archibald Wheeler</strong>, who had earlier supervised Richard Feynman and later coined the terms “black hole” and “wormhole”. Everett’s 1957 PhD thesis, originally titled “Wave Mechanics Without Probability” and later shortened to “On the Foundations of Quantum Mechanics”, is the founding document of the interpretation. A condensed version appeared the same year in <em>Reviews of Modern Physics</em> as “‘Relative State’ Formulation of Quantum Mechanics”, with a supportive note from Wheeler.</p>
+<p>The reception was cool. In 1959 Everett travelled to Copenhagen to present the idea to Niels Bohr and his circle. The meeting went badly: Bohr’s school saw the idea as missing the point, and Everett came away discouraged. By then he had already begun a second career. He worked from 1956 for the Pentagon’s Weapons Systems Evaluation Group on nuclear-war modelling, and later at defence-analysis firms he co-founded, where he did influential work on optimisation (a generalised Lagrange-multiplier method) and on military operations research. He never held a physics professorship, and published almost nothing more on quantum foundations.</p>
+<p>Everett did not use the phrase “many worlds”. It was <strong>Bryce DeWitt</strong>, who admired the idea and championed it, who popularised the name in a 1970 <em>Physics Today</em> article, and who with Neill Graham edited the 1973 collection <em>The Many-Worlds Interpretation of Quantum Mechanics</em>, which finally printed Everett’s long thesis. Everett died of a heart attack in 1982, aged 51, after years of heavy smoking and drinking. His son, the musician Mark Oliver Everett of the band Eels, made a 2007 BBC documentary about his father, <em>Parallel Worlds, Parallel Lives</em>. Everett’s theory was only taken seriously after his death.</p>
+</section>
+<section id="the-mathematics-how-branches-appear" class="level2">
+<h2 class="anchored" data-anchor-id="the-mathematics-how-branches-appear">The mathematics: how branches appear</h2>
+<section id="measurement-as-entanglement" class="level3">
+<h3 class="anchored" data-anchor-id="measurement-as-entanglement">Measurement as entanglement</h3>
+<p>Take a system qubit in the state <span class="math inline">\(|\psi\rangle = c_0|0\rangle + c_1|1\rangle\)</span> and a measuring device that starts in a “ready” state <span class="math inline">\(|R\rangle\)</span>. A good measurement is just an interaction that correlates the device with the system:</p>
+<p><span class="math display">\[
+\bigl(c_0|0\rangle + c_1|1\rangle\bigr)\otimes|R\rangle
+\;\xrightarrow{\ \text{Schrödinger}\ }\;
+c_0\,|0\rangle|D_0\rangle + c_1\,|1\rangle|D_1\rangle .
+\]</span></p>
+<p>The result is an <strong>entangled</strong> state. There’s no collapse here, just linear evolution. If the device is an observer, the right-hand side contains one term where the observer saw 0 and one where they saw 1. Each term is a self-consistent “world” in which the observer remembers a definite result. Everett called each term’s observer state <em>relative</em> to the system state, hence “relative-state formulation”.</p>
+<p>We can check numerically that this entangled state is genuinely not a product state. Its <strong>entanglement entropy</strong> vanishes only for a product state:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>entropy_bits <span class="ot">&lt;-</span> <span class="cf">function</span>(p) { p <span class="ot">&lt;-</span> p[p <span class="sc">&gt;</span> <span class="fl">1e-12</span>]; <span class="sc">-</span><span class="fu">sum</span>(p <span class="sc">*</span> <span class="fu">log2</span>(p)) }</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>c0 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fl">0.9</span>); c1 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fl">0.1</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># State of (system, device) as a 2x2 matrix Psi[system, device]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>Psi <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(c0, <span class="dv">0</span>, <span class="dv">0</span>, c1), <span class="dv">2</span>, <span class="dv">2</span>)     <span class="co"># c0|0&gt;|D0&gt; + c1|1&gt;|D1&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>schmidt <span class="ot">&lt;-</span> <span class="fu">svd</span>(Psi)<span class="sc">$</span>d<span class="sc">^</span><span class="dv">2</span>                  <span class="co"># squared Schmidt coefficients</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">schmidt_weights =</span> schmidt, <span class="at">entanglement_entropy_bits =</span> <span class="fu">entropy_bits</span>(schmidt))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         schmidt_weights1          schmidt_weights2 entanglement_entropy_bits 
+                0.9000000                 0.1000000                 0.4689956 </code></pre>
+</div>
+</div>
+<p>The two Schmidt weights are 0.9 and 0.1, and the entropy is about <strong>0.469 bits</strong>. A product state would have a single weight of 1 and zero entropy.</p>
+</section>
+<section id="why-branches-dont-interfere-decoherence" class="level3">
+<h3 class="anchored" data-anchor-id="why-branches-dont-interfere-decoherence">Why branches don’t interfere: decoherence</h3>
+<p>If the post-measurement state is just a quantum superposition, why can’t we see interference between the two terms, as we do in the double-slit experiment? The answer, developed from the 1970s by H. Dieter Zeh, Wojciech Zurek and others, is <strong>decoherence</strong>: the branches become entangled with the enormous number of microscopic degrees of freedom in their surroundings, and this makes interference between them unobservable in practice.</p>
+<p>Here is a minimal model. Our system qubit interacts with <span class="math inline">\(N\)</span> environment qubits, each initially <span class="math inline">\(|0\rangle\)</span>. If the system is <span class="math inline">\(|0\rangle\)</span>, the environment is untouched. If it is <span class="math inline">\(|1\rangle\)</span>, each environment qubit is rotated into <span class="math inline">\(|e_1\rangle = \cos\theta\,|0\rangle + \sin\theta\,|1\rangle\)</span>. The joint state is</p>
+<p><span class="math display">\[
+|\Psi\rangle = c_0\,|0\rangle\,|0\rangle^{\otimes N} + c_1\,|1\rangle\,|e_1\rangle^{\otimes N}.
+\]</span></p>
+<p>Tracing out the environment gives the system’s reduced density matrix. Its diagonal entries are <span class="math inline">\(|c_0|^2\)</span> and <span class="math inline">\(|c_1|^2\)</span>, unchanged, but the off-diagonal “coherence” term that controls interference is</p>
+<p><span class="math display">\[
+\rho_{01} = c_0 c_1^{*}\,\langle e_1|0\rangle^{N} = c_0 c_1^{*}\,(\cos\theta)^{N}.
+\]</span></p>
+<p>Each extra environment qubit multiplies the coherence by <span class="math inline">\(\cos\theta &lt; 1\)</span>, so it decays <em>exponentially</em> with environment size. I’ll verify this formula by building the full <span class="math inline">\(2^{N+1}\)</span>-dimensional state vector explicitly and tracing out the environment numerically:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>env_state <span class="ot">&lt;-</span> <span class="cf">function</span>(N, theta) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  e1 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">cos</span>(theta), <span class="fu">sin</span>(theta))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (k <span class="cf">in</span> <span class="fu">seq_len</span>(N)) v <span class="ot">&lt;-</span> <span class="fu">kronecker</span>(v, e1)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  v</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>zero_env <span class="ot">&lt;-</span> <span class="cf">function</span>(N) { v <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">2</span><span class="sc">^</span>N); v[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">1</span>; v }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>coherence_numeric <span class="ot">&lt;-</span> <span class="cf">function</span>(N, theta, c0, c1) {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># joint state as a matrix: rows = system (0,1), columns = environment basis</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  Psi <span class="ot">&lt;-</span> <span class="fu">rbind</span>(c0 <span class="sc">*</span> <span class="fu">zero_env</span>(N), c1 <span class="sc">*</span> <span class="fu">env_state</span>(N, theta))</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> Psi <span class="sc">%*%</span> <span class="fu">t</span>(Psi)          <span class="co"># trace over environment (real amplitudes)</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abs</span>(rho[<span class="dv">1</span>, <span class="dv">2</span>])</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>theta <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>chk <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">N =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">10</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">numeric  =</span> <span class="fu">sapply</span>(N, coherence_numeric, <span class="at">theta =</span> theta, <span class="at">c0 =</span> c0, <span class="at">c1 =</span> c1),</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">analytic =</span> c0 <span class="sc">*</span> c1 <span class="sc">*</span> <span class="fu">cos</span>(theta)<span class="sc">^</span>N</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>chk <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(numeric, analytic), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">5</span>))) <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">11</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 3
+      N numeric analytic
+  &lt;int&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+1     0  0.3      0.3   
+2     1  0.263    0.263 
+3     2  0.231    0.231 
+4     5  0.156    0.156 
+5    10  0.0813   0.0813</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(chk<span class="sc">$</span>numeric <span class="sc">-</span> chk<span class="sc">$</span>analytic))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2.775558e-17</code></pre>
+</div>
+</div>
+<p>The brute-force trace and the closed form agree to machine precision (maximum difference 2.8e-17). Even with only 10 environment qubits, the coherence has dropped to 27.1% of its initial value. Real environments contain something like <span class="math inline">\(10^{20}\)</span> or more degrees of freedom:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>curves <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">N =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">60</span>, <span class="at">theta =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">rel =</span> <span class="fu">cos</span>(theta)<span class="sc">^</span>N, <span class="at">theta =</span> <span class="fu">factor</span>(<span class="fu">paste0</span>(<span class="st">"θ = "</span>, theta)))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(curves, <span class="fu">aes</span>(N, rel, <span class="at">colour =</span> theta)) <span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> chk <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">theta =</span> <span class="fu">factor</span>(<span class="st">"θ = 0.5"</span>), <span class="at">rel =</span> numeric <span class="sc">/</span> numeric[<span class="dv">1</span>]),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>             <span class="fu">aes</span>(N, rel), <span class="at">size =</span> <span class="fl">2.5</span>, <span class="at">colour =</span> <span class="st">"black"</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_log</span>()) <span class="sc">+</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Number of environment qubits N"</span>, <span class="at">y =</span> <span class="st">"Relative coherence |ρ₀₁| / |ρ₀₁(0)|"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-decoherence" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-decoherence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-decoherence-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-decoherence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Coherence between the two branches, relative to its starting value, as the number of environment qubits grows. Lines: analytic result (cos θ)^N for three coupling strengths. Points: brute-force numerical trace for N ≤ 10 (θ = 0.5). Decoherence is exponential in environment size.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This is the mechanism that makes the branches <em>effectively independent</em>. Once the off-diagonal terms are negligible, nothing that happens in one branch can be detected from another, and each branch evolves as though the others did not exist. This is what Everettians mean by saying the “worlds” are real but emergent: they are not added to the theory, they are patterns in the wave function that decoherence makes robust.</p>
+<p>One common objection is that branching must violate energy conservation. It does not: the total state remains normalised, <span class="math inline">\(\sum_i|c_i|^2 = 1\)</span>, and each branch carries only its share. Branching does not copy the universe; it describes how a single wave function organises itself.</p>
+</section>
+</section>
+<section id="the-hard-part-where-do-the-probabilities-come-from" class="level2">
+<h2 class="anchored" data-anchor-id="the-hard-part-where-do-the-probabilities-come-from">The hard part: where do the probabilities come from?</h2>
+<p>If every outcome occurs, what does it mean to say that outcome 0 has probability 0.9? A tempting answer is to <em>count branches</em>. After a single measurement there are two branches, so each has “probability 1/2” regardless of the amplitudes. That gives the wrong answer.</p>
+<p>The problem is sharper with repeated measurements. Prepare <span class="math inline">\(n\)</span> copies of <span class="math inline">\(\sqrt{0.9}|0\rangle+\sqrt{0.1}|1\rangle\)</span> and measure them all. There are <span class="math inline">\(2^n\)</span> branches, one for each sequence of results. Counting branches treats all sequences as equally likely, so the number of zeros would follow a Binomial<span class="math inline">\((n, 1/2)\)</span> distribution. The Born rule instead gives each sequence with <span class="math inline">\(k\)</span> zeros a weight <span class="math inline">\(0.9^k\,0.1^{n-k}\)</span>, so the total weight of branches with <span class="math inline">\(k\)</span> zeros is Binomial<span class="math inline">\((n, 0.9)\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>bc <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">k =</span> <span class="dv">0</span><span class="sc">:</span>n,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Count branches</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">dbinom</span>(k, n, <span class="fl">0.5</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Weight by |amplitude|²</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">dbinom</span>(k, n, <span class="fl">0.9</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>k, <span class="at">names_to =</span> <span class="st">"rule"</span>, <span class="at">values_to =</span> <span class="st">"p"</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bc, <span class="fu">aes</span>(k, p, <span class="at">fill =</span> rule)) <span class="sc">+</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"identity"</span>, <span class="at">alpha =</span> <span class="fl">0.65</span>) <span class="sc">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#2c7fb8"</span>, <span class="st">"#d95f0e"</span>)) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Number of zeros in 50 measurements"</span>, <span class="at">y =</span> <span class="st">"Probability / relative weight"</span>, <span class="at">fill =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-branch-counting" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-branch-counting-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-branch-counting-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-branch-counting-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Distribution of the number of zeros after measuring n = 50 identically prepared qubits with |c0|² = 0.9. Counting branches (blue) predicts about half zeros; weighting each branch by |amplitude|² (orange) gives the observed 90%.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Experiments see frequencies near 90% zeros, so the amplitude-squared weighting is the one that matches experience. The question is <em>why</em> that weighting, rather than branch-counting, should govern what an observer expects.</p>
+<p><strong>Everett’s own argument</strong> was a law-of-large-numbers result. Measure the weight (squared norm) of the branches whose relative frequency of zeros deviates from 0.9 by more than 0.05. That weight goes to zero as <span class="math inline">\(n\)</span> grows, so the branches that carry almost all the weight are those in which the observed frequencies match the Born rule:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">250</span>, <span class="dv">500</span>, <span class="dv">1000</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>atypical <span class="ot">&lt;-</span> <span class="fu">sapply</span>(ns, <span class="cf">function</span>(n) {</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span>n</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(<span class="fu">dbinom</span>(k, n, <span class="fl">0.9</span>)[<span class="fu">abs</span>(k <span class="sc">/</span> n <span class="sc">-</span> <span class="fl">0.9</span>) <span class="sc">&gt;</span> <span class="fl">0.05</span>])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">n =</span> ns, <span class="at">weight_of_atypical_branches =</span> <span class="fu">round</span>(atypical, <span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 2
+      n weight_of_atypical_branches
+  &lt;dbl&gt;                       &lt;dbl&gt;
+1    10                     0.613  
+2    25                     0.508  
+3    50                     0.234  
+4   100                     0.0963 
+5   250                     0.00836
+6   500                     0.0003 
+7  1000                     0      </code></pre>
+</div>
+</div>
+<p>By <span class="math inline">\(n = 1000\)</span> the atypical branches carry a negligible weight. But critics, notably Adrian Kent, point out that this is circular: it <em>assumes</em> the squared-amplitude weighting is the right measure of “how much a branch matters” and then derives that observers will see Born frequencies. It does not independently justify the weighting.</p>
+<p>The modern responses are:</p>
+<ul>
+<li><strong>Decision theory (Deutsch 1999, Wallace 2012).</strong> Show that a rational agent who accepts Everettian quantum mechanics and some plausible rationality axioms must bet as if branch probabilities equal <span class="math inline">\(|c_i|^2\)</span>.</li>
+<li><strong>Self-locating uncertainty (Sebens and Carroll 2018).</strong> Before learning which branch you are in, you have uncertainty about <em>where</em> you are, and symmetry arguments fix that uncertainty to the Born weights. This links to ordinary Bayesian reasoning, like the posterior calculations in the <a href="../../probability/prosecutors-fallacy/">prosecutor’s fallacy post</a>: the question is not “what will happen?” but “given everything I know, which of the observers that match my evidence am I?”.</li>
+<li><strong>Objective-weights or “measure” proposals.</strong> Treat <span class="math inline">\(|c_i|^2\)</span> as a basic feature of the world, akin to a mass, not a probability to be derived.</li>
+</ul>
+<p>Whether any of these succeeds is a matter of live disagreement. It remains the main technical objection to the interpretation.</p>
+</section>
+<section id="who-defends-it-today" class="level2">
+<h2 class="anchored" data-anchor-id="who-defends-it-today">Who defends it today?</h2>
+<p>The interpretation was a fringe position for decades, but has found serious advocates:</p>
+<ul>
+<li><strong>David Deutsch</strong> (Oxford) is the most committed champion. He argues that the interpretation is demanded by quantum computing, since the computation seems to need explaining by many parallel computational histories, and made the case in <em>The Fabric of Reality</em> (1997). His 1999 decision-theoretic derivation of the Born rule started the modern probability debate.</li>
+<li><strong>David Wallace</strong> (philosopher of physics, now at the University of Pittsburgh) gave the most careful defence in <em>The Emergent Multiverse</em> (2012), which treats branches as emergent, decoherence-defined structures and develops the decision-theoretic argument.</li>
+<li><strong>Sean Carroll</strong> (Johns Hopkins and the Santa Fe Institute) brought the view to a wide readership in <em>Something Deeply Hidden</em> (2019) and, with Charles Sebens, developed the self-locating-uncertainty approach.</li>
+<li><strong>Simon Saunders</strong> (Oxford) has contributed foundational work on branching and probability, and <strong>Lev Vaidman</strong> (Tel Aviv) is another long-standing advocate, and the author of the standard encyclopedia entry on the topic.</li>
+<li><strong>Max Tegmark</strong> (MIT) treats many-worlds as one level of a hierarchy of multiverses (below), and has argued that the interpretation follows naturally from taking the Schrödinger equation seriously.</li>
+<li><strong>Wojciech Zurek</strong> and <strong>H. Dieter Zeh</strong> built the decoherence framework that makes the interpretation precise, although neither is a straightforward Everettian.</li>
+</ul>
+<p>It remains a minority view. A 2013 survey of conference participants by Schlosshauer, Kofler and Zeilinger found roughly 42% favouring Copenhagen-style views and about 18% favouring Everett, with the rest split among other approaches. The main rivals each have prominent supporters and each has costs:</p>
+<ul>
+<li><strong>Collapse theories</strong> (GRW, Penrose) modify the dynamics, adding a physical collapse mechanism, with testable differences.</li>
+<li><strong>Pilot-wave (Bohmian) mechanics</strong> adds definite particle positions guided by the wave function, at the cost of non-locality.</li>
+<li><strong>QBism and relational views</strong> treat the quantum state as an agent’s information, not a feature of the world.</li>
+</ul>
+<p>Critics such as Tim Maudlin, David Albert and Adrian Kent press the probability problem and ask whether “worlds” are well defined.</p>
+</section>
+<section id="how-it-connects-to-cosmology" class="level2">
+<h2 class="anchored" data-anchor-id="how-it-connects-to-cosmology">How it connects to cosmology</h2>
+<p><strong>It is not the same as Rees’s multiverse.</strong> Tegmark organises the possibilities into levels:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Level</th>
+<th style="text-align: left;">What exists</th>
+<th style="text-align: left;">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">I</td>
+<td style="text-align: left;">Regions beyond our cosmic horizon, same laws and constants</td>
+<td style="text-align: left;">Infinite or very large space</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">II</td>
+<td style="text-align: left;">Other “bubble” universes with different constants and perhaps different physics</td>
+<td style="text-align: left;">Eternal inflation, string landscape</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">III</td>
+<td style="text-align: left;">Branches of the quantum wave function</td>
+<td style="text-align: left;">Everett’s many-worlds</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">IV</td>
+<td style="text-align: left;">All mathematically consistent structures</td>
+<td style="text-align: left;">Mathematical universe hypothesis</td>
+</tr>
+</tbody>
+</table>
+<p>The multiverse that bears on the six numbers is <strong>Level II</strong>: different regions can have different <span class="math inline">\(N\)</span>, <span class="math inline">\(\varepsilon\)</span>, <span class="math inline">\(Q\)</span> and <span class="math inline">\(\lambda\)</span>, so an anthropic selection effect can explain why we see values that permit observers. That is the argument Carr and Rees made in 1979, and it is the cosmological version of the carbon-resonance reasoning behind the <a href="../../cosmology/stellar-nucleosynthesis/">Hoyle state</a>.</p>
+<p><strong>Level III does not do that job.</strong> Every Everettian branch obeys the same Schrödinger equation with the same constants. Many-worlds therefore gives no anthropic explanation for why <span class="math inline">\(N \approx 10^{36}\)</span> or why <span class="math inline">\(\varepsilon\approx0.007\)</span>. The two ideas are logically independent: one can accept either, both or neither. Deutsch and Tegmark have argued that if you believe in an inflating universe, the two views end up looking more alike.</p>
+<p><strong>A place where they meet: the origin of structure.</strong> The amplitude <span class="math inline">\(Q\approx10^{-5}\)</span> of primordial density fluctuations is, in the inflationary picture, set by <em>quantum</em> fluctuations that were stretched to cosmic size. On the Everettian reading, the specific pattern of hot and cold spots in the microwave background is one of an enormous number of branches, each with a different realisation of the same statistics. The galaxies in our branch sit where they do because of one such history; our measured <span class="math inline">\(Q\)</span> describes the <em>statistics</em> that all branches share.</p>
+<p><strong>Probability again.</strong> Questions like “which observers am I?” echo the counting problems in the <a href="../../probability/birthday-paradox/">birthday paradox post</a>, where the right answer came from counting the right things (pairs, not people). Here the analogous question, what to count and how to weight it, is exactly what the Born-rule debate is about.</p>
+</section>
+<section id="takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
+<ul>
+<li><strong>Everett (1957)</strong> removed the collapse postulate and kept only unitary evolution; measurement becomes entanglement, and each outcome corresponds to a branch.</li>
+<li><strong>Decoherence</strong> explains why branches don’t interfere: coherence falls as <span class="math inline">\((\cos\theta)^N\)</span> with environment size, as the numerical check shows.</li>
+<li><strong>The unresolved issue is probability.</strong> Counting branches gives the wrong answer; the Born weights come from decision theory, self-locating arguments or a postulate, and critics contest each.</li>
+<li><strong>Many-worlds is not the cosmological multiverse.</strong> It does not explain fine-tuned constants, which belong to Level II arguments of the kind Rees discusses.</li>
+<li>It remains a <strong>minority but serious</strong> position, with prominent defenders such as Deutsch, Wallace, Carroll, Saunders, Vaidman and Tegmark.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Everett, H. (1957). “Relative state” formulation of quantum mechanics. <em>Reviews of Modern Physics</em> 29, 454.</li>
+<li>DeWitt, B. S. (1970). Quantum mechanics and reality. <em>Physics Today</em> 23(9), 30.</li>
+<li>DeWitt, B. S., &amp; Graham, N. (eds.) (1973). <em>The Many-Worlds Interpretation of Quantum Mechanics</em>. Princeton University Press.</li>
+<li>Zeh, H. D. (1970). On the interpretation of measurement in quantum theory. <em>Foundations of Physics</em> 1, 69.</li>
+<li>Zurek, W. H. (2003). Decoherence, einselection, and the quantum origins of the classical. <em>Reviews of Modern Physics</em> 75, 715.</li>
+<li>Deutsch, D. (1985). Quantum theory, the Church–Turing principle and the universal quantum computer. <em>Proceedings of the Royal Society A</em> 400, 97.</li>
+<li>Deutsch, D. (1997). <em>The Fabric of Reality</em>. Allen Lane.</li>
+<li>Deutsch, D. (1999). Quantum theory of probability and decisions. <em>Proceedings of the Royal Society A</em> 455, 3129.</li>
+<li>Wallace, D. (2012). <em>The Emergent Multiverse</em>. Oxford University Press.</li>
+<li>Sebens, C. T., &amp; Carroll, S. M. (2018). Self-locating uncertainty and the origin of probability in Everettian quantum mechanics. <em>British Journal for the Philosophy of Science</em> 69, 25.</li>
+<li>Carroll, S. (2019). <em>Something Deeply Hidden</em>. Dutton.</li>
+<li>Tegmark, M. (2003). Parallel universes. In J. D. Barrow et al.&nbsp;(eds.), <em>Science and Ultimate Reality</em>. Cambridge University Press.</li>
+<li>Schlosshauer, M., Kofler, J., &amp; Zeilinger, A. (2013). A snapshot of foundational attitudes toward quantum mechanics. <em>Studies in History and Philosophy of Modern Physics</em> 44, 222.</li>
+<li>Vaidman, L. Many-worlds interpretation of quantum mechanics. <em>Stanford Encyclopedia of Philosophy</em>.</li>
+<li>Carr, B. J., &amp; Rees, M. J. (1979). The anthropic principle and the structure of the physical world. <em>Nature</em> 278, 605.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
