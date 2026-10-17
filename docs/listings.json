@@ -1,16 +1,9 @@
 [
   {
-    "listing": "/probability/index.html",
+    "listing": "/papers/index.html",
     "items": [
-      "/probability/birthday-paradox/index.html"
-    ]
-  },
-  {
-    "listing": "/index.html",
-    "items": [
-      "/posts/diffusion-phase-transition/index.html",
-      "/posts/rg-diffusion-phase-transitions/index.html",
-      "/posts/welcome/index.html"
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   },
   {
@@ -24,10 +17,18 @@
     ]
   },
   {
-    "listing": "/papers/index.html",
+    "listing": "/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html",
-      "/papers/rg-critical-phenomena/index.html"
+      "/posts/diffusion-phase-transition/index.html",
+      "/posts/rg-diffusion-phase-transitions/index.html",
+      "/posts/welcome/index.html"
+    ]
+  },
+  {
+    "listing": "/probability/index.html",
+    "items": [
+      "/probability/birthday-paradox/index.html",
+      "/probability/prosecutors-fallacy/index.html"
     ]
   }
 ]
