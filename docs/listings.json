@@ -7,6 +7,12 @@
     ]
   },
   {
+    "listing": "/cosmology/index.html",
+    "items": [
+      "/cosmology/stellar-nucleosynthesis/index.html"
+    ]
+  },
+  {
     "listing": "/explainers/index.html",
     "items": [
       "/explainers/cgle-pattern-morphology/index.html",

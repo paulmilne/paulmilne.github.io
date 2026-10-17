@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-18">
+<meta name="description" content="From Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper.">
+
+<title>Stellar Nucleosynthesis – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Stellar Nucleosynthesis – math-blog">
+<meta property="og:description" content="From Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper.">
+<meta property="og:image" content="https://paulmilne.github.io/cosmology/stellar-nucleosynthesis/index_files/figure-html/fig-gamow-peak-1.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="864">
+<meta property="og:image:width" content="1344">
+<meta name="twitter:title" content="Stellar Nucleosynthesis – math-blog">
+<meta name="twitter:description" content="From Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper.">
+<meta name="twitter:image" content="https://paulmilne.github.io/cosmology/stellar-nucleosynthesis/index_files/figure-html/fig-gamow-peak-1.png">
+<meta name="twitter:image-height" content="864">
+<meta name="twitter:image-width" content="1344">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Stellar Nucleosynthesis</h1>
+            <p class="subtitle lead">How stars make the elements, and Fred Hoyle’s carbon resonance</p>
+                  <div>
+        <div class="description">
+          From Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cosmology</div>
+                <div class="quarto-category">nuclear-astrophysics</div>
+                <div class="quarto-category">history-of-science</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 18, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#a-short-history" id="toc-a-short-history" class="nav-link active" data-scroll-target="#a-short-history">A short history</a></li>
+  <li><a href="#why-fusion-happens-at-all-gamow-tunnelling" id="toc-why-fusion-happens-at-all-gamow-tunnelling" class="nav-link" data-scroll-target="#why-fusion-happens-at-all-gamow-tunnelling">Why fusion happens at all: Gamow tunnelling</a></li>
+  <li><a href="#the-gamow-peak" id="toc-the-gamow-peak" class="nav-link" data-scroll-target="#the-gamow-peak">The Gamow peak</a></li>
+  <li><a href="#how-steeply-do-rates-depend-on-temperature" id="toc-how-steeply-do-rates-depend-on-temperature" class="nav-link" data-scroll-target="#how-steeply-do-rates-depend-on-temperature">How steeply do rates depend on temperature?</a></li>
+  <li><a href="#hydrogen-burning-pp-chain-and-cno-cycle" id="toc-hydrogen-burning-pp-chain-and-cno-cycle" class="nav-link" data-scroll-target="#hydrogen-burning-pp-chain-and-cno-cycle">Hydrogen burning: pp chain and CNO cycle</a></li>
+  <li><a href="#a-reaction-network-in-general" id="toc-a-reaction-network-in-general" class="nav-link" data-scroll-target="#a-reaction-network-in-general">A reaction network, in general</a></li>
+  <li><a href="#helium-burning-and-the-triple-alpha-process" id="toc-helium-burning-and-the-triple-alpha-process" class="nav-link" data-scroll-target="#helium-burning-and-the-triple-alpha-process">Helium burning and the triple-alpha process</a></li>
+  <li><a href="#what-if-the-resonance-were-somewhere-else" id="toc-what-if-the-resonance-were-somewhere-else" class="nav-link" data-scroll-target="#what-if-the-resonance-were-somewhere-else">What if the resonance were somewhere else?</a></li>
+  <li><a href="#after-helium-carbon-oxygen-and-beyond" id="toc-after-helium-carbon-oxygen-and-beyond" class="nav-link" data-scroll-target="#after-helium-carbon-oxygen-and-beyond">After helium: carbon, oxygen and beyond</a></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Almost every atom heavier than helium was made inside a star. The carbon in your cells, the oxygen you breathe and the iron in your blood were assembled by thermonuclear reactions in stellar cores and then scattered by stellar winds and supernovae. This post covers the physics that makes that possible, in three steps: why fusion happens at all at stellar temperatures, how the rates of the main reaction chains depend on temperature, and how Fred Hoyle used the existence of carbon-based life to predict a property of the carbon-12 nucleus before anyone had measured it.</p>
+<section id="a-short-history" class="level2">
+<h2 class="anchored" data-anchor-id="a-short-history">A short history</h2>
+<p><strong>Why do stars shine?</strong> In 1920 Arthur Eddington argued that stars are powered by turning hydrogen into helium. Four hydrogen nuclei weigh about 0.7% more than one helium nucleus, so the conversion releases energy through <span class="math inline">\(E = mc^2\)</span>. The objection was that stellar cores seemed far too cool: at roughly <span class="math inline">\(10^7\)</span> K, protons do not have nearly enough energy to climb the Coulomb barrier. The way out came with quantum mechanics. In 1928 George Gamow showed that nuclei can <em>tunnel</em> through the barrier, and by the late 1930s Hans Bethe (and independently Carl von Weizsäcker) had worked out the reaction chains that power ordinary stars. Bethe’s 1939 paper laid out the proton–proton chain and the carbon–nitrogen–oxygen cycle.</p>
+<p><strong>Where do the heavier elements come from?</strong> In the 1940s there were two rival ideas. George Gamow and collaborators (Alpher, Bethe, Gamow, 1948) proposed that all the elements were cooked in the first minutes of the Big Bang. That runs into a wall: there are no stable nuclei with mass number 5 or 8, so building up from helium one nucleon at a time stalls, and the Big Bang makes essentially only hydrogen, helium and traces of lithium.</p>
+<p><strong>Enter Fred Hoyle.</strong> Fred Hoyle (1915–2001), a Cambridge astronomer, argued in 1946 that the heavier elements are built inside stars as they evolve. He was, with Hermann Bondi and Thomas Gold, also the author of the steady-state cosmology (1948), a rival to the Big Bang picture. The phrase “Big Bang” itself is usually credited to Hoyle, from a 1949 BBC radio talk. He later said it was meant as a vivid image and not a sneer, though the claim is still debated. Whatever his view of cosmology, his work on nucleosynthesis was right, and it outlived the steady-state theory.</p>
+<p>The bottleneck was carbon. Stars can make helium, but to get anything heavier they must fuse helium nuclei (alpha particles). Two alphas make beryllium-8, which is unbound and falls apart in about <span class="math inline">\(10^{-16}\)</span> s. A third alpha has to arrive within that window. Hoyle realised that for this to work at a useful rate in stellar cores, carbon-12 must have an excited state at roughly 7.65 MeV that lines up with the energy of the three-alpha system. In 1953 he pressed this on Willy Fowler’s group at Caltech. Fowler’s team (Dunbar, Cook, Whaling and colleagues) measured it, and found a <span class="math inline">\(0^+\)</span> state at about 7.65 MeV, now called the <strong>Hoyle state</strong>. Hoyle published the full programme in 1954.</p>
+<p>In 1957 Margaret Burbidge, Geoffrey Burbidge, Willy Fowler and Fred Hoyle published “Synthesis of the Elements in Stars”, universally known as <strong>B2FH</strong>. It laid out the processes of nucleosynthesis (hydrogen burning, helium burning, the alpha process, the <em>s</em>- and <em>r</em>-processes of neutron capture, and others) and connected them to observed abundances. Fowler shared the 1983 Nobel Prize in Physics for this work (with Subrahmanyan Chandrasekhar, who was honoured for other research); Hoyle was not included, which many in the field regard as a serious omission.</p>
+<p>There is also a famous gloss on the Hoyle state: that Hoyle predicted it <em>because</em> carbon-based life exists, as an early anthropic argument. Historians disagree about how much of that reasoning was in Hoyle’s mind in 1953 versus added in later retellings. The nuclear physics is on firmer ground than the narrative.</p>
+</section>
+<section id="why-fusion-happens-at-all-gamow-tunnelling" class="level2">
+<h2 class="anchored" data-anchor-id="why-fusion-happens-at-all-gamow-tunnelling">Why fusion happens at all: Gamow tunnelling</h2>
+<p>Two nuclei with charges <span class="math inline">\(Z_1 e\)</span> and <span class="math inline">\(Z_2 e\)</span> repel each other with Coulomb energy <span class="math inline">\(Z_1 Z_2 e^2/(4\pi\varepsilon_0 r)\)</span>. At the nuclear radius (a few femtometres) this barrier is of order an MeV, while the thermal energy at the Sun’s core temperature of <span class="math inline">\(1.5\times10^7\)</span> K is only <span class="math inline">\(kT \approx 1.3\)</span> keV. Classical collisions would almost never get through.</p>
+<p>Quantum tunnelling gives a small but non-zero probability. For relative energy <span class="math inline">\(E\)</span> much below the barrier height, the penetration probability is approximately</p>
+<p><span class="math display">\[
+P(E) \approx \exp\!\left(-\sqrt{E_G/E}\right),
+\qquad
+E_G = 2 m_r c^2 \,(\pi \alpha Z_1 Z_2)^2,
+\]</span></p>
+<p>where <span class="math inline">\(m_r\)</span> is the reduced mass, <span class="math inline">\(\alpha \approx 1/137\)</span> is the fine-structure constant and <span class="math inline">\(E_G\)</span> is the <strong>Gamow energy</strong>. It grows rapidly with the charges, which is why hydrogen burns first and heavier fuels need higher temperatures.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>reactions <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>reaction,        <span class="sc">~</span>Z1, <span class="sc">~</span>Z2, <span class="sc">~</span>A1, <span class="sc">~</span>A2, <span class="sc">~</span>T,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"p + p"</span>,            <span class="dv">1</span>,   <span class="dv">1</span>,   <span class="dv">1</span>,   <span class="dv">1</span>, <span class="fl">1.5e7</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"p + 14N"</span>,          <span class="dv">1</span>,   <span class="dv">7</span>,   <span class="dv">1</span>,  <span class="dv">14</span>, <span class="fl">2.0e7</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"alpha + alpha"</span>,    <span class="dv">2</span>,   <span class="dv">2</span>,   <span class="dv">4</span>,   <span class="dv">4</span>, <span class="fl">1.0e8</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"alpha + 12C"</span>,      <span class="dv">2</span>,   <span class="dv">6</span>,   <span class="dv">4</span>,  <span class="dv">12</span>, <span class="fl">2.0e8</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">E_G_keV =</span> <span class="fu">gamow_energy</span>(Z1, Z2, A1, A2))</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>reactions <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">E_G_keV =</span> <span class="fu">round</span>(E_G_keV), <span class="at">kT_keV =</span> <span class="fu">round</span>(<span class="fu">kT_keV</span>(T), <span class="dv">2</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(reaction, T, kT_keV, E_G_keV)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 4
+  reaction              T kT_keV E_G_keV
+  &lt;chr&gt;             &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+1 p + p          15000000   1.29     490
+2 p + 14N        20000000   1.72   44779
+3 alpha + alpha 100000000   8.62   31332
+4 alpha + 12C   200000000  17.2   422984</code></pre>
+</div>
+</div>
+</section>
+<section id="the-gamow-peak" class="level2">
+<h2 class="anchored" data-anchor-id="the-gamow-peak">The Gamow peak</h2>
+<p>Particles in a hot plasma follow a Maxwell–Boltzmann energy distribution, <span class="math inline">\(\propto \exp(-E/kT)\)</span>, which favours low energies. Tunnelling probability favours high energies. The reaction rate per particle pair is the integral of their product,</p>
+<p><span class="math display">\[
+\langle\sigma v\rangle = \left(\frac{8}{\pi m_r}\right)^{1/2}\frac{1}{(kT)^{3/2}}
+\int_0^\infty S(E)\,\exp\!\left(-\frac{E}{kT}-\sqrt{\frac{E_G}{E}}\right)dE,
+\]</span></p>
+<p>where the cross-section is written as <span class="math inline">\(\sigma(E) = \dfrac{S(E)}{E}\,e^{-\sqrt{E_G/E}}\)</span> and the <strong>astrophysical S-factor</strong> <span class="math inline">\(S(E)\)</span> absorbs the slowly varying nuclear physics. The exponent is minimised at the <strong>Gamow peak</strong></p>
+<p><span class="math display">\[
+E_0 = \left(\frac{E_G\,(kT)^2}{4}\right)^{1/3},
+\qquad
+\Delta = \frac{4}{\sqrt{3}}\sqrt{E_0\,kT},
+\]</span></p>
+<p>with <span class="math inline">\(\Delta\)</span> the <span class="math inline">\(1/e\)</span> full width. For protons in the Sun’s core the peak sits at about 6 keV, many times the mean thermal energy of <span class="math inline">\(\sim 1.3\)</span> keV, and only a thin slice of the distribution is doing any fusing.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>T_sun <span class="ot">&lt;-</span> <span class="fl">1.5e7</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>EG_pp <span class="ot">&lt;-</span> <span class="fu">gamow_energy</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>kT <span class="ot">&lt;-</span> <span class="fu">kT_keV</span>(T_sun)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>E <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.05</span>, <span class="dv">20</span>, <span class="at">length.out =</span> <span class="dv">800</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>mb  <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="sc">-</span>E <span class="sc">/</span> kT)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>tun <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fu">sqrt</span>(EG_pp <span class="sc">/</span> E))</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>prod <span class="ot">&lt;-</span> mb <span class="sc">*</span> tun</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>E0 <span class="ot">&lt;-</span> (EG_pp <span class="sc">*</span> kT<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="dv">4</span>)<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">E =</span> E,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Maxwell–Boltzmann</span><span class="st">`</span> <span class="ot">=</span> mb <span class="sc">/</span> <span class="fu">max</span>(mb),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Tunnelling</span><span class="st">`</span> <span class="ot">=</span> tun <span class="sc">/</span> <span class="fu">max</span>(tun),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Product (Gamow peak)</span><span class="st">`</span> <span class="ot">=</span> prod <span class="sc">/</span> <span class="fu">max</span>(prod)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>E, <span class="at">names_to =</span> <span class="st">"factor"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(E, value, <span class="at">colour =</span> factor)) <span class="sc">+</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> E0, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"text"</span>, <span class="at">x =</span> E0 <span class="sc">+</span> <span class="fl">0.4</span>, <span class="at">y =</span> <span class="fl">0.55</span>, <span class="at">label =</span> <span class="fu">sprintf</span>(<span class="st">"E0 = %.1f keV"</span>, E0),</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>           <span class="at">hjust =</span> <span class="dv">0</span>, <span class="at">colour =</span> <span class="st">"grey30"</span>) <span class="sc">+</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#2c7fb8"</span>, <span class="st">"black"</span>, <span class="st">"#d95f0e"</span>)) <span class="sc">+</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Relative energy E (keV)"</span>, <span class="at">y =</span> <span class="st">"Relative magnitude (each curve normalised)"</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>       <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-gamow-peak" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-gamow-peak-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-gamow-peak-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-gamow-peak-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Maxwell–Boltzmann tail (blue), tunnelling probability (orange) and their product, the Gamow peak (black), for p + p at the Sun’s core temperature. Each curve is normalised to its own maximum so that all three share one axis.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The peak is at <strong>5.9 keV</strong> for a thermal energy of <strong>1.29 keV</strong>.</p>
+</section>
+<section id="how-steeply-do-rates-depend-on-temperature" class="level2">
+<h2 class="anchored" data-anchor-id="how-steeply-do-rates-depend-on-temperature">How steeply do rates depend on temperature?</h2>
+<p>Near its maximum, the integrand is approximately a Gaussian, and the integral gives a rate that depends on temperature as <span class="math inline">\(\langle\sigma v\rangle \propto T^{\,n}\)</span> with the local exponent</p>
+<p><span class="math display">\[
+n = \frac{\tau - 2}{3},
+\qquad
+\tau = \frac{3E_0}{kT} = 3\left(\frac{E_G}{4\,kT}\right)^{1/3}.
+\]</span></p>
+<p>This exponent explains why different stars burn different fuels in different regimes. Reactions with a larger Coulomb barrier have a larger <span class="math inline">\(\tau\)</span>, so they respond far more violently to temperature.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>reactions <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">tau =</span> <span class="dv">3</span> <span class="sc">*</span> (E_G_keV <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">*</span> <span class="fu">kT_keV</span>(T)))<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n   =</span> (tau <span class="sc">-</span> <span class="dv">2</span>) <span class="sc">/</span> <span class="dv">3</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(reaction, T, <span class="at">E_G_keV =</span> <span class="fu">round</span>(E_G_keV), <span class="at">tau =</span> <span class="fu">round</span>(tau, <span class="dv">1</span>), <span class="at">n =</span> <span class="fu">round</span>(n, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 5
+  reaction              T E_G_keV   tau     n
+  &lt;chr&gt;             &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 p + p          15000000     490  13.7   3.9
+2 p + 14N        20000000   44779  56    18  
+3 alpha + alpha 100000000   31332  29.1   9  
+4 alpha + 12C   200000000  422984  54.9  17.6</code></pre>
+</div>
+</div>
+<p>The alpha + alpha row is the <em>non-resonant</em> value; the resonant triple-alpha process below is far steeper. For p + p at <span class="math inline">\(1.5\times10^7\)</span> K the rate goes roughly as <span class="math inline">\(T^4\)</span>; for proton capture on nitrogen-14 it goes as a much higher power of <span class="math inline">\(T\)</span>. This is why the CNO cycle dominates over the pp chain in stars somewhat more massive than the Sun. It also shows up in stellar structure: a CNO-burning core has a steep temperature gradient, which drives convection.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">T =</span> <span class="dv">10</span><span class="sc">^</span><span class="fu">seq</span>(<span class="fl">6.8</span>, <span class="fl">8.6</span>, <span class="at">length.out =</span> <span class="dv">200</span>), <span class="at">i =</span> <span class="fu">seq_len</span>(<span class="fu">nrow</span>(reactions))) <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">reaction =</span> reactions<span class="sc">$</span>reaction[i],</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">EG =</span> reactions<span class="sc">$</span>E_G_keV[i],</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> (<span class="dv">3</span> <span class="sc">*</span> (EG <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">*</span> <span class="fu">kT_keV</span>(T)))<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>) <span class="sc">-</span> <span class="dv">2</span>) <span class="sc">/</span> <span class="dv">3</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(grid, <span class="fu">aes</span>(T, n, <span class="at">colour =</span> reaction)) <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_log10</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="fl">1e7</span>, <span class="fl">3e7</span>, <span class="fl">1e8</span>, <span class="fl">3e8</span>), <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_scientific</span>(<span class="at">digits =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Temperature (K)"</span>, <span class="at">y =</span> <span class="st">"Local exponent n,  rate ∝ T^n"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-exponent-vs-T" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-exponent-vs-T-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-exponent-vs-T-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-exponent-vs-T-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Local temperature exponent n of the non-resonant charged-particle reaction rate, for four reactions. Higher barrier means a steeper dependence.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="hydrogen-burning-pp-chain-and-cno-cycle" class="level2">
+<h2 class="anchored" data-anchor-id="hydrogen-burning-pp-chain-and-cno-cycle">Hydrogen burning: pp chain and CNO cycle</h2>
+<p>Both routes convert four protons into one helium-4 nucleus:</p>
+<p><span class="math display">\[
+4\,{}^{1}\mathrm{H} \;\to\; {}^{4}\mathrm{He} + 2e^{+} + 2\nu_e + \text{energy}.
+\]</span></p>
+<p>The energy released is the mass difference. Using atomic masses, <span class="math inline">\(m({}^1\mathrm{H}) = 1.007825\)</span> u and <span class="math inline">\(m({}^4\mathrm{He}) = 4.002603\)</span> u,</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>m_H1  <span class="ot">&lt;-</span> <span class="fl">1.007825</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>m_He4 <span class="ot">&lt;-</span> <span class="fl">4.002603</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>Q_MeV    <span class="ot">&lt;-</span> (<span class="dv">4</span> <span class="sc">*</span> m_H1 <span class="sc">-</span> m_He4) <span class="sc">*</span> amu_MeV</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>frac     <span class="ot">&lt;-</span> (<span class="dv">4</span> <span class="sc">*</span> m_H1 <span class="sc">-</span> m_He4) <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">*</span> m_H1)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Sun: how long could hydrogen burning last?</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>L_sun <span class="ot">&lt;-</span> <span class="fl">3.828e26</span>; M_sun <span class="ot">&lt;-</span> <span class="fl">1.989e30</span>; c_ms <span class="ot">&lt;-</span> <span class="fl">2.998e8</span>; yr <span class="ot">&lt;-</span> <span class="fl">3.156e7</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>t_ms <span class="ot">&lt;-</span> <span class="fl">0.1</span> <span class="sc">*</span> frac <span class="sc">*</span> M_sun <span class="sc">*</span> c_ms<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> L_sun <span class="sc">/</span> yr    <span class="co"># ~10% of mass burns on the main sequence</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">Q_MeV =</span> Q_MeV, <span class="at">mass_fraction_released =</span> frac, <span class="at">main_sequence_years =</span> t_ms)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Q_MeV mass_fraction_released    main_sequence_years 
+          2.673108e+01           7.118547e-03           1.053369e+10 </code></pre>
+</div>
+</div>
+<p>That is about <strong>26.7 MeV</strong> per helium nucleus (a bit less reaches the star, since neutrinos carry some away), or <strong>0.71%</strong> of the rest mass. Assuming the Sun burns about 10% of its hydrogen at its current luminosity, that gives a lifetime of roughly <strong>11 billion years</strong>, in line with the Sun’s expected main-sequence life.</p>
+<p><strong>The pp chain</strong> begins with the slowest, weak-interaction step:</p>
+<p><span class="math display">\[
+p + p \to {}^{2}\mathrm{H} + e^{+} + \nu_e ,
+\]</span></p>
+<p>which is the bottleneck, with a characteristic time of billions of years per proton. This is why the Sun lasts so long. Deuterium then captures another proton, <span class="math inline">\({}^2\mathrm{H}(p,\gamma){}^3\mathrm{He}\)</span>, and two <span class="math inline">\({}^3\mathrm{He}\)</span> nuclei combine to give <span class="math inline">\({}^4\mathrm{He}\)</span> plus two protons (the dominant branch).</p>
+<p><strong>The CNO cycle</strong> uses carbon, nitrogen and oxygen as catalysts, never consumed overall. The slowest step is <span class="math inline">\({}^{14}\mathrm{N}(p,\gamma){}^{15}\mathrm{O}\)</span>, which sets the cycle’s overall speed and, given the high Coulomb barrier, its steep temperature dependence.</p>
+</section>
+<section id="a-reaction-network-in-general" class="level2">
+<h2 class="anchored" data-anchor-id="a-reaction-network-in-general">A reaction network, in general</h2>
+<p>The abundance of each species <span class="math inline">\(i\)</span> (written as a number fraction <span class="math inline">\(Y_i = n_i/(\rho N_A)\)</span>) obeys a coupled system of ordinary differential equations. For a reaction <span class="math inline">\(a + b \to c + \dots\)</span>,</p>
+<p><span class="math display">\[
+\frac{dY_i}{dt} = \sum_{j,k} \frac{\rho N_A \langle\sigma v\rangle_{jk}}{1+\delta_{jk}}\,Y_j Y_k\,(\pm\text{stoichiometry}) \;+\; \text{decays}.
+\]</span></p>
+<p>Real codes solve hundreds of such equations simultaneously. The system is <strong>stiff</strong>: the fastest and slowest rates can differ by tens of orders of magnitude, so implicit integrators are needed.</p>
+</section>
+<section id="helium-burning-and-the-triple-alpha-process" class="level2">
+<h2 class="anchored" data-anchor-id="helium-burning-and-the-triple-alpha-process">Helium burning and the triple-alpha process</h2>
+<p>Once the core runs out of hydrogen it contracts and heats up. At around <span class="math inline">\(10^8\)</span> K, helium can fuse. The reaction has to proceed through two steps:</p>
+<p><span class="math display">\[
+\alpha + \alpha \;\rightleftharpoons\; {}^{8}\mathrm{Be},
+\qquad
+{}^{8}\mathrm{Be} + \alpha \;\to\; {}^{12}\mathrm{C}^{*} \;\to\; {}^{12}\mathrm{C} + \gamma\ (\text{or } e^{+}e^{-}).
+\]</span></p>
+<p><span class="math inline">\({}^8\mathrm{Be}\)</span> lies only about 92 keV above two free alphas and lives for roughly <span class="math inline">\(10^{-16}\)</span> s. At stellar temperatures a small equilibrium population of it nonetheless exists, given (up to order-unity factors) by the <strong>Saha equation</strong>,</p>
+<p><span class="math display">\[
+\frac{n_{\mathrm{Be}}}{n_\alpha^2} \sim \left(\frac{2\pi\hbar^2}{M_\alpha kT}\right)^{3/2} e^{-E_{\mathrm{Be}}/kT},
+\qquad E_{\mathrm{Be}} \approx 92\ \text{keV}.
+\]</span></p>
+<p>At <span class="math inline">\(10^8\)</span> K (<span class="math inline">\(kT \approx 8.6\)</span> keV) the Boltzmann factor is only about <span class="math inline">\(e^{-10.7}\)</span>, so beryllium is rare, but not negligibly so. A third alpha capturing on this beryllium would normally be too weak to matter. The <strong>Hoyle state</strong>, however, sits just above the <span class="math inline">\({}^8\mathrm{Be} + \alpha\)</span> threshold: at 7.654 MeV excitation energy in <span class="math inline">\({}^{12}\mathrm{C}\)</span>, it is about 0.287 MeV above the <span class="math inline">\({}^8\mathrm{Be}+\alpha\)</span> threshold, or 0.379 MeV above the three-alpha threshold. Capture into it is a <strong>resonance</strong>, so the cross-section is enormously boosted.</p>
+<p>For a narrow resonance, the resulting three-body rate per unit volume is</p>
+<p><span class="math display">\[
+r_{3\alpha} = 3^{3/2}\, n_\alpha^3 \left(\frac{2\pi\hbar^2}{M_\alpha kT}\right)^{3}\frac{\Gamma}{\hbar}\,
+\exp\!\left(-\frac{Q}{kT}\right),
+\]</span></p>
+<p>with <span class="math inline">\(Q = 379.5\)</span> keV the resonance energy above the three-alpha threshold and <span class="math inline">\(\Gamma\)</span> the <em>effective</em> width. Most Hoyle-state nuclei fall apart again into <span class="math inline">\(^8\)</span>Be + <span class="math inline">\(\alpha\)</span>; the quantity that matters is the small radiative width <span class="math inline">\(\Gamma_\gamma \approx 3.7\)</span> meV (plus a smaller pair-emission contribution), because only decays by radiation or pair emission produce stable carbon.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>hbar  <span class="ot">&lt;-</span> <span class="fl">1.054572e-34</span>      <span class="co"># J s</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>kB    <span class="ot">&lt;-</span> <span class="fl">1.380649e-23</span>      <span class="co"># J/K</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>M_a   <span class="ot">&lt;-</span> <span class="fl">4.001506</span> <span class="sc">*</span> <span class="fl">1.66054e-27</span>   <span class="co"># kg</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>eV    <span class="ot">&lt;-</span> <span class="fl">1.602177e-19</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>N_A   <span class="ot">&lt;-</span> <span class="fl">6.02214e23</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>Q_J   <span class="ot">&lt;-</span> <span class="fl">379.5e3</span> <span class="sc">*</span> eV      <span class="co"># resonance energy above 3-alpha threshold</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>Gam_J <span class="ot">&lt;-</span> <span class="fl">3.7e-3</span> <span class="sc">*</span> eV       <span class="co"># effective width ~ radiative width</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># rate per unit volume (m^-3 s^-1); rho in g/cm^3, pure helium</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>r3a <span class="ot">&lt;-</span> <span class="cf">function</span>(T, rho) {</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  n_a <span class="ot">&lt;-</span> (rho <span class="sc">*</span> <span class="fl">1e3</span> <span class="sc">/</span> <span class="fl">4.0026e-3</span>) <span class="sc">*</span> N_A            <span class="co"># alphas per m^3 (rho in kg/m^3 / molar mass)</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  thermal <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> hbar<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> (M_a <span class="sc">*</span> kB <span class="sc">*</span> T)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span><span class="sc">^</span><span class="fl">1.5</span> <span class="sc">*</span> n_a<span class="sc">^</span><span class="dv">3</span> <span class="sc">*</span> thermal<span class="sc">^</span><span class="dv">3</span> <span class="sc">*</span> (Gam_J <span class="sc">/</span> hbar) <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span>Q_J <span class="sc">/</span> (kB <span class="sc">*</span> T))</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co"># alpha-particle lifetime against destruction: n_alpha / (3 r)</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>tau_alpha_yr <span class="ot">&lt;-</span> <span class="cf">function</span>(T, rho) {</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  n_a <span class="ot">&lt;-</span> (rho <span class="sc">*</span> <span class="fl">1e3</span> <span class="sc">/</span> <span class="fl">4.0026e-3</span>) <span class="sc">*</span> N_A</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  n_a <span class="sc">/</span> (<span class="dv">3</span> <span class="sc">*</span> <span class="fu">r3a</span>(T, rho)) <span class="sc">/</span> yr</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>tau_demo <span class="ot">&lt;-</span> <span class="fu">tau_alpha_yr</span>(<span class="fl">1e8</span>, <span class="fl">1e5</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="co"># format a number as LaTeX scientific notation for inline use</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>sci_tex <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">digits =</span> <span class="dv">2</span>) {</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  e <span class="ot">&lt;-</span> <span class="fu">floor</span>(<span class="fu">log10</span>(x)); m <span class="ot">&lt;-</span> <span class="fu">signif</span>(x <span class="sc">/</span> <span class="dv">10</span><span class="sc">^</span>e, digits)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sprintf</span>(<span class="st">"%s </span><span class="sc">\\</span><span class="st">times 10^{%d}"</span>, <span class="fu">format</span>(m), e)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>At <span class="math inline">\(T = 10^8\)</span> K and <span class="math inline">\(\rho = 10^5\)</span> g cm<span class="math inline">\(^{-3}\)</span> (the sort of dense, degenerate core in which helium ignites in a low-mass star), this simple estimate gives a helium lifetime of roughly <span class="math inline">\(4.8 \times 10^{7}\)</span> years. At the same temperature but <span class="math inline">\(10^3\)</span> g cm<span class="math inline">\(^{-3}\)</span> it would be <span class="math inline">\(10^4\)</span> times longer, because the rate scales as <span class="math inline">\(\rho^3\)</span> while the helium supply scales as <span class="math inline">\(\rho\)</span>. Helium burns only when the core is both hot and dense.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ta <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">T =</span> <span class="dv">10</span><span class="sc">^</span><span class="fu">seq</span>(<span class="fl">7.8</span>, <span class="fl">8.6</span>, <span class="at">length.out =</span> <span class="dv">200</span>), <span class="at">rho =</span> <span class="fu">c</span>(<span class="fl">1e4</span>, <span class="fl">1e5</span>, <span class="fl">1e6</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tau =</span> <span class="fu">tau_alpha_yr</span>(T, rho), <span class="at">rho =</span> <span class="fu">factor</span>(<span class="fu">format</span>(rho, <span class="at">scientific =</span> <span class="cn">FALSE</span>, <span class="at">big.mark =</span> <span class="st">","</span>)))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(ta, <span class="fu">aes</span>(T, tau, <span class="at">colour =</span> rho)) <span class="sc">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_log10</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="fl">1e8</span>, <span class="fl">2e8</span>, <span class="fl">4e8</span>), <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_scientific</span>(<span class="at">digits =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_log</span>()) <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Temperature (K)"</span>, <span class="at">y =</span> <span class="st">"Helium lifetime (years)"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">colour =</span> <span class="fu">expression</span>(rho<span class="sc">~</span><span class="st">"(g/cm"</span><span class="sc">^</span><span class="dv">3</span><span class="sc">*</span><span class="st">")"</span>)) <span class="sc">+</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-triple-alpha" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-triple-alpha-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-triple-alpha-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-triple-alpha-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Helium lifetime against the triple-alpha reaction for a pure-helium plasma, at three densities. The lifetime falls by many orders of magnitude over a factor of a few in temperature.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The local exponent of this rate is enormous. Since <span class="math inline">\(r \propto T^{-3}e^{-Q/kT}\)</span> (the <span class="math inline">\(T^{-3}\)</span> coming from the thermal factor),</p>
+<p><span class="math display">\[
+\frac{d\ln r_{3\alpha}}{d\ln T} = \frac{Q}{kT} - 3.
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>Texp <span class="ot">&lt;-</span> <span class="fl">1e8</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>n_ta <span class="ot">&lt;-</span> Q_J <span class="sc">/</span> (kB <span class="sc">*</span> Texp) <span class="sc">-</span> <span class="dv">3</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>n_ta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 41.03916</code></pre>
+</div>
+</div>
+<p>At <span class="math inline">\(10^8\)</span> K that is <strong>41</strong>, so the rate scales as roughly <span class="math inline">\(T^{41}\)</span>. A 10% temperature rise speeds helium burning up by a factor of about 50. Helium ignition therefore happens abruptly, and in stars with degenerate cores it is explosive (the <em>helium flash</em>).</p>
+</section>
+<section id="what-if-the-resonance-were-somewhere-else" class="level2">
+<h2 class="anchored" data-anchor-id="what-if-the-resonance-were-somewhere-else">What if the resonance were somewhere else?</h2>
+<p>The factor <span class="math inline">\(\exp(-Q/kT)\)</span> makes the rate exponentially sensitive to the resonance energy. If the Hoyle state were shifted by <span class="math inline">\(\Delta E\)</span> relative to its real position, the rate at fixed temperature would change by <span class="math inline">\(\exp(-\Delta E/kT)\)</span> (holding all else fixed, which is an idealisation).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>kT100 <span class="ot">&lt;-</span> <span class="fu">kT_keV</span>(<span class="fl">1e8</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>shift <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">dE =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">150</span>, <span class="dv">150</span>, <span class="at">length.out =</span> <span class="dv">300</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">rel =</span> <span class="fu">exp</span>(<span class="sc">-</span>dE <span class="sc">/</span> kT100))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(shift, <span class="fu">aes</span>(dE, rel)) <span class="sc">+</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">colour =</span> <span class="st">"#2c7fb8"</span>) <span class="sc">+</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_log</span>()) <span class="sc">+</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Resonance shift ΔE (keV)"</span>, <span class="at">y =</span> <span class="st">"Rate relative to actual"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-shifted" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-shifted-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-shifted-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-shifted-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Relative triple-alpha rate at 10^8 K if the resonance were displaced by ΔE from its true position, other properties unchanged. A shift of order 100 keV changes the rate by about five orders of magnitude.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This sensitivity is what gives the “fine-tuning” discussions their punch. Fairer treatments, though, vary underlying nuclear parameters and track how the resonance energy, the beryllium state and the later burning of carbon into oxygen all respond together. The conclusion that comes out of such studies is more nuanced than “the universe is exactly balanced”, and what to make of it is a matter of ongoing debate rather than a result.</p>
+</section>
+<section id="after-helium-carbon-oxygen-and-beyond" class="level2">
+<h2 class="anchored" data-anchor-id="after-helium-carbon-oxygen-and-beyond">After helium: carbon, oxygen and beyond</h2>
+<p>Once carbon exists, it can capture another alpha to form oxygen, <span class="math inline">\({}^{12}\mathrm{C}(\alpha,\gamma){}^{16}\mathrm{O}\)</span>. The competition between this and the triple-alpha process sets the <strong>carbon-to-oxygen ratio</strong> at the end of helium burning, which controls what a star does afterwards. That rate is known only to limited accuracy, and measuring it more precisely is still an active problem in nuclear astrophysics.</p>
+<p>In more massive stars the sequence continues in shells and cores: carbon burning (<span class="math inline">\(\sim 6\times10^8\)</span> K), neon, oxygen and silicon burning, each stage faster and hotter than the last. The chain stops at iron-group nuclei because they have the greatest binding energy per nucleon, so fusing them no longer releases energy. Elements beyond iron are mostly made by neutron capture: slowly (the <em>s</em>-process, in evolved stars) or rapidly (the <em>r</em>-process, in neutron-star mergers and perhaps some supernovae).</p>
+</section>
+<section id="takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
+<ul>
+<li>Fusion in stars depends on <strong>quantum tunnelling</strong>. The reaction rate is the product of two competing exponentials, giving the narrow Gamow peak.</li>
+<li>The <strong>temperature sensitivity</strong> of a reaction, <span class="math inline">\(n = (\tau-2)/3\)</span>, is set by the Coulomb barrier through the Gamow energy.</li>
+<li>Hydrogen burning releases about <strong>26.7 MeV</strong> per helium nucleus, enough for the Sun to shine for billions of years.</li>
+<li>The <strong>triple-alpha process</strong> needs a resonance, the <strong>Hoyle state</strong>, to make carbon at a useful rate. Fred Hoyle inferred its existence in 1953, and Fowler’s group confirmed it.</li>
+<li><strong>B2FH</strong> (1957) put stellar nucleosynthesis on a systematic footing. Fowler received the Nobel Prize in 1983; Hoyle did not.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Eddington, A. S. (1920). The internal constitution of the stars. <em>The Observatory</em> 43, 341.</li>
+<li>Gamow, G. (1928). Zur Quantentheorie des Atomkernes. <em>Zeitschrift für Physik</em> 51, 204.</li>
+<li>Bethe, H. A. (1939). Energy production in stars. <em>Physical Review</em> 55, 434.</li>
+<li>Alpher, R. A., Bethe, H., &amp; Gamow, G. (1948). The origin of chemical elements. <em>Physical Review</em> 73, 803.</li>
+<li>Hoyle, F. (1946). The synthesis of the elements from hydrogen. <em>Monthly Notices of the RAS</em> 106, 343.</li>
+<li>Hoyle, F. (1954). On nuclear reactions occurring in very hot stars. I. The synthesis of elements from carbon to nickel. <em>Astrophysical Journal Supplement</em> 1, 121.</li>
+<li>Burbidge, E. M., Burbidge, G. R., Fowler, W. A., &amp; Hoyle, F. (1957). Synthesis of the elements in stars. <em>Reviews of Modern Physics</em> 29, 547.</li>
+<li>Rolfs, C. E., &amp; Rodney, W. S. (1988). <em>Cauldrons in the Cosmos</em>. University of Chicago Press.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

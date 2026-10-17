@@ -9,6 +9,7 @@ project:
     - "posts/**"
     - "explainers/**"
     - "probability/**"
+    - "cosmology/**"
     - "papers/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
@@ -30,6 +31,8 @@ website:
         text: Papers
       - href: probability/index.qmd
         text: Probability
+      - href: cosmology/index.qmd
+        text: Cosmology
     right:
       - about.qmd
       - icon: github
