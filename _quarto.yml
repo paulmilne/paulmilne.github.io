@@ -8,6 +8,7 @@ project:
     - "*.qmd"
     - "posts/**"
     - "explainers/**"
+    - "probability/**"
     - "papers/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
@@ -26,6 +27,8 @@ website:
         text: Explainers
       - href: papers/index.qmd
         text: Papers
+      - href: probability/index.qmd
+        text: Probability
     right:
       - about.qmd
       - icon: github

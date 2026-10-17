@@ -1,0 +1,136 @@
+---
+title: "The Birthday Paradox"
+subtitle: "Why 23 people is enough for a shared birthday"
+description: "A worked derivation of the birthday paradox: the exact probability, the exponential approximation, the square-root scaling law, and a Monte Carlo check in R."
+author: "Paul Milne"
+date: "2026-10-17"
+categories: [probability, combinatorics, simulation]
+engine: knitr
+format:
+  html:
+    toc: true
+---
+
+Put 23 people in a room and the chance that two of them share a birthday is better than 50%. It feels wrong, which is why it's called a paradox, but it's a true statement and the arithmetic is short.
+
+```{r}
+#| label: setup
+#| include: false
+library(ggplot2)
+library(dplyr)
+theme_set(theme_minimal(base_size = 12))
+set.seed(42)
+```
+
+## Count the complement
+
+Assume 365 equally likely birthdays (ignore 29 February and seasonal effects). Computing "at least one match" directly is messy, so compute the opposite: *no one* shares a birthday.
+
+Person 1 can have any birthday. Person 2 must avoid 1 day, so has probability $364/365$. Person 3 must avoid 2 days, so $363/365$, and so on. For $n$ people,
+
+$$
+P(\text{no match}) = \prod_{k=0}^{n-1}\frac{365-k}{365} = \frac{365!}{(365-n)!\,365^n},
+$$
+
+and the answer we want is
+
+$$
+P(\text{match}) = 1 - \frac{365!}{(365-n)!\,365^n}.
+$$
+
+```{r}
+#| label: exact
+p_match <- function(n, d = 365) {
+  1 - sapply(n, function(m) prod((d - seq_len(m) + 1) / d))
+}
+tibble(n = c(10, 20, 23, 30, 50, 70)) |>
+  mutate(P_match = round(p_match(n), 4))
+```
+
+The probability crosses 50% at $n = 23$ and passes 99% by $n = 57$.
+
+```{r}
+#| label: fig-curve
+#| fig-cap: "Exact probability of at least one shared birthday as the group grows. The 50% line is crossed at n = 23."
+#| fig-height: 4
+df <- tibble(n = 1:80, p = p_match(1:80))
+ggplot(df, aes(n, p)) +
+  geom_line(linewidth = 1, colour = "#2c7fb8") +
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey50") +
+  geom_vline(xintercept = 23, linetype = "dashed", colour = "grey50") +
+  labs(x = "Number of people", y = "P(at least one shared birthday)")
+```
+
+## Why it feels wrong: pairs, not people
+
+The intuition says "23 is small next to 365". But we aren't asking whether someone matches *my* birthday. We're asking whether *any* pair matches, and the number of pairs grows quadratically:
+
+$$
+\binom{n}{2} = \frac{n(n-1)}{2}, \qquad \binom{23}{2} = 253.
+$$
+
+Each pair matches with probability $1/365$, so with 253 pairs a match is no longer surprising. (Pairs aren't independent, so this is only a heuristic, but it points at the right scaling.)
+
+## An approximation
+
+Use $1 - x \approx e^{-x}$ for small $x$:
+
+$$
+P(\text{no match}) = \prod_{k=0}^{n-1}\left(1-\frac{k}{365}\right) \approx \exp\!\left(-\sum_{k=0}^{n-1}\frac{k}{365}\right) = \exp\!\left(-\frac{n(n-1)}{2\cdot 365}\right).
+$$
+
+Setting this equal to $1/2$ and solving for $n$ gives
+
+$$
+n \approx \sqrt{2\ln 2\; d}\;\approx\; 1.18\sqrt{d},
+$$
+
+which for $d = 365$ is about $22.5$. So the threshold scales as $\sqrt{d}$ rather than $d$. That square-root law is what makes hash collisions arrive so much sooner than people expect: a 64-bit hash has $d = 2^{64}$ values, yet collisions become likely after only about $2^{32}$ items.
+
+```{r}
+#| label: fig-approx
+#| fig-cap: "The exponential approximation tracks the exact curve closely over the whole range."
+#| fig-height: 4
+df <- df |> mutate(approx = 1 - exp(-n * (n - 1) / (2 * 365)))
+df |>
+  tidyr::pivot_longer(c(p, approx), names_to = "which", values_to = "prob") |>
+  mutate(which = recode(which, p = "Exact", approx = "Approximation")) |>
+  ggplot(aes(n, prob, colour = which, linetype = which)) +
+  geom_line(linewidth = 1) +
+  labs(x = "Number of people", y = "P(match)", colour = NULL, linetype = NULL) +
+  theme(legend.position = "top")
+```
+
+```{r}
+#| label: threshold
+n50 <- min(which(df$p >= 0.5))
+c(exact_threshold = n50, sqrt_formula = sqrt(2 * log(2) * 365))
+```
+
+## Monte Carlo check
+
+Simulate it directly: draw $n$ random birthdays many times and count how often a duplicate appears.
+
+```{r}
+#| label: fig-mc
+#| fig-cap: "Monte Carlo estimates (points, 20,000 trials each) against the exact curve."
+#| fig-height: 4
+sim_match <- function(n, trials = 20000) {
+  mean(replicate(trials, anyDuplicated(sample.int(365, n, replace = TRUE)) > 0))
+}
+ns <- seq(5, 70, by = 5)
+mc <- tibble(n = ns, p = sapply(ns, sim_match))
+
+ggplot(df, aes(n, p)) +
+  geom_line(colour = "#2c7fb8", linewidth = 1) +
+  geom_point(data = mc, colour = "#d95f0e", size = 2.5) +
+  labs(x = "Number of people", y = "P(match)")
+```
+
+The simulated points sit on the exact curve to within sampling noise (about $\pm 0.007$ at 20,000 trials).
+
+## Takeaways
+
+- Count the complement: "no shared birthday" is a clean product.
+- The surprise comes from $\binom{n}{2}$ pairs, not $n$ people.
+- Collision thresholds scale as $\sqrt{d}$, a fact that shows up well beyond birthdays, in hashing and cryptographic collision attacks.

@@ -1,5 +1,11 @@
 [
   {
+    "listing": "/probability/index.html",
+    "items": [
+      "/probability/birthday-paradox/index.html"
+    ]
+  },
+  {
     "listing": "/index.html",
     "items": [
       "/posts/diffusion-phase-transition/index.html",
@@ -10,6 +16,7 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/cgle-pattern-morphology/index.html",
       "/explainers/bifurcation-vs-langevin/index.html",
       "/explainers/markov-chains-diffusion/index.html",
       "/explainers/mean-field-annealed-disorder/index.html",
