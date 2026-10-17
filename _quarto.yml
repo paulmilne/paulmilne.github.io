@@ -12,6 +12,7 @@ project:
     - "papers/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
+    - "!CLASS_option_evaluation.qmd"  # needs local Excel data, not a site page
 
 website:
   title: "math-blog"
