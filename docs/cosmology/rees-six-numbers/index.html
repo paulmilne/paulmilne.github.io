@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-18">
+<meta name="description" content="A profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different.">
+
+<title>Martin Rees and the Six Numbers – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Martin Rees and the Six Numbers – math-blog">
+<meta property="og:description" content="A profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different.">
+<meta property="og:image" content="https://paulmilne.github.io/cosmology/rees-six-numbers/index_files/figure-html/fig-n-scaling-1.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="768">
+<meta property="og:image:width" content="1344">
+<meta name="twitter:title" content="Martin Rees and the Six Numbers – math-blog">
+<meta name="twitter:description" content="A profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different.">
+<meta name="twitter:image" content="https://paulmilne.github.io/cosmology/rees-six-numbers/index_files/figure-html/fig-n-scaling-1.png">
+<meta name="twitter:image-height" content="768">
+<meta name="twitter:image-width" content="1344">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Martin Rees and the Six Numbers</h1>
+            <p class="subtitle lead">The dimensionless constants that shaped the universe, and the astronomer who put them together</p>
+                  <div>
+        <div class="description">
+          A profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cosmology</div>
+                <div class="quarto-category">history-of-science</div>
+                <div class="quarto-category">fine-tuning</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 18, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#who-is-martin-rees" id="toc-who-is-martin-rees" class="nav-link active" data-scroll-target="#who-is-martin-rees">Who is Martin Rees?</a>
+  <ul class="collapse">
+  <li><a href="#the-anthropic-thread" id="toc-the-anthropic-thread" class="nav-link" data-scroll-target="#the-anthropic-thread">The anthropic thread</a></li>
+  </ul></li>
+  <li><a href="#the-six-numbers" id="toc-the-six-numbers" class="nav-link" data-scroll-target="#the-six-numbers">The six numbers</a></li>
+  <li><a href="#n-approx-1036-the-weakness-of-gravity" id="toc-n-approx-1036-the-weakness-of-gravity" class="nav-link" data-scroll-target="#n-approx-1036-the-weakness-of-gravity">1. <span class="math inline">\(N \approx 10^{36}\)</span>: the weakness of gravity</a></li>
+  <li><a href="#varepsilon-approx-0.007-the-efficiency-of-fusion" id="toc-varepsilon-approx-0.007-the-efficiency-of-fusion" class="nav-link" data-scroll-target="#varepsilon-approx-0.007-the-efficiency-of-fusion">2. <span class="math inline">\(\varepsilon \approx 0.007\)</span>: the efficiency of fusion</a></li>
+  <li><a href="#omega-approx-0.3-how-much-matter" id="toc-omega-approx-0.3-how-much-matter" class="nav-link" data-scroll-target="#omega-approx-0.3-how-much-matter">3. <span class="math inline">\(\Omega \approx 0.3\)</span>: how much matter</a></li>
+  <li><a href="#lambda-approx-0.7-the-cosmological-constant" id="toc-lambda-approx-0.7-the-cosmological-constant" class="nav-link" data-scroll-target="#lambda-approx-0.7-the-cosmological-constant">4. <span class="math inline">\(\lambda \approx 0.7\)</span>: the cosmological constant</a></li>
+  <li><a href="#q-approx-10-5-how-lumpy-was-the-early-universe" id="toc-q-approx-10-5-how-lumpy-was-the-early-universe" class="nav-link" data-scroll-target="#q-approx-10-5-how-lumpy-was-the-early-universe">5. <span class="math inline">\(Q \approx 10^{-5}\)</span>: how lumpy was the early universe?</a></li>
+  <li><a href="#d-3-dimensions-of-space" id="toc-d-3-dimensions-of-space" class="nav-link" data-scroll-target="#d-3-dimensions-of-space">6. <span class="math inline">\(D = 3\)</span>: dimensions of space</a></li>
+  <li><a href="#how-seriously-should-we-take-all-this" id="toc-how-seriously-should-we-take-all-this" class="nav-link" data-scroll-target="#how-seriously-should-we-take-all-this">How seriously should we take all this?</a></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>In 1999 the astrophysicist Martin Rees published a short book, <em>Just Six Numbers</em>, built around a claim that is easy to state and hard to dismiss: the large-scale structure of the universe, and its ability to contain anything as intricate as life, depends on six dimensionless numbers. None of them is predicted by any current theory. Change any one by a modest amount and the universe would look utterly different.</p>
+<p>This post introduces Rees himself, then goes through the six numbers one at a time, with the physics behind each and a short calculation in R.</p>
+<section id="who-is-martin-rees" class="level2">
+<h2 class="anchored" data-anchor-id="who-is-martin-rees">Who is Martin Rees?</h2>
+<p>Martin Rees was born in York in 1942 and studied mathematics at Trinity College, Cambridge. He completed his PhD in 1967 under Dennis Sciama, whose students over the years included Stephen Hawking, George Ellis and Brandon Carter. That group worked on general relativity and cosmology at a time when the subject was moving from speculation to observation. He has spent most of his career in Cambridge, as Plumian Professor of Astronomy and Experimental Philosophy from 1973, Astronomer Royal since 1995, Master of Trinity College from 2004 to 2012, and President of the Royal Society from 2005 to 2010. He became a life peer, Baron Rees of Ludlow, in 2005, was appointed to the Order of Merit in 2007, and received the Templeton Prize in 2011.</p>
+<p>His research output is unusually broad. A few landmarks, all from my memory of the literature and worth checking against the references:</p>
+<ul>
+<li><strong>Superluminal motion (1966).</strong> Rees showed that jets from quasars moving close to the speed of light at a small angle to our line of sight can <em>appear</em> to move faster than light. No physics is violated; it is a light-travel-time effect.</li>
+<li><strong>Evolving radio sources.</strong> In the 1960s, with Sciama, he worked on how the numbers of distant radio sources and quasars change with cosmic time, evidence that the universe evolves, as the Big Bang picture says and the steady-state model does not.</li>
+<li><strong>The Rees–Sciama effect (1968).</strong> Light crossing a <em>changing</em> gravitational potential, such as a collapsing cluster, picks up a small net energy shift. This is a tiny signature on the cosmic microwave background.</li>
+<li><strong>Radio galaxies and black holes (1970s–80s).</strong> With Roger Blandford he developed the “twin-exhaust” model in which jets carry energy from a galactic nucleus to giant radio lobes. His wider reviews established the picture of supermassive black holes powering active galactic nuclei.</li>
+<li><strong>Galaxy formation.</strong> With Jeremiah Ostriker (1977) he studied how gas cools and collapses to form galaxies, and with Blumenthal, Faber and Primack (1984) he helped establish cold dark matter as the framework for structure formation.</li>
+<li><strong>Gamma-ray bursts.</strong> With Péter Mészáros he developed the fireball model of gamma-ray bursts and their afterglows in the early 1990s.</li>
+</ul>
+<p>He is also a prolific author for general readers: <em>Before the Beginning</em> (1997), <em>Just Six Numbers</em> (1999), <em>Our Cosmic Habitat</em> (2001), <em>Our Final Hour</em> (2003, published in the UK as <em>Our Final Century</em>) and <em>On the Future</em> (2018). He gave the BBC Reith Lectures in 2010 and co-founded Cambridge’s Centre for the Study of Existential Risk in 2012. The theme running through the later work is that the cosmos is far larger and older than we usually keep in mind, and that humanity’s own future is much less settled than the cosmos’s.</p>
+<section id="the-anthropic-thread" class="level3">
+<h3 class="anchored" data-anchor-id="the-anthropic-thread">The anthropic thread</h3>
+<p>The six-numbers argument has a lineage. In 1961 Robert Dicke observed that the age of the universe cannot be arbitrary if observers like us are to exist. In 1974 Brandon Carter, Rees’s Cambridge contemporary, gave the idea a name, the anthropic principle. In 1979 Rees and Bernard Carr wrote a long Nature review, “The anthropic principle and the structure of the physical world”, which assembled the evidence that many features of physics seem tuned to allow complex structure. The Hoyle carbon resonance (covered in the <a href="../../cosmology/stellar-nucleosynthesis/">stellar nucleosynthesis post</a>) is one of its classic examples. <em>Just Six Numbers</em> is the popular distillation of that programme.</p>
+</section>
+</section>
+<section id="the-six-numbers" class="level2">
+<h2 class="anchored" data-anchor-id="the-six-numbers">The six numbers</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Symbol</th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: left;">Approximate value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(N\)</span></td>
+<td style="text-align: left;">Ratio of electric to gravitational force between two protons</td>
+<td style="text-align: left;"><span class="math inline">\(10^{36}\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(\varepsilon\)</span></td>
+<td style="text-align: left;">Fraction of mass released when hydrogen fuses to helium</td>
+<td style="text-align: left;"><span class="math inline">\(0.007\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\Omega\)</span></td>
+<td style="text-align: left;">Matter density relative to the critical density</td>
+<td style="text-align: left;"><span class="math inline">\(\approx 0.3\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(\lambda\)</span></td>
+<td style="text-align: left;">Dark-energy (cosmological constant) density relative to critical</td>
+<td style="text-align: left;"><span class="math inline">\(\approx 0.7\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(Q\)</span></td>
+<td style="text-align: left;">Amplitude of primordial density fluctuations</td>
+<td style="text-align: left;"><span class="math inline">\(\approx 10^{-5}\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(D\)</span></td>
+<td style="text-align: left;">Number of spatial dimensions</td>
+<td style="text-align: left;"><span class="math inline">\(3\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>Rees groups them: <span class="math inline">\(N\)</span> and <span class="math inline">\(\varepsilon\)</span> govern <em>small-scale</em> physics (atoms, stars), <span class="math inline">\(\Omega\)</span>, <span class="math inline">\(\lambda\)</span> and <span class="math inline">\(Q\)</span> govern the large-scale cosmos, and <span class="math inline">\(D\)</span> sets the framework in which everything operates.</p>
+</section>
+<section id="n-approx-1036-the-weakness-of-gravity" class="level2">
+<h2 class="anchored" data-anchor-id="n-approx-1036-the-weakness-of-gravity">1. <span class="math inline">\(N \approx 10^{36}\)</span>: the weakness of gravity</h2>
+<p>Two protons repel each other electrically and attract each other gravitationally. The ratio of the two forces does not depend on distance, since both fall off as <span class="math inline">\(1/r^2\)</span>:</p>
+<p><span class="math display">\[
+N = \frac{e^2/(4\pi\varepsilon_0)}{G m_p^2}.
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> e_chg<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">*</span> pi <span class="sc">*</span> eps0 <span class="sc">*</span> G <span class="sc">*</span> m_p<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fl">137.036</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>alpha_G <span class="ot">&lt;-</span> alpha <span class="sc">/</span> N             <span class="co"># G m_p^2 / (hbar c)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>M_star <span class="ot">&lt;-</span> alpha_G<span class="sc">^</span>(<span class="sc">-</span><span class="dv">3</span><span class="sc">/</span><span class="dv">2</span>) <span class="sc">*</span> m_p   <span class="co"># characteristic stellar mass</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">N =</span> N, <span class="at">alpha_G =</span> alpha_G, <span class="at">M_star_in_Msun =</span> M_star <span class="sc">/</span> Msun)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             N        alpha_G M_star_in_Msun 
+  1.235702e+36   5.905432e-39   1.853019e+00 </code></pre>
+</div>
+</div>
+<p>So <span class="math inline">\(N = 1.2 \times 10^{36}\)</span>. Gravity is feeble compared with electromagnetism, and that is why <em>large</em> objects are needed for it to matter. A characteristic stellar mass comes out of dimensional analysis alone, where <span class="math inline">\(\alpha_G = G m_p^2/\hbar c = \alpha/N\)</span>:</p>
+<p><span class="math display">\[
+M_\star \sim \alpha_G^{-3/2}\, m_p \approx 1.9\, M_\odot .
+\]</span></p>
+<p>That is a stellar mass, so <span class="math inline">\(N\)</span> is why stars are about the size they are. Since <span class="math inline">\(M_\star \propto N^{3/2}\)</span>, a universe with gravity <span class="math inline">\(10^6\)</span> times stronger (<span class="math inline">\(N \sim 10^{30}\)</span>) would have stars about a billion times lighter.</p>
+<p><strong>Lifetimes.</strong> The standard result for radiative stars is <span class="math inline">\(L \propto G^4 M^3\)</span>, so a star’s lifetime goes as <span class="math inline">\(t \sim M/L \propto G^{-4}M^{-2}\)</span>. Combined with <span class="math inline">\(M_\star \propto G^{-3/2}\)</span> this gives <span class="math inline">\(t_\star \propto G^{-1} \propto N\)</span>. A million-fold stronger gravity therefore shortens stellar lifetimes about a million-fold, from roughly <span class="math inline">\(10^{10}\)</span> years to roughly <span class="math inline">\(10^4\)</span>. That’s Rees’s “Lilliputian universe”: there would be no time for evolution to do anything.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sc <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">logN =</span> <span class="fu">seq</span>(<span class="dv">30</span>, <span class="dv">40</span>, <span class="at">length.out =</span> <span class="dv">200</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">mass     =</span> (<span class="dv">10</span><span class="sc">^</span>logN <span class="sc">/</span> N)<span class="sc">^</span>(<span class="dv">3</span><span class="sc">/</span><span class="dv">2</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">lifetime =</span> (<span class="dv">10</span><span class="sc">^</span>logN <span class="sc">/</span> N)<span class="sc">^</span><span class="dv">1</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="fu">c</span>(mass, lifetime), <span class="at">names_to =</span> <span class="st">"quantity"</span>, <span class="at">values_to =</span> <span class="st">"rel"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">quantity =</span> <span class="fu">recode</span>(quantity, <span class="at">mass =</span> <span class="st">"Stellar mass ∝ N^(3/2)"</span>, <span class="at">lifetime =</span> <span class="st">"Stellar lifetime ∝ N"</span>))</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(sc, <span class="fu">aes</span>(logN, rel, <span class="at">colour =</span> quantity)) <span class="sc">+</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">log10</span>(N), <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_log</span>()) <span class="sc">+</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="fu">expression</span>(log[<span class="dv">10</span>]<span class="sc">~</span>N), <span class="at">y =</span> <span class="st">"Relative to our universe"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-n-scaling" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-n-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-n-scaling-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-n-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: How characteristic stellar mass and lifetime scale with N (equivalently, with 1/G), normalised to our universe. Stronger gravity means smaller, shorter-lived stars.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Going the other way, a <em>much larger</em> <span class="math inline">\(N\)</span> (weaker gravity) gives huge, cool, slowly evolving stars, and galaxies would struggle to form from gas that is so slow to collapse. Rees’s point is that life needs something like our value, not an order of magnitude here or there.</p>
+</section>
+<section id="varepsilon-approx-0.007-the-efficiency-of-fusion" class="level2">
+<h2 class="anchored" data-anchor-id="varepsilon-approx-0.007-the-efficiency-of-fusion">2. <span class="math inline">\(\varepsilon \approx 0.007\)</span>: the efficiency of fusion</h2>
+<p>When four hydrogen nuclei fuse into one helium-4 nucleus, a fraction <span class="math inline">\(\varepsilon\)</span> of their mass is converted to energy:</p>
+<p><span class="math display">\[
+\varepsilon = \frac{4 m_{\mathrm{H}} - m_{\mathrm{He}}}{4 m_{\mathrm{H}}}.
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>m_H1  <span class="ot">&lt;-</span> <span class="fl">1.007825</span>; m_He4 <span class="ot">&lt;-</span> <span class="fl">4.002603</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>eps_fus <span class="ot">&lt;-</span> (<span class="dv">4</span> <span class="sc">*</span> m_H1 <span class="sc">-</span> m_He4) <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">*</span> m_H1)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>eps_fus</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.007118547</code></pre>
+</div>
+</div>
+<p>That gives <span class="math inline">\(\varepsilon =\)</span> <strong>0.0071</strong>. It is set by the strong nuclear force, and it fixes how long stars shine: a star’s nuclear fuel supply is roughly <span class="math inline">\(\varepsilon M c^2\)</span>, so lifetime is proportional to <span class="math inline">\(\varepsilon\)</span> at fixed luminosity. Beyond that, it determines what the hydrogen-burning chain can do at all. The chain starts with deuterium, and its stability depends on the strength of the nuclear force. Rees’s examples are qualitative:</p>
+<ul>
+<li>With <span class="math inline">\(\varepsilon\)</span> around 0.006, the first step toward helium would not proceed, so the universe would stay hydrogen and no heavier elements, and no chemistry, would be made.</li>
+<li>With <span class="math inline">\(\varepsilon\)</span> around 0.008, nearly all hydrogen would have been fused in the early universe, leaving no hydrogen for water or long-lived stars.</li>
+</ul>
+<p>These are Rees’s illustrations of <em>sensitivity</em>, and I haven’t derived them here. Detailed nuclear calculations in the literature find that the range of habitable values is somewhat wider than such sharp statements suggest, but still narrow.</p>
+</section>
+<section id="omega-approx-0.3-how-much-matter" class="level2">
+<h2 class="anchored" data-anchor-id="omega-approx-0.3-how-much-matter">3. <span class="math inline">\(\Omega \approx 0.3\)</span>: how much matter</h2>
+<p>The expansion of a homogeneous universe obeys the Friedmann equation</p>
+<p><span class="math display">\[
+H^2 = \frac{8\pi G}{3}\rho - \frac{kc^2}{a^2} + \frac{\Lambda c^2}{3}.
+\]</span></p>
+<p>The <strong>critical density</strong> is the value of <span class="math inline">\(\rho\)</span> for which a universe with <span class="math inline">\(\Lambda=0\)</span> is spatially flat, <span class="math inline">\(\rho_c = 3H_0^2/8\pi G\)</span>, and <span class="math inline">\(\Omega = \rho/\rho_c\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>rho_c <span class="ot">&lt;-</span> <span class="dv">3</span> <span class="sc">*</span> H0<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> (<span class="dv">8</span> <span class="sc">*</span> pi <span class="sc">*</span> G)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>n_protons <span class="ot">&lt;-</span> rho_c <span class="sc">/</span> m_p</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">rho_crit_kg_m3 =</span> rho_c, <span class="at">protons_per_m3 =</span> n_protons)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>rho_crit_kg_m3 protons_per_m3 
+  8.533115e-27   5.101707e+00 </code></pre>
+</div>
+</div>
+<p>The critical density is about <span class="math inline">\(8.5 \times 10^{-27}\)</span> kg m<span class="math inline">\(^{-3}\)</span>, equivalent to roughly <strong>5.1 protons per cubic metre</strong>. The measured density of ordinary matter plus dark matter is about 0.3 of that, so <span class="math inline">\(\Omega_m \approx\)</span> 0.315.</p>
+<p><strong>The flatness problem.</strong> If <span class="math inline">\(\Omega\)</span> is not exactly 1 at the start, it runs away from 1 as the universe expands. Writing the deviation as <span class="math inline">\(|\Omega^{-1}-1| = |k|c^2/(a^2H^2)\)</span>, one can compute how finely the early universe had to be balanced to leave <span class="math inline">\(\Omega\)</span> of order unity today:</p>
+<p><span class="math display">\[
+\frac{|\Omega^{-1}-1|(z)}{|\Omega^{-1}-1|_0} = \frac{(1+z)^2}{E(z)^2},
+\qquad
+E^2(z) = \Omega_r(1+z)^4 + \Omega_m(1+z)^3 + \Omega_\Lambda .
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>E2 <span class="ot">&lt;-</span> <span class="cf">function</span>(z) Orad <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">+</span> z)<span class="sc">^</span><span class="dv">4</span> <span class="sc">+</span> Om <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">+</span> z)<span class="sc">^</span><span class="dv">3</span> <span class="sc">+</span> OL</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>dev_ratio <span class="ot">&lt;-</span> <span class="cf">function</span>(z) (<span class="dv">1</span> <span class="sc">+</span> z)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">E2</span>(z)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>z_bbn <span class="ot">&lt;-</span> <span class="fl">1e10</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">deviation_at_BBN_relative_to_today =</span> <span class="fu">dev_ratio</span>(z_bbn))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>deviation_at_BBN_relative_to_today 
+                      1.111111e-16 </code></pre>
+</div>
+</div>
+<p>At nucleosynthesis (<span class="math inline">\(z \sim 10^{10}\)</span>, about a second after the Big Bang) the universe had to be flat to within about <span class="math inline">\(1 \times 10^{-16}\)</span> of whatever it is today. Too much matter and the universe would have collapsed in a fraction of a second; too little and it would have expanded too quickly for galaxies to form. <em>Inflation</em>, proposed in the early 1980s, offers a mechanism that drives the universe toward flatness automatically, and it is one reason Rees treats <span class="math inline">\(\Omega\)</span> as less mysterious than the other numbers.</p>
+</section>
+<section id="lambda-approx-0.7-the-cosmological-constant" class="level2">
+<h2 class="anchored" data-anchor-id="lambda-approx-0.7-the-cosmological-constant">4. <span class="math inline">\(\lambda \approx 0.7\)</span>: the cosmological constant</h2>
+<p>Until the late 1990s most cosmologists assumed that <span class="math inline">\(\Lambda = 0\)</span>. Then supernova surveys (Riess et al.&nbsp;1998; Perlmutter et al.&nbsp;1999) showed that the expansion is <em>accelerating</em>, which requires a repulsive component, the <strong>cosmological constant</strong> or dark energy. It is parametrised as <span class="math inline">\(\Omega_\Lambda = \Lambda c^2/(3H_0^2) \approx 0.7\)</span>, Rees’s <span class="math inline">\(\lambda\)</span>.</p>
+<p>With <span class="math inline">\(\Omega_m + \Omega_\Lambda = 1\)</span> the Friedmann equation can be integrated for the age and the history of the scale factor:</p>
+<p><span class="math display">\[
+t(a) = \frac{1}{H_0}\int_0^{a}\frac{da'}{a'\,E(a')},
+\qquad
+E(a)^2 = \Omega_m a^{-3} + \Omega_\Lambda .
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>E_a <span class="ot">&lt;-</span> <span class="cf">function</span>(a, Om, OL) <span class="fu">sqrt</span>(Om <span class="sc">*</span> a<span class="sc">^-</span><span class="dv">3</span> <span class="sc">+</span> OL <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> Om <span class="sc">-</span> OL) <span class="sc">*</span> a<span class="sc">^-</span><span class="dv">2</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>t_of_a <span class="ot">&lt;-</span> <span class="cf">function</span>(a, Om, OL) {</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sapply</span>(a, <span class="cf">function</span>(x) <span class="fu">integrate</span>(<span class="cf">function</span>(y) <span class="dv">1</span> <span class="sc">/</span> (y <span class="sc">*</span> <span class="fu">E_a</span>(y, Om, OL)), <span class="fl">1e-8</span>, x)<span class="sc">$</span>value) <span class="sc">/</span> H0 <span class="sc">/</span> Gyr</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>age_LCDM <span class="ot">&lt;-</span> <span class="fu">t_of_a</span>(<span class="dv">1</span>, Om, OL)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>age_EdS  <span class="ot">&lt;-</span> <span class="fu">t_of_a</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>age_open <span class="ot">&lt;-</span> <span class="fu">t_of_a</span>(<span class="dv">1</span>, Om, <span class="dv">0</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>a_acc    <span class="ot">&lt;-</span> (Om <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> OL))<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>)      <span class="co"># acceleration begins (a-double-dot = 0)</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>a_eq     <span class="ot">&lt;-</span> (Om <span class="sc">/</span> OL)<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>)            <span class="co"># matter-lambda equality</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">age_LCDM =</span> age_LCDM, <span class="at">age_EdS =</span> age_EdS, <span class="at">age_open =</span> age_open,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">z_accel =</span> <span class="dv">1</span> <span class="sc">/</span> a_acc <span class="sc">-</span> <span class="dv">1</span>, <span class="at">z_equal =</span> <span class="dv">1</span> <span class="sc">/</span> a_eq <span class="sc">-</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  age_LCDM    age_EdS   age_open    z_accel    z_equal 
+13.7952864  9.6708712 11.6613622  0.6323126  0.2955674 </code></pre>
+</div>
+</div>
+<p>The flat ΛCDM age is <strong>13.8 Gyr</strong>, which is comfortably older than the oldest stars. A matter-only universe with the same <span class="math inline">\(H_0\)</span> would be only 9.7 Gyr old, an awkward conflict that was one of the early hints for <span class="math inline">\(\Lambda\)</span>. Acceleration began at <span class="math inline">\(z \approx\)</span> 0.63, and matter and dark energy had equal densities at <span class="math inline">\(z \approx\)</span> 0.3.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>a_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.02</span>, <span class="fl">2.5</span>, <span class="at">length.out =</span> <span class="dv">300</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>mods <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">"Matter only (Ω = 1)"</span>, <span class="st">"Open, no Λ (Ω = 0.315)"</span>, <span class="st">"ΛCDM (Ω_m = 0.315, Ω_Λ = 0.685)"</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Om_ =</span> <span class="fu">c</span>(<span class="dv">1</span>, Om, Om), <span class="at">OL_ =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, OL)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>curves <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(<span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(mods)), <span class="cf">function</span>(i) {</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">model =</span> mods<span class="sc">$</span>model[i], <span class="at">a =</span> a_grid, <span class="at">t =</span> <span class="fu">t_of_a</span>(a_grid, mods<span class="sc">$</span>Om_[i], mods<span class="sc">$</span>OL_[i]))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>}))</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(curves, <span class="fu">aes</span>(t, a, <span class="at">colour =</span> model)) <span class="sc">+</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">40</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">2.5</span>)) <span class="sc">+</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Time since the Big Bang (Gyr)"</span>, <span class="at">y =</span> <span class="st">"Scale factor a (today = 1)"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span> <span class="fu">guides</span>(<span class="at">colour =</span> <span class="fu">guide_legend</span>(<span class="at">nrow =</span> <span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-scale-factor" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-scale-factor-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-scale-factor-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-scale-factor-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Scale factor against cosmic time for three universes with the same present-day Hubble constant. Only the model with a cosmological constant is old enough and ends up accelerating.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Why is <span class="math inline">\(\lambda\)</span> interesting?</strong> Two reasons. First, it is absurdly small compared with what particle physics naively suggests. Vacuum energy computed with a Planck-scale cutoff is about <span class="math inline">\(\rho_P = c^5/(\hbar G^2)\)</span>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>rho_P <span class="ot">&lt;-</span> c_ms<span class="sc">^</span><span class="dv">5</span> <span class="sc">/</span> (hbar <span class="sc">*</span> G<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>rho_L <span class="ot">&lt;-</span> OL <span class="sc">*</span> rho_c</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">rho_Planck =</span> rho_P, <span class="at">rho_Lambda =</span> rho_L, <span class="at">ratio =</span> rho_L <span class="sc">/</span> rho_P)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   rho_Planck    rho_Lambda         ratio 
+ 5.155823e+96  5.845184e-27 1.133705e-123 </code></pre>
+</div>
+</div>
+<p>The observed dark-energy density is smaller than the Planck density by a factor of about <span class="math inline">\(1 \times 10^{-123}\)</span>: roughly 120 orders of magnitude, a famous failure of naive estimates. Second, Steven Weinberg noted in 1987 that if <span class="math inline">\(\Lambda\)</span> were much larger than observed, repulsion would have stopped structure forming before galaxies could assemble. That anthropic bound is what pointed toward a small, non-zero value before the supernova results, and it is the kind of argument Rees treats seriously.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>co <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">loga =</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">400</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">a =</span> <span class="dv">10</span><span class="sc">^</span>loga,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">matter =</span> Om <span class="sc">*</span> a<span class="sc">^-</span><span class="dv">3</span> <span class="sc">/</span> (Om <span class="sc">*</span> a<span class="sc">^-</span><span class="dv">3</span> <span class="sc">+</span> OL),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">dark_energy =</span> <span class="dv">1</span> <span class="sc">-</span> matter) <span class="sc">|&gt;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="fu">c</span>(matter, dark_energy), <span class="at">names_to =</span> <span class="st">"component"</span>, <span class="at">values_to =</span> <span class="st">"fraction"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">component =</span> <span class="fu">recode</span>(component, <span class="at">matter =</span> <span class="st">"Matter"</span>, <span class="at">dark_energy =</span> <span class="st">"Dark energy"</span>))</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(co, <span class="fu">aes</span>(loga, fraction, <span class="at">colour =</span> component)) <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="fu">expression</span>(log[<span class="dv">10</span>]<span class="sc">~</span>a<span class="sc">~</span><span class="st">"(today = 0)"</span>), <span class="at">y =</span> <span class="st">"Fraction of total energy density"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-coincidence" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-coincidence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-coincidence-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-coincidence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Matter and dark-energy fractions as the universe expands. Dark energy is negligible at early times and dominates at late times; we happen to live near the crossover.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="q-approx-10-5-how-lumpy-was-the-early-universe" class="level2">
+<h2 class="anchored" data-anchor-id="q-approx-10-5-how-lumpy-was-the-early-universe">5. <span class="math inline">\(Q \approx 10^{-5}\)</span>: how lumpy was the early universe?</h2>
+<p>The cosmic microwave background is uniform to about one part in <span class="math inline">\(10^5\)</span>. Those tiny temperature ripples correspond to density fluctuations of a similar relative size, and Rees calls their amplitude <span class="math inline">\(Q\)</span>. Gravity amplifies them: in a matter-dominated universe, small perturbations grow in proportion to the scale factor. In a universe with dark energy the growth factor <span class="math inline">\(D(a)\)</span> obeys</p>
+<p><span class="math display">\[
+D(a) \;\propto\; E(a)\int_0^a \frac{da'}{\bigl[a'E(a')\bigr]^3},
+\]</span></p>
+<p>normalised so that <span class="math inline">\(D = a\)</span> at early times.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>growth_D <span class="ot">&lt;-</span> <span class="cf">function</span>(a, Om, OL) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sapply</span>(a, <span class="cf">function</span>(x) <span class="fl">2.5</span> <span class="sc">*</span> Om <span class="sc">*</span> <span class="fu">E_a</span>(x, Om, OL) <span class="sc">*</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>           <span class="fu">integrate</span>(<span class="cf">function</span>(y) <span class="dv">1</span> <span class="sc">/</span> (y <span class="sc">*</span> <span class="fu">E_a</span>(y, Om, OL))<span class="sc">^</span><span class="dv">3</span>, <span class="fl">1e-8</span>, x)<span class="sc">$</span>value)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>D_today <span class="ot">&lt;-</span> <span class="fu">growth_D</span>(<span class="dv">1</span>, Om, OL)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>D_today</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.7878126</code></pre>
+</div>
+</div>
+<p>Today <span class="math inline">\(D(1) =\)</span> 0.79: dark energy has already throttled structure growth by about 21% relative to a matter-only universe.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>gg <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">a =</span> <span class="fu">seq</span>(<span class="fl">0.02</span>, <span class="dv">3</span>, <span class="at">length.out =</span> <span class="dv">300</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">LCDM =</span> <span class="fu">growth_D</span>(a, Om, OL), <span class="st">`</span><span class="at">Matter only</span><span class="st">`</span> <span class="ot">=</span> a) <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="fu">c</span>(LCDM, <span class="st">`</span><span class="at">Matter only</span><span class="st">`</span>), <span class="at">names_to =</span> <span class="st">"model"</span>, <span class="at">values_to =</span> <span class="st">"D"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gg, <span class="fu">aes</span>(a, D, <span class="at">colour =</span> model, <span class="at">linetype =</span> model)) <span class="sc">+</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dotted"</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>) <span class="sc">+</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Scale factor a (today = 1)"</span>, <span class="at">y =</span> <span class="st">"Growth factor D(a)"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>, <span class="at">linetype =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-growth" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-growth-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-growth-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-growth-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Linear growth factor of density perturbations against scale factor. Growth tracks the matter-only line (dashed) until dark energy takes over, then stalls.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In this picture a region collapses into a bound structure once its linear overdensity reaches about 1.7, so the redshift at which structures of a given size form scales in proportion to their initial amplitude. That is why <span class="math inline">\(Q\)</span> matters so much:</p>
+<ul>
+<li><strong>If <span class="math inline">\(Q\)</span> were much smaller</strong> (around <span class="math inline">\(10^{-6}\)</span>), gas clouds would take far longer to contract. Galaxies would form late, if at all, and their stars would be diffuse, so supernova ejecta could escape and no second generation of enriched stars would form.</li>
+<li><strong>If <span class="math inline">\(Q\)</span> were much larger</strong> (around <span class="math inline">\(10^{-4}\)</span>), structure would form very early and densely. Galaxies would be compact enough for stars to collide, and many would collapse to giant black holes.</li>
+</ul>
+<p>Our value gives galaxies that are big enough to retain heavy elements and sparse enough that planetary systems survive. This post doesn’t compute the full structure-formation calculation; the scaling above is only the heart of it.</p>
+</section>
+<section id="d-3-dimensions-of-space" class="level2">
+<h2 class="anchored" data-anchor-id="d-3-dimensions-of-space">6. <span class="math inline">\(D = 3\)</span>: dimensions of space</h2>
+<p>Why three? Paul Ehrenfest’s 1917 analysis shows that the <em>stability of orbits</em> singles out <span class="math inline">\(D=3\)</span>. In <span class="math inline">\(D\)</span> spatial dimensions Gauss’s law makes a central force fall off as <span class="math inline">\(r^{-(D-1)}\)</span> and the potential as <span class="math inline">\(r^{-(D-2)}\)</span>. For a particle with angular momentum <span class="math inline">\(L\)</span> the effective potential is</p>
+<p><span class="math display">\[
+V_{\mathrm{eff}}(r) = \frac{L^2}{2mr^2} - \frac{k}{r^{D-2}} .
+\]</span></p>
+<p>A stable circular orbit needs a minimum of <span class="math inline">\(V_{\mathrm{eff}}\)</span>.</p>
+<ul>
+<li><strong><span class="math inline">\(D=3\)</span>:</strong> the attractive <span class="math inline">\(-k/r\)</span> is overtaken by the centrifugal <span class="math inline">\(r^{-2}\)</span> term at small <span class="math inline">\(r\)</span>, producing a stable minimum. Planets can orbit stars.</li>
+<li><strong><span class="math inline">\(D=4\)</span>:</strong> both terms go as <span class="math inline">\(r^{-2}\)</span>. There is no minimum at all: for weak angular momentum a particle spirals into the centre, for strong angular momentum it is flung away.</li>
+<li><strong><span class="math inline">\(D\ge5\)</span>:</strong> the attractive term dominates at small <span class="math inline">\(r\)</span> and the potential is unbounded below. Everything collapses.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>veff <span class="ot">&lt;-</span> <span class="cf">function</span>(r, D) <span class="fl">0.5</span> <span class="sc">/</span> r<span class="sc">^</span><span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span> <span class="sc">/</span> r<span class="sc">^</span>(D <span class="sc">-</span> <span class="dv">2</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>dd <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">r =</span> <span class="fu">seq</span>(<span class="fl">0.15</span>, <span class="dv">4</span>, <span class="at">length.out =</span> <span class="dv">500</span>), <span class="at">D =</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">V =</span> <span class="fu">veff</span>(r, D), <span class="at">D =</span> <span class="fu">factor</span>(<span class="fu">paste0</span>(<span class="st">"D = "</span>, D)))</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(dd, <span class="fu">aes</span>(r, V, <span class="at">colour =</span> D)) <span class="sc">+</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">colour =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>)) <span class="sc">+</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Radius r"</span>, <span class="at">y =</span> <span class="fu">expression</span>(V[eff](r)), <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-dimensions" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dimensions-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-dimensions-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dimensions-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Effective potential for gravity in 3, 4 and 5 spatial dimensions (units with L²/2m = 0.5 and k = 1). Only D = 3 has a stable orbital minimum; the same argument applies to electrons around nuclei.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The same argument applies to the Schrödinger equation: in four or more spatial dimensions, hydrogen-like atoms have no stable ground state, so there would be no chemistry. Fewer dimensions have their own problems: in <span class="math inline">\(D=2\)</span> the gravitational potential is logarithmic, orbits are not closed, and a body can never escape. Max Tegmark’s 1997 survey of these arguments is a good modern treatment.</p>
+</section>
+<section id="how-seriously-should-we-take-all-this" class="level2">
+<h2 class="anchored" data-anchor-id="how-seriously-should-we-take-all-this">How seriously should we take all this?</h2>
+<p>It is worth being clear about what the six-numbers argument does and does not establish.</p>
+<ul>
+<li><strong>What it shows</strong> is <em>sensitivity</em>: with physics otherwise unchanged, the outcome of these numbers is not robust to large changes. Those scaling arguments, such as <span class="math inline">\(M_\star \propto N^{3/2}\)</span>, the flatness calculation and the orbital stability of <span class="math inline">\(D=3\)</span>, are straightforward calculations.</li>
+<li><strong>What it does not show</strong> is that the numbers <em>had</em> to be tuned by something. For that you need a probability distribution over possible values of constants, and nobody has a principled one. Critics, among them Lee Smolin and Sabine Hossenfelder, argue that “fine-tuning” is not well-defined without such a measure, and some of the numbers (like <span class="math inline">\(\Omega\)</span>) may have explanations through dynamics like inflation.</li>
+<li><strong>Rees’s own response</strong> is to take the multiverse seriously: if a very large ensemble of universes exists with different values of <span class="math inline">\(N\)</span>, <span class="math inline">\(\varepsilon\)</span>, <span class="math inline">\(Q\)</span> and so on, then finding ourselves in one that permits observers is no surprise. He is open that this is a hypothesis, not a result, and that it remains controversial.</li>
+</ul>
+<p>Whichever view you prefer, the numbers provide a clear way to ask what a universe is made of at the deepest level. That is why the book has been durable.</p>
+</section>
+<section id="takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
+<ul>
+<li><span class="math inline">\(N \approx 10^{36}\)</span> sets how big stars are and how long they live: <span class="math inline">\(M_\star\propto N^{3/2}\)</span> and <span class="math inline">\(t_\star\propto N\)</span>.</li>
+<li><span class="math inline">\(\varepsilon \approx 0.007\)</span> is the fraction of mass released by hydrogen fusion; Rees’s examples show it sits in a narrow window.</li>
+<li><span class="math inline">\(\Omega\approx0.3\)</span> and <span class="math inline">\(\lambda\approx0.7\)</span> govern the expansion history. The flatness calculation shows the early universe was balanced to about one part in <span class="math inline">\(10^{16}\)</span>, and <span class="math inline">\(\lambda\)</span> is about <span class="math inline">\(10^{-123}\)</span> of the naive Planck-scale value.</li>
+<li><span class="math inline">\(Q\approx10^{-5}\)</span> sets when and how densely galaxies form.</li>
+<li><span class="math inline">\(D=3\)</span> is singled out by the stability of orbits and atoms.</li>
+<li>The sensitivity arguments are solid. What they <em>mean</em> is still debated.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Rees, M. (1999). <em>Just Six Numbers: The Deep Forces That Shape the Universe</em>. Weidenfeld &amp; Nicolson.</li>
+<li>Carr, B. J., &amp; Rees, M. J. (1979). The anthropic principle and the structure of the physical world. <em>Nature</em> 278, 605.</li>
+<li>Rees, M. J., &amp; Sciama, D. W. (1968). Large-scale density inhomogeneities in the universe. <em>Nature</em> 217, 511.</li>
+<li>Blandford, R. D., &amp; Rees, M. J. (1974). A “twin-exhaust” model for double radio sources. <em>MNRAS</em> 169, 395.</li>
+<li>Rees, M. J., &amp; Ostriker, J. P. (1977). Cooling, dynamics and fragmentation of massive gas clouds. <em>MNRAS</em> 179, 541.</li>
+<li>Blumenthal, G. R., Faber, S. M., Primack, J. R., &amp; Rees, M. J. (1984). Formation of galaxies and large-scale structure with cold dark matter. <em>Nature</em> 311, 517.</li>
+<li>Mészáros, P., &amp; Rees, M. J. (1993). Relativistic fireballs and their impact on external matter. <em>Astrophysical Journal</em> 405, 278.</li>
+<li>Weinberg, S. (1987). Anthropic bound on the cosmological constant. <em>Physical Review Letters</em> 59, 2607.</li>
+<li>Riess, A. G., et al.&nbsp;(1998). Observational evidence from supernovae for an accelerating universe. <em>Astronomical Journal</em> 116, 1009.</li>
+<li>Perlmutter, S., et al.&nbsp;(1999). Measurements of Ω and Λ from 42 high-redshift supernovae. <em>Astrophysical Journal</em> 517, 565.</li>
+<li>Ehrenfest, P. (1917). In what way does it become manifest in the fundamental laws of physics that space has three dimensions? <em>Proc. Amsterdam Academy</em> 20, 200.</li>
+<li>Tegmark, M. (1997). On the dimensionality of spacetime. <em>Classical and Quantum Gravity</em> 14, L69.</li>
+<li>Planck Collaboration (2020). Planck 2018 results. VI. Cosmological parameters. <em>Astronomy &amp; Astrophysics</em> 641, A6.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
