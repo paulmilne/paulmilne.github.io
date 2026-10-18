@@ -10,6 +10,7 @@
     "listing": "/cosmology/index.html",
     "items": [
       "/cosmology/astronomy/index.html",
+      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html",
       "/cosmology/many-worlds/index.html",
       "/cosmology/rees-six-numbers/index.html",
       "/cosmology/stellar-nucleosynthesis/index.html"
@@ -17,7 +18,9 @@
   },
   {
     "listing": "/cosmology/astronomy/index.html",
-    "items": []
+    "items": [
+      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html"
+    ]
   },
   {
     "listing": "/explainers/index.html",

@@ -1,0 +1,11 @@
+# Python environment used to execute index.qmd (render with QUARTO_PYTHON pointing at this env)
+optiland==0.6.3
+numpy
+scipy
+matplotlib
+pandas
+ipykernel
+nbformat
+nbclient
+pyyaml
+tabulate
