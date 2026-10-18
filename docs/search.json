@@ -515,7 +515,7 @@
     "href": "cosmology/index.html",
     "title": "Cosmology",
     "section": "",
-    "text": "Notes and worked examples on cosmology.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nThe Many-Worlds Interpretation\n\n\nHugh Everett’s relative-state idea, decoherence, and the problem of probability\n\n\n\ncosmology\n\nquantum-mechanics\n\nhistory-of-science\n\n\n\nA worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett’s life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today’s leading advocates, and how it differs from the multiverse of Martin Rees.\n\n\n\n\n\nOct 18, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nMartin Rees and the Six Numbers\n\n\nThe dimensionless constants that shaped the universe, and the astronomer who put them together\n\n\n\ncosmology\n\nhistory-of-science\n\nfine-tuning\n\n\n\nA profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different.\n\n\n\n\n\nOct 18, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nStellar Nucleosynthesis\n\n\nHow stars make the elements, and Fred Hoyle’s carbon resonance\n\n\n\ncosmology\n\nnuclear-astrophysics\n\nhistory-of-science\n\n\n\nFrom Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper.\n\n\n\n\n\nOct 18, 2026\n\n\nPaul Milne\n\n\n\n\n\nNo matching items"
+    "text": "Notes and worked examples on cosmology.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nAstronomy\n\n\n\n\n\nNotes and worked examples on observational and theoretical astronomy.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nThe Many-Worlds Interpretation\n\n\nHugh Everett’s relative-state idea, decoherence, and the problem of probability\n\n\n\ncosmology\n\nquantum-mechanics\n\nhistory-of-science\n\n\n\nA worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett’s life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today’s leading advocates, and how it differs from the multiverse of Martin Rees.\n\n\n\n\n\nOct 18, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nMartin Rees and the Six Numbers\n\n\nThe dimensionless constants that shaped the universe, and the astronomer who put them together\n\n\n\ncosmology\n\nhistory-of-science\n\nfine-tuning\n\n\n\nA profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different.\n\n\n\n\n\nOct 18, 2026\n\n\nPaul Milne\n\n\n\n\n\n\n\n\n\n\n\n\nStellar Nucleosynthesis\n\n\nHow stars make the elements, and Fred Hoyle’s carbon resonance\n\n\n\ncosmology\n\nnuclear-astrophysics\n\nhistory-of-science\n\n\n\nFrom Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper.\n\n\n\n\n\nOct 18, 2026\n\n\nPaul Milne\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
@@ -523,6 +523,13 @@
     "title": "About",
     "section": "",
     "text": "About this blog"
+  },
+  {
+    "objectID": "cosmology/astronomy/index.html",
+    "href": "cosmology/astronomy/index.html",
+    "title": "Astronomy",
+    "section": "",
+    "text": "Notes and worked examples on astronomy.\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "cosmology/many-worlds/index.html",
