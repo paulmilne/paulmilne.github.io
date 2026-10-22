@@ -35,10 +35,10 @@ website:
         text: Cosmology
     right:
       - about.qmd
+      - icon: linkedin
+        href: https://www.linkedin.com/in/paulmilne/
       - icon: github
-        href: https://github.com/
-      - icon: twitter
-        href: https://twitter.com
+        href: https://github.com/paulmilne
 format:
   html:
     theme:
