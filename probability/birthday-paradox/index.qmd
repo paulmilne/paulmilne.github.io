@@ -2,6 +2,7 @@
 title: "The Birthday Paradox"
 subtitle: "Why 23 people is enough for a shared birthday"
 description: "A worked derivation of the birthday paradox: the exact probability, the exponential approximation, the square-root scaling law, and a Monte Carlo check in R."
+image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-17"
 categories: [probability, combinatorics, simulation]

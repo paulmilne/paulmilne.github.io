@@ -2,6 +2,7 @@
 title: "Inside a Meade LX90: Ray Tracing an 8-inch Schmidt–Cassegrain"
 subtitle: "Corrector plate, mirrors and eyepiece modelled in Python, plus field curvature, diffraction and chromatic focus"
 description: "A ray-traced model of an 8-inch f/10 Schmidt–Cassegrain telescope like the Meade LX90, built with the Optiland Python package: design geometry, a designed corrector plate, a Plössl eyepiece, diffraction and MTF with the central obstruction, field curvature, and a comparison of chromatic focus against achromatic and apochromatic refractors."
+image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-18"
 categories: [astronomy, optics, python]

@@ -2,6 +2,7 @@
 title: "Martin Rees and the Six Numbers"
 subtitle: "The dimensionless constants that shaped the universe, and the astronomer who put them together"
 description: "A profile of Martin Rees and a worked tour of the six numbers from Just Six Numbers (N, epsilon, Omega, lambda, Q and D): what each means, the equations behind it, and what changes if it were different."
+image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-18"
 categories: [cosmology, history-of-science, fine-tuning]

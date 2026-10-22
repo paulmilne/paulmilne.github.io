@@ -2,6 +2,7 @@
 title: "Stellar Nucleosynthesis"
 subtitle: "How stars make the elements, and Fred Hoyle's carbon resonance"
 description: "From Gamow tunnelling to the triple-alpha process: the mathematics of thermonuclear reaction rates, the pp chain and CNO cycle, and the story of Fred Hoyle, the Hoyle state and the B2FH paper."
+image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-18"
 categories: [cosmology, nuclear-astrophysics, history-of-science]

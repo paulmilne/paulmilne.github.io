@@ -2,6 +2,7 @@
 title: "The Many-Worlds Interpretation"
 subtitle: "Hugh Everett's relative-state idea, decoherence, and the problem of probability"
 description: "A worked introduction to the many-worlds interpretation of quantum mechanics: Hugh Everett's life and the 1957 relative-state formulation, entanglement and decoherence computed explicitly, the Born-rule counting problem, today's leading advocates, and how it differs from the multiverse of Martin Rees."
+image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-18"
 categories: [cosmology, quantum-mechanics, history-of-science]

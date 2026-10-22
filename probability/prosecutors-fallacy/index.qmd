@@ -2,6 +2,7 @@
 title: "The Prosecutor's Fallacy"
 subtitle: "Confusing P(evidence | innocent) with P(innocent | evidence)"
 description: "A worked look at the prosecutor's fallacy: why a one-in-a-million match does not mean a one-in-a-million chance of innocence, with Bayes' theorem, a natural-frequency picture, and an R simulation."
+image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-17"
 categories: [probability, bayes, statistics]
