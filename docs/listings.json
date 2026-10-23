@@ -1,25 +1,18 @@
 [
   {
-    "listing": "/papers/index.html",
+    "listing": "/probability/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html",
-      "/papers/rg-critical-phenomena/index.html"
+      "/probability/pearl-causal-inference/index.html",
+      "/probability/birthday-paradox/index.html",
+      "/probability/prosecutors-fallacy/index.html"
     ]
   },
   {
-    "listing": "/cosmology/index.html",
+    "listing": "/index.html",
     "items": [
-      "/cosmology/astronomy/index.html",
-      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html",
-      "/cosmology/many-worlds/index.html",
-      "/cosmology/rees-six-numbers/index.html",
-      "/cosmology/stellar-nucleosynthesis/index.html"
-    ]
-  },
-  {
-    "listing": "/cosmology/astronomy/index.html",
-    "items": [
-      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html"
+      "/posts/diffusion-phase-transition/index.html",
+      "/posts/rg-diffusion-phase-transitions/index.html",
+      "/posts/welcome/index.html"
     ]
   },
   {
@@ -33,18 +26,26 @@
     ]
   },
   {
-    "listing": "/index.html",
+    "listing": "/cosmology/astronomy/index.html",
     "items": [
-      "/posts/diffusion-phase-transition/index.html",
-      "/posts/rg-diffusion-phase-transitions/index.html",
-      "/posts/welcome/index.html"
+      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html"
     ]
   },
   {
-    "listing": "/probability/index.html",
+    "listing": "/cosmology/index.html",
     "items": [
-      "/probability/birthday-paradox/index.html",
-      "/probability/prosecutors-fallacy/index.html"
+      "/cosmology/astronomy/index.html",
+      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html",
+      "/cosmology/many-worlds/index.html",
+      "/cosmology/rees-six-numbers/index.html",
+      "/cosmology/stellar-nucleosynthesis/index.html"
+    ]
+  },
+  {
+    "listing": "/papers/index.html",
+    "items": [
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   }
 ]

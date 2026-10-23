@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-23">
+<meta name="description" content="An introduction to Judea Pearl: his life, the three rungs of the ladder of causation, causal diagrams, the backdoor and front-door criteria, the three rules of the do-calculus and counterfactuals, with R checks and a look at what it means for AI.">
+
+<title>Judea Pearl, the do-Calculus and the Ladder of Causation – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Judea Pearl, the do-Calculus and the Ladder of Causation – math-blog">
+<meta property="og:description" content="An introduction to Judea Pearl: his life, the three rungs of the ladder of causation, causal diagrams, the backdoor and front-door criteria, the three rules of the do-calculus and counterfactuals, with R checks and a look at what it means for AI.">
+<meta property="og:image" content="https://paulmilne.github.io/probability/pearl-causal-inference/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="960">
+<meta property="og:image:width" content="1344">
+<meta name="twitter:title" content="Judea Pearl, the do-Calculus and the Ladder of Causation – math-blog">
+<meta name="twitter:description" content="An introduction to Judea Pearl: his life, the three rungs of the ladder of causation, causal diagrams, the backdoor and front-door criteria, the three rules of the do-calculus and counterfactuals, with R checks and a look at what it means for AI.">
+<meta name="twitter:image" content="https://paulmilne.github.io/probability/pearl-causal-inference/thumbnail.png">
+<meta name="twitter:image-height" content="960">
+<meta name="twitter:image-width" content="1344">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Judea Pearl, the do-Calculus and the Ladder of Causation</h1>
+            <p class="subtitle lead">From Bayesian networks to the maths of ‘what if’, and why it matters for AI</p>
+                  <div>
+        <div class="description">
+          An introduction to Judea Pearl: his life, the three rungs of the ladder of causation, causal diagrams, the backdoor and front-door criteria, the three rules of the do-calculus and counterfactuals, with R checks and a look at what it means for AI.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">probability</div>
+                <div class="quarto-category">causality</div>
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">statistics</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 23, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#who-is-judea-pearl" id="toc-who-is-judea-pearl" class="nav-link active" data-scroll-target="#who-is-judea-pearl">Who is Judea Pearl?</a>
+  <ul class="collapse">
+  <li><a href="#what-came-before" id="toc-what-came-before" class="nav-link" data-scroll-target="#what-came-before">What came before</a></li>
+  </ul></li>
+  <li><a href="#the-ladder-of-causation" id="toc-the-ladder-of-causation" class="nav-link" data-scroll-target="#the-ladder-of-causation">The ladder of causation</a></li>
+  <li><a href="#same-data-different-worlds" id="toc-same-data-different-worlds" class="nav-link" data-scroll-target="#same-data-different-worlds">Same data, different worlds</a></li>
+  <li><a href="#causal-diagrams-and-the-three-basic-structures" id="toc-causal-diagrams-and-the-three-basic-structures" class="nav-link" data-scroll-target="#causal-diagrams-and-the-three-basic-structures">Causal diagrams and the three basic structures</a>
+  <ul class="collapse">
+  <li><a href="#colliders-in-action" id="toc-colliders-in-action" class="nav-link" data-scroll-target="#colliders-in-action">Colliders in action</a></li>
+  </ul></li>
+  <li><a href="#simpsons-paradox-resolved" id="toc-simpsons-paradox-resolved" class="nav-link" data-scroll-target="#simpsons-paradox-resolved">Simpson’s paradox, resolved</a></li>
+  <li><a href="#interventions-as-graph-surgery" id="toc-interventions-as-graph-surgery" class="nav-link" data-scroll-target="#interventions-as-graph-surgery">Interventions as graph surgery</a></li>
+  <li><a href="#the-backdoor-criterion" id="toc-the-backdoor-criterion" class="nav-link" data-scroll-target="#the-backdoor-criterion">The backdoor criterion</a></li>
+  <li><a href="#the-do-calculus" id="toc-the-do-calculus" class="nav-link" data-scroll-target="#the-do-calculus">The do-calculus</a>
+  <ul class="collapse">
+  <li><a href="#the-backdoor-formula-derived" id="toc-the-backdoor-formula-derived" class="nav-link" data-scroll-target="#the-backdoor-formula-derived">The backdoor formula, derived</a></li>
+  <li><a href="#the-front-door-formula" id="toc-the-front-door-formula" class="nav-link" data-scroll-target="#the-front-door-formula">The front-door formula</a></li>
+  </ul></li>
+  <li><a href="#rung-3-counterfactuals" id="toc-rung-3-counterfactuals" class="nav-link" data-scroll-target="#rung-3-counterfactuals">Rung 3: counterfactuals</a>
+  <ul class="collapse">
+  <li><a href="#probability-of-necessity" id="toc-probability-of-necessity" class="nav-link" data-scroll-target="#probability-of-necessity">Probability of necessity</a></li>
+  </ul></li>
+  <li><a href="#why-it-matters-for-ai" id="toc-why-it-matters-for-ai" class="nav-link" data-scroll-target="#why-it-matters-for-ai">Why it matters for AI</a>
+  <ul class="collapse">
+  <li><a href="#genesis-how-pearl-shaped-early-modern-ai" id="toc-genesis-how-pearl-shaped-early-modern-ai" class="nav-link" data-scroll-target="#genesis-how-pearl-shaped-early-modern-ai">Genesis: how Pearl shaped early modern AI</a></li>
+  <li><a href="#ongoing-what-modern-ai-is-missing" id="toc-ongoing-what-modern-ai-is-missing" class="nav-link" data-scroll-target="#ongoing-what-modern-ai-is-missing">Ongoing: what modern AI is missing</a></li>
+  <li><a href="#caveats-and-critics" id="toc-caveats-and-critics" class="nav-link" data-scroll-target="#caveats-and-critics">Caveats and critics</a></li>
+  </ul></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Every statistics course repeats that correlation is not causation. Almost none of them say what causation <em>is</em>, or how to get from data to a causal answer when you can’t run an experiment. Judea Pearl spent forty years building the missing machinery: a language for causal assumptions (diagrams), an algebra for answering causal questions (the <strong>do-calculus</strong>), and a hierarchy that says which questions each kind of data can answer (the <strong>ladder of causation</strong>).</p>
+<p>This post is a tour of that machinery. It covers the person, the three rungs, the mathematics, working R checks of each idea, and why the work matters for artificial intelligence, both in how modern AI began and in what it is still missing.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+A note on sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The biographical and historical details below are from memory of the standard sources (Pearl’s own books, his Turing Award citation and the usual histories). Check specific dates, titles and attributions before quoting them. The mathematics and every number in the code outputs are computed here.</p>
+</div>
+</div>
+<section id="who-is-judea-pearl" class="level2">
+<h2 class="anchored" data-anchor-id="who-is-judea-pearl">Who is Judea Pearl?</h2>
+<p>Judea Pearl was born in Tel Aviv in 1936 and trained as an electrical engineer at the Technion, later taking graduate degrees in the United States, including a PhD from the Polytechnic Institute of Brooklyn. After industrial research work on electronic devices he joined UCLA in 1970, where he built the Cognitive Systems Laboratory and has worked ever since.</p>
+<p>His career has two distinct halves, and the second grew out of the limits of the first.</p>
+<ol type="1">
+<li><strong>Probabilistic reasoning for AI (1980s).</strong> At the time, AI reasoned with logic rules and ad-hoc “certainty factors”. Pearl argued that uncertainty should be handled by probability theory, and made that practical by representing a joint distribution as a <strong>Bayesian network</strong>: a directed graph in which each variable depends only on its parents. His 1982 paper on message passing in trees and his 1988 book <em>Probabilistic Reasoning in Intelligent Systems</em> introduced <strong>belief propagation</strong>, an efficient way to compute posteriors by passing local messages along the graph.</li>
+<li><strong>Causality (1990s onward).</strong> Pearl came to think that a Bayesian network, however good at <em>prediction</em>, says nothing reliable about what happens when you <em>act</em>. His 1995 <em>Biometrika</em> paper “Causal diagrams for empirical research” introduced the do-calculus, and his book <em>Causality</em> (2000, second edition 2009) set out the full theory. <em>The Book of Why</em> (2018, written with Dana Mackenzie) is the popular version and the source of the “ladder of causation”.</li>
+</ol>
+<p>He received the ACM Turing Award for 2011 “for fundamental contributions to artificial intelligence through the development of a calculus for probabilistic and causal reasoning”. The citation names both halves.</p>
+<p>Pearl is also known beyond science. His son Daniel, a <em>Wall Street Journal</em> reporter, was kidnapped and murdered in Pakistan in 2002, and the family set up the Daniel Pearl Foundation in his memory.</p>
+<section id="what-came-before" class="level3">
+<h3 class="anchored" data-anchor-id="what-came-before">What came before</h3>
+<p>Pearl did not invent causal thinking from nothing. The pieces he unified were scattered across fields that barely spoke to each other.</p>
+<ul>
+<li><strong>Sewall Wright</strong> (1921) drew path diagrams for guinea-pig coat colours, the first causal graphs, but the method stayed inside genetics and econometrics.</li>
+<li><strong>R. A. Fisher</strong> gave the randomised experiment its modern form in the 1920s and 30s. Randomisation works because it deletes the arrows into treatment, which we’ll see is exactly what Pearl’s <span class="math inline">\(do(\cdot)\)</span> operator does to a diagram.</li>
+<li><strong>Jerzy Neyman</strong> (1923) and <strong>Donald Rubin</strong> (1970s) developed <em>potential outcomes</em>, the other major formalism, in which each unit has an outcome under each treatment.</li>
+<li><strong>Trygve Haavelmo</strong> (1940s) argued that structural equations in economics describe how a system responds to <em>intervention</em>, not just how it is distributed.</li>
+<li><strong>Statisticians such as Simpson (1951)</strong> documented paradoxes, but statistics had no vocabulary to say which of the two conflicting answers was right.</li>
+</ul>
+<p>Pearl’s contribution was to put these into one framework with a precise graphical language, and to prove which causal quantities can be computed from which data.</p>
+</section>
+</section>
+<section id="the-ladder-of-causation" class="level2">
+<h2 class="anchored" data-anchor-id="the-ladder-of-causation">The ladder of causation</h2>
+<p>Pearl sorts all causal reasoning into three levels, which he calls rungs. Each rung asks a qualitatively different question, and, crucially, <strong>data on a lower rung can never answer a higher-rung question without extra assumptions</strong>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>rungs <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">ymin =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">1.1</span>, <span class="fl">2.2</span>),</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ymax =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">2.1</span>, <span class="fl">3.2</span>),</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">fill =</span> <span class="fu">c</span>(<span class="st">"#9ecae1"</span>, <span class="st">"#6baed6"</span>, <span class="st">"#2171b5"</span>),</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">txt  =</span> <span class="fu">c</span>(<span class="st">"#08306b"</span>, <span class="st">"#08306b"</span>, <span class="st">"white"</span>),</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">title =</span> <span class="fu">c</span>(<span class="st">"1. Seeing  (association)"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"2. Doing  (intervention)"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"3. Imagining  (counterfactuals)"</span>),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">q =</span> <span class="fu">c</span>(<span class="st">"What does observing X tell me about Y?"</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"What happens to Y if I set X?"</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"What would Y have been, had X been different?"</span>),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">sym =</span> <span class="fu">c</span>(<span class="st">"P(y | x)"</span>, <span class="st">"P(y | do(x))"</span>, <span class="st">"P(y_x | x', y')"</span>),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">ex =</span> <span class="fu">c</span>(<span class="st">"Do people who take aspirin have fewer headaches?"</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>         <span class="st">"If I take aspirin, will my headache go?"</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>         <span class="st">"My headache went after aspirin. Was it the aspirin?"</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(rungs) <span class="sc">+</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_rect</span>(<span class="fu">aes</span>(<span class="at">xmin =</span> <span class="dv">0</span>, <span class="at">xmax =</span> <span class="dv">10</span>, <span class="at">ymin =</span> ymin, <span class="at">ymax =</span> ymax, <span class="at">fill =</span> fill)) <span class="sc">+</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fl">0.3</span>, <span class="at">y =</span> ymax <span class="sc">-</span> <span class="fl">0.2</span>, <span class="at">label =</span> title, <span class="at">colour =</span> txt),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            <span class="at">hjust =</span> <span class="dv">0</span>, <span class="at">vjust =</span> <span class="dv">1</span>, <span class="at">fontface =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="fl">4.6</span>) <span class="sc">+</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fl">0.3</span>, <span class="at">y =</span> ymax <span class="sc">-</span> <span class="fl">0.52</span>, <span class="at">label =</span> q, <span class="at">colour =</span> txt),</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>            <span class="at">hjust =</span> <span class="dv">0</span>, <span class="at">vjust =</span> <span class="dv">1</span>, <span class="at">size =</span> <span class="fl">3.6</span>) <span class="sc">+</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fl">0.3</span>, <span class="at">y =</span> ymin <span class="sc">+</span> <span class="fl">0.18</span>, <span class="at">label =</span> ex, <span class="at">colour =</span> txt),</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>            <span class="at">hjust =</span> <span class="dv">0</span>, <span class="at">vjust =</span> <span class="dv">0</span>, <span class="at">size =</span> <span class="fl">3.3</span>, <span class="at">fontface =</span> <span class="st">"italic"</span>) <span class="sc">+</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fl">9.7</span>, <span class="at">y =</span> (ymin <span class="sc">+</span> ymax) <span class="sc">/</span> <span class="dv">2</span>, <span class="at">label =</span> sym, <span class="at">colour =</span> txt),</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>            <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">size =</span> <span class="dv">5</span>, <span class="at">family =</span> <span class="st">"mono"</span>) <span class="sc">+</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_identity</span>() <span class="sc">+</span> <span class="fu">scale_colour_identity</span>() <span class="sc">+</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">10</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">3.2</span>), <span class="at">expand =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div id="fig-ladder" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ladder-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-ladder-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ladder-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The three rungs of the ladder of causation. Each rung needs strictly more causal knowledge than the one below it.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Rung 1, seeing.</strong> Pure statistics lives here: conditional probabilities, regression, and today most of machine learning. Bayes’ theorem, as in <a href="../../probability/prosecutors-fallacy/">the prosecutor’s fallacy</a>, is a rung-1 tool. It tells you how to update beliefs on evidence, but not what would happen if you changed something.</p>
+<p><strong>Rung 2, doing.</strong> Here we ask about the consequences of deliberate action. The key notation is <span class="math inline">\(P(y \mid do(x))\)</span>: the distribution of <span class="math inline">\(Y\)</span> in a world where <span class="math inline">\(X\)</span> has been <em>forced</em> to <span class="math inline">\(x\)</span>, not merely observed there. A randomised trial measures it directly. Observational data can too, if the causal structure is known.</p>
+<p><strong>Rung 3, imagining.</strong> Counterfactuals concern a specific individual and a specific alternative history: “Would this patient have recovered had they not been treated?” The quantity <span class="math inline">\(P(y_x \mid x', y')\)</span> reads “the probability that <span class="math inline">\(Y\)</span> would have been <span class="math inline">\(y\)</span> had <span class="math inline">\(X\)</span> been <span class="math inline">\(x\)</span>, given that we actually saw <span class="math inline">\(x'\)</span> and <span class="math inline">\(y'\)</span>”. Responsibility, blame, regret and explanation all live here.</p>
+<p>A tidy way to remember the difference: the rooster’s crow predicts sunrise (rung 1) but silencing the rooster doesn’t stop the sun (rung 2), and “had the rooster not crowed, would the sun still have risen?” is a counterfactual (rung 3) with an obvious answer that no dataset contains.</p>
+</section>
+<section id="same-data-different-worlds" class="level2">
+<h2 class="anchored" data-anchor-id="same-data-different-worlds">Same data, different worlds</h2>
+<p>Why can’t rung-1 data reach rung 2? Because very different causal worlds can produce <em>identical</em> observational distributions. Here are two models with the same joint distribution of <span class="math inline">\((X, Y)\)</span>.</p>
+<ul>
+<li><strong>Model A:</strong> <span class="math inline">\(X\)</span> is a fair coin; <span class="math inline">\(Y\)</span> depends on <span class="math inline">\(X\)</span>: <span class="math inline">\(P(Y{=}1 \mid X) = 0.3 + 0.4X\)</span>.</li>
+<li><strong>Model B:</strong> a hidden coin <span class="math inline">\(U\)</span>; <span class="math inline">\(X\)</span> is just a copy of <span class="math inline">\(U\)</span>; <span class="math inline">\(Y\)</span> depends on <span class="math inline">\(U\)</span> with the same formula, and <span class="math inline">\(X\)</span> has <em>no effect</em> on <span class="math inline">\(Y\)</span>.</li>
+</ul>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fl">1e6</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Model A: X causes Y</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>xa <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>ya <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> xa)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Model B: hidden U drives both; X is a copy of U</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>ub <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>xb <span class="ot">&lt;-</span> ub</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>yb <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> ub)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># intervening: set X by an outside coin</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>do_a <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fu">mean</span>(<span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> x))</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>do_b <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fu">mean</span>(<span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> ub))   <span class="co"># X has no arrow into Y</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">"A: X causes Y"</span>, <span class="st">"B: X is a copy of a hidden cause"</span>),</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">P(Y=1 | X=1)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">mean</span>(ya[xa <span class="sc">==</span> <span class="dv">1</span>]), <span class="fu">mean</span>(yb[xb <span class="sc">==</span> <span class="dv">1</span>])),</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">P(Y=1 | X=0)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">mean</span>(ya[xa <span class="sc">==</span> <span class="dv">0</span>]), <span class="fu">mean</span>(yb[xb <span class="sc">==</span> <span class="dv">0</span>])),</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">P(Y=1 | do(X=1))</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">do_a</span>(<span class="dv">1</span>), <span class="fu">do_b</span>(<span class="dv">1</span>)),</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">P(Y=1 | do(X=0))</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">do_a</span>(<span class="dv">0</span>), <span class="fu">do_b</span>(<span class="dv">0</span>))</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), \(v) <span class="fu">round</span>(v, <span class="dv">3</span>))) <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 29%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 19%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">model</th>
+<th style="text-align: right;">P(Y=1 | X=1)</th>
+<th style="text-align: right;">P(Y=1 | X=0)</th>
+<th style="text-align: right;">P(Y=1 | do(X=1))</th>
+<th style="text-align: right;">P(Y=1 | do(X=0))</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A: X causes Y</td>
+<td style="text-align: right;">0.700</td>
+<td style="text-align: right;">0.300</td>
+<td style="text-align: right;">0.700</td>
+<td style="text-align: right;">0.299</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B: X is a copy of a hidden cause</td>
+<td style="text-align: right;">0.699</td>
+<td style="text-align: right;">0.299</td>
+<td style="text-align: right;">0.501</td>
+<td style="text-align: right;">0.500</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The observational columns are identical, and the interventional columns are not: in model A, forcing <span class="math inline">\(X\)</span> moves <span class="math inline">\(Y\)</span> by 0.4, and in model B it does nothing. No amount of rung-1 data separates them. You need to say which model you believe, and that is what a causal diagram does.</p>
+</section>
+<section id="causal-diagrams-and-the-three-basic-structures" class="level2">
+<h2 class="anchored" data-anchor-id="causal-diagrams-and-the-three-basic-structures">Causal diagrams and the three basic structures</h2>
+<p>A <strong>structural causal model</strong> (SCM) assigns each variable a function of its direct causes (its <em>parents</em>) plus independent noise:</p>
+<p><span class="math display">\[
+X_i := f_i(\mathrm{pa}_i,\, U_i).
+\]</span></p>
+<p>Drawing an arrow from each parent to its child gives a directed acyclic graph (DAG). The graph is the qualitative content of the model: it encodes which variables listen to which, and, just as importantly, which don’t.</p>
+<p>Every DAG is built from three elementary patterns, and each carries a different statistical signature.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- graph utilities (edges: data.frame with columns from, to) -----------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>parents_of  <span class="ot">&lt;-</span> <span class="cf">function</span>(e, v) e<span class="sc">$</span>from[e<span class="sc">$</span>to <span class="sc">==</span> v]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>children_of <span class="ot">&lt;-</span> <span class="cf">function</span>(e, v) e<span class="sc">$</span>to[e<span class="sc">$</span>from <span class="sc">==</span> v]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>closure <span class="ot">&lt;-</span> <span class="cf">function</span>(e, vs, step) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> vs</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">repeat</span> {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    new <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">unlist</span>(<span class="fu">lapply</span>(out, \(v) <span class="fu">step</span>(e, v))), out)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">length</span>(new)) <span class="cf">break</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">c</span>(out, new)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  out</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>ancestors_of   <span class="ot">&lt;-</span> <span class="cf">function</span>(e, vs) <span class="fu">closure</span>(e, vs, parents_of)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>descendants_of <span class="ot">&lt;-</span> <span class="cf">function</span>(e, vs) <span class="fu">closure</span>(e, vs, children_of)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>cut_in  <span class="ot">&lt;-</span> <span class="cf">function</span>(e, nodes) e[<span class="sc">!</span>(e<span class="sc">$</span>to   <span class="sc">%in%</span> nodes), ]   <span class="co"># delete arrows INTO nodes</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>cut_out <span class="ot">&lt;-</span> <span class="cf">function</span>(e, nodes) e[<span class="sc">!</span>(e<span class="sc">$</span>from <span class="sc">%in%</span> nodes), ]   <span class="co"># delete arrows OUT OF nodes</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># d-separation via the moralised ancestral graph</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>d_sep <span class="ot">&lt;-</span> <span class="cf">function</span>(e, x, y, <span class="at">z =</span> <span class="fu">character</span>()) {</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  anc <span class="ot">&lt;-</span> <span class="fu">ancestors_of</span>(e, <span class="fu">c</span>(x, y, z))</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  sub <span class="ot">&lt;-</span> e[e<span class="sc">$</span>from <span class="sc">%in%</span> anc <span class="sc">&amp;</span> e<span class="sc">$</span>to <span class="sc">%in%</span> anc, ]</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  und <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">a =</span> sub<span class="sc">$</span>from, <span class="at">b =</span> sub<span class="sc">$</span>to)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (v <span class="cf">in</span> anc) {</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> sub<span class="sc">$</span>from[sub<span class="sc">$</span>to <span class="sc">==</span> v]</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(p) <span class="sc">&gt;</span> <span class="dv">1</span>) {</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      cm <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">combn</span>(p, <span class="dv">2</span>))</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>      und <span class="ot">&lt;-</span> <span class="fu">rbind</span>(und, <span class="fu">data.frame</span>(<span class="at">a =</span> cm[, <span class="dv">1</span>], <span class="at">b =</span> cm[, <span class="dv">2</span>]))</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  und <span class="ot">&lt;-</span> und[<span class="sc">!</span>(und<span class="sc">$</span>a <span class="sc">%in%</span> z <span class="sc">|</span> und<span class="sc">$</span>b <span class="sc">%in%</span> z), ]</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  reach <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(x, z)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  frontier <span class="ot">&lt;-</span> reach</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="cf">repeat</span> {</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    nb <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">unique</span>(<span class="fu">c</span>(und<span class="sc">$</span>b[und<span class="sc">$</span>a <span class="sc">%in%</span> frontier], und<span class="sc">$</span>a[und<span class="sc">$</span>b <span class="sc">%in%</span> frontier])), reach)</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">length</span>(nb)) <span class="cf">break</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    reach <span class="ot">&lt;-</span> <span class="fu">c</span>(reach, nb)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    frontier <span class="ot">&lt;-</span> nb</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>  <span class="sc">!</span><span class="fu">any</span>(y <span class="sc">%in%</span> reach)</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># backdoor criterion: Z has no descendant of X, and blocks every path</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="co"># that starts with an arrow INTO X</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>backdoor_ok <span class="ot">&lt;-</span> <span class="cf">function</span>(e, x, y, z) {</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  <span class="sc">!</span><span class="fu">any</span>(z <span class="sc">%in%</span> <span class="fu">descendants_of</span>(e, x)) <span class="sc">&amp;&amp;</span> <span class="fu">d_sep</span>(<span class="fu">cut_out</span>(e, x), x, y, z)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="co"># all minimal valid adjustment sets drawn from observed variables</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>adjustment_sets <span class="ot">&lt;-</span> <span class="cf">function</span>(e, x, y, <span class="at">latent =</span> <span class="fu">character</span>()) {</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>  cand <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">unique</span>(<span class="fu">c</span>(e<span class="sc">$</span>from, e<span class="sc">$</span>to)), <span class="fu">c</span>(x, y, latent))</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>  ok <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">0</span><span class="sc">:</span><span class="fu">length</span>(cand)) {</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>    combs <span class="ot">&lt;-</span> <span class="cf">if</span> (k <span class="sc">==</span> <span class="dv">0</span>) <span class="fu">list</span>(<span class="fu">character</span>()) <span class="cf">else</span> <span class="fu">combn</span>(cand, k, <span class="at">simplify =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (s <span class="cf">in</span> combs) <span class="cf">if</span> (<span class="fu">backdoor_ok</span>(e, x, y, s)) ok[[<span class="fu">length</span>(ok) <span class="sc">+</span> <span class="dv">1</span>]] <span class="ot">&lt;-</span> s</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Filter</span>(\(s) <span class="sc">!</span><span class="fu">any</span>(<span class="fu">vapply</span>(ok, \(t) <span class="fu">length</span>(t) <span class="sc">&lt;</span> <span class="fu">length</span>(s) <span class="sc">&amp;&amp;</span> <span class="fu">all</span>(t <span class="sc">%in%</span> s), <span class="fu">logical</span>(<span class="dv">1</span>))), ok)</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>fmt_sets <span class="ot">&lt;-</span> <span class="cf">function</span>(s) {</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">length</span>(s)) <span class="fu">return</span>(<span class="st">"none"</span>)</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(<span class="fu">vapply</span>(s, \(v) <span class="cf">if</span> (<span class="fu">length</span>(v)) <span class="fu">paste0</span>(<span class="st">"{"</span>, <span class="fu">paste</span>(v, <span class="at">collapse =</span> <span class="st">", "</span>), <span class="st">"}"</span>) <span class="cf">else</span> <span class="st">"{} (nothing)"</span>,</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>               <span class="st">""</span>), <span class="at">collapse =</span> <span class="st">"; "</span>)</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="co"># --- drawing -------------------------------------------------------------</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>draw_dag <span class="ot">&lt;-</span> <span class="cf">function</span>(nodes, edges) {</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>  lv <span class="ot">&lt;-</span> <span class="fu">unique</span>(nodes<span class="sc">$</span>graph)</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>  seg <span class="ot">&lt;-</span> edges <span class="sc">|&gt;</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(<span class="fu">select</span>(nodes, graph, <span class="at">from =</span> name, x, y), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"graph"</span>, <span class="st">"from"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(<span class="fu">select</span>(nodes, graph, <span class="at">to =</span> name, <span class="at">xend =</span> x, <span class="at">yend =</span> y), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"graph"</span>, <span class="st">"to"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">len =</span> <span class="fu">sqrt</span>((xend <span class="sc">-</span> x)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (yend <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>           <span class="at">x2 =</span> x <span class="sc">+</span> (xend <span class="sc">-</span> x) <span class="sc">*</span> (len <span class="sc">-</span> <span class="fl">0.22</span>) <span class="sc">/</span> len, <span class="at">y2 =</span> y <span class="sc">+</span> (yend <span class="sc">-</span> y) <span class="sc">*</span> (len <span class="sc">-</span> <span class="fl">0.22</span>) <span class="sc">/</span> len,</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>           <span class="at">x1 =</span> x <span class="sc">+</span> (xend <span class="sc">-</span> x) <span class="sc">*</span> <span class="fl">0.22</span> <span class="sc">/</span> len,         <span class="at">y1 =</span> y <span class="sc">+</span> (yend <span class="sc">-</span> y) <span class="sc">*</span> <span class="fl">0.22</span> <span class="sc">/</span> len,</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>           <span class="at">graph =</span> <span class="fu">factor</span>(graph, <span class="at">levels =</span> lv))</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>  nodes <span class="ot">&lt;-</span> <span class="fu">mutate</span>(nodes, <span class="at">graph =</span> <span class="fu">factor</span>(graph, <span class="at">levels =</span> lv))</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_segment</span>(<span class="at">data =</span> seg, <span class="fu">aes</span>(<span class="at">x =</span> x1, <span class="at">y =</span> y1, <span class="at">xend =</span> x2, <span class="at">yend =</span> y2),</span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>                 <span class="at">arrow =</span> <span class="fu">arrow</span>(<span class="at">length =</span> <span class="fu">unit</span>(<span class="fl">0.2</span>, <span class="st">"cm"</span>), <span class="at">type =</span> <span class="st">"closed"</span>), <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">data =</span> nodes, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> latent), <span class="at">shape =</span> <span class="dv">21</span>, <span class="at">size =</span> <span class="dv">12</span>, <span class="at">stroke =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_text</span>(<span class="at">data =</span> nodes, <span class="fu">aes</span>(x, y, <span class="at">label =</span> name), <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">FALSE</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"white"</span>, <span class="st">`</span><span class="at">TRUE</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"grey80"</span>), <span class="at">guide =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span>graph, <span class="at">nrow =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_fixed</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.3</span>, <span class="fl">2.3</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.3</span>, <span class="fl">1.3</span>)) <span class="sc">+</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">11</span>, <span class="at">margin =</span> <span class="fu">margin</span>(<span class="at">b =</span> <span class="dv">6</span>)))</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>motif_nodes <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Chain"</span>, <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"M"</span>, <span class="st">"Y"</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="at">y =</span> <span class="fl">0.5</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Fork"</span>, <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"M"</span>, <span class="st">"Y"</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Collider"</span>, <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"M"</span>, <span class="st">"Y"</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">latent =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>motif_edges <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Chain"</span>, <span class="at">from =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"M"</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="st">"M"</span>, <span class="st">"Y"</span>)),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Fork"</span>, <span class="at">from =</span> <span class="fu">c</span>(<span class="st">"M"</span>, <span class="st">"M"</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"Y"</span>)),</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Collider"</span>, <span class="at">from =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"Y"</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="st">"M"</span>, <span class="st">"M"</span>))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_dag</span>(motif_nodes, motif_edges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div id="fig-motifs" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-motifs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-motifs-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-motifs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The three building blocks of every causal diagram: a chain (mediator), a fork (common cause) and a collider (common effect).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>motif_tab <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">c</span>(<span class="st">"Chain"</span>, <span class="st">"Fork"</span>, <span class="st">"Collider"</span>), \(g) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  e <span class="ot">&lt;-</span> motif_edges <span class="sc">|&gt;</span> <span class="fu">filter</span>(graph <span class="sc">==</span> g) <span class="sc">|&gt;</span> <span class="fu">select</span>(from, to)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">structure =</span> g,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>         <span class="st">`</span><span class="at">X, Y independent?</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">d_sep</span>(e, <span class="st">"X"</span>, <span class="st">"Y"</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>         <span class="st">`</span><span class="at">X, Y independent given M?</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">d_sep</span>(e, <span class="st">"X"</span>, <span class="st">"Y"</span>, <span class="st">"M"</span>))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">|&gt;</span> <span class="fu">bind_rows</span>()</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(motif_tab)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">structure</th>
+<th style="text-align: left;">X, Y independent?</th>
+<th style="text-align: left;">X, Y independent given M?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Chain</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fork</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Collider</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<ul>
+<li>In a <strong>chain</strong> (<span class="math inline">\(X \to M \to Y\)</span>) the association flows through <span class="math inline">\(M\)</span>. Conditioning on <span class="math inline">\(M\)</span> blocks it.</li>
+<li>In a <strong>fork</strong> (<span class="math inline">\(X \leftarrow M \to Y\)</span>) <span class="math inline">\(M\)</span> is a common cause (a <strong>confounder</strong>), which creates a spurious association between <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span>. Conditioning on <span class="math inline">\(M\)</span> removes it.</li>
+<li>In a <strong>collider</strong> (<span class="math inline">\(X \to M \leftarrow Y\)</span>) the two causes are independent, but conditioning on the common effect <span class="math inline">\(M\)</span> <em>creates</em> a dependence between them.</li>
+</ul>
+<p>The last is the surprising one, and it is the rule that Pearl’s <strong>d-separation</strong> criterion generalises: a path is blocked by a set <span class="math inline">\(Z\)</span> if it contains a non-collider in <span class="math inline">\(Z\)</span>, or a collider that is neither in <span class="math inline">\(Z\)</span> nor has a descendant in <span class="math inline">\(Z\)</span>. The <code>d_sep</code> function above implements it by the standard moralised-ancestral-graph test.</p>
+<section id="colliders-in-action" class="level3">
+<h3 class="anchored" data-anchor-id="colliders-in-action">Colliders in action</h3>
+<p>Suppose talent and looks are independent in the general population, but a casting director only hires people whose combination of the two is high enough. Among those hired, the two are negatively correlated: someone with modest talent must be good-looking to have got the job.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fl">1e5</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>talent <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N); looks <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>hired <span class="ot">&lt;-</span> (talent <span class="sc">+</span> looks) <span class="sc">&gt;</span> <span class="fu">quantile</span>(talent <span class="sc">+</span> looks, <span class="fl">0.9</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">everyone =</span> <span class="fu">cor</span>(talent, looks), <span class="at">hired_only =</span> <span class="fu">cor</span>(talent[hired], looks[hired]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>    everyone   hired_only 
+ 0.001020544 -0.717057871 </code></pre>
+</div>
+</div>
+<p>This selection effect, also called Berkson’s paradox, is a standard source of spurious findings (“why are the cleverest students so clumsy?”) and a good reason not to “control for everything”. It also has a cosmological cousin: <a href="../../cosmology/rees-six-numbers/">Martin Rees’s fine-tuning argument</a> is a statement about the universes in which observers exist, so any inference from “we observe these constants” conditions on the collider “observers exist”.</p>
+</section>
+</section>
+<section id="simpsons-paradox-resolved" class="level2">
+<h2 class="anchored" data-anchor-id="simpsons-paradox-resolved">Simpson’s paradox, resolved</h2>
+<p>Here is the classic reversal, using the figures usually quoted for a 1980s comparison of two treatments for kidney stones: open surgery (A) and percutaneous nephrolithotomy (B).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ks <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">treatment =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"A: open surgery"</span>, <span class="st">"B: percutaneous"</span>), <span class="at">each =</span> <span class="dv">2</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">size      =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"small"</span>, <span class="st">"large"</span>), <span class="dv">2</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n         =</span> <span class="fu">c</span>(<span class="dv">87</span>, <span class="dv">263</span>, <span class="dv">270</span>, <span class="dv">80</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">recovered =</span> <span class="fu">c</span>(<span class="dv">81</span>, <span class="dv">192</span>, <span class="dv">234</span>, <span class="dv">55</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">rate =</span> recovered <span class="sc">/</span> n)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>by_size <span class="ot">&lt;-</span> ks <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">rate =</span> <span class="fu">sprintf</span>(<span class="st">"%.1f%%  (%d/%d)"</span>, <span class="dv">100</span> <span class="sc">*</span> rate, recovered, n)) <span class="sc">|&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(treatment, size, rate) <span class="sc">|&gt;</span> tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(<span class="at">names_from =</span> size, <span class="at">values_from =</span> rate)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>overall <span class="ot">&lt;-</span> ks <span class="sc">|&gt;</span> <span class="fu">group_by</span>(treatment) <span class="sc">|&gt;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">overall =</span> <span class="fu">sprintf</span>(<span class="st">"%.1f%%"</span>, <span class="dv">100</span> <span class="sc">*</span> <span class="fu">sum</span>(recovered) <span class="sc">/</span> <span class="fu">sum</span>(n)))</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">left_join</span>(by_size, overall, <span class="at">by =</span> <span class="st">"treatment"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">treatment</th>
+<th style="text-align: left;">small</th>
+<th style="text-align: left;">large</th>
+<th style="text-align: left;">overall</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A: open surgery</td>
+<td style="text-align: left;">93.1% (81/87)</td>
+<td style="text-align: left;">73.0% (192/263)</td>
+<td style="text-align: left;">78.0%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B: percutaneous</td>
+<td style="text-align: left;">86.7% (234/270)</td>
+<td style="text-align: left;">68.8% (55/80)</td>
+<td style="text-align: left;">82.6%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Treatment A does better for small stones, better for large stones, and yet B looks better overall. Whether the paradox is a paradox, or which table to trust, depends on the causal story. Doctors give the harder open surgery to the harder cases, so stone size <span class="math inline">\(Z\)</span> influences both treatment <span class="math inline">\(X\)</span> and recovery <span class="math inline">\(Y\)</span>: <span class="math inline">\(Z\)</span> is a confounder.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pz <span class="ot">&lt;-</span> ks <span class="sc">|&gt;</span> <span class="fu">group_by</span>(size) <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(n)) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">pz =</span> n <span class="sc">/</span> <span class="fu">sum</span>(n))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>adj <span class="ot">&lt;-</span> ks <span class="sc">|&gt;</span> <span class="fu">left_join</span>(<span class="fu">select</span>(pz, size, pz), <span class="at">by =</span> <span class="st">"size"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(treatment) <span class="sc">|&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="st">`</span><span class="at">naive P(recover | treatment)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(recovered) <span class="sc">/</span> <span class="fu">sum</span>(n),</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">adjusted P(recover | do(treatment))</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(rate <span class="sc">*</span> pz))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(adj, <span class="at">digits =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 37%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">treatment</th>
+<th style="text-align: right;">naive P(recover | treatment)</th>
+<th style="text-align: right;">adjusted P(recover | do(treatment))</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A: open surgery</td>
+<td style="text-align: right;">0.780</td>
+<td style="text-align: right;">0.833</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B: percutaneous</td>
+<td style="text-align: right;">0.826</td>
+<td style="text-align: right;">0.779</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Adjusting for stone size, weighting each treatment’s within-size rates by how common each size is in the whole population, reverses the naive ranking and favours A. The formula used is the <strong>backdoor adjustment</strong>:</p>
+<p><span class="math display">\[
+P(y \mid do(x)) = \sum_z P(y \mid x, z)\, P(z).
+\]</span></p>
+<p>This answer is only right <em>because</em> the diagram says size is a confounder. If instead the “<span class="math inline">\(Z\)</span>” were a post-treatment variable (say, a measured side effect of the treatment), adjusting for it would be the wrong move, and the aggregated table would be the right one. The same numbers can give opposite advice. The graph decides, and the data cannot.</p>
+</section>
+<section id="interventions-as-graph-surgery" class="level2">
+<h2 class="anchored" data-anchor-id="interventions-as-graph-surgery">Interventions as graph surgery</h2>
+<p>Pearl’s central idea is that an intervention is a <em>local</em> change to the model. Setting <span class="math inline">\(X\)</span> to <span class="math inline">\(x\)</span> replaces the equation for <span class="math inline">\(X\)</span> with the constant <span class="math inline">\(x\)</span>, which deletes every arrow into <span class="math inline">\(X\)</span> and leaves all other equations alone. The result is the <strong>truncated factorisation</strong>: if the joint distribution factorises over the DAG as <span class="math inline">\(P(v) = \prod_i P(v_i \mid \mathrm{pa}_i)\)</span>, then</p>
+<p><span class="math display">\[
+P(v \mid do(x)) = \prod_{i:\,V_i \notin X} P(v_i \mid \mathrm{pa}_i)\quad\text{(for $v$ consistent with $x$)},
+\]</span></p>
+<p>with the factors for the intervened variables dropped. This is exactly what randomisation does: it makes treatment independent of everything upstream.</p>
+</section>
+<section id="the-backdoor-criterion" class="level2">
+<h2 class="anchored" data-anchor-id="the-backdoor-criterion">The backdoor criterion</h2>
+<p>When can we express <span class="math inline">\(P(y \mid do(x))\)</span> using only observational quantities? The simplest sufficient condition is the <strong>backdoor criterion</strong>: a set <span class="math inline">\(Z\)</span> satisfies it relative to <span class="math inline">\((X, Y)\)</span> if</p>
+<ol type="1">
+<li>no member of <span class="math inline">\(Z\)</span> is a descendant of <span class="math inline">\(X\)</span>, and</li>
+<li><span class="math inline">\(Z\)</span> blocks every path from <span class="math inline">\(X\)</span> to <span class="math inline">\(Y\)</span> that starts with an arrow <em>into</em> <span class="math inline">\(X\)</span> (the “back doors”).</li>
+</ol>
+<p>Then the adjustment formula above is valid. Checking condition 2 is a d-separation test on the graph with <span class="math inline">\(X\)</span>’s outgoing arrows removed, which is how <code>backdoor_ok</code> is written. Here it is on three graphs with different causes of trouble.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dag_nodes <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Confounder"</span>, <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"Z"</span>, <span class="st">"X"</span>, <span class="st">"Y"</span>), <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>), <span class="at">latent =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"M-bias"</span>, <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"U1"</span>, <span class="st">"U2"</span>, <span class="st">"Z"</span>, <span class="st">"X"</span>, <span class="st">"Y"</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="fl">1.1</span>, <span class="fl">1.1</span>, <span class="fl">0.55</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">latent =</span> <span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>)),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Front-door"</span>, <span class="at">name =</span> <span class="fu">c</span>(<span class="st">"U"</span>, <span class="st">"X"</span>, <span class="st">"M"</span>, <span class="st">"Y"</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="fl">1.1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>), <span class="at">latent =</span> <span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>dag_edges <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Confounder"</span>, <span class="at">from =</span> <span class="fu">c</span>(<span class="st">"Z"</span>, <span class="st">"Z"</span>, <span class="st">"X"</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"Y"</span>, <span class="st">"Y"</span>)),</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"M-bias"</span>, <span class="at">from =</span> <span class="fu">c</span>(<span class="st">"U1"</span>, <span class="st">"U1"</span>, <span class="st">"U2"</span>, <span class="st">"U2"</span>, <span class="st">"X"</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"Z"</span>, <span class="st">"Z"</span>, <span class="st">"Y"</span>, <span class="st">"Y"</span>)),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> <span class="st">"Front-door"</span>, <span class="at">from =</span> <span class="fu">c</span>(<span class="st">"U"</span>, <span class="st">"U"</span>, <span class="st">"X"</span>, <span class="st">"M"</span>), <span class="at">to =</span> <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"Y"</span>, <span class="st">"M"</span>, <span class="st">"Y"</span>))</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_dag</span>(dag_nodes, dag_edges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div id="fig-dags" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dags-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-dags-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dags-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Three diagrams. Grey nodes are unobserved. Left: a simple confounder. Middle: ‘M-bias’, where the observed Z is a collider. Right: the front-door graph, where the confounder U is never observed.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>latent <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">Confounder =</span> <span class="fu">character</span>(), <span class="st">`</span><span class="at">M-bias</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"U1"</span>, <span class="st">"U2"</span>), <span class="st">`</span><span class="at">Front-door</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"U"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>adj_tab <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">names</span>(latent), \(g) {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  e <span class="ot">&lt;-</span> dag_edges <span class="sc">|&gt;</span> <span class="fu">filter</span>(graph <span class="sc">==</span> g) <span class="sc">|&gt;</span> <span class="fu">select</span>(from, to)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">graph =</span> g, <span class="st">`</span><span class="at">valid adjustment sets</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">fmt_sets</span>(<span class="fu">adjustment_sets</span>(e, <span class="st">"X"</span>, <span class="st">"Y"</span>, latent[[g]])))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">|&gt;</span> <span class="fu">bind_rows</span>()</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(adj_tab)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">graph</th>
+<th style="text-align: left;">valid adjustment sets</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Confounder</td>
+<td style="text-align: left;">{Z}</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">M-bias</td>
+<td style="text-align: left;">{} (nothing)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Front-door</td>
+<td style="text-align: left;">none</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<ul>
+<li><strong>Confounder:</strong> adjust for <span class="math inline">\(Z\)</span>, as in the kidney-stone example.</li>
+<li><strong>M-bias:</strong> the <em>empty</em> set is valid. <span class="math inline">\(Z\)</span> is not a confounder; it is a collider on the path <span class="math inline">\(X \leftarrow U_1 \to Z \leftarrow U_2 \to Y\)</span>, which is already blocked. Adjusting for it would open the path and <em>introduce</em> bias. Habitually controlling for every pre-treatment variable is not safe.</li>
+<li><strong>Front-door:</strong> there is no valid set among the observed variables, since the only observed candidate <span class="math inline">\(M\)</span> is a descendant of <span class="math inline">\(X\)</span>. The backdoor route is closed to us. This is where the do-calculus earns its keep.</li>
+</ul>
+</section>
+<section id="the-do-calculus" class="level2">
+<h2 class="anchored" data-anchor-id="the-do-calculus">The do-calculus</h2>
+<p>The backdoor criterion is a special case of something more general. Pearl’s <strong>do-calculus</strong> consists of three rules for transforming expressions containing <span class="math inline">\(do(\cdot)\)</span>. Write <span class="math inline">\(G_{\overline{X}}\)</span> for the graph with arrows <em>into</em> <span class="math inline">\(X\)</span> deleted, and <span class="math inline">\(G_{\underline{Z}}\)</span> for the graph with arrows <em>out of</em> <span class="math inline">\(Z\)</span> deleted. For disjoint sets of variables <span class="math inline">\(X, Y, Z, W\)</span>:</p>
+<p><strong>Rule 1: insert or delete an observation.</strong> <span class="math display">\[
+P(y \mid do(x), z, w) = P(y \mid do(x), w) \quad\text{if } (Y \perp Z \mid X, W)_{G_{\overline{X}}}.
+\]</span></p>
+<p><strong>Rule 2: exchange an action for an observation.</strong> <span class="math display">\[
+P(y \mid do(x), do(z), w) = P(y \mid do(x), z, w) \quad\text{if } (Y \perp Z \mid X, W)_{G_{\overline{X}\,\underline{Z}}}.
+\]</span></p>
+<p><strong>Rule 3: insert or delete an action.</strong> <span class="math display">\[
+P(y \mid do(x), do(z), w) = P(y \mid do(x), w) \quad\text{if } (Y \perp Z \mid X, W)_{G_{\overline{X}\,\overline{Z(W)}}},
+\]</span> where <span class="math inline">\(Z(W)\)</span> is the set of <span class="math inline">\(Z\)</span>-nodes that are not ancestors of any <span class="math inline">\(W\)</span>-node in <span class="math inline">\(G_{\overline{X}}\)</span>.</p>
+<p>Each rule says that when a certain d-separation holds in a surgically modified graph, two interventional or observational expressions are equal. Rule 1 is d-separation itself; Rule 2 is the licence to treat “seeing” as “doing” once confounding is cut away; Rule 3 says some interventions have no effect at all.</p>
+<p>The results that make this more than a curiosity are:</p>
+<ul>
+<li><strong>Soundness:</strong> every equality derived with the rules is true in every model compatible with the graph.</li>
+<li><strong>Completeness</strong> (Shpitser &amp; Pearl, and independently Huang &amp; Valtorta, 2006): if a causal effect can be identified from the graph and the observational distribution at all, then some sequence of do-calculus steps will derive it. An algorithm, the ID algorithm, finds one automatically, and returns “not identifiable” otherwise.</li>
+</ul>
+<p>So whether a causal question is answerable from your data is a <em>decidable</em> property of the diagram.</p>
+<section id="the-backdoor-formula-derived" class="level3">
+<h3 class="anchored" data-anchor-id="the-backdoor-formula-derived">The backdoor formula, derived</h3>
+<p>Let <span class="math inline">\(Z\)</span> satisfy the backdoor criterion. Then</p>
+<p><span class="math display">\[
+\begin{aligned}
+P(y \mid do(x)) &amp;= \sum_z P(y \mid do(x), z)\,P(z \mid do(x)) &amp;&amp; \text{(probability)}\\
+&amp;= \sum_z P(y \mid x, z)\,P(z \mid do(x)) &amp;&amp; \text{(Rule 2: } Y \perp X \mid Z \text{ once back doors are cut)}\\
+&amp;= \sum_z P(y \mid x, z)\,P(z) &amp;&amp; \text{(Rule 3: } Z \perp X \text{ in } G_{\overline{X}}\text{, since } Z \text{ is not a descendant)}.
+\end{aligned}
+\]</span></p>
+</section>
+<section id="the-front-door-formula" class="level3">
+<h3 class="anchored" data-anchor-id="the-front-door-formula">The front-door formula</h3>
+<p>Now the harder case: <span class="math inline">\(U\)</span> is never observed, so we can’t adjust for it, but we <em>have</em> a mediator <span class="math inline">\(M\)</span> that is shielded from <span class="math inline">\(U\)</span>. A (hypothetical) example: genotype <span class="math inline">\(U\)</span> affects both smoking <span class="math inline">\(X\)</span> and cancer <span class="math inline">\(Y\)</span> and cannot be measured; smoking acts on cancer only through tar deposits <span class="math inline">\(M\)</span>. Three applications of the rules give</p>
+<p><span class="math display">\[
+P(y \mid do(x)) = \sum_m P(m \mid x) \sum_{x'} P(y \mid x', m)\, P(x').
+\]</span></p>
+<p>The reasoning has three steps, each licensed by a rule. Here the graph conditions are checked by machine.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fd <span class="ot">&lt;-</span> dag_edges <span class="sc">|&gt;</span> <span class="fu">filter</span>(graph <span class="sc">==</span> <span class="st">"Front-door"</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(from, to)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">step =</span> <span class="fu">c</span>(<span class="st">"1. P(m | do(x)) = P(m | x)       [Rule 2: X's own effect on M is unconfounded]"</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>           <span class="st">"2. P(y | do(m)) = sum_x' P(y | m, x') P(x')   [backdoor via X]"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>           <span class="st">"3. P(y | do(x), do(m)) = P(y | do(m))   [Rule 3: once M is set, X is irrelevant]"</span>),</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">graph condition holds?</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">d_sep</span>(<span class="fu">cut_out</span>(fd, <span class="st">"X"</span>), <span class="st">"X"</span>, <span class="st">"M"</span>),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">backdoor_ok</span>(fd, <span class="st">"M"</span>, <span class="st">"Y"</span>, <span class="st">"X"</span>),</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">d_sep</span>(<span class="fu">cut_in</span>(fd, <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"M"</span>)), <span class="st">"X"</span>, <span class="st">"Y"</span>, <span class="st">"M"</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 79%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">step</th>
+<th style="text-align: left;">graph condition holds?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1. P(m | do(x)) = P(m | x) [Rule 2: X’s own effect on M is unconfounded]</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2. P(y | do(m)) = sum_x’ P(y | m, x’) P(x’) [backdoor via X]</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3. P(y | do(x), do(m)) = P(y | do(m)) [Rule 3: once M is set, X is irrelevant]</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Now the numerical test. Simulate a world with a genuine hidden confounder, so we know the true answer, and see whether the front-door formula recovers it from only the observed <span class="math inline">\((X, M, Y)\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SCM:  U -&gt; X, U -&gt; Y, X -&gt; M -&gt; Y     (U hidden)</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fl">2e6</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">do_x =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">is.null</span>(do_x)) <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.2</span> <span class="sc">+</span> <span class="fl">0.6</span> <span class="sc">*</span> u) <span class="cf">else</span> <span class="fu">rep</span>(do_x, n)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.7</span> <span class="sc">*</span> x)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> m <span class="sc">+</span> <span class="fl">0.3</span> <span class="sc">*</span> u)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(x, m, y)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">sim</span>()</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co"># ground truth: actually intervene in the simulator</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">do(X=0)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(<span class="fu">sim</span>(<span class="dv">0</span>)<span class="sc">$</span>y), <span class="st">`</span><span class="at">do(X=1)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(<span class="fu">sim</span>(<span class="dv">1</span>)<span class="sc">$</span>y))</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># naive: just condition on X</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>naive <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">do(X=0)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(d<span class="sc">$</span>y[d<span class="sc">$</span>x <span class="sc">==</span> <span class="dv">0</span>]), <span class="st">`</span><span class="at">do(X=1)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(d<span class="sc">$</span>y[d<span class="sc">$</span>x <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co"># front-door formula using only observed x, m, y</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>front <span class="ot">&lt;-</span> <span class="cf">function</span>(d, x) {</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(<span class="fu">table</span>(d<span class="sc">$</span>x))</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(<span class="fu">sapply</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>, \(m) {</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    pm <span class="ot">&lt;-</span> <span class="fu">mean</span>(d<span class="sc">$</span>m[d<span class="sc">$</span>x <span class="sc">==</span> x] <span class="sc">==</span> m)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    inner <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">sapply</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>, \(xp) <span class="fu">mean</span>(d<span class="sc">$</span>y[d<span class="sc">$</span>x <span class="sc">==</span> xp <span class="sc">&amp;</span> d<span class="sc">$</span>m <span class="sc">==</span> m]) <span class="sc">*</span> px[<span class="fu">as.character</span>(xp)]))</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    pm <span class="sc">*</span> inner</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  }))</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>fdoor <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">do(X=0)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">front</span>(d, <span class="dv">0</span>), <span class="st">`</span><span class="at">do(X=1)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">front</span>(d, <span class="dv">1</span>))</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="st">`</span><span class="at">True (simulated intervention)</span><span class="st">`</span> <span class="ot">=</span> truth,</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Naive conditioning on X</span><span class="st">`</span> <span class="ot">=</span> naive,</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Front-door formula</span><span class="st">`</span> <span class="ot">=</span> fdoor)</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">cbind</span>(res, <span class="st">`</span><span class="at">effect (do1 - do0)</span><span class="st">`</span> <span class="ot">=</span> res[, <span class="dv">2</span>] <span class="sc">-</span> res[, <span class="dv">1</span>])</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">round</span>(res, <span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">do(X=0)</th>
+<th style="text-align: right;">do(X=1)</th>
+<th style="text-align: right;">effect (do1 - do0)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">True (simulated intervention)</td>
+<td style="text-align: right;">0.300</td>
+<td style="text-align: right;">0.650</td>
+<td style="text-align: right;">0.350</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Naive conditioning on X</td>
+<td style="text-align: right;">0.210</td>
+<td style="text-align: right;">0.740</td>
+<td style="text-align: right;">0.530</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Front-door formula</td>
+<td style="text-align: right;">0.299</td>
+<td style="text-align: right;">0.651</td>
+<td style="text-align: right;">0.352</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The naive contrast overstates the effect, because people with high <span class="math inline">\(U\)</span> are both more likely to have <span class="math inline">\(X = 1\)</span> and more likely to have <span class="math inline">\(Y = 1\)</span>. The front-door formula, which never sees <span class="math inline">\(U\)</span>, lands on the interventional truth.</p>
+</section>
+</section>
+<section id="rung-3-counterfactuals" class="level2">
+<h2 class="anchored" data-anchor-id="rung-3-counterfactuals">Rung 3: counterfactuals</h2>
+<p>Rungs 1 and 2 describe populations. Counterfactuals describe <em>one unit</em>. Pearl’s recipe has three steps, given a fully specified SCM and an observed outcome:</p>
+<ol type="1">
+<li><strong>Abduction:</strong> update the noise terms <span class="math inline">\(U\)</span> to be consistent with what was observed.</li>
+<li><strong>Action:</strong> apply the intervention <span class="math inline">\(do(X = x')\)</span> to the model.</li>
+<li><strong>Prediction:</strong> compute the outcome in the modified model, using the updated <span class="math inline">\(U\)</span>.</li>
+</ol>
+<p>The result is the counterfactual <span class="math inline">\(Y_{x'}(u)\)</span>. Counterfactuals are defined <em>inside</em> a model, as a mutilated model plus the unit’s own unobserved background, rather than as events in other physical worlds. That is a useful contrast with <a href="../../cosmology/many-worlds/">the many-worlds interpretation</a>, where the alternative branches are taken to be real. Pearl’s counterfactuals are a way of reasoning, whatever one thinks about branching universes.</p>
+<section id="probability-of-necessity" class="level3">
+<h3 class="anchored" data-anchor-id="probability-of-necessity">Probability of necessity</h3>
+<p>A very practical rung-3 quantity is the <strong>probability of necessity</strong>,</p>
+<p><span class="math display">\[
+\mathrm{PN} = P(Y_{x'} = 0 \mid X = x,\, Y = 1),
+\]</span></p>
+<p>“given that the treated patient recovered, the chance they would <em>not</em> have recovered without treatment”. It is what a court means by “but for” causation, and it is not identified by experiments alone. Tian and Pearl (2000) showed that experimental and observational data nevertheless <em>bound</em> it:</p>
+<p><span class="math display">\[
+\max\!\left\{0,\ \frac{P(y) - P(y_{x'})}{P(x, y)}\right\} \;\le\; \mathrm{PN} \;\le\; \min\!\left\{1,\ \frac{P(y'_{x'}) - P(x', y')}{P(x, y)}\right\}.
+\]</span></p>
+<p>We can test this because we can build a population in which each person’s response type is known. There are four types: <strong>doomed</strong> (never recovers), <strong>immune</strong> (always recovers), <strong>causal</strong> (recovers only if treated) and <strong>preventive</strong> (recovers only if untreated). Doctors tend to treat the people most likely to benefit, so treatment is confounded.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>types <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"doomed"</span>, <span class="st">"immune"</span>, <span class="st">"causal"</span>, <span class="st">"preventive"</span>),</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">p    =</span> <span class="fu">c</span>(<span class="fl">0.30</span>, <span class="fl">0.25</span>, <span class="fl">0.35</span>, <span class="fl">0.10</span>),    <span class="co"># population share</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">y0   =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>),                <span class="co"># recovery without treatment</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">y1   =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>),                <span class="co"># recovery with treatment</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">px   =</span> <span class="fu">c</span>(<span class="fl">0.30</span>, <span class="fl">0.50</span>, <span class="fl">0.70</span>, <span class="fl">0.40</span>)     <span class="co"># P(treated | type): confounded</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_x1 =</span> p <span class="sc">*</span> px,           <span class="co"># P(type, X = 1)</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_x0 =</span> p <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> px)      <span class="co"># P(type, X = 0)</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co"># observational probabilities</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>P_x1y1 <span class="ot">&lt;-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x1 <span class="sc">*</span> types<span class="sc">$</span>y1)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>P_x0y0 <span class="ot">&lt;-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> types<span class="sc">$</span>y0))</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>P_y1   <span class="ot">&lt;-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x1 <span class="sc">*</span> types<span class="sc">$</span>y1) <span class="sc">+</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x0 <span class="sc">*</span> types<span class="sc">$</span>y0)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co"># interventional (experimental) probabilities</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>P_y_do0 <span class="ot">&lt;-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p <span class="sc">*</span> types<span class="sc">$</span>y0)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>P_y_do1 <span class="ot">&lt;-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p <span class="sc">*</span> types<span class="sc">$</span>y1)</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>lower <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">0</span>, (P_y1 <span class="sc">-</span> P_y_do0) <span class="sc">/</span> P_x1y1)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>upper <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="dv">1</span>, ((<span class="dv">1</span> <span class="sc">-</span> P_y_do0) <span class="sc">-</span> P_x0y0) <span class="sc">/</span> P_x1y1)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="co"># ground truth PN, available only because we know each person's type</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>pn_true <span class="ot">&lt;-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x1[types<span class="sc">$</span>type <span class="sc">==</span> <span class="st">"causal"</span>]) <span class="sc">/</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>           <span class="fu">sum</span>(types<span class="sc">$</span>p_x1 <span class="sc">*</span> types<span class="sc">$</span>y1)</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">quantity =</span> <span class="fu">c</span>(<span class="st">"Naive risk difference  P(y|x) - P(y|x')"</span>,</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Causal effect  P(y|do(x)) - P(y|do(x'))"</span>,</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>               <span class="st">"PN lower bound"</span>, <span class="st">"PN true value (needs the types)"</span>, <span class="st">"PN upper bound"</span>),</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(P_x1y1 <span class="sc">/</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x1) <span class="sc">-</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x0 <span class="sc">*</span> types<span class="sc">$</span>y0) <span class="sc">/</span> <span class="fu">sum</span>(types<span class="sc">$</span>p_x0),</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>            P_y_do1 <span class="sc">-</span> P_y_do0, lower, pn_true, upper)</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">quantity</th>
+<th style="text-align: right;">value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Naive risk difference P(y|x) - P(y|x’)</td>
+<td style="text-align: right;">0.370</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Causal effect P(y|do(x)) - P(y|do(x’))</td>
+<td style="text-align: right;">0.250</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PN lower bound</td>
+<td style="text-align: right;">0.554</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PN true value (needs the types)</td>
+<td style="text-align: right;">0.662</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PN upper bound</td>
+<td style="text-align: right;">0.905</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The true probability of necessity lies inside the bounds, as the theory requires, but the bounds are not tight: experiments and observations together say it is <em>somewhere</em> in an interval, and only extra assumptions (for example, no preventive types, called monotonicity) or knowledge of the mechanism can pin it down. That is the content of “rung 3 needs more than rung 2”.</p>
+</section>
+</section>
+<section id="why-it-matters-for-ai" class="level2">
+<h2 class="anchored" data-anchor-id="why-it-matters-for-ai">Why it matters for AI</h2>
+<section id="genesis-how-pearl-shaped-early-modern-ai" class="level3">
+<h3 class="anchored" data-anchor-id="genesis-how-pearl-shaped-early-modern-ai">Genesis: how Pearl shaped early modern AI</h3>
+<p>Before the late 1980s, the dominant AI approach to uncertainty was to attach ad-hoc “certainty factors” to rules, as in the medical expert system MYCIN, or to avoid numbers altogether. Probability was dismissed as intractable: a joint distribution over <span class="math inline">\(n\)</span> binary variables has <span class="math inline">\(2^n\)</span> entries.</p>
+<p>Pearl’s insight was that real domains have <em>structure</em>, since most variables are directly relevant to only a few others, and that a DAG captures that structure and makes inference local. Belief propagation computes exact marginals on trees by passing messages between neighbours, in time linear in the number of variables. The same machinery spread through the field:</p>
+<ul>
+<li><strong>Probabilistic graphical models</strong>, developed by Lauritzen and Spiegelhalter, Jordan, Koller and Friedman and many others, built a whole toolkit (junction trees, variational inference, structure learning) on Bayesian networks.</li>
+<li><strong>Hidden Markov models and Kalman filters</strong>, the workhorses of speech recognition and tracking, turned out to be special cases of belief propagation on chains.</li>
+<li><strong>Error-correcting codes:</strong> the decoders for turbo and LDPC codes, used in mobile networks and satellite links, were recognised in the late 1990s as <em>loopy</em> belief propagation (McEliece, MacKay and Cheng’s paper “Turbo decoding as an instance of Pearl’s belief propagation algorithm”). Pearl’s message-passing idea is inside the phone in your pocket.</li>
+<li><strong>Statistical physics:</strong> belief propagation has deep ties to mean-field theory and the Bethe approximation. <a href="../../posts/rg-diffusion-phase-transitions/">Fixed points of belief-propagation maps</a> and <a href="../../explainers/mean-field-annealed-disorder/">mean-field theory with annealed disorder</a> are discussed elsewhere on this blog, and they are the same mathematics.</li>
+</ul>
+<p>The 1980s revolution made <em>reasoning under uncertainty</em> a respectable engineering discipline, and set the stage for the data-driven AI that followed.</p>
+</section>
+<section id="ongoing-what-modern-ai-is-missing" class="level3">
+<h3 class="anchored" data-anchor-id="ongoing-what-modern-ai-is-missing">Ongoing: what modern AI is missing</h3>
+<p>Pearl’s later complaint is that the field took the first half of his work and mostly ignored the second. In a 2018 essay (<em>Theoretical impediments to machine learning with seven sparks from the causal revolution</em>) he characterised deep learning as, in effect, sophisticated curve fitting: powerful, but confined to rung 1. The issues are concrete.</p>
+<ul>
+<li><strong>Distribution shift and robustness.</strong> A model that learns <span class="math inline">\(P(y \mid x)\)</span> is correct only while the data-generating process stays put. Causal mechanisms are the parts that tend to stay stable under change, which is the motivation for <em>invariant risk minimisation</em> (Arjovsky et al.) and for <em>causal representation learning</em> (Schölkopf et al.).</li>
+<li><strong>Decisions, not predictions.</strong> Recommendation, pricing and treatment systems are used to <em>intervene</em>. Evaluating a new policy from logs of an old one is a rung-2 question, handled by off-policy evaluation and counterfactual reasoning in advertising and reinforcement learning (Bottou et al.&nbsp;and others).</li>
+<li><strong>Fairness.</strong> “Would this loan decision have been different had the applicant been of another group, all else causally equal?” is a counterfactual, and <em>counterfactual fairness</em> (Kusner et al.) formalises it. Purely associational fairness metrics can be satisfied by models that are plainly discriminatory, and vice versa.</li>
+<li><strong>Explanation.</strong> Counterfactual explanations (“you would have been approved with an income £3,000 higher”) are rung-3 statements. Regulators increasingly want them.</li>
+<li><strong>Large language models.</strong> Models trained to predict text have absorbed enormous amounts of <em>causal talk</em>, and can often answer causal questions correctly, but they can also fail in fluent and confident ways. Benchmarks such as CLadder and Corr2Cause were built to separate genuine causal reasoning from pattern recall. Whether next-token prediction can climb the ladder, or only mimic having climbed it, is an open and live debate, and Pearl has been a prominent sceptic.</li>
+<li><strong>Agents.</strong> An AI agent acts, and every action is an intervention on a system whose logs were generated by other behaviour. Judging whether an agent’s intervention <em>caused</em> an outcome, rather than coincided with it, is a rung-2 and rung-3 problem. The instrumentation ideas in <a href="../../papers/instrumenting-agent-cybernetics/">Instrumenting Agent Cybernetics</a> are about observing agent behaviour, and the do-calculus is the natural language for asking what those observations imply.</li>
+</ul>
+</section>
+<section id="caveats-and-critics" class="level3">
+<h3 class="anchored" data-anchor-id="caveats-and-critics">Caveats and critics</h3>
+<p>Pearl’s framework is not universally embraced, and honest accounts note the disagreements.</p>
+<ul>
+<li>Identification results depend on the diagram being <em>right</em>. The calculus tells you what follows from your assumptions, but cannot validate them from observational data. Sensitivity analysis and domain knowledge remain essential.</li>
+<li>The <strong>potential-outcomes</strong> school (Rubin, Imbens and others) reaches many of the same results by different means, and some statisticians prefer it for its focus on estimation. The two frameworks are formally equivalent in the cases they both cover, and the long-running debate has been more about style and emphasis than about disagreement on the mathematics.</li>
+<li>Pearl is known for strong opinions, including about the field’s slowness to adopt graphical methods. Whatever one thinks of his tone, the technical results (soundness, completeness, the front-door and backdoor criteria) are not in dispute.</li>
+</ul>
+</section>
+</section>
+<section id="takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
+<ul>
+<li>Pearl has two legacies: <strong>Bayesian networks and belief propagation</strong>, which gave AI a workable theory of uncertainty in the 1980s, and <strong>causal inference</strong>, which gave science a formal language for intervention and counterfactuals.</li>
+<li>The <strong>ladder of causation</strong> (seeing, doing, imagining) organises questions by what knowledge they require. Data at one rung cannot answer a question at a higher rung without causal assumptions.</li>
+<li>A <strong>causal diagram</strong> is the assumption set. <strong>d-separation</strong> reads independence off it, <strong>graph surgery</strong> models an intervention, and the <strong>backdoor</strong> and <strong>front-door</strong> formulas are corollaries of the three <strong>do-calculus</strong> rules.</li>
+<li>The do-calculus is <strong>complete</strong>: whether a causal effect is identifiable from observational data is a decidable property of the graph.</li>
+<li>Counterfactuals need more than experiments, but experiments and observations together can <em>bound</em> them, as with the probability of necessity.</li>
+<li>For AI, the lesson is that prediction is not the same as understanding what happens when you act. Robustness, policy evaluation, fairness, explanation and agent oversight are all causal questions, which is why Pearl’s frameworks keep reappearing in current research.</li>
+</ul>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li>Judea Pearl and Dana Mackenzie, <em>The Book of Why</em> (2018). The accessible introduction and source of the ladder.</li>
+<li>Judea Pearl, <em>Causality: Models, Reasoning and Inference</em> (2nd ed., 2009). The full theory.</li>
+<li>Judea Pearl, Madelyn Glymour and Nicholas Jewell, <em>Causal Inference in Statistics: A Primer</em> (2016). A short textbook.</li>
+<li>Judea Pearl, “Causal diagrams for empirical research”, <em>Biometrika</em> (1995). The origin of the do-calculus.</li>
+<li>Ilya Shpitser and Judea Pearl, “Identification of joint interventional distributions in recursive semi-Markovian causal models” (2006). Completeness.</li>
+<li>Bernhard Schölkopf et al., “Toward causal representation learning”, <em>Proceedings of the IEEE</em> (2021). The machine-learning view.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
