@@ -1,34 +1,13 @@
 [
   {
-    "listing": "/probability/index.html",
-    "items": [
-      "/probability/pearl-causal-inference/index.html",
-      "/probability/birthday-paradox/index.html",
-      "/probability/prosecutors-fallacy/index.html"
-    ]
+    "listing": "/sci-fi/index.html",
+    "items": []
   },
   {
-    "listing": "/index.html",
+    "listing": "/papers/index.html",
     "items": [
-      "/posts/diffusion-phase-transition/index.html",
-      "/posts/rg-diffusion-phase-transitions/index.html",
-      "/posts/welcome/index.html"
-    ]
-  },
-  {
-    "listing": "/explainers/index.html",
-    "items": [
-      "/explainers/cgle-pattern-morphology/index.html",
-      "/explainers/bifurcation-vs-langevin/index.html",
-      "/explainers/markov-chains-diffusion/index.html",
-      "/explainers/mean-field-annealed-disorder/index.html",
-      "/explainers/toy-diffusion-model/index.html"
-    ]
-  },
-  {
-    "listing": "/cosmology/astronomy/index.html",
-    "items": [
-      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html"
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   },
   {
@@ -42,10 +21,35 @@
     ]
   },
   {
-    "listing": "/papers/index.html",
+    "listing": "/cosmology/astronomy/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html",
-      "/papers/rg-critical-phenomena/index.html"
+      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html"
+    ]
+  },
+  {
+    "listing": "/explainers/index.html",
+    "items": [
+      "/explainers/cgle-pattern-morphology/index.html",
+      "/explainers/bifurcation-vs-langevin/index.html",
+      "/explainers/markov-chains-diffusion/index.html",
+      "/explainers/mean-field-annealed-disorder/index.html",
+      "/explainers/toy-diffusion-model/index.html"
+    ]
+  },
+  {
+    "listing": "/index.html",
+    "items": [
+      "/posts/diffusion-phase-transition/index.html",
+      "/posts/rg-diffusion-phase-transitions/index.html",
+      "/posts/welcome/index.html"
+    ]
+  },
+  {
+    "listing": "/probability/index.html",
+    "items": [
+      "/probability/pearl-causal-inference/index.html",
+      "/probability/birthday-paradox/index.html",
+      "/probability/prosecutors-fallacy/index.html"
     ]
   }
 ]
