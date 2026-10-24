@@ -14,7 +14,7 @@ uv sync
 ## Run it
 
 ```bash
-uv run render.py                    # out/tripod_attack_witness.mp4: the walk into the village, from the village
+uv run render.py                    # out/tripod_attack_witness.mp4: the walk into the village, with sound
 uv run render.py --camera track     # the same, following the machine
 uv run render.py --still --at 100   # one frame, 100 s in
 uv run mjpython view.py             # live, interactive (SPACE holds fire)
@@ -24,7 +24,8 @@ uv run rimless_wheel.py             # why a tripod cannot simply roll
 ```
 
 `render.py` renders in real time; `--gait transfer --speed 2` shows the slow,
-edge-to-edge gait instead.
+edge-to-edge gait instead. `--no-sound` skips the soundtrack, and `--audio-only`
+writes just the WAV, which needs no OpenGL.
 
 ## Files
 
@@ -38,7 +39,8 @@ edge-to-edge gait instead.
 | `tripod/planner.py` | Model-predictive centre-of-mass planner (inverted pendulum, OSQP) |
 | `tripod/heatray.py` | Heat-Ray turret, ray casting, fire, and beam drawing |
 | `tripod/martian.py` | Gait plus Heat-Ray: walks, picks targets, burns them |
-| `render.py`, `view.py` | Offline video / stills, and the live viewer |
+| `tripod/audio.py` | Soundtrack synthesised from the simulation |
+| `render.py`, `view.py` | Offline video with sound / stills, and the live viewer |
 | `walk_test.py`, `stand_test.py` | Headless checks with pass/fail |
 | `rimless_wheel.py` | The first experiment: the milking stool as a rimless wheel |
 
@@ -157,6 +159,30 @@ see is the flash where it lands, then flames. Anything it rests on heats up,
 catches after 1.5 s of beam, spreads fire to the rest of the same building or
 tree, burns, and is left charred. The Martian (`martian.py`) burns the nearest
 target within 80 m and holds fire whenever the hood tilts more than 3°.
+
+## Sound
+
+There are no recordings. While the video renders, `tripod/audio.py` logs what
+makes noise against simulation time: each leg motor's torque and speed, each
+foot's ground force and height, the Heat-Ray's state and where it lands, what
+catches fire, and where the camera is. Afterwards it synthesises a 48 kHz
+stereo track and ffmpeg attaches it to the video.
+
+* **Motors**: a geared whine per leg, pitch following joint speed and loudness
+  following mechanical power, over a hydraulic hiss.
+* **Footfalls**: a landing is a foot that was clear of the ground for a third of
+  a second and is now loaded. Each gets a falling boom, a thump and a short ring
+  from the brass foot, scaled by how hard it came down.
+* **Heat-Ray**: a crack when the beam strikes, a low drone while it is on, a
+  "whoomph" as each thing catches, and fire crackle that builds with the number
+  burning. Wells does not describe the ray's sound; this is invented.
+
+Every sound is placed in the world. It reaches the camera distance / 343 m/s
+later, quieter with distance, duller with distance, and panned by where it is.
+From the village camera a foot lands about half a second before you hear it.
+Video frame n and audio sample k are both mapped to simulation time by the same
+clock, so they cannot drift; at `--speed 2` events come twice as fast but the
+pitches stay natural.
 
 ## Next steps
 
