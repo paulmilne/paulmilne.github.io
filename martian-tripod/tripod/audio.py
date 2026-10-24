@@ -13,8 +13,9 @@ what makes noise, against simulation time:
 
   * motors: a geared whine per leg whose pitch follows joint speed and whose
     loudness follows power, over a hydraulic hiss;
-  * footfalls: a deep falling thud plus a short metallic ring from the brass
-    foot, scaled by how hard the foot came down;
+  * footfalls: a heavy, unpitched crump (impact crack, falling low body,
+    sub-bass pressure wave, crunching soil, long ground rumble), scaled by how
+    hard the foot came down;
   * Heat-Ray: a crackle as the beam strikes, a low electric drone while it
     is on, a "whoomph" each time something catches, and fire crackle that
     builds with the number of things alight. (Wells says nothing about the
@@ -190,30 +191,63 @@ def footfalls(P: Placer, rec, rng) -> tuple[np.ndarray, list[tuple[float, float]
                     events.append((t[e], rec["foot_pos"][e, i].copy(), peak))
                 airborne_since = None
     marks = []
-    dur = 1.6
-    k = np.arange(int(dur * sr)) / sr
     for te, pos, peak in events:
         j = int(np.searchsorted(t, te).clip(0, len(t) - 1))
         d = float(np.linalg.norm(pos - rec["cam_pos"][j]))
         arrive = te + d / C_SOUND
         start = int(round((arrive - P.t0) / P.speed * sr))
-        if start >= P.n or start < -len(k):
-            continue
         strength = min(2.0, (peak / (0.4 * weight)) ** 0.6)
-        f = 16 + 30 * np.exp(-k / 0.12)                   # a falling boom
-        boom = np.sin(2 * math.pi * np.cumsum(f) / sr) * np.exp(-k / 0.45)
-        thump = one_pole(rng.standard_normal(len(k)), 180, sr) * np.exp(-k / 0.06) * 3.0
-        ring = sum(a * np.sin(2 * math.pi * fr * k + ph) * np.exp(-k / dc)
-                   for a, fr, ph, dc in ((0.25, 183, 0.1, 0.6), (0.18, 297, 1.3, 0.45), (0.12, 412, 2.0, 0.3),
-                                         (0.07, 655, 0.7, 0.2)))
-        mono = air(strength * (1.4 * boom + thump + 0.5 * ring), d, sr)
+        mono = crump(rng, sr, strength)
+        if start >= P.n or start < -len(mono):
+            continue
+        mono = air(mono, d, sr)
         gain = REF_DIST / max(d, REF_DIST)
         pan = float((pos - rec["cam_pos"][j]) @ rec["cam_right"][j] / max(d, 1e-6))
-        a, b = max(0, start), min(P.n, start + len(k))
+        a, b = max(0, start), min(P.n, start + len(mono))
         seg = mono[a - start:b - start]
-        out[a:b] += P.stereo(seg * 0.9, np.full(len(seg), gain), np.full(len(seg), pan))
+        out[a:b] += P.stereo(seg, np.full(len(seg), gain), np.full(len(seg), pan))
         marks.append((te, arrive))
     return out, marks
+
+
+
+def crump(rng, sr: int, strength: float = 1.0) -> np.ndarray:
+    """A 40-tonne foot meeting the ground: a heavy, unpitched crump.
+
+    Built only from shaped noise, so nothing in it has a pitch (a pitched sweep
+    is what makes a drum). Layers, from first to last:
+      impact   a few milliseconds of broadband crack as the foot strikes
+      body     low noise whose cut-off falls from 325 to 45 Hz over a quarter
+               second, saturated, for the "crump" itself
+      sub      15-60 Hz noise, the pressure wave you feel more than hear
+      crunch   sparse grains of soil and stone giving way, thinning out
+      rumble   a long low tail as the ground carries the shock away
+    """
+    dur = 2.6
+    n = int(dur * sr)
+    k = np.arange(n) / sr
+    noise = rng.standard_normal(n)
+    impact = band(rng.standard_normal(n), 200, 2500, sr) * np.exp(-k / 0.004) * 2.5
+    # body: a falling low-pass sweep, applied in short blocks
+    body = np.zeros(n)
+    block = int(0.01 * sr)
+    z = rng.standard_normal(n)
+    state = 0.0
+    for i in range(0, n, block):
+        fc = 45 + 280 * math.exp(-(i / sr) / 0.06)
+        alpha = 1 - math.exp(-2 * math.pi * fc / sr)
+        for m_ in range(i, min(n, i + block)):
+            state += alpha * (z[m_] - state)
+            body[m_] = state
+    body *= (1 - np.exp(-k / 0.004)) * np.exp(-k / 0.22) * 9
+    body = np.tanh(body * 1.5)
+    sub = band(noise, 15, 60, sr) * (1 - np.exp(-k / 0.01)) * np.exp(-k / 0.7) * 7
+    grains = (rng.random(n) < 900 / sr * np.exp(-k / 0.18)) * rng.standard_normal(n)
+    crunch = band(grains, 250, 1800, sr) * 0.7
+    rumble = band(rng.standard_normal(n), 25, 140, sr) * (1 - np.exp(-k / 0.08)) * np.exp(-k / 1.1) * 2.2
+    x = impact * 0.35 + body + 1.3 * sub + crunch + rumble
+    x *= np.minimum(1.0, (n - np.arange(n)) / (0.05 * sr))          # no click at the end
+    return strength * x * 0.5
 
 
 def heatray(P: Placer, rec, ignitions, rng) -> np.ndarray:

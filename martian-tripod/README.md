@@ -171,8 +171,9 @@ stereo track and ffmpeg attaches it to the video.
 * **Motors**: a geared whine per leg, pitch following joint speed and loudness
   following mechanical power, over a hydraulic hiss.
 * **Footfalls**: a landing is a foot that was clear of the ground for a third of
-  a second and is now loaded. Each gets a falling boom, a thump and a short ring
-  from the brass foot, scaled by how hard it came down.
+  a second and is now loaded. Each is a heavy, unpitched crump built only from
+  shaped noise (a crack, a falling low body, a sub-bass pressure wave, crunching
+  soil and a long ground rumble), scaled by how hard it came down.
 * **Heat-Ray**: a crack when the beam strikes, a low drone while it is on, a
   "whoomph" as each thing catches, and fire crackle that builds with the number
   burning. Wells does not describe the ray's sound; this is invented.
