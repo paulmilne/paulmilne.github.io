@@ -80,9 +80,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-categories"],
+      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -134,10 +134,16 @@ window.Quarto = {
 <link rel="stylesheet" href="../styles.css">
 <meta property="og:title" content="Sci-Fi – math-blog">
 <meta property="og:description" content="The science behind science fiction: physics, engineering and simulation of imagined worlds and machines.">
+<meta property="og:image" content="https://paulmilne.github.io/sci-fi/martian-tripod/thumbnail.png">
 <meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="720">
+<meta property="og:image:width" content="1280">
 <meta name="twitter:title" content="Sci-Fi – math-blog">
 <meta name="twitter:description" content="The science behind science fiction: physics, engineering and simulation of imagined worlds and machines.">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://paulmilne.github.io/sci-fi/martian-tripod/thumbnail.png">
+<meta name="twitter:image-height" content="720">
+<meta name="twitter:image-width" content="1280">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -231,7 +237,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(0)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(1)</span></div><div class="category" data-category="b3JiaXRhbCUyMG1lY2hhbmljcw==">orbital mechanics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cGh5c2ljcw==">physics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cHl0aG9u">python <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cm9ib3RpY3M=">robotics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2NpLWZp">sci-fi <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -246,7 +252,47 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="c2NpLWZpJTJDcm9ib3RpY3MlMkNwaHlzaWNzJTJDb3JiaXRhbCUyMG1lY2hhbmljcyUyQ3B5dGhvbg==" data-listing-date-sort="1792796400000" data-listing-file-modified-sort="1792845140573" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="34" data-listing-word-count-sort="6699">
+<div class="thumbnail"><a href="../sci-fi/martian-tripod/index.html" class="no-external">
 
+<img loading="lazy" src="../sci-fi/martian-tripod/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../sci-fi/martian-tripod/index.html" class="no-external">The Martian Tripod: Walking a Fighting-Machine in MuJoCo</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../sci-fi/martian-tripod/index.html" class="no-external">The kinematics of Wells’s tripods, the physics engine behind modern robot learning, and the road from Mars</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('c2NpLWZp'); return false;">sci-fi</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cGh5c2ljcw=='); return false;">physics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('b3JiaXRhbCUyMG1lY2hhbmljcw=='); return false;">orbital mechanics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cHl0aG9u'); return false;">python</div>
+
+</div>
+<div class="delink listing-description"><a href="../sci-fi/martian-tripod/index.html" class="no-external">
+<p>A MuJoCo model of an H. G. Wells fighting-machine: leg kinematics, why a tripod cannot roll, a model-predictive tumbling gait, an overview of MuJoCo and DeepMind, and the maths of firing the cylinders from Mars.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../sci-fi/martian-tripod/index.html" class="no-external">
+<div class="listing-date">
+Oct 24, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
 </div>
 <div class="listing-no-matching d-none">No matching items</div>
 </div></main> <!-- /main -->

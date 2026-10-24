@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-24">
+<meta name="description" content="A MuJoCo model of an H. G. Wells fighting-machine: leg kinematics, why a tripod cannot roll, a model-predictive tumbling gait, an overview of MuJoCo and DeepMind, and the maths of firing the cylinders from Mars.">
+
+<title>The Martian Tripod: Walking a Fighting-Machine in MuJoCo – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/videojs/video.min.js"></script>
+<link href="../../site_libs/quarto-contrib/videojs/video-js.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Martian Tripod: Walking a Fighting-Machine in MuJoCo – math-blog">
+<meta property="og:description" content="A MuJoCo model of an H. G. Wells fighting-machine: leg kinematics, why a tripod cannot roll, a model-predictive tumbling gait, an overview of MuJoCo and DeepMind, and the maths of firing the cylinders from Mars.">
+<meta property="og:image" content="https://paulmilne.github.io/sci-fi/martian-tripod/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="720">
+<meta property="og:image:width" content="1280">
+<meta name="twitter:title" content="The Martian Tripod: Walking a Fighting-Machine in MuJoCo – math-blog">
+<meta name="twitter:description" content="A MuJoCo model of an H. G. Wells fighting-machine: leg kinematics, why a tripod cannot roll, a model-predictive tumbling gait, an overview of MuJoCo and DeepMind, and the maths of firing the cylinders from Mars.">
+<meta name="twitter:image" content="https://paulmilne.github.io/sci-fi/martian-tripod/thumbnail.png">
+<meta name="twitter:image-height" content="720">
+<meta name="twitter:image-width" content="1280">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Martian Tripod: Walking a Fighting-Machine in MuJoCo</h1>
+            <p class="subtitle lead">The kinematics of Wells’s tripods, the physics engine behind modern robot learning, and the road from Mars</p>
+                  <div>
+        <div class="description">
+          A MuJoCo model of an H. G. Wells fighting-machine: leg kinematics, why a tripod cannot roll, a model-predictive tumbling gait, an overview of MuJoCo and DeepMind, and the maths of firing the cylinders from Mars.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">sci-fi</div>
+                <div class="quarto-category">robotics</div>
+                <div class="quarto-category">physics</div>
+                <div class="quarto-category">orbital mechanics</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 24, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#where-the-martians-came-down" id="toc-where-the-martians-came-down" class="nav-link active" data-scroll-target="#where-the-martians-came-down">Where the Martians came down</a></li>
+  <li><a href="#mujoco-the-physics-engine-of-robot-learning" id="toc-mujoco-the-physics-engine-of-robot-learning" class="nav-link" data-scroll-target="#mujoco-the-physics-engine-of-robot-learning">MuJoCo: the physics engine of robot learning</a>
+  <ul class="collapse">
+  <li><a href="#how-it-works" id="toc-how-it-works" class="nav-link" data-scroll-target="#how-it-works">How it works</a></li>
+  <li><a href="#from-research-tool-to-ai-infrastructure" id="toc-from-research-tool-to-ai-infrastructure" class="nav-link" data-scroll-target="#from-research-tool-to-ai-infrastructure">From research tool to AI infrastructure</a></li>
+  </ul></li>
+  <li><a href="#the-machine" id="toc-the-machine" class="nav-link" data-scroll-target="#the-machine">The machine</a></li>
+  <li><a href="#leg-kinematics" id="toc-leg-kinematics" class="nav-link" data-scroll-target="#leg-kinematics">Leg kinematics</a>
+  <ul class="collapse">
+  <li><a href="#forward-kinematics" id="toc-forward-kinematics" class="nav-link" data-scroll-target="#forward-kinematics">Forward kinematics</a></li>
+  <li><a href="#inverse-kinematics" id="toc-inverse-kinematics" class="nav-link" data-scroll-target="#inverse-kinematics">Inverse kinematics</a></li>
+  <li><a href="#statics-what-the-motors-must-hold" id="toc-statics-what-the-motors-must-hold" class="nav-link" data-scroll-target="#statics-what-the-motors-must-hold">Statics: what the motors must hold</a></li>
+  </ul></li>
+  <li><a href="#can-a-tripod-roll-the-milking-stool-problem" id="toc-can-a-tripod-roll-the-milking-stool-problem" class="nav-link" data-scroll-target="#can-a-tripod-roll-the-milking-stool-problem">Can a tripod roll? The milking-stool problem</a></li>
+  <li><a href="#balance-the-support-triangle-and-the-hinge" id="toc-balance-the-support-triangle-and-the-hinge" class="nav-link" data-scroll-target="#balance-the-support-triangle-and-the-hinge">Balance: the support triangle and the hinge</a></li>
+  <li><a href="#walking-by-planning-the-fall" id="toc-walking-by-planning-the-fall" class="nav-link" data-scroll-target="#walking-by-planning-the-fall">Walking by planning the fall</a></li>
+  <li><a href="#the-road-from-mars" id="toc-the-road-from-mars" class="nav-link" data-scroll-target="#the-road-from-mars">The road from Mars</a>
+  <ul class="collapse">
+  <li><a href="#launching-from-the-surface" id="toc-launching-from-the-surface" class="nav-link" data-scroll-target="#launching-from-the-surface">Launching from the surface</a></li>
+  <li><a href="#choosing-the-moment-porkchops-and-oppositions" id="toc-choosing-the-moment-porkchops-and-oppositions" class="nav-link" data-scroll-target="#choosing-the-moment-porkchops-and-oppositions">Choosing the moment: porkchops and oppositions</a></li>
+  <li><a href="#ten-nights-ten-shots" id="toc-ten-nights-ten-shots" class="nav-link" data-scroll-target="#ten-nights-ten-shots">Ten nights, ten shots</a></li>
+  <li><a href="#arriving-entry-and-impact" id="toc-arriving-entry-and-impact" class="nav-link" data-scroll-target="#arriving-entry-and-impact">Arriving: entry and impact</a></li>
+  </ul></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<blockquote class="blockquote">
+<p><em>“A monstrous tripod, higher than many houses, striding over the young pine trees, and smashing them aside in its career; a walking engine of glittering metal … Can you imagine a milking stool tilted and bowled violently along the ground?”</em></p>
+<p>H. G. Wells, <em>The War of the Worlds</em> (1898), Book I, chapter X</p>
+</blockquote>
+<p>Wells gives us a three-legged walking machine and almost nothing about how it walks. This post takes him at his word and builds one. The machine is a 257-tonne, 30-metre tripod simulated in <strong>MuJoCo</strong>, the physics engine that now underpins a large part of robot-learning research. It walks into a Surrey village, rears up to look round, and burns what it finds with a Heat-Ray.</p>
+<p>On the way the post covers:</p>
+<ul>
+<li>what MuJoCo is, and why Google DeepMind bought it and gave it away;</li>
+<li>the leg kinematics, statics and stability of a three-legged machine, worked through with the model;</li>
+<li>why Wells’s “bowled milking stool” cannot simply roll, and the planned-fall gait that works instead;</li>
+<li>the other end of the story: how the cylinders would have to be fired from Mars, the transfer orbit to Earth, and what arriving at 12 km/s would do to the Martians inside.</li>
+</ul>
+<p>The video below is the simulation itself, seen from eye height in the village, with a soundtrack synthesised from the simulated motors, footfalls and fires.</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="A fighting-machine walks into the village: MuJoCo simulation, witness camera"><source src="tripod_attack_witness.mp4"></video></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About the model and the sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The simulation code lives in the <code>martian-tripod</code> project alongside this blog. Every number in this post’s code outputs comes from running it, or from the orbital calculations below. Wells gives few engineering details, so the machine’s dimensions and masses are choices, not quotations. The history of MuJoCo is written from memory of the published record, so check specific dates before quoting them.</p>
+</div>
+</div>
+<section id="where-the-martians-came-down" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="where-the-martians-came-down">Where the Martians came down</h2>
+<p>Seven of the ten cylinders land in the novel, all within about 25 miles of London. The interactive atlas below follows them from the sand pits on Horsell Common to the great pit on Primrose Hill. It also traces the Martian advance, the narrator’s route through Surrey and London, and his brother’s flight to the Essex coast. Use the day buttons or <strong>Play</strong> to watch the invasion unfold, and click any marker for the passage it comes from.</p>
+<div class="column-page">
+<iframe src="atlas.html" title="War of the Worlds atlas" loading="lazy" style="width:100%; height:1050px; border:1px solid #ccd5ce; border-radius:4px;">
+</iframe>
+</div>
+<p><a href="atlas.html" target="_blank">Open the atlas in its own page</a></p>
+</section>
+<section id="mujoco-the-physics-engine-of-robot-learning" class="level2">
+<h2 class="anchored" data-anchor-id="mujoco-the-physics-engine-of-robot-learning">MuJoCo: the physics engine of robot learning</h2>
+<p><strong>MuJoCo</strong> (Multi-Joint dynamics with Contact) was written by Emanuel Todorov, with Tom Erez and Yuval Tassa, at the University of Washington. It was introduced in the 2012 paper “MuJoCo: A physics engine for model-based control”. As the title says, it was built for <em>control</em>: for computing what an articulated body will do, quickly and accurately, so that an optimiser could plan its movements.</p>
+<section id="how-it-works" class="level3">
+<h3 class="anchored" data-anchor-id="how-it-works">How it works</h3>
+<p>Game physics engines usually simulate each rigid body separately and hold them together with joint constraints. MuJoCo instead works in <strong>generalised coordinates</strong>, the joint angles themselves, and writes the dynamics of the whole mechanism as</p>
+<p><span class="math display">\[
+M(q)\,\dot v + c(q, v) = \tau + J^\top(q)\, f,
+\]</span></p>
+<p>where <span class="math inline">\(q\)</span> and <span class="math inline">\(v\)</span> are joint positions and velocities, <span class="math inline">\(M\)</span> is the mass matrix, <span class="math inline">\(c\)</span> collects gravity, Coriolis and centrifugal terms, <span class="math inline">\(\tau\)</span> the motor torques, and <span class="math inline">\(f\)</span> the contact and constraint forces acting through their Jacobian <span class="math inline">\(J\)</span>.</p>
+<p>The distinctive part is contact. MuJoCo treats contacts as <strong>soft constraints</strong> and finds the contact forces by solving a small <em>convex</em> optimisation at each step, a modern form of Gauss’s principle of least constraint. The method is fast, stable at large timesteps, and well-defined in both directions. Given a motion, it can recover the forces that produced it, and that inverse dynamics is what model-based controllers need.</p>
+<p>Models are written in an XML format, MJCF. The tripod’s model file is generated from a single Python parameter file, so changing a leg length changes everything consistently.</p>
+</section>
+<section id="from-research-tool-to-ai-infrastructure" class="level3">
+<h3 class="anchored" data-anchor-id="from-research-tool-to-ai-infrastructure">From research tool to AI infrastructure</h3>
+<p>MuJoCo’s speed made it the default simulator for a new kind of AI.</p>
+<ul>
+<li><strong>Deep reinforcement learning (2015 onward).</strong> Learning to control a body by trial and error needs millions of simulated episodes. The continuous-control benchmarks that became standard (HalfCheetah, Hopper, Walker, Ant, Humanoid in OpenAI Gym, and later the <strong>DeepMind Control Suite</strong>) were all MuJoCo models. Algorithms such as TRPO, PPO, DDPG and SAC were developed and compared on them.</li>
+<li><strong>Sim-to-real robotics.</strong> OpenAI’s Dactyl hand learned to manipulate a cube in simulation before doing it on a real robot hand. DeepMind trained small humanoid robots to play football in MuJoCo and transferred the policies to hardware.</li>
+<li><strong>DeepMind’s acquisition (2021).</strong> DeepMind, where Tassa and others now worked, bought MuJoCo in October 2021 and made it free. In 2022 it was released as open source under the Apache 2.0 licence. That removed the licence cost that had kept it out of many labs and classrooms.</li>
+<li><strong>Scaling up.</strong> MuJoCo 3 added <strong>MJX</strong>, a re-implementation in JAX that runs thousands of simulations in parallel on GPUs and TPUs. The point is the same as with large language models: learning is limited by how much experience you can generate. Later work extended this further, including a GPU version built with NVIDIA (MuJoCo Warp).</li>
+</ul>
+<p>In short, MuJoCo is to robot learning roughly what large text datasets are to language models: the source of experience. The control methods in this post are classical rather than learned, but they lean on the same features. These are an exact, fast forward model, cheap inverse dynamics and Jacobians, ray casting (used for the Heat-Ray) and easy access to every internal quantity.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> Path.cwd().resolve().parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"martian-tripod"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mujoco</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> brentq</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.integrate <span class="im">import</span> solve_ivp</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.build <span class="im">import</span> write</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.params <span class="im">import</span> DEFAULT <span class="im">as</span> P, leg_ik, planar_ik</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.control <span class="im">import</span> BodyController</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.kinematics <span class="im">import</span> rotz</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.gait <span class="im">import</span> PredictiveGait, PredictiveConfig</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>BRASS, STEEL, RED, BLUE, GREEN, GREY <span class="op">=</span> <span class="st">"#b8860b"</span>, <span class="st">"#4a5a6a"</span>, <span class="st">"#c0392b"</span>, <span class="st">"#2c7fb8"</span>, <span class="st">"#2ca25f"</span>, <span class="st">"#7f8c8d"</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> mujoco.MjModel.from_xml_path(<span class="bu">str</span>(write()))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fresh():</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> mujoco.MjData(model)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_resetDataKeyframe(model, d, model.key(<span class="st">"stand"</span>).<span class="bu">id</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_forward(model, d)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>HOOD <span class="op">=</span> model.body(<span class="st">"hood"</span>).<span class="bu">id</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>MASS <span class="op">=</span> <span class="bu">float</span>(model.body_subtreemass[HOOD])</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"MuJoCo </span><span class="sc">{</span>mujoco<span class="sc">.</span>__version__<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>model<span class="sc">.</span>nbody<span class="sc">}</span><span class="ss"> bodies, </span><span class="sc">{</span>model<span class="sc">.</span>njnt<span class="sc">}</span><span class="ss"> joints, "</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"</span><span class="sc">{</span>model<span class="sc">.</span>nu<span class="sc">}</span><span class="ss"> motors, timestep </span><span class="sc">{</span>model<span class="sc">.</span>opt<span class="sc">.</span>timestep<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"machine mass </span><span class="sc">{</span>MASS<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.1f}</span><span class="ss"> t"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>MuJoCo 3.17.0: 48 bodies, 52 joints, 11 motors, timestep 2 ms
+machine mass 257.2 t</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="the-machine" class="level2">
+<h2 class="anchored" data-anchor-id="the-machine">The machine</h2>
+<div id="cell-fig-renders" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> fresh()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> mujoco.Renderer(model, <span class="dv">450</span>, <span class="dv">640</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>r.update_scene(d, camera<span class="op">=</span><span class="st">"witness"</span>)<span class="op">;</span> img_stand <span class="op">=</span> r.render().copy()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>gait <span class="op">=</span> PredictiveGait(P, model, d, PredictiveConfig())</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> d.time <span class="op">&lt;</span> <span class="fl">12.0</span>:</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    gait(d)<span class="op">;</span> mujoco.mj_step(model, d)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>r.update_scene(d, camera<span class="op">=</span><span class="st">"track"</span>)<span class="op">;</span> img_walk <span class="op">=</span> r.render().copy()</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>r.close()</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.6</span>))</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, im <span class="kw">in</span> <span class="bu">zip</span>(ax, (img_stand, img_walk)):</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    a.imshow(im)<span class="op">;</span> a.axis(<span class="st">"off"</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-renders" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-renders-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-renders-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-renders-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The MuJoCo model. Left: standing in the village, from the witness camera. Right: mid-stride, about 12 s into a walk, from a camera that follows the machine.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The model follows Wells where he is specific and makes engineering choices where he is not.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Part</th>
+<th>Model</th>
+<th>Wells</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hood</td>
+<td>160 t brass ellipsoid, 9 m across, carried 30 m up</td>
+<td>“a brazen hood”, “higher than many houses”</td>
+</tr>
+<tr class="even">
+<td>Legs</td>
+<td>three, each with hip yaw, hip pitch and knee; 16 m thigh, 28 m shin</td>
+<td>“articulate ropes of steel dangling”</td>
+</tr>
+<tr class="odd">
+<td>Motors</td>
+<td>torque-controlled, limited to 40 MN·m per joint</td>
+<td>not described</td>
+</tr>
+<tr class="even">
+<td>Tentacles</td>
+<td>two chains of passive spring-damper links</td>
+<td>“long, flexible, glittering tentacles”</td>
+</tr>
+<tr class="odd">
+<td>Heat-Ray</td>
+<td>projector on a two-axis arm; a ray cast through the scene</td>
+<td>“an invisible, inevitable sword of heat”</td>
+</tr>
+<tr class="even">
+<td>Carrier</td>
+<td>9 t basket on the back of the hood</td>
+<td>“the great metallic carrier which projected behind him”</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="leg-kinematics" class="level2">
+<h2 class="anchored" data-anchor-id="leg-kinematics">Leg kinematics</h2>
+<p>Each leg hangs from the underside of the hood at azimuth <span class="math inline">\(a_i \in \{0^\circ, 120^\circ, 240^\circ\}\)</span>, on a circle of radius <span class="math inline">\(r_h = 2.6\)</span> m, <span class="math inline">\(d_h = 2\)</span> m below the hood’s centre. It has three joints: a yaw <span class="math inline">\(\psi\)</span> that swings the leg’s plane round, then a hip pitch <span class="math inline">\(q_h\)</span> and knee <span class="math inline">\(q_k\)</span> that work in that plane like a two-link arm.</p>
+<section id="forward-kinematics" class="level3">
+<h3 class="anchored" data-anchor-id="forward-kinematics">Forward kinematics</h3>
+<p>Within the leg plane, measure the thigh and shin by their elevation angles <span class="math inline">\(\phi_1 = -q_h\)</span> and <span class="math inline">\(\phi_2 = -(q_h + q_k)\)</span>. The foot, relative to the hip, is at</p>
+<p><span class="math display">\[
+\mathbf{p}_\text{plane} = \begin{pmatrix} L_1\cos\phi_1 + L_2\cos\phi_2 \\ 0 \\ L_1\sin\phi_1 + L_2\sin\phi_2 \end{pmatrix},
+\]</span></p>
+<p>and in the world it is</p>
+<p><span class="math display">\[
+\mathbf{p}_\text{foot} = \mathbf{p}_\text{hood} + R_\text{hood}\left(\mathbf{m}_i + R_z(a_i)\,R_z(\psi)\,\mathbf{p}_\text{plane}\right),
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf{m}_i = (r_h\cos a_i,\ r_h\sin a_i,\ -d_h)\)</span> is the hip mount.</p>
+</section>
+<section id="inverse-kinematics" class="level3">
+<h3 class="anchored" data-anchor-id="inverse-kinematics">Inverse kinematics</h3>
+<p>Going the other way, to find joint angles that put the foot at a given point, is what every gait needs. Transform the target into the hip’s frame to get <span class="math inline">\((x, y, z)\)</span>. Then the yaw is <span class="math inline">\(\psi = \operatorname{atan2}(y, x)\)</span>, which leaves a planar problem with horizontal reach <span class="math inline">\(\rho = \sqrt{x^2 + y^2}\)</span> and height <span class="math inline">\(z\)</span>. The law of cosines gives the knee bend:</p>
+<p><span class="math display">\[
+\cos\beta = \frac{\rho^2 + z^2 - L_1^2 - L_2^2}{2L_1L_2}, \qquad
+\phi_1 = \operatorname{atan2}(z, \rho) - \operatorname{atan2}(L_2\sin\beta,\ L_1 + L_2\cos\beta),
+\]</span></p>
+<p>with <span class="math inline">\(\phi_2 = \phi_1 + \beta\)</span>. There are two solutions, <span class="math inline">\(\pm\beta\)</span>. The model takes the <strong>knee-up</strong> one, with knees above the line from hip to foot. That is how a spider or a harvestman stands, and it is the silhouette everyone draws for Wells’s machines. A solution exists only if the foot lies in the annulus <span class="math inline">\(|L_1 - L_2| \le \sqrt{\rho^2 + z^2} \le L_1 + L_2\)</span>, between 12 m and 44 m from the hip.</p>
+<div id="cell-fig-leg" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>L1, L2 <span class="op">=</span> P.leg.thigh, P.leg.shin</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>hip_z <span class="op">=</span> P.stance_height <span class="op">-</span> P.hip_drop</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> leg_pts(dx, dz):</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    qh, qk <span class="op">=</span> planar_ik(L1, L2, dx, dz, <span class="va">True</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    p1, p2 <span class="op">=</span> <span class="op">-</span>qh, <span class="op">-</span>(qh <span class="op">+</span> qk)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    knee <span class="op">=</span> np.array([L1<span class="op">*</span>math.cos(p1), L1<span class="op">*</span>math.sin(p1)])</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    foot <span class="op">=</span> knee <span class="op">+</span> np.array([L2<span class="op">*</span>math.cos(p2), L2<span class="op">*</span>math.sin(p2)])</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([[<span class="dv">0</span>, <span class="dv">0</span>], knee, foot])</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">4.6</span>))</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>th <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">400</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> rr, fc <span class="kw">in</span> [(L1 <span class="op">+</span> L2, <span class="st">"#e8eef3"</span>), (L2 <span class="op">-</span> L1, <span class="st">"white"</span>)]:</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    ax.fill(P.hip_radius <span class="op">+</span> rr<span class="op">*</span>np.cos(th), hip_z <span class="op">+</span> rr<span class="op">*</span>np.sin(th), color<span class="op">=</span>fc, zorder<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"#7a6a4f"</span>, lw<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>reach <span class="op">=</span> P.stance_radius <span class="op">-</span> P.hip_radius</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> dz, ls, lab <span class="kw">in</span> [(<span class="op">-</span>(hip_z <span class="op">-</span> P.leg.foot_radius), <span class="st">"-"</span>, <span class="st">"walking stance (hood 30 m)"</span>),</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                    (<span class="op">-</span>(hip_z <span class="op">+</span> <span class="fl">7.0</span> <span class="op">-</span> P.leg.foot_radius), <span class="st">"--"</span>, <span class="st">"reared up (hood 37 m)"</span>)]:</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> leg_pts(reach, dz)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    base <span class="op">=</span> np.array([P.hip_radius, hip_z <span class="cf">if</span> ls <span class="op">==</span> <span class="st">"-"</span> <span class="cf">else</span> hip_z <span class="op">+</span> <span class="fl">7.0</span>])</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> pts <span class="op">+</span> base</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    ax.plot(pts[:, <span class="dv">0</span>], pts[:, <span class="dv">1</span>], ls, color<span class="op">=</span>STEEL, lw<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span>lab)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    ax.plot(<span class="op">*</span>pts[<span class="dv">1</span>], <span class="st">"o"</span>, color<span class="op">=</span>BRASS, ms<span class="op">=</span><span class="dv">7</span>)<span class="op">;</span> ax.plot(<span class="op">*</span>pts[<span class="dv">2</span>], <span class="st">"o"</span>, color<span class="op">=</span><span class="st">"k"</span>, ms<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    hood <span class="op">=</span> plt.matplotlib.patches.Ellipse((<span class="dv">0</span>, base[<span class="dv">1</span>] <span class="op">+</span> P.hip_drop), <span class="dv">2</span><span class="op">*</span>P.hood_radius, <span class="dv">2</span><span class="op">*</span>P.hood_height,</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                                          color<span class="op">=</span>BRASS, alpha<span class="op">=</span><span class="fl">0.8</span> <span class="cf">if</span> ls <span class="op">==</span> <span class="st">"-"</span> <span class="cf">else</span> <span class="fl">0.25</span>)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    ax.add_patch(hood)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax.set_xlim(<span class="op">-</span><span class="dv">8</span>, <span class="dv">50</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="dv">3</span>, <span class="dv">48</span>)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"horizontal distance from body axis (m)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"height (m)"</span>)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">"upper right"</span>, frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>qh0, qk0 <span class="op">=</span> leg_ik(P)</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"stance joint angles: hip pitch </span><span class="sc">{</span>math<span class="sc">.</span>degrees(qh0)<span class="sc">:.1f}</span><span class="ss"> deg, knee </span><span class="sc">{</span>math<span class="sc">.</span>degrees(qk0)<span class="sc">:.1f}</span><span class="ss"> deg"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-leg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-leg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-leg-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-leg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: One leg in its own plane. The shaded annulus is everywhere the foot can reach. The solid leg is the walking stance; the dashed leg is the machine reared up to look round, with the hood raised 7 m and the legs near the edge of their reach.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>stance joint angles: hip pitch -3.2 deg, knee 86.2 deg</code></pre>
+</div>
+</div>
+<p>In the walking stance the thigh is almost level and the shin drops nearly vertically, like a harvestman’s leg. Rearing up to look round takes the foot to about 90% of full reach. That is why the machine has to stop to do it: from there it cannot take a full stride.</p>
+</section>
+<section id="statics-what-the-motors-must-hold" class="level3">
+<h3 class="anchored" data-anchor-id="statics-what-the-motors-must-hold">Statics: what the motors must hold</h3>
+<p>A leg pushing on the ground with force <span class="math inline">\(\mathbf{f}\)</span> at the foot needs joint torques</p>
+<p><span class="math display">\[
+\boldsymbol\tau = J^\top(q)\,\mathbf{f},
+\]</span></p>
+<p>where <span class="math inline">\(J\)</span> is the foot’s Jacobian, the matrix that maps joint velocities to foot velocity. This is the principle of virtual work: power in at the joints equals power out at the foot, <span class="math inline">\(\boldsymbol\tau\cdot\dot{\mathbf q} = \mathbf f\cdot\dot{\mathbf p}\)</span>. For a vertical foot force <span class="math inline">\(F_z\)</span>, the hip-pitch torque is just <span class="math inline">\(F_z\)</span> times the foot’s horizontal distance from the hip, less the moment of the leg’s own weight:</p>
+<p><span class="math display">\[
+\tau_\text{hip} = F_z\,\rho_\text{foot} - \sum_\text{parts} m_j g\, \rho_j .
+\]</span></p>
+<p>Here is that estimate against what MuJoCo’s balance controller actually commands while the machine stands still.</p>
+<div id="statics" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> fresh()</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ctl <span class="op">=</span> BodyController(P, model)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>goal, _ <span class="op">=</span> ctl.com_state(d)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> d.time <span class="op">&lt;</span> <span class="fl">6.0</span>:</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    ctl(d, [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>], goal, np.zeros(<span class="dv">3</span>), rotz(<span class="fl">0.0</span>))<span class="op">;</span> mujoco.mj_step(model, d)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># hand calculation for leg 1, from the stance geometry</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>qh, qk <span class="op">=</span> leg_ik(P)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>p1, p2 <span class="op">=</span> <span class="op">-</span>qh, <span class="op">-</span>(qh <span class="op">+</span> qk)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>x_knee <span class="op">=</span> L1<span class="op">*</span>math.cos(p1)<span class="op">;</span> x_foot <span class="op">=</span> x_knee <span class="op">+</span> L2<span class="op">*</span>math.cos(p2)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>leg <span class="op">=</span> P.leg</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>weight_moment <span class="op">=</span> <span class="fl">9.81</span><span class="op">*</span>(leg.thigh_mass<span class="op">*</span>x_knee<span class="op">/</span><span class="dv">2</span> <span class="op">+</span> leg.knee_mass<span class="op">*</span>x_knee</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                      <span class="op">+</span> leg.shin_mass<span class="op">*</span>(x_knee <span class="op">+</span> x_foot)<span class="op">/</span><span class="dv">2</span> <span class="op">+</span> leg.foot_mass<span class="op">*</span>x_foot)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>Fz <span class="op">=</span> ctl.last_forces[<span class="dv">1</span>][<span class="dv">2</span>]</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>tau_hip_hand <span class="op">=</span> Fz<span class="op">*</span>x_foot <span class="op">-</span> weight_moment</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>tau_knee_hand <span class="op">=</span> Fz<span class="op">*</span>(x_foot <span class="op">-</span> x_knee) <span class="op">-</span> <span class="fl">9.81</span><span class="op">*</span>(leg.shin_mass<span class="op">*</span>(x_foot <span class="op">-</span> x_knee)<span class="op">/</span><span class="dv">2</span> <span class="op">+</span> leg.foot_mass<span class="op">*</span>(x_foot <span class="op">-</span> x_knee))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>tau_sim <span class="op">=</span> d.ctrl[<span class="dv">3</span>:<span class="dv">6</span>]</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"foot load (leg 1)          </span><span class="sc">{</span>Fz<span class="op">/</span><span class="fl">1e6</span><span class="sc">:6.2f}</span><span class="ss"> MN   (weight / 3 = </span><span class="sc">{</span>MASS<span class="op">*</span><span class="fl">9.81</span><span class="op">/</span><span class="dv">3</span><span class="op">/</span><span class="fl">1e6</span><span class="sc">:.2f}</span><span class="ss"> MN)"</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"foot reach from hip        </span><span class="sc">{</span>x_foot<span class="sc">:6.1f}</span><span class="ss"> m, knee </span><span class="sc">{</span>x_knee<span class="sc">:.1f}</span><span class="ss"> m out"</span>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"hip torque   hand </span><span class="sc">{</span>tau_hip_hand<span class="op">/</span><span class="fl">1e6</span><span class="sc">:6.2f}</span><span class="ss"> MN m,  MuJoCo </span><span class="sc">{</span><span class="bu">abs</span>(tau_sim[<span class="dv">1</span>])<span class="op">/</span><span class="fl">1e6</span><span class="sc">:6.2f}</span><span class="ss"> MN m"</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"knee torque  hand </span><span class="sc">{</span>tau_knee_hand<span class="op">/</span><span class="fl">1e6</span><span class="sc">:6.2f}</span><span class="ss"> MN m,  MuJoCo </span><span class="sc">{</span><span class="bu">abs</span>(tau_sim[<span class="dv">2</span>])<span class="op">/</span><span class="fl">1e6</span><span class="sc">:6.2f}</span><span class="ss"> MN m"</span>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"motor limit  </span><span class="sc">{</span>P<span class="sc">.</span>max_torque<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss"> MN m = </span><span class="sc">{</span>P<span class="sc">.</span>max_torque<span class="op">/</span><span class="bu">abs</span>(tau_sim[<span class="dv">1</span>])<span class="sc">:.1f}</span><span class="ss"> x the standing hip torque"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>foot load (leg 1)            0.85 MN   (weight / 3 = 0.84 MN)
+foot reach from hip          19.4 m, knee 16.0 m out
+hip torque   hand  13.20 MN m,  MuJoCo  13.20 MN m
+knee torque  hand   2.68 MN m,  MuJoCo   2.68 MN m
+motor limit  40 MN m = 3.0 x the standing hip torque</code></pre>
+</div>
+</div>
+<p>The hand calculation and the simulation agree. The hip carries most of the load because the foot is almost 20 m out from it. The knee, sitting nearly above the foot, carries much less. That is the advantage of the spider stance: the shin stands almost vertical, so the knee works little, and the hip motor does most of the work.</p>
+</section>
+</section>
+<section id="can-a-tripod-roll-the-milking-stool-problem" class="level2">
+<h2 class="anchored" data-anchor-id="can-a-tripod-roll-the-milking-stool-problem">Can a tripod roll? The milking-stool problem</h2>
+<p>Wells’s image, a milking stool “tilted and bowled violently along the ground”, suggests the machine rolls over its legs like a wheel without a rim. That is a classic model in walking research, the <strong>rimless wheel</strong> (McGeer, 1990): <span class="math inline">\(N\)</span> rigid spokes of length <span class="math inline">\(L\)</span> around a hub of mass <span class="math inline">\(M\)</span> and radius of gyration <span class="math inline">\(kL\)</span>.</p>
+<p>Between footfalls the wheel pivots over the stance spoke. When the next spoke strikes the ground, the collision is instantaneous, so angular momentum about the new contact point is conserved. Two spokes are <span class="math inline">\(2\alpha = 2\pi/N\)</span> apart, which gives</p>
+<p><span class="math display">\[
+\frac{\omega^+}{\omega^-} = \frac{k^2 + \cos 2\alpha}{1 + k^2}.
+\]</span></p>
+<p>For a three-spoke wheel, <span class="math inline">\(\cos 2\alpha = \cos 120^\circ = -\tfrac12\)</span>. Unless <span class="math inline">\(k^2 &gt; \tfrac12\)</span>, the ratio is <strong>negative</strong>, which would need the trailing foot to pull on the ground. It can’t, so the footfall stops the roll dead. The milking stool only bowls along if most of its inertia is out in its legs. The tripod’s isn’t, as MuJoCo’s mass properties show.</p>
+<div id="cell-fig-rimless" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> fresh()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>com <span class="op">=</span> d.subtree_com[HOOD].copy()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>I <span class="op">=</span> np.zeros((<span class="dv">3</span>, <span class="dv">3</span>))<span class="op">;</span> M <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> <span class="bu">range</span>(model.nbody):</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> model.body_rootid[b] <span class="op">!=</span> HOOD:</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    mb <span class="op">=</span> model.body_mass[b]<span class="op">;</span> R <span class="op">=</span> d.ximat[b].reshape(<span class="dv">3</span>, <span class="dv">3</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    rvec <span class="op">=</span> d.xipos[b] <span class="op">-</span> com</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    I <span class="op">+=</span> R <span class="op">@</span> np.diag(model.body_inertia[b]) <span class="op">@</span> R.T <span class="op">+</span> mb<span class="op">*</span>(rvec <span class="op">@</span> rvec<span class="op">*</span>np.eye(<span class="dv">3</span>) <span class="op">-</span> np.outer(rvec, rvec))</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    M <span class="op">+=</span> mb</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>foot <span class="op">=</span> d.site_xpos[model.site(<span class="st">"foot1"</span>).<span class="bu">id</span>].copy()<span class="op">;</span> foot[<span class="dv">2</span>] <span class="op">-=</span> P.leg.foot_radius</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>L_spoke <span class="op">=</span> math.hypot(foot[<span class="dv">0</span>] <span class="op">-</span> com[<span class="dv">0</span>], com[<span class="dv">2</span>] <span class="op">-</span> foot[<span class="dv">2</span>])     <span class="co"># in the plane of the roll over the 1-2 edge</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>k2 <span class="op">=</span> I[<span class="dv">1</span>, <span class="dv">1</span>]<span class="op">/</span>(M<span class="op">*</span>L_spoke<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>k2s <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="fl">1.5</span>, <span class="dv">300</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">7.5</span>, <span class="fl">3.8</span>))</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n, col <span class="kw">in</span> [(<span class="dv">3</span>, RED), (<span class="dv">4</span>, BRASS), (<span class="dv">6</span>, BLUE), (<span class="dv">12</span>, GREEN)]:</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    ax.plot(k2s, (k2s <span class="op">+</span> math.cos(<span class="dv">2</span><span class="op">*</span>math.pi<span class="op">/</span>n))<span class="op">/</span>(<span class="dv">1</span> <span class="op">+</span> k2s), color<span class="op">=</span>col, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="ss">f"N = </span><span class="sc">{</span>n<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)<span class="op">;</span> ax.axvline(k2, color<span class="op">=</span>GREY, ls<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>ax.text(k2 <span class="op">+</span> <span class="fl">0.03</span>, <span class="fl">0.3</span>, <span class="ss">f"tripod</span><span class="ch">\n</span><span class="ss">k² = </span><span class="sc">{</span>k2<span class="sc">:.2f}</span><span class="ss">"</span>, color<span class="op">=</span>GREY)</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"k²  (radius of gyration / spoke length, squared)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"ω⁺ / ω⁻"</span>)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>ax.legend(frameon<span class="op">=</span><span class="va">False</span>, ncol<span class="op">=</span><span class="dv">4</span>, loc<span class="op">=</span><span class="st">"lower right"</span>)<span class="op">;</span> plt.show()</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"spoke length </span><span class="sc">{</span>L_spoke<span class="sc">:.1f}</span><span class="ss"> m, k^2 = </span><span class="sc">{</span>k2<span class="sc">:.3f}</span><span class="ss">, three-spoke footfall ratio = </span><span class="sc">{</span>(k2 <span class="op">-</span> <span class="fl">0.5</span>)<span class="op">/</span>(<span class="dv">1</span> <span class="op">+</span> k2)<span class="sc">:.2f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-rimless" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-rimless-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-rimless-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-rimless-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Fraction of angular velocity that survives a footfall for an N-spoked rimless wheel, against how far out the mass is (k²). Below zero, the wheel stops dead. The vertical line is the tripod with its legs locked, computed from the MuJoCo model.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>spoke length 29.3 m, k^2 = 0.110, three-spoke footfall ratio = -0.35</code></pre>
+</div>
+</div>
+<p>So the legs must carry the body over every step. The project’s <code>rimless_wheel.py</code> checks the impact law against MuJoCo contact simulations: the six-spoke wheel’s steady rolling speed down a 15° slope matches theory to about 1%, and a three-spoke wheel stops at the first footfall.</p>
+</section>
+<section id="balance-the-support-triangle-and-the-hinge" class="level2">
+<h2 class="anchored" data-anchor-id="balance-the-support-triangle-and-the-hinge">Balance: the support triangle and the hinge</h2>
+<p>A body standing on point feet is statically balanced when its centre of mass lies above the <strong>support polygon</strong>, the convex hull of the feet. For a tripod that is a triangle. With all three feet down the machine is stable, but it cannot step: lifting any foot shrinks the support polygon to the <em>line</em> between the other two.</p>
+<p>On two feet the machine is a <strong>hinge</strong>. Nothing the motors do can produce a moment about the line through two point feet, so across that line the body simply falls. Treat it as an inverted pendulum with the centre of mass at height <span class="math inline">\(h\)</span>. If <span class="math inline">\(y\)</span> is the horizontal distance of the centre of mass from the hinge line,</p>
+<p><span class="math display">\[
+\ddot y = \frac{g}{h}\,y \quad\Longrightarrow\quad y(t) = y_0\cosh\omega t + \frac{\dot y_0}{\omega}\sinh\omega t, \qquad \omega = \sqrt{g/h}.
+\]</span></p>
+<div id="hinge" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>h_com <span class="op">=</span> <span class="fl">26.5</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>w <span class="op">=</span> math.sqrt(<span class="fl">9.81</span><span class="op">/</span>h_com)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"omega = </span><span class="sc">{</span>w<span class="sc">:.3f}</span><span class="ss"> 1/s, so the fall e-folds every </span><span class="sc">{</span><span class="dv">1</span><span class="op">/</span>w<span class="sc">:.2f}</span><span class="ss"> s"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"over a 1.2 s swing a lean of 1 m grows to </span><span class="sc">{</span>math<span class="sc">.</span>cosh(w<span class="op">*</span><span class="fl">1.2</span>)<span class="sc">:.2f}</span><span class="ss"> m (starting at rest)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>omega = 0.608 1/s, so the fall e-folds every 1.64 s
+over a 1.2 s swing a lean of 1 m grows to 1.28 m (starting at rest)</code></pre>
+</div>
+</div>
+<p>The fall is slow because the machine is tall, but it cannot be stopped from two feet. The swinging leg must land in time to catch it. The tumble is therefore part of the gait itself: Wells’s bowled milking stool, in three dimensions.</p>
+</section>
+<section id="walking-by-planning-the-fall" class="level2">
+<h2 class="anchored" data-anchor-id="walking-by-planning-the-fall">Walking by planning the fall</h2>
+<p>The project’s first gait waited out the topple. It moved the centre of mass to just inside the edge of the next two-foot support, lifted a leg, let the body fall onto it, and settled. That works, but slowly: in the project’s tests, about 1.1 mph, with the hood tilting by up to 17°.</p>
+<p>The faster gait <em>plans</em> the fall instead, using the standard model from humanoid robotics: the <strong>linear inverted pendulum</strong> with a <strong>zero-moment point</strong> (ZMP). Hold the centre of mass at constant height <span class="math inline">\(h\)</span>. Then its horizontal position <span class="math inline">\(\mathbf c\)</span> obeys</p>
+<p><span class="math display">\[
+\ddot{\mathbf c} = \omega^2(\mathbf c - \mathbf z),
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf z\)</span> is the ZMP, the point on the ground through which the net ground force acts. The ZMP is what the legs control, and it must stay inside the support polygon. With three feet down, it can go anywhere in the triangle. With one leg swinging, it is confined to the line between the other two, which is the hinge again, seen from the planner’s side.</p>
+<p>Over a timestep <span class="math inline">\(\Delta t\)</span> with <span class="math inline">\(\mathbf z\)</span> held fixed, the pendulum’s motion is exact:</p>
+<p><span class="math display">\[
+\begin{pmatrix}\mathbf c\\ \dot{\mathbf c}\end{pmatrix}_{k+1} =
+\begin{pmatrix}\cosh\omega\Delta t &amp; \omega^{-1}\sinh\omega\Delta t\\ \omega\sinh\omega\Delta t &amp; \cosh\omega\Delta t\end{pmatrix}
+\begin{pmatrix}\mathbf c\\ \dot{\mathbf c}\end{pmatrix}_k +
+\begin{pmatrix}1 - \cosh\omega\Delta t\\ -\omega\sinh\omega\Delta t\end{pmatrix}\mathbf z_k .
+\]</span></p>
+<p>Given the footstep rhythm, the planner chooses <span class="math inline">\(\mathbf z_0, \dots, \mathbf z_{N-1}\)</span> over a 14-second horizon to minimise a quadratic cost:</p>
+<p><span class="math display">\[
+\sum_k w_v\|\dot{\mathbf c}_k - \mathbf v_\text{ref}\|^2 + w_p\|\mathbf c_k - \mathbf c^\text{nom}_k\|^2 + w_{\Delta z}\|\mathbf z_k - \mathbf z_{k-1}\|^2 + w_z\|\mathbf z_k - \bar{\mathbf p}_k\|^2.
+\]</span></p>
+<p>The terms keep the walking speed, keep up with the footstep schedule, smooth the ZMP and centre it in the support (<span class="math inline">\(\bar{\mathbf p}_k\)</span> is the centroid of the planted feet). The constraints are the pendulum dynamics and linear inequalities keeping each <span class="math inline">\(\mathbf z_k\)</span> inside its support triangle or on its hinge line. It is a <strong>quadratic programme</strong>, solved with OSQP, and re-solved from the measured state at every change of support and every 0.4 s. Re-planning from the measured state is what makes this <strong>model-predictive control</strong>.</p>
+<p>A whole-body controller then turns the plan into joint torques. It computes the ground force and moment that keep the centre of mass and hood on plan, and shares them among the planted feet by least squares, never pulling on the ground and staying within friction. It maps each foot’s share to joint torques through <span class="math inline">\(J^\top\)</span>, the statics formula from earlier.</p>
+<div id="walk" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> fresh()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>gait <span class="op">=</span> PredictiveGait(P, model, d, PredictiveConfig())</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> gait.centroid().copy()<span class="op">;</span> t_start <span class="op">=</span> d.time</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>log <span class="op">=</span> {k: [] <span class="cf">for</span> k <span class="kw">in</span> (<span class="st">"t"</span>, <span class="st">"cx"</span>, <span class="st">"cy"</span>, <span class="st">"vx"</span>, <span class="st">"zx"</span>, <span class="st">"zy"</span>, <span class="st">"tilt"</span>, <span class="st">"two"</span>)}</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>landings <span class="op">=</span> [[f.copy() <span class="cf">for</span> f <span class="kw">in</span> gait.planted]]</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>steps_seen <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> gait.steps_done <span class="op">&lt;</span> <span class="dv">15</span> <span class="kw">and</span> d.time <span class="op">&lt;</span> <span class="dv">60</span>:</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    info <span class="op">=</span> gait(d)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_step(model, d)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    c, v <span class="op">=</span> gait.ctl.com_state(d)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    R <span class="op">=</span> d.xmat[HOOD].reshape(<span class="dv">3</span>, <span class="dv">3</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> gait.planner.reference(d.time)[<span class="dv">3</span>] <span class="cf">if</span> gait.planner.X <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="cf">else</span> c[:<span class="dv">2</span>]</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k, val <span class="kw">in</span> <span class="bu">zip</span>(log, (d.time, c[<span class="dv">0</span>], c[<span class="dv">1</span>], v[<span class="dv">0</span>], z[<span class="dv">0</span>], z[<span class="dv">1</span>],</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>                            math.degrees(math.acos(<span class="bu">min</span>(<span class="fl">1.0</span>, R[<span class="dv">2</span>, <span class="dv">2</span>]))), info[<span class="st">"two_legged"</span>])):</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>        log[k].append(val)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> gait.steps_done <span class="op">!=</span> steps_seen:</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>        steps_seen <span class="op">=</span> gait.steps_done</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>        landings.append([f.copy() <span class="cf">for</span> f <span class="kw">in</span> gait.planted])</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>log <span class="op">=</span> {k: np.array(v) <span class="cf">for</span> k, v <span class="kw">in</span> log.items()}</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>T_walk <span class="op">=</span> d.time <span class="op">-</span> t_start</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>moved <span class="op">=</span> <span class="bu">float</span>((gait.centroid() <span class="op">-</span> start) <span class="op">@</span> gait.<span class="bu">dir</span>)</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>speed <span class="op">=</span> moved<span class="op">/</span>T_walk</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>gait<span class="sc">.</span>steps_done<span class="sc">}</span><span class="ss"> steps in </span><span class="sc">{</span>T_walk<span class="sc">:.1f}</span><span class="ss"> s: </span><span class="sc">{</span>moved<span class="sc">:.0f}</span><span class="ss"> m at </span><span class="sc">{</span>speed<span class="sc">:.2f}</span><span class="ss"> m/s = </span><span class="sc">{</span>speed<span class="op">*</span><span class="fl">2.237</span><span class="sc">:.1f}</span><span class="ss"> mph"</span>)</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"on two feet </span><span class="sc">{</span>log[<span class="st">'two'</span>]<span class="sc">.</span>mean()<span class="sc">:.0%}</span><span class="ss"> of the time, max hood tilt </span><span class="sc">{</span>log[<span class="st">'tilt'</span>]<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss"> deg"</span>)</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"planner failures: </span><span class="sc">{</span>gait<span class="sc">.</span>plan_failures<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>15 steps in 30.6 s: 77 m at 2.52 m/s = 5.6 mph
+on two feet 59% of the time, max hood tilt 2.7 deg
+planner failures: 0</code></pre>
+</div>
+</div>
+<div id="cell-fig-walk" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fig, (a1, a2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">6.6</span>), gridspec_kw<span class="op">=</span>{<span class="st">"height_ratios"</span>: [<span class="fl">1.1</span>, <span class="dv">1</span>]})</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, feet <span class="kw">in</span> <span class="bu">enumerate</span>(landings):</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    tri <span class="op">=</span> np.array([f[:<span class="dv">2</span>] <span class="cf">for</span> f <span class="kw">in</span> feet] <span class="op">+</span> [feet[<span class="dv">0</span>][:<span class="dv">2</span>]])</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    a1.fill(tri[:, <span class="dv">0</span>], tri[:, <span class="dv">1</span>], color<span class="op">=</span>GREY, alpha<span class="op">=</span><span class="fl">0.08</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    a1.plot(tri[:, <span class="dv">0</span>], tri[:, <span class="dv">1</span>], color<span class="op">=</span>GREY, lw<span class="op">=</span><span class="fl">0.6</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> f <span class="kw">in</span> feet:</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        a1.plot(f[<span class="dv">0</span>], f[<span class="dv">1</span>], <span class="st">"o"</span>, color<span class="op">=</span><span class="st">"k"</span>, ms<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>a1.plot(log[<span class="st">"zx"</span>][::<span class="dv">40</span>], log[<span class="st">"zy"</span>][::<span class="dv">40</span>], <span class="st">"."</span>, color<span class="op">=</span>RED, ms<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"planned ZMP"</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>a1.plot(log[<span class="st">"cx"</span>], log[<span class="st">"cy"</span>], color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"centre of mass"</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>a1.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> a1.set_xlabel(<span class="st">"x (m)"</span>)<span class="op">;</span> a1.set_ylabel(<span class="st">"y (m)"</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>a1.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"upper left"</span>, ncol<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> log[<span class="st">"t"</span>] <span class="op">-</span> log[<span class="st">"t"</span>][<span class="dv">0</span>]</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>two <span class="op">=</span> log[<span class="st">"two"</span>].astype(<span class="bu">bool</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> (a2,):</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    edges <span class="op">=</span> np.flatnonzero(np.diff(two.astype(<span class="bu">int</span>)))</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    starts <span class="op">=</span> <span class="bu">list</span>(t[edges[two[edges <span class="op">+</span> <span class="dv">1</span>]] <span class="op">+</span> <span class="dv">1</span>]) <span class="cf">if</span> <span class="bu">len</span>(edges) <span class="cf">else</span> []</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    ends <span class="op">=</span> <span class="bu">list</span>(t[edges[<span class="op">~</span>two[edges <span class="op">+</span> <span class="dv">1</span>]] <span class="op">+</span> <span class="dv">1</span>]) <span class="cf">if</span> <span class="bu">len</span>(edges) <span class="cf">else</span> []</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> two[<span class="dv">0</span>]: starts <span class="op">=</span> [t[<span class="dv">0</span>]] <span class="op">+</span> starts</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> two[<span class="op">-</span><span class="dv">1</span>]: ends <span class="op">=</span> ends <span class="op">+</span> [t[<span class="op">-</span><span class="dv">1</span>]]</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s0, s1 <span class="kw">in</span> <span class="bu">zip</span>(starts, ends):</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        a.axvspan(s0, s1, color<span class="op">=</span>GREY, alpha<span class="op">=</span><span class="fl">0.15</span>, lw<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>a2.plot(t, log[<span class="st">"vx"</span>], color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="fl">1.6</span>, label<span class="op">=</span><span class="st">"forward speed (m/s)"</span>)</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>a2.plot(t, log[<span class="st">"tilt"</span>], color<span class="op">=</span>BRASS, lw<span class="op">=</span><span class="fl">1.6</span>, label<span class="op">=</span><span class="st">"hood tilt (deg)"</span>)</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>a2.set_xlabel(<span class="st">"time (s)"</span>)<span class="op">;</span> a2.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"upper right"</span>)</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-walk" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-walk-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-walk-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-walk-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Five gait cycles seen from above (top) and over time (bottom). Grey triangles are the support polygon after each footfall; the line is the centre of mass and the dots are the planned zero-moment point. Shading marks the times on two feet, when the machine is a hinge.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The centre of mass never stops. It swings from side to side as each two-foot hinge appears in a different direction, which is the 3-D version of the bowled stool. The hood stays within a few degrees of level, and the machine walks at about 5.5 mph, five times the speed of the wait-and-topple gait with a sixth of its tilt.</p>
+<p>How fast <em>could</em> it go? Animals of very different sizes walk in dynamically similar ways at the same <strong>Froude number</strong> <span class="math inline">\(\mathrm{Fr} = v^2/(g\ell)\)</span>, where <span class="math inline">\(\ell\)</span> is leg length. People switch from walking to running near <span class="math inline">\(\mathrm{Fr} \approx 0.5\)</span>.</p>
+<div id="froude" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ell <span class="op">=</span> P.stance_height <span class="op">-</span> P.hip_drop</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"leg length ~</span><span class="sc">{</span>ell<span class="sc">:.0f}</span><span class="ss"> m; this gait: Fr = </span><span class="sc">{</span>speed<span class="op">**</span><span class="dv">2</span><span class="op">/</span>(<span class="fl">9.81</span><span class="op">*</span>ell)<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"a person walking at 1.4 m/s: Fr = </span><span class="sc">{</span><span class="fl">1.4</span><span class="op">**</span><span class="dv">2</span><span class="op">/</span>(<span class="fl">9.81</span><span class="op">*</span><span class="fl">0.9</span>)<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Fr = 0.5 would be </span><span class="sc">{</span>math<span class="sc">.</span>sqrt(<span class="fl">0.5</span><span class="op">*</span><span class="fl">9.81</span><span class="op">*</span>ell)<span class="sc">:.1f}</span><span class="ss"> m/s = </span><span class="sc">{</span>math<span class="sc">.</span>sqrt(<span class="fl">0.5</span><span class="op">*</span><span class="fl">9.81</span><span class="op">*</span>ell)<span class="op">*</span><span class="fl">2.237</span><span class="sc">:.0f}</span><span class="ss"> mph"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>leg length ~28 m; this gait: Fr = 0.023
+a person walking at 1.4 m/s: Fr = 0.22
+Fr = 0.5 would be 11.7 m/s = 26 mph</code></pre>
+</div>
+</div>
+<p>By that measure the simulated machine is strolling, at a tenth of a person’s dynamic pace. Its speed is limited by the 40 MN·m motors and by the planner, not by geometry. Faster rhythms manage 6–7 mph for a dozen steps and then fall, as the swing legs saturate. A machine that strode at Wells’s evident pace would need much stronger joints, or a planner that also chooses where to put its feet.</p>
+</section>
+<section id="the-road-from-mars" class="level2">
+<h2 class="anchored" data-anchor-id="the-road-from-mars">The road from Mars</h2>
+<p>The fighting-machines are the end of a much longer journey. Wells describes it in his first chapter: astronomers see “a huge outbreak of incandescent gas upon the planet”, then another, “and so for ten nights, a flame each night”. The Martians are firing a vast gun, one shot a night, and each shot is a cylinder about thirty yards across that will land in Surrey. How hard is that?</p>
+<section id="launching-from-the-surface" class="level3">
+<h3 class="anchored" data-anchor-id="launching-from-the-surface">Launching from the surface</h3>
+<p>To leave Mars and still be moving at speed <span class="math inline">\(v_\infty\)</span> relative to it once far away, energy conservation gives the speed needed at the surface:</p>
+<p><span class="math display">\[
+v_\text{muzzle} = \sqrt{v_\text{esc}^2 + v_\infty^2}, \qquad v_\text{esc} = \sqrt{\frac{2GM_\text{Mars}}{R_\text{Mars}}} \approx 5.0\ \text{km/s}.
+\]</span></p>
+<p>A gun has no burn time: all of that speed must be given inside the barrel. For a barrel of length <span class="math inline">\(L\)</span> and constant acceleration <span class="math inline">\(a\)</span>, <span class="math inline">\(v^2 = 2aL\)</span>, so the acceleration the passengers feel is</p>
+<p><span class="math display">\[
+a = \frac{v_\text{muzzle}^2}{2L}.
+\]</span></p>
+<p>The atmosphere then slows the cylinder on the way out. For a body with <em>ballistic coefficient</em> <span class="math inline">\(\beta = m/(C_D A)\)</span> crossing an exponential atmosphere of surface density <span class="math inline">\(\rho_0\)</span> and scale height <span class="math inline">\(H\)</span> at angle <span class="math inline">\(\gamma\)</span>, the speed falls by a factor <span class="math inline">\(\exp\!\left(-\rho_0 H / (2\beta\sin\gamma)\right)\)</span>. Mars helps here too: its column of air, <span class="math inline">\(\rho_0 H\)</span>, is about 40 times smaller than Earth’s.</p>
+<div id="launch" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>MU_MARS, R_MARS <span class="op">=</span> <span class="fl">42828.37</span>, <span class="fl">3389.5</span>                      <span class="co"># km^3/s^2, km</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>MU_EARTH, R_EARTH <span class="op">=</span> <span class="fl">398600.4</span>, <span class="fl">6371.0</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>v_esc_m <span class="op">=</span> math.sqrt(<span class="dv">2</span><span class="op">*</span>MU_MARS<span class="op">/</span>R_MARS)<span class="op">;</span> v_esc_e <span class="op">=</span> math.sqrt(<span class="dv">2</span><span class="op">*</span>MU_EARTH<span class="op">/</span>R_EARTH)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>D_cyl <span class="op">=</span> <span class="dv">30</span><span class="op">*</span><span class="fl">0.9144</span>                                        <span class="co"># "about thirty yards" diameter (m)</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>A_cyl <span class="op">=</span> math.pi<span class="op">*</span>(D_cyl<span class="op">/</span><span class="dv">2</span>)<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> beta(mass_t, cd<span class="op">=</span><span class="fl">1.0</span>): <span class="cf">return</span> mass_t<span class="op">*</span><span class="fl">1e3</span><span class="op">/</span>(cd<span class="op">*</span>A_cyl)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"escape speed: Mars </span><span class="sc">{</span>v_esc_m<span class="sc">:.2f}</span><span class="ss"> km/s, Earth </span><span class="sc">{</span>v_esc_e<span class="sc">:.2f}</span><span class="ss"> km/s"</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"air column rho0*H: Mars </span><span class="sc">{</span><span class="fl">0.020</span><span class="op">*</span><span class="dv">11100</span><span class="sc">:.0f}</span><span class="ss"> kg/m^2, Earth </span><span class="sc">{</span><span class="fl">1.225</span><span class="op">*</span><span class="dv">7200</span><span class="sc">:.0f}</span><span class="ss"> kg/m^2"</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> mass <span class="kw">in</span> (<span class="dv">1000</span>, <span class="dv">3000</span>):</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    b <span class="op">=</span> beta(mass)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>mass<span class="sc">:&gt;5}</span><span class="ss"> t cylinder (beta = </span><span class="sc">{</span>b<span class="sc">:,.0f}</span><span class="ss"> kg/m^2): speed kept through the air, fired vertically: "</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"Mars </span><span class="sc">{</span>math<span class="sc">.</span>exp(<span class="op">-</span><span class="fl">0.020</span><span class="op">*</span><span class="dv">11100</span><span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>b))<span class="sc">:.0%}</span><span class="ss">, Earth </span><span class="sc">{</span>math<span class="sc">.</span>exp(<span class="op">-</span><span class="fl">1.225</span><span class="op">*</span><span class="dv">7200</span><span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>b))<span class="sc">:.0%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>escape speed: Mars 5.03 km/s, Earth 11.19 km/s
+air column rho0*H: Mars 222 kg/m^2, Earth 8820 kg/m^2
+ 1000 t cylinder (beta = 1,692 kg/m^2): speed kept through the air, fired vertically: Mars 94%, Earth 7%
+ 3000 t cylinder (beta = 5,076 kg/m^2): speed kept through the air, fired vertically: Mars 98%, Earth 42%</code></pre>
+</div>
+</div>
+<p>This is why the gun is on Mars and not on Earth. Jules Verne’s moon gun would lose a large part of its speed to the air, while a Martian gun gives up only a few per cent.</p>
+</section>
+<section id="choosing-the-moment-porkchops-and-oppositions" class="level3">
+<h3 class="anchored" data-anchor-id="choosing-the-moment-porkchops-and-oppositions">Choosing the moment: porkchops and oppositions</h3>
+<p>Which <span class="math inline">\(v_\infty\)</span>? That depends on when the gun fires and how long the trip takes. Model Mars and Earth on circular, coplanar orbits (1.524 AU and 1 AU). Then fix the departure time and the flight time. The cylinder’s path between Mars’s position at departure and Earth’s position at arrival is the solution of <strong>Lambert’s problem</strong>: the Keplerian orbit through two points in a given time. It is solved here with the universal-variable method. Plotting the required speeds over a grid of departure dates and flight times gives the mission designer’s <strong>porkchop plot</strong>.</p>
+<div id="lambert" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>MU_SUN <span class="op">=</span> <span class="fl">1.32712440018e11</span><span class="op">;</span> AU <span class="op">=</span> <span class="fl">1.495978707e8</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>rE, rM <span class="op">=</span> AU, <span class="fl">1.523679</span><span class="op">*</span>AU</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>nE, nM <span class="op">=</span> math.sqrt(MU_SUN<span class="op">/</span>rE<span class="op">**</span><span class="dv">3</span>), math.sqrt(MU_SUN<span class="op">/</span>rM<span class="op">**</span><span class="dv">3</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>DAY <span class="op">=</span> <span class="fl">86400.0</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stumpff(z):</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> z <span class="op">&gt;</span> <span class="fl">1e-8</span>:</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> math.sqrt(z)<span class="op">;</span> <span class="cf">return</span> (<span class="dv">1</span> <span class="op">-</span> math.cos(s))<span class="op">/</span>z, (s <span class="op">-</span> math.sin(s))<span class="op">/</span>s<span class="op">**</span><span class="dv">3</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> z <span class="op">&lt;</span> <span class="op">-</span><span class="fl">1e-8</span>:</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> math.sqrt(<span class="op">-</span>z)<span class="op">;</span> <span class="cf">return</span> (math.cosh(s) <span class="op">-</span> <span class="dv">1</span>)<span class="op">/</span>(<span class="op">-</span>z), (math.sinh(s) <span class="op">-</span> s)<span class="op">/</span>s<span class="op">**</span><span class="dv">3</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">0.5</span>, <span class="dv">1</span><span class="op">/</span><span class="dv">6</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lambert(r1v, r2v, tof, mu<span class="op">=</span>MU_SUN):</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Prograde single-revolution Lambert solution (universal variables)."""</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    r1, r2 <span class="op">=</span> np.linalg.norm(r1v), np.linalg.norm(r2v)</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    dth <span class="op">=</span> math.acos(np.clip(r1v <span class="op">@</span> r2v<span class="op">/</span>(r1<span class="op">*</span>r2), <span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> r1v[<span class="dv">0</span>]<span class="op">*</span>r2v[<span class="dv">1</span>] <span class="op">-</span> r1v[<span class="dv">1</span>]<span class="op">*</span>r2v[<span class="dv">0</span>] <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>        dth <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>math.pi <span class="op">-</span> dth</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> math.sin(dth)<span class="op">*</span>math.sqrt(r1<span class="op">*</span>r2<span class="op">/</span>(<span class="dv">1</span> <span class="op">-</span> math.cos(dth)))</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> y(z):</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>        C, S <span class="op">=</span> stumpff(z)<span class="op">;</span> <span class="cf">return</span> r1 <span class="op">+</span> r2 <span class="op">+</span> A<span class="op">*</span>(z<span class="op">*</span>S <span class="op">-</span> <span class="dv">1</span>)<span class="op">/</span>math.sqrt(C)</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> F(z):</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>        C, S <span class="op">=</span> stumpff(z)<span class="op">;</span> yz <span class="op">=</span> y(z)</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (yz<span class="op">/</span>C)<span class="op">**</span><span class="fl">1.5</span><span class="op">*</span>S <span class="op">+</span> A<span class="op">*</span>math.sqrt(yz) <span class="op">-</span> math.sqrt(mu)<span class="op">*</span>tof</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>    zl, zh <span class="op">=</span> <span class="op">-</span><span class="dv">4</span><span class="op">*</span>math.pi<span class="op">**</span><span class="dv">2</span>, <span class="dv">4</span><span class="op">*</span>math.pi<span class="op">**</span><span class="dv">2</span> <span class="op">-</span> <span class="fl">1e-6</span></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> y(zl) <span class="op">&lt;</span> <span class="dv">0</span> <span class="kw">or</span> F(zl) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>        zl <span class="op">+=</span> <span class="fl">0.05</span></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> zl <span class="op">&gt;=</span> zh: <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"no bracket"</span>)</span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> brentq(F, zl, zh, xtol<span class="op">=</span><span class="fl">1e-12</span>)</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>    yz <span class="op">=</span> y(z)<span class="op">;</span> C, S <span class="op">=</span> stumpff(z)</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>    f, g, gd <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> yz<span class="op">/</span>r1, A<span class="op">*</span>math.sqrt(yz<span class="op">/</span>mu), <span class="dv">1</span> <span class="op">-</span> yz<span class="op">/</span>r2</span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (r2v <span class="op">-</span> f<span class="op">*</span>r1v)<span class="op">/</span>g, (gd<span class="op">*</span>r2v <span class="op">-</span> r1v)<span class="op">/</span>g</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> planet(r, n, t):</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>    th <span class="op">=</span> n<span class="op">*</span>t</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> r<span class="op">*</span>np.array([math.cos(th), math.sin(th)]), math.sqrt(MU_SUN<span class="op">/</span>r)<span class="op">*</span>np.array([<span class="op">-</span>math.sin(th), math.cos(th)])</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> transfer(t_dep, tof):</span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""t_dep in days relative to opposition (both planets at longitude 0 at t = 0)."""</span></span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>    r1, vM <span class="op">=</span> planet(rM, nM, t_dep<span class="op">*</span>DAY)</span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>    r2, vE <span class="op">=</span> planet(rE, nE, (t_dep <span class="op">+</span> tof)<span class="op">*</span>DAY)</span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>    v1, v2 <span class="op">=</span> lambert(r1, r2, tof<span class="op">*</span>DAY)</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.linalg.norm(v1 <span class="op">-</span> vM), np.linalg.norm(v2 <span class="op">-</span> vE), v1, r1</span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Hohmann reference</span></span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a>a_h <span class="op">=</span> (rE <span class="op">+</span> rM)<span class="op">/</span><span class="dv">2</span></span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>tof_h <span class="op">=</span> math.pi<span class="op">*</span>math.sqrt(a_h<span class="op">**</span><span class="dv">3</span><span class="op">/</span>MU_SUN)<span class="op">/</span>DAY</span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>vinf_dep_h <span class="op">=</span> math.sqrt(MU_SUN<span class="op">/</span>rM) <span class="op">-</span> math.sqrt(MU_SUN<span class="op">*</span>(<span class="dv">2</span><span class="op">/</span>rM <span class="op">-</span> <span class="dv">1</span><span class="op">/</span>a_h))</span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a>vinf_arr_h <span class="op">=</span> math.sqrt(MU_SUN<span class="op">*</span>(<span class="dv">2</span><span class="op">/</span>rE <span class="op">-</span> <span class="dv">1</span><span class="op">/</span>a_h)) <span class="op">-</span> math.sqrt(MU_SUN<span class="op">/</span>rE)</span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a>lead_h <span class="op">=</span> (math.pi <span class="op">-</span> nE<span class="op">*</span>tof_h<span class="op">*</span>DAY) <span class="op">%</span> (<span class="dv">2</span><span class="op">*</span>math.pi)                 <span class="co"># Earth's angle ahead of Mars at departure</span></span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a>days_before_opp <span class="op">=</span> (<span class="dv">2</span><span class="op">*</span>math.pi <span class="op">-</span> lead_h)<span class="op">/</span>(nE <span class="op">-</span> nM)<span class="op">/</span>DAY</span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a>dep <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">320</span>, <span class="dv">40</span>, <span class="dv">121</span>)<span class="op">;</span> tofs <span class="op">=</span> np.linspace(<span class="dv">60</span>, <span class="dv">420</span>, <span class="dv">121</span>)</span>
+<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a>VD <span class="op">=</span> np.full((<span class="bu">len</span>(tofs), <span class="bu">len</span>(dep)), np.nan)<span class="op">;</span> VA <span class="op">=</span> VD.copy()</span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j, td <span class="kw">in</span> <span class="bu">enumerate</span>(dep):</span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, tf <span class="kw">in</span> <span class="bu">enumerate</span>(tofs):</span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a>        <span class="co"># skip the degenerate 180-degree transfers of the coplanar model</span></span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>        r1, _ <span class="op">=</span> planet(rM, nM, td<span class="op">*</span>DAY)<span class="op">;</span> r2, _ <span class="op">=</span> planet(rE, nE, (td <span class="op">+</span> tf)<span class="op">*</span>DAY)</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a>        ang <span class="op">=</span> math.degrees(math.acos(np.clip(r1 <span class="op">@</span> r2<span class="op">/</span>(np.linalg.norm(r1)<span class="op">*</span>np.linalg.norm(r2)), <span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>)))</span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">abs</span>(ang <span class="op">-</span> <span class="dv">180</span>) <span class="op">&lt;</span> <span class="dv">4</span>:</span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>            VD[i, j], VA[i, j], _, _ <span class="op">=</span> transfer(td, tf)</span>
+<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb19-65"><a href="#cb19-65" aria-hidden="true" tabindex="-1"></a>            <span class="cf">pass</span></span>
+<span id="cb19-66"><a href="#cb19-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Hohmann transfer: </span><span class="sc">{</span>tof_h<span class="sc">:.0f}</span><span class="ss"> days, v_inf leaving Mars </span><span class="sc">{</span>vinf_dep_h<span class="sc">:.2f}</span><span class="ss"> km/s, "</span></span>
+<span id="cb19-67"><a href="#cb19-67" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"arriving at Earth </span><span class="sc">{</span>vinf_arr_h<span class="sc">:.2f}</span><span class="ss"> km/s"</span>)</span>
+<span id="cb19-68"><a href="#cb19-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"it departs </span><span class="sc">{</span>days_before_opp<span class="sc">:.0f}</span><span class="ss"> days before opposition"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Hohmann transfer: 259 days, v_inf leaving Mars 2.65 km/s, arriving at Earth 2.94 km/s
+it departs 163 days before opposition</code></pre>
+</div>
+</div>
+<div id="cell-fig-porkchop" class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>fig, (a1, a2) <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">4.6</span>))</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>cs <span class="op">=</span> a1.contourf(dep, tofs, np.clip(VD, <span class="dv">0</span>, <span class="dv">20</span>), levels<span class="op">=</span>np.arange(<span class="fl">2.5</span>, <span class="fl">20.5</span>, <span class="fl">1.0</span>), cmap<span class="op">=</span><span class="st">"viridis_r"</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>a1.contour(dep, tofs, VA, levels<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">8</span>, <span class="dv">12</span>], colors<span class="op">=</span><span class="st">"w"</span>, linewidths<span class="op">=</span><span class="fl">0.8</span>, linestyles<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>fig.colorbar(cs, ax<span class="op">=</span>a1, label<span class="op">=</span><span class="st">"v∞ leaving Mars (km/s)"</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>a1.plot(<span class="op">-</span>days_before_opp, tof_h, <span class="st">"*"</span>, color<span class="op">=</span>BRASS, ms<span class="op">=</span><span class="dv">14</span>, mec<span class="op">=</span><span class="st">"k"</span>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>a1.axvline(<span class="dv">0</span>, color<span class="op">=</span>RED, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>a1.text(<span class="op">-</span><span class="dv">4</span>, <span class="dv">395</span>, <span class="st">"opposition"</span>, color<span class="op">=</span>RED, fontsize<span class="op">=</span><span class="dv">9</span>, ha<span class="op">=</span><span class="st">"right"</span>)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>a1.set_xlabel(<span class="st">"departure, days relative to opposition"</span>)<span class="op">;</span> a1.set_ylabel(<span class="st">"flight time (days)"</span>)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>a1.set_title(<span class="st">"dashed: arrival v∞ at Earth (km/s)"</span>, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> propagate(r0, v0, days):</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> <span class="kw">lambda</span> t, s: np.r_[s[<span class="dv">2</span>:], <span class="op">-</span>MU_SUN<span class="op">*</span>s[:<span class="dv">2</span>]<span class="op">/</span>np.linalg.norm(s[:<span class="dv">2</span>])<span class="op">**</span><span class="dv">3</span>]</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    sol <span class="op">=</span> solve_ivp(f, (<span class="dv">0</span>, days<span class="op">*</span>DAY), np.r_[r0, v0], rtol<span class="op">=</span><span class="fl">1e-9</span>, atol<span class="op">=</span><span class="dv">1</span>, max_step<span class="op">=</span>DAY)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sol.y[:<span class="dv">2</span>]<span class="op">/</span>AU</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>th <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">300</span>)</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>a2.plot(np.cos(th), np.sin(th), color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="dv">1</span>)<span class="op">;</span> a2.plot(<span class="fl">1.524</span><span class="op">*</span>np.cos(th), <span class="fl">1.524</span><span class="op">*</span>np.sin(th), color<span class="op">=</span>RED, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>a2.plot(<span class="dv">0</span>, <span class="dv">0</span>, <span class="st">"o"</span>, color<span class="op">=</span><span class="st">"#f4c430"</span>, ms<span class="op">=</span><span class="dv">12</span>, mec<span class="op">=</span><span class="st">"k"</span>)</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> td, tf, col <span class="kw">in</span> [(<span class="op">-</span>days_before_opp, tof_h, BRASS), (<span class="fl">0.0</span>, <span class="fl">120.0</span>, RED)]:</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> col <span class="op">==</span> BRASS:    <span class="co"># Hohmann: start at Mars on the transfer ellipse's aphelion</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>        r1, vM <span class="op">=</span> planet(rM, nM, td<span class="op">*</span>DAY)</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>        v1 <span class="op">=</span> vM<span class="op">*</span>(<span class="dv">1</span> <span class="op">-</span> vinf_dep_h<span class="op">/</span>np.linalg.norm(vM))</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>        _, _, v1, r1 <span class="op">=</span> transfer(td, tf)</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    path <span class="op">=</span> propagate(r1, v1, tf)</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    a2.plot(<span class="op">*</span>path, color<span class="op">=</span>col, lw<span class="op">=</span><span class="fl">2.2</span>)</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    a2.plot(<span class="op">*</span>path[:, <span class="dv">0</span>], <span class="st">"o"</span>, color<span class="op">=</span>col)<span class="op">;</span> a2.plot(<span class="op">*</span>path[:, <span class="op">-</span><span class="dv">1</span>], <span class="st">"s"</span>, color<span class="op">=</span>col)</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>a2.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> a2.set_xlabel(<span class="st">"AU"</span>)<span class="op">;</span> a2.set_ylabel(<span class="st">"AU"</span>)<span class="op">;</span> a2.set_xlim(<span class="op">-</span><span class="fl">1.8</span>, <span class="fl">1.8</span>)<span class="op">;</span> a2.set_ylim(<span class="op">-</span><span class="fl">1.8</span>, <span class="fl">1.8</span>)</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-porkchop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-porkchop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-porkchop-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-porkchop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Left: porkchop plot of the speed the gun must leave Mars with (v∞, km/s), against departure date relative to opposition and flight time. The star is the Hohmann minimum-energy transfer; the white band is 180° transfers, where the flat circular-orbit model is degenerate. Right: that transfer (brass) and a fast 120-day shot fired at opposition (red), with Mars’s and Earth’s orbits.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The cheapest shot is the <strong>Hohmann transfer</strong>, half an ellipse touching both orbits. It takes eight and a half months and must be fired about five months <em>before</em> opposition, while Earth is still well behind Mars, so that Earth arrives at the meeting point at the same time as the cylinder. Wells has his astronomers see the flashes as Mars approaches opposition, which is the right season. Firing <em>at</em> opposition, when the planets are closest, is not cheapest: Earth is already pulling ahead, and catching it quickly costs much more speed.</p>
+<div id="scenarios" class="cell" data-execution_count="13">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, td, tf <span class="kw">in</span> [(<span class="st">"Hohmann (minimum energy)"</span>, <span class="va">None</span>, tof_h),</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                     (<span class="st">"fired at opposition, 250 days"</span>, <span class="fl">0.0</span>, <span class="fl">250.0</span>),</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>                     (<span class="st">"fired at opposition, 120 days"</span>, <span class="fl">0.0</span>, <span class="fl">120.0</span>)]:</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> td <span class="kw">is</span> <span class="va">None</span>:      <span class="co"># exactly 180 degrees: use the closed form, not Lambert</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        vd, va <span class="op">=</span> vinf_dep_h, vinf_arr_h</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        vd, va, _, _ <span class="op">=</span> transfer(td, tf)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    rows.append((name, tf, vd, math.sqrt(v_esc_m<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> vd<span class="op">**</span><span class="dv">2</span>), va, math.sqrt(v_esc_e<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> va<span class="op">**</span><span class="dv">2</span>)))</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'trajectory'</span><span class="sc">:32s}{</span><span class="st">'days'</span><span class="sc">:&gt;6s}{</span><span class="st">'v_inf Mars'</span><span class="sc">:&gt;12s}{</span><span class="st">'muzzle'</span><span class="sc">:&gt;9s}{</span><span class="st">'v_inf Earth'</span><span class="sc">:&gt;13s}{</span><span class="st">'entry'</span><span class="sc">:&gt;8s}</span><span class="ss">  (km/s)"</span>)</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r_ <span class="kw">in</span> rows:</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>r_[<span class="dv">0</span>]<span class="sc">:32s}{</span>r_[<span class="dv">1</span>]<span class="sc">:6.0f}{</span>r_[<span class="dv">2</span>]<span class="sc">:12.2f}{</span>r_[<span class="dv">3</span>]<span class="sc">:9.2f}{</span>r_[<span class="dv">4</span>]<span class="sc">:13.2f}{</span>r_[<span class="dv">5</span>]<span class="sc">:8.2f}</span><span class="ss">"</span>)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>v_muzzle <span class="op">=</span> rows[<span class="dv">0</span>][<span class="dv">3</span>]<span class="op">;</span> v_entry <span class="op">=</span> rows[<span class="dv">0</span>][<span class="dv">5</span>]</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">barrel length needed for the Hohmann shot:"</span>)</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> gees <span class="kw">in</span> (<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">1000</span>):</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>gees<span class="sc">:&gt;5}</span><span class="ss"> g  -&gt;  </span><span class="sc">{</span>(v_muzzle<span class="op">*</span><span class="fl">1e3</span>)<span class="op">**</span><span class="dv">2</span><span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>gees<span class="op">*</span><span class="fl">9.81</span>)<span class="op">/</span><span class="fl">1e3</span><span class="sc">:8.1f}</span><span class="ss"> km"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>trajectory                        days  v_inf Mars   muzzle  v_inf Earth   entry  (km/s)
+Hohmann (minimum energy)           259        2.65     5.68         2.94   11.57
+fired at opposition, 250 days      250        5.11     7.17         9.73   14.82
+fired at opposition, 120 days      120       13.68    14.58         9.14   14.44
+
+barrel length needed for the Hohmann shot:
+     10 g  -&gt;     164.6 km
+    100 g  -&gt;      16.5 km
+   1000 g  -&gt;       1.6 km</code></pre>
+</div>
+</div>
+<p>Even the gentlest shot needs a muzzle speed of almost 6 km/s. Accelerating to that at a survivable 10 g would need a barrel well over a hundred kilometres long. A barrel of a kilometre or so, closer to anything one might call a gun, means more than a thousand g. Wells’s Martians are, in his description, little more than great heads with hands. Perhaps a body built like that, raised in Mars’s 0.38 g, packs well for a violent ride.</p>
+</section>
+<section id="ten-nights-ten-shots" class="level3">
+<h3 class="anchored" data-anchor-id="ten-nights-ten-shots">Ten nights, ten shots</h3>
+<p>Why one shot a night? A gun built into the ground turns with the planet. Mars’s day (the sol) lasts 24 h 37 min, almost the same as Earth’s, so the gun points along its firing line once per sol. Each cylinder follows nearly the same path, so they arrive about a day apart, as they do in the novel: the first lands in the early hours of a Friday, the second around Friday midnight, the third on Saturday night. Near opposition Mars is highest in the sky around midnight, so watchers on Earth would see each flash at nearly the same hour, drifting about 40 minutes later each night: Wells’s “a flame each night”.</p>
+</section>
+<section id="arriving-entry-and-impact" class="level3">
+<h3 class="anchored" data-anchor-id="arriving-entry-and-impact">Arriving: entry and impact</h3>
+<p>The cylinder reaches Earth’s atmosphere at the entry speed in the table, at least 11.6 km/s. It is a ballistic body with no wings or parachute in Wells, so its descent follows the equations of planar atmospheric flight:</p>
+<p><span class="math display">\[
+\dot v = -\frac{\rho(h)\,v^2}{2\beta} + g\sin\gamma, \qquad
+\dot\gamma = \left(\frac{g}{v} - \frac{v}{R_\oplus + h}\right)\cos\gamma, \qquad
+\dot h = -v\sin\gamma,
+\]</span></p>
+<p>with <span class="math inline">\(\gamma\)</span> the angle below horizontal and <span class="math inline">\(\rho(h) = \rho_0 e^{-h/H}\)</span>. For a steep, fast entry the classic Allen–Eggers result gives the peak deceleration in closed form, independent of the body’s mass,</p>
+<p><span class="math display">\[
+a_\text{max} = \frac{v_E^2\sin\gamma}{2eH},
+\]</span></p>
+<p>so the passengers’ worst moment depends only on how fast and how steeply they come in. The impact speed, by contrast, depends strongly on mass. The cylinder’s mass is not given, so the calculation sweeps it from a few hundred tonnes (light, for a craft carrying several Martians and the parts of fighting-machines) to many thousands.</p>
+<div id="cell-fig-entry" class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>H, RHO0, G0 <span class="op">=</span> <span class="fl">7200.0</span>, <span class="fl">1.225</span>, <span class="fl">9.81</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>gamma0 <span class="op">=</span> math.radians(<span class="dv">30</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> entry(mass_t, v0<span class="op">=</span>v_entry<span class="op">*</span><span class="fl">1e3</span>, h0<span class="op">=</span><span class="fl">120e3</span>, g0<span class="op">=</span>gamma0):</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    b <span class="op">=</span> beta(mass_t)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> rhs(t, s):</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>        v, gam, h <span class="op">=</span> s</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>        g <span class="op">=</span> G0<span class="op">*</span>(R_EARTH<span class="op">*</span><span class="fl">1e3</span><span class="op">/</span>(R_EARTH<span class="op">*</span><span class="fl">1e3</span> <span class="op">+</span> h))<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>        rho <span class="op">=</span> RHO0<span class="op">*</span>math.exp(<span class="op">-</span>h<span class="op">/</span>H)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [<span class="op">-</span>rho<span class="op">*</span>v<span class="op">*</span>v<span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>b) <span class="op">+</span> g<span class="op">*</span>math.sin(gam),</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>                (g<span class="op">/</span>v <span class="op">-</span> v<span class="op">/</span>(R_EARTH<span class="op">*</span><span class="fl">1e3</span> <span class="op">+</span> h))<span class="op">*</span>math.cos(gam),</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>                <span class="op">-</span>v<span class="op">*</span>math.sin(gam)]</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    hit <span class="op">=</span> <span class="kw">lambda</span> t, s: s[<span class="dv">2</span>]<span class="op">;</span> hit.terminal <span class="op">=</span> <span class="va">True</span><span class="op">;</span> hit.direction <span class="op">=</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    sol <span class="op">=</span> solve_ivp(rhs, (<span class="dv">0</span>, <span class="dv">3000</span>), [v0, g0, h0], events<span class="op">=</span>hit, max_step<span class="op">=</span><span class="fl">0.05</span>, rtol<span class="op">=</span><span class="fl">1e-8</span>)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    v, gam, h <span class="op">=</span> sol.y</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    rho <span class="op">=</span> RHO0<span class="op">*</span>np.exp(<span class="op">-</span>h<span class="op">/</span>H)</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    decel <span class="op">=</span> rho<span class="op">*</span>v<span class="op">*</span>v<span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>b)</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sol.t, v, h, decel</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>masses <span class="op">=</span> [<span class="dv">300</span>, <span class="dv">1000</span>, <span class="dv">3000</span>, <span class="dv">10000</span>, <span class="dv">30000</span>]</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">4.2</span>))</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> []</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> mass, col <span class="kw">in</span> <span class="bu">zip</span>(masses, [<span class="st">"#6baed6"</span>, BLUE, GREEN, BRASS, RED]):</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    t_, v_, h_, dec <span class="op">=</span> entry(mass)</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    ax.plot(v_<span class="op">/</span><span class="fl">1e3</span>, h_<span class="op">/</span><span class="fl">1e3</span>, color<span class="op">=</span>col, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="ss">f"</span><span class="sc">{</span>mass<span class="sc">:,}</span><span class="ss"> t"</span>)</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>    ke <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>mass<span class="op">*</span><span class="fl">1e3</span><span class="op">*</span>v_[<span class="op">-</span><span class="dv">1</span>]<span class="op">**</span><span class="dv">2</span><span class="op">/</span><span class="fl">4.184e9</span>          <span class="co"># tonnes of TNT</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    results.append((mass, v_[<span class="op">-</span><span class="dv">1</span>], dec.<span class="bu">max</span>()<span class="op">/</span><span class="fl">9.81</span>, ke))</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"speed (km/s)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"altitude (km)"</span>)<span class="op">;</span> ax.set_ylim(<span class="dv">0</span>, <span class="dv">80</span>)</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>ax.legend(title<span class="op">=</span><span class="st">"cylinder mass"</span>, frameon<span class="op">=</span><span class="va">False</span>)<span class="op">;</span> plt.show()</span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Allen-Eggers peak deceleration at </span><span class="sc">{</span>math<span class="sc">.</span>degrees(gamma0)<span class="sc">:.0f}</span><span class="ss"> deg: "</span></span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"</span><span class="sc">{</span>(v_entry<span class="op">*</span><span class="fl">1e3</span>)<span class="op">**</span><span class="dv">2</span><span class="op">*</span>math<span class="sc">.</span>sin(gamma0)<span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>math.e<span class="op">*</span>H)<span class="op">/</span><span class="fl">9.81</span><span class="sc">:.0f}</span><span class="ss"> g"</span>)</span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'mass (t)'</span><span class="sc">:&gt;9s}{</span><span class="st">'impact speed'</span><span class="sc">:&gt;15s}{</span><span class="st">'peak decel'</span><span class="sc">:&gt;12s}{</span><span class="st">'impact energy'</span><span class="sc">:&gt;20s}</span><span class="ss">"</span>)</span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> mass, vi, gmax, ke <span class="kw">in</span> results:</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>mass<span class="sc">:9,d}{</span>vi<span class="sc">:12.0f}</span><span class="ss"> m/s</span><span class="sc">{</span>gmax<span class="sc">:10.0f}</span><span class="ss"> g</span><span class="sc">{</span>ke<span class="sc">:14,.0f}</span><span class="ss"> t of TNT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-entry" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-entry-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-entry-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-entry-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: A thirty-yard cylinder entering Earth’s atmosphere at the Hohmann arrival speed, 30° below horizontal, for several masses. Heavy cylinders reach the ground at kilometres per second; only light ones are slowed to the speed of a falling meteorite.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Allen-Eggers peak deceleration at 30 deg: 174 g
+ mass (t)   impact speed  peak decel       impact energy
+      300          93 m/s       173 g             0 t of TNT
+    1,000         192 m/s       173 g             4 t of TNT
+    3,000        1985 m/s       173 g         1,412 t of TNT
+   10,000        6829 m/s       172 g        55,725 t of TNT
+   30,000        9757 m/s       117 g       341,318 t of TNT</code></pre>
+</div>
+</div>
+<p>A heavy cylinder barely notices the air. It would reach Horsell Common at several kilometres per second and release the energy of a small nuclear weapon, leaving a crater rather than Wells’s “enormous hole” in a sand pit, with a cylinder still intact enough to unscrew. A light cylinder is slowed to a few hundred metres per second, which is survivable for a strong hull and fits the novel’s sandy pit and the “still so hot” metal much better. Either way, the occupants ride through a peak deceleration of well over a hundred g, set by the entry speed and angle, not by the hull. A shallower entry or a parachute would help. Wells, writing five years before the Wright brothers flew, gives his cylinders neither, and the arithmetic suggests the Martians were tougher than they looked.</p>
+</section>
+</section>
+<section id="takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
+<ul>
+<li><strong>MuJoCo</strong> grew from a 2012 research engine for model-based control into the standard simulator for robot learning. Its fast, convex contact model and generalised-coordinate dynamics make it suited to both classical control and reinforcement learning, and DeepMind’s 2021 purchase and open-sourcing made it free to everyone.</li>
+<li><strong>A tripod’s leg is a two-link arm on a yaw joint.</strong> Inverse kinematics is the law of cosines; the knee-up spider stance puts the load on the hips; and statics is <span class="math inline">\(\boldsymbol\tau = J^\top\mathbf f\)</span>, which the simulation confirms by hand.</li>
+<li><strong>A three-legged machine cannot roll passively.</strong> The rimless-wheel impact law, <span class="math inline">\(\omega^+/\omega^- = (k^2 + \cos 2\alpha)/(1 + k^2)\)</span>, is negative for a tripod unless most of its mass is in its legs.</li>
+<li><strong>Walking on three legs means repeatedly falling about a hinge.</strong> Planning that fall with a linear inverted pendulum and a model-predictive ZMP planner gives a steady 5.5 mph with the hood within a few degrees of level.</li>
+<li><strong>The cylinders are the hard part.</strong> A gun on Mars works, because Mars has little air. The cheapest shot leaves about five months before opposition, needs almost 6 km/s, a barrel of tens or hundreds of kilometres to keep the g-load down, and ends in an entry of more than a hundred g. Wells’s ten nightly flashes fit a gun that turns with the planet.</li>
+</ul>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li>H. G. Wells, <em>The War of the Worlds</em> (1898), free at <a href="https://www.gutenberg.org/ebooks/36">Project Gutenberg</a>.</li>
+<li>E. Todorov, T. Erez and Y. Tassa, “MuJoCo: A physics engine for model-based control”, IROS (2012); the <a href="https://mujoco.readthedocs.io/">MuJoCo documentation</a>.</li>
+<li>T. McGeer, “Passive dynamic walking”, <em>International Journal of Robotics Research</em> (1990), for the rimless wheel.</li>
+<li>S. Kajita et al., “Biped walking pattern generation by using preview control of zero-moment point”, ICRA (2003), for ZMP planning.</li>
+<li>H. D. Curtis, <em>Orbital Mechanics for Engineering Students</em>, for Lambert’s problem and porkchop plots.</li>
+<li>H. J. Allen and A. J. Eggers, “A study of the motion and aerodynamic heating of ballistic missiles entering the earth’s atmosphere at high supersonic speeds”, NACA Report 1381 (1958).</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script>videojs(video_shortcode_videojs_video1);</script>
+
+
+
+
+</body></html>

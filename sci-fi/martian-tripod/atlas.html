@@ -1,0 +1,654 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>War of the Worlds Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a survey sheet. The map is the page; a field-notes column beside it holds the selected place and the day-by-day chronology. */
+:root{
+  --paper:#eef1ec; --land:#e2e8e0; --panel:#f6f8f5; --ink:#1c2521; --muted:#5a6a62; --rule:#c6d0c7;
+  --water:#8fb0bf; --water-fill:#c9dbe2; --grat:#cbd4cc; --meridian:#9aa89f;
+  --mars:#b5301c; --cyl:#128a46; --cyl-glow:rgba(18,138,70,.26); --nar:#23459a; --bro:#a2680a;
+  --smoke:rgba(24,26,24,.40); --halo:#e2e8e0; --sel:#1c2521;
+  --display:"IM Fell English SC", "Iowan Old Style", Georgia, serif;
+  --body:"Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0d1211; --land:#111917; --panel:#131b19; --ink:#dde6e1; --muted:#90a198; --rule:#25322d;
+  --water:#3b6577; --water-fill:#152830; --grat:#1c2825; --meridian:#3a4a44;
+  --mars:#ff6b53; --cyl:#43ec86; --cyl-glow:rgba(67,236,134,.24); --nar:#90afff; --bro:#f0b64c;
+  --smoke:rgba(170,172,160,.30); --halo:#111917; --sel:#dde6e1; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0d1211; --land:#111917; --panel:#131b19; --ink:#dde6e1; --muted:#90a198; --rule:#25322d;
+  --water:#3b6577; --water-fill:#152830; --grat:#1c2825; --meridian:#3a4a44;
+  --mars:#ff6b53; --cyl:#43ec86; --cyl-glow:rgba(67,236,134,.24); --nar:#90afff; --bro:#f0b64c;
+  --smoke:rgba(170,172,160,.30); --halo:#111917; --sel:#dde6e1; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-block:26px 44px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,5.2vw,56px);line-height:1;margin:8px 0 10px;text-wrap:balance;letter-spacing:.01em}
+.lede{max-width:64ch;margin:0;color:var(--muted)}
+.lede b{color:var(--ink);font-weight:600}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:22px;margin-top:22px;align-items:start}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:10px}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--panel)}
+.seg button{font:500 12px/1 var(--mono);letter-spacing:.04em;color:var(--muted);background:none;border:0;border-right:1px solid var(--rule);padding:9px 10px;cursor:pointer;min-height:34px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:focus-visible,.chip:focus-visible,.zoom button:focus-visible,.ev:focus-visible,.play:focus-visible{outline:2px solid var(--cyl);outline-offset:1px}
+.tlabel{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.daywrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.play{font:600 12px/1 var(--mono);border:1px solid var(--rule);background:var(--panel);color:var(--ink);border-radius:3px;padding:9px 11px;cursor:pointer;min-height:34px}
+
+.mapbox{position:relative;border:1px solid var(--rule);background:var(--land);border-radius:3px;overflow:hidden;height:clamp(400px,68vh,760px)}
+#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#map.dragging{cursor:grabbing}
+.zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--panel)}
+.zoom button{width:36px;height:36px;border:0;background:none;color:var(--ink);font:600 18px/1 var(--mono);cursor:pointer}
+.zoom button+button{border-top:1px solid var(--rule)}
+.scale{position:absolute;left:12px;bottom:10px;font:11px var(--mono);color:var(--ink);pointer-events:none}
+.scale .bar{height:6px;border:1.5px solid var(--ink);border-top:0;margin-top:3px}
+.hint{position:absolute;right:12px;bottom:10px;font:11px var(--mono);color:var(--muted);pointer-events:none;text-align:right}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;font:12px var(--body);border:1px solid var(--rule);background:var(--panel);color:var(--ink);padding:6px 11px 6px 9px;border-radius:999px;cursor:pointer;min-height:34px}
+.chip[aria-pressed="false"]{opacity:.42;text-decoration:line-through}
+.glyph{width:22px;height:12px;flex:none}
+
+/* map ink */
+.grat path{stroke:var(--grat);fill:none}
+.grat .meridian{stroke:var(--meridian)}
+.gl{fill:var(--muted);font-family:var(--mono)}
+.river{stroke:var(--water);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sea{fill:var(--water-fill);stroke:var(--water);stroke-linejoin:round}
+.base{fill:var(--muted);font-family:var(--body);font-style:italic}
+.county{fill:var(--muted);font-family:var(--display);letter-spacing:.3em;opacity:.75}
+.smoke{fill:var(--smoke)}
+.route{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.r-mars{stroke:var(--mars)} .r-nar{stroke:var(--nar)} .r-bro{stroke:var(--bro)}
+.mk{cursor:pointer}
+.mk .hit{fill:transparent}
+.m-cyl .glow{fill:var(--cyl-glow)} .m-cyl .core{fill:var(--cyl);stroke:var(--halo)}
+.m-cyl text{fill:var(--halo);font-family:var(--mono);font-weight:600;text-anchor:middle}
+.m-mars .core{fill:var(--mars);stroke:var(--halo)}
+.m-nar .core{fill:var(--nar);stroke:var(--halo)}
+.m-bro .core{fill:var(--bro);stroke:var(--halo)}
+.lbl{fill:var(--ink);font-family:var(--body);paint-order:stroke;stroke:var(--halo);stroke-linejoin:round;pointer-events:none}
+.lbl.p1{font-weight:600}
+.lbl.sel{font-weight:600}
+.selring{fill:none;stroke:var(--sel)}
+@media (prefers-reduced-motion:no-preference){ .selring{animation:pulse 1.8s ease-out infinite} }
+@keyframes pulse{0%{opacity:1}100%{opacity:.15}}
+
+/* side column */
+aside{display:flex;flex-direction:column;gap:16px;min-width:0}
+.detail{background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:16px 18px 18px}
+.dmeta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dmeta .trk{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:600}
+.detail h2{font-family:var(--display);font-weight:400;font-size:27px;line-height:1.1;margin:8px 0 6px;text-wrap:balance}
+.detail p{margin:0;max-width:62ch}
+.when{font-style:italic;color:var(--muted);margin-bottom:6px!important}
+
+.chron{background:var(--panel);border:1px solid var(--rule);border-radius:3px;min-width:0}
+.chron h3{font-family:var(--display);font-weight:400;font-size:20px;margin:0;padding:14px 18px 10px;border-bottom:1px solid var(--rule)}
+.chron .list{max-height:min(62vh,640px);overflow:auto;padding:4px 0 10px}
+@media (max-width:920px){.chron .list{max-height:none}}
+.dayh{font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:12px 18px 4px;position:sticky;top:0;background:var(--panel)}
+.ev{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;align-items:baseline;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:14px/1.35 var(--body);padding:6px 18px;cursor:pointer}
+.ev:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.ev[aria-current="true"]{background:color-mix(in srgb,var(--ink) 10%,transparent);font-weight:600}
+.ev .ch{font:11px var(--mono);color:var(--muted);white-space:nowrap;font-weight:400}
+.ev svg{width:14px;height:14px;align-self:center}
+.empty{padding:16px 18px;color:var(--muted);font-style:italic}
+
+footer{margin-top:26px;border-top:1px solid var(--rule);padding-top:14px;color:var(--muted);font-size:13px;max-width:90ch}
+footer a{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">H. G. Wells · The War of the Worlds · 1898</div>
+    <h1>Where the Martians Came Down</h1>
+    <p class="lede">Seven of the ten cylinders land in the book. Follow them from the sand pits on Horsell Common to the great pit on Primrose Hill, with <b>the Martian advance</b>, <b>the narrator’s route</b> through Surrey and London, and <b>his brother’s flight</b> to the Essex coast.</p>
+  </header>
+
+  <div class="grid">
+    <section aria-label="Map">
+      <div class="toolbar">
+        <div class="seg" id="views" role="group" aria-label="Map view"></div>
+        <div class="daywrap">
+          <span class="tlabel">Up to</span>
+          <div class="seg" id="days" role="group" aria-label="Show events up to"></div>
+          <button class="play" id="play" type="button">▶ Play</button>
+        </div>
+      </div>
+      <div class="mapbox">
+        <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Map of Surrey, London and Essex showing the events of the novel">
+          <defs>
+            <filter id="blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+          </defs>
+          <g class="grat" id="grat"></g>
+          <g id="water"></g>
+          <g id="gl"></g>
+          <g id="smoke" filter="url(#blur)"></g>
+          <g id="routes"></g>
+          <g id="baselbl"></g>
+          <g id="markers"></g>
+          <g id="labels"></g>
+          <g id="selg"></g>
+        </svg>
+        <div class="zoom"><button type="button" id="zin" aria-label="Zoom in">+</button><button type="button" id="zout" aria-label="Zoom out">−</button></div>
+        <div class="scale" id="scale"><span></span><div class="bar"></div></div>
+        <div class="hint">drag to pan · scroll or pinch to zoom</div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <aside>
+      <div class="detail" id="detail" aria-live="polite"></div>
+      <div class="chron">
+        <h3>Chronology</h3>
+        <div class="list" id="list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    Places, days and times come from the text. Points sit on the modern positions of the places Wells names; where he gives only an area (the Byfleet pine woods, the sea fight off the Essex coast, the brother’s cross-country leg toward Colchester) the point or line is approximate. The Martian line is a reading of the battle reports in Book I, chapters XIV–XVII, not a single machine’s track. Text: <a href="https://www.gutenberg.org/ebooks/36" target="_blank" rel="noopener">Project Gutenberg</a>.
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var K=1000, COS=Math.cos(51.5*Math.PI/180), LON0=-0.75, LAT0=52.0;
+function P(lat,lon){return [(lon-LON0)*K*COS,(LAT0-lat)*K];}
+var KM=K/111.2;            // units per km
+var MILE=KM*1.609;          // units per mile
+
+var DAYS=["","Friday","Saturday","Sunday","Monday","Tuesday","Wednesday","Weeks after"];
+var DSHORT=["","Fri","Sat","Sun","Mon","Tue","Wed","After"];
+var TRACKS={cyl:"Cylinder",mars:"Martians",nar:"Narrator",bro:"Brother"};
+
+/* ---------- events, in narrative order ---------- */
+var EV=[];
+function E(id,t,name,lat,lon,d,when,ch,p,note,o){o=o||{};EV.push({id:id,t:t,name:name,lat:lat,lon:lon,d:d,when:when,ch:ch,p:p,note:note,smoke:!!o.smoke,num:o.num,nolabel:!!o.nolabel});}
+
+E("c1","cyl","Horsell Common",51.3365,-0.5640,1,"Early hours of Friday; opens at sunset","Book I, ch. II–V",1,"The first cylinder buries itself in the sand pits between Horsell, Ottershaw and Woking. Ogilvy finds it at dawn. At sunset the lid unscrews, and the Heat-Ray burns the Deputation under its white flag, then sweeps the Chobham road and the crowd on the common.",{num:1});
+E("n_maybury","nar","Maybury",51.3165,-0.5370,1,"Friday, and again at the very end","Book I, ch. III · Book II, ch. IX",1,"The narrator’s house on Maybury Hill, on the eastern edge of Woking, a short walk from the pit. He walks out to see the cylinder on Friday. At the end of the book he comes back here by train, and his wife, who had believed him dead, returns to find him.");
+E("c2","cyl","Byfleet pine woods",51.3470,-0.5220,2,"Just after midnight, Friday night","Book I, ch. VIII–IX",2,"The second cylinder is seen from the Chertsey road, falling into the pine woods. On Saturday afternoon guns at Chertsey or Addlestone shell the burning wood about the Byfleet golf links where it lies. Wells names the woods, not the spot.",{num:2});
+E("m_oriental","mars","Oriental College",51.3195,-0.5445,2,"Saturday, about 6 p.m.","Book I, ch. IX",3,"The Heat-Ray strikes the trees round the Oriental College. A church tower falls and the mosque loses its pinnacle; a chimney of the narrator’s own house is hit. He decides to get his wife away.");
+E("n_oldwoking","nar","Old Woking",51.3035,-0.5465,2,"Saturday evening","Book I, ch. IX",3,"He hires the dog-cart from the landlord of the Spotted Dog and drives his wife south, past Old Woking.");
+E("n_send","nar","Send",51.2835,-0.5370,2,"Saturday evening","Book I, ch. IX–X",3,"On the road toward Leatherhead, with the fires of Woking behind them.");
+E("n_leatherhead","nar","Leatherhead",51.2965,-0.3290,2,"Saturday, about 9 p.m.","Book I, ch. X",1,"He leaves his wife with her cousins and turns back to return the dog-cart, as promised. He does not see her again until the last chapter.");
+E("m_woking","mars","Woking",51.3195,-0.5580,2,"Saturday evening and night","Book I, ch. XI",1,"The Martians come out of the pit, wreck the station and burn the town. The artilleryman later tells how the Cardigan men’s rush was cut down in the open.");
+E("n_mayburyhill","nar","Maybury Hill",51.3205,-0.5280,2,"Saturday night, in the storm","Book I, ch. X–XI",3,"Driving back through a thunderstorm he meets a fighting-machine striding toward Pyrford. The horse bolts and the cart overturns. He finds the landlord of the Spotted Dog dead, and shelters at home, where the artilleryman joins him before dawn.");
+E("b_waterloo","bro","Waterloo",51.5030,-0.1130,2,"Saturday night and Sunday","Book I, ch. XIV",2,"The narrator’s brother, a medical student in London, finds the Woking trains cancelled. He comes back on Sunday and is cleared off the platforms about 5 p.m., then walks via Westminster to his lodgings.");
+
+E("c3","cyl","Pyrford",51.3165,-0.4990,3,"Soon after midnight, Saturday night","Book I, ch. X",1,"The third cylinder falls into a field beyond Pyrford church, as the narrator drives back through the storm. Its guarding machines stand between him and Leatherhead on Sunday.",{num:3});
+E("n_byfleet","nar","Byfleet",51.3385,-0.4780,3,"Sunday morning","Book I, ch. XII",3,"With the artilleryman. Six twelve-pounders stand facing Woking; the village packs up in a tumult.");
+E("n_weybridge","nar","Weybridge",51.3715,-0.4570,3,"Sunday, to midday","Book I, ch. XII",2,"Troops are throwing up a rampart. Nobody knows where headquarters are. He waits here until midday.");
+E("m_chertsey","mars","Chertsey",51.3895,-0.5085,3,"Sunday afternoon","Book I, ch. XII",2,"A gun fires from the Chertsey side. Five Martians appear, and one turns the Heat-Ray on the town.");
+E("m_shepperton","mars","Shepperton",51.3905,-0.4470,3,"Sunday afternoon","Book I, ch. XII",1,"Hidden guns hit a Martian wading the Thames. Its hood bursts and it reels into Shepperton, strikes the church tower and falls into the river. The others burn Weybridge and Shepperton and carry the wreck away. It is the only Martian brought down by guns on land.");
+E("n_confluence","nar","Shepperton Lock",51.3825,-0.4615,3,"Sunday afternoon","Book I, ch. XII",2,"Where the Wey meets the Thames he dives into the river as the Martians come. When the stricken machine falls, a wave of scalding water sweeps round the bend; a Martian’s foot comes down near his head.");
+E("n_halliford","nar","Halliford",51.3990,-0.4320,3,"Sunday evening to Monday, 5 p.m.","Book I, ch. XIII · Book II, ch. I",1,"He drifts downstream in a boat and meets the curate. They are cut off by Black Smoke in an empty house. On Monday a Martian crosses the fields laying smoke, and its steam jet scalds the curate’s hand.");
+E("m_stgeorge","mars","St George’s Hill",51.3550,-0.4550,3,"Sunday, about 8 p.m.","Book I, ch. XV",2,"Hidden guns cripple a Martian; another destroys the battery with the Heat-Ray and the pines burn. By 9.05 seven Martians stand in a curve from St George’s Hill through Weybridge to Send.");
+E("m_ripley","mars","Ripley",51.2995,-0.4905,3,"Sunday evening","Book I, ch. XV",3,"Raw gunners fire one wild volley and run. A Martian walks over their guns. Canisters of Black Smoke follow.",{smoke:true});
+E("m_painshill","mars","Painshill Park",51.3340,-0.4310,3,"Sunday evening","Book I, ch. XV",3,"The guns here are destroyed.");
+E("m_cobham","mars","Street Cobham",51.3220,-0.4080,3,"Sunday night","Book I, ch. XV",3,"Black Smoke is left to settle on the village. One man survives in the church spire for a day and a half.",{smoke:true});
+E("m_esher","mars","Esher",51.3690,-0.3660,3,"Sunday, twilight","Book I, ch. XV",2,"The batteries waiting here are smothered by Black Smoke. There are no survivors.",{smoke:true});
+E("m_sunbury","mars","Sunbury",51.4045,-0.4090,3,"Sunday, about 9 p.m.","Book I, ch. XV",3,"A Martian faces the town and a hill of Black Smoke rises.",{smoke:true});
+E("m_walton","mars","Walton",51.3860,-0.4170,3,"Sunday, about 9 p.m.","Book I, ch. XV",3,"A second hill of Black Smoke rises across the river from Halliford.",{smoke:true});
+E("m_staines","mars","Staines",51.4335,-0.5110,3,"Sunday night","Book I, ch. XV",3,"A distant Martian answers the firing; a projectile is sent toward Hounslow.");
+E("m_ditton","mars","Ditton",51.3910,-0.3260,3,"Sunday, about 11 p.m.","Book I, ch. XV",3,"Smoke is discharged here; the siege guns at Ditton and Hampton fire on the Martians.",{smoke:true});
+E("m_hampton","mars","Hampton",51.4125,-0.3680,3,"Sunday, about 11 p.m.","Book I, ch. XV",3,"Siege guns open fire across the Thames valley.");
+E("c4","cyl","Bushey Park",51.4140,-0.3350,3,"Sunday night","Book I, ch. XV",2,"The fourth cylinder comes down in Bushey Park as a brilliant green meteor, while the guns at Hampton and Ditton are firing.",{num:4});
+E("m_richmond","mars","Richmond",51.4520,-0.3000,3,"Sunday night to Monday dawn","Book I, ch. XV",1,"Searchlights on Richmond and Kingston hills; the guns fire for a quarter of an hour, then a red glow takes their place. Richmond Park is blazing by midnight, and black vapour pours through the streets before dawn.",{smoke:true});
+
+E("m_kingston","mars","Kingston",51.4110,-0.3010,4,"Early Monday","Book I, ch. XIV",2,"The Commander-in-Chief’s despatch: the Martians have destroyed Richmond, Kingston and Wimbledon and are advancing on London, using Black Smoke.");
+E("b_lodgings","bro","Marylebone",51.5220,-0.1480,4,"Monday dawn","Book I, ch. XIV",3,"The brother is woken by the alarm in his lodgings near Regent’s Park. The news of the smoke sends London into flight.");
+E("b_chalkfarm","bro","Chalk Farm",51.5440,-0.1530,4,"Monday morning","Book I, ch. XVI",3,"He fails to board a North-Western train and takes a bicycle from a looted cycle shop, cutting his wrist.");
+E("b_edgware","bro","Edgware",51.6135,-0.2750,4,"Monday, about 7 a.m.","Book I, ch. XVI",2,"He arrives ahead of the crowd and eats at an inn. The bicycle’s rim broke about a mile short.");
+E("b_rescue","bro","Lane toward High Barnet",51.6300,-0.2250,4,"Monday morning","Book I, ch. XVI",3,"He drives off three men attacking a pony-chaise, and joins its passengers, Mrs and Miss Elphinstone.");
+E("b_barnet","bro","Chipping Barnet",51.6525,-0.2000,4,"Monday, late morning","Book I, ch. XVI",2,"Swept through the town in the torrent of refugees on the Great North Road.");
+E("m_barnes","mars","Barnes",51.4725,-0.2440,4,"Monday, by midday","Book I, ch. XVI",3,"A Martian is seen here.");
+E("m_ealing","mars","Ealing",51.5180,-0.3120,4,"Monday, by midday","Book I, ch. XVI",2,"A cloud of black vapour passes over Ealing and surrounds a group of survivors on Castle Hill.",{smoke:true});
+E("m_lambeth","mars","Lambeth",51.4940,-0.1170,4,"Monday, by midday","Book I, ch. XVI–XVII",2,"Black vapour drifts along the Thames and across the Lambeth flats, cutting off escape over the bridges. Around 1 p.m. it appears under Blackfriars Bridge and panic breaks out in the Pool.",{smoke:true});
+E("m_limehouse","mars","Limehouse",51.5100,-0.0360,4,"Monday, about 2 p.m.","Book I, ch. XVII",2,"A Martian wades down the river past the Clock Tower. Above Limehouse only wreckage floats.");
+E("b_eastbarnet","bro","East Barnet",51.6430,-0.1630,4,"Monday afternoon and night","Book I, ch. XVI",3,"They rest for the rest of the day, watching packed trains go north on the Great Northern line.");
+E("c6","cyl","Wimbledon",51.4250,-0.2050,4,"Monday night","Book I, ch. XVII",2,"The sixth cylinder. The brother sees its green flash from a meadow north of London.",{num:6});
+E("n_richmond","nar","Richmond Bridge",51.4570,-0.3070,4,"Monday, about 8.30 p.m.","Book II, ch. I",3,"Leaving Halliford at five, they walk through Sunbury, Hampton Court and Twickenham. On the bridge red masses float downstream; the town on the hill is burning.");
+E("n_kew","nar","Kew",51.4785,-0.2925,4,"Monday, dusk","Book II, ch. I",2,"A fighting-machine picks up fugitives near Kew Lodge and drops them into a carrier on its back. The two men hide in a shed, then a ditch, until the stars come out.");
+E("c5","cyl","Sheen",51.4665,-0.2665,4,"Monday, near midnight","Book II, ch. I–VI",1,"The fifth cylinder strikes beside the white house on the road toward Mortlake, burying the narrator and the curate in the ruin. For about fifteen days they watch the Martians at work in the pit. The curate dies there. The narrator crawls out into a land overgrown with the red weed.",{num:5});
+
+E("m_highgate","mars","Highgate",51.5710,-0.1470,5,"Tuesday","Book I, ch. XVII",3,"Reports reach the refugees of Martians at Highgate and Neasden.");
+E("c7","cyl","Primrose Hill",51.5395,-0.1605,5,"Tuesday night","Book I, ch. XVII",1,"The seventh cylinder, seen falling by Miss Elphinstone. It becomes the site of the Martians’ largest pit and earthen redoubt.",{num:7});
+
+E("m_waltham","mars","Waltham Abbey",51.6870,-0.0040,6,"By Wednesday","Book I, ch. XVII",2,"News that the powder mills have been blown up in an attempt to kill a Martian, and rumours of Martians at Epping.");
+E("b_chelmsford","bro","Chelmsford",51.7360,0.4790,6,"Wednesday","Book I, ch. XVII",2,"After two days crossing Essex toward Colchester, a local committee seizes their pony for food.");
+E("b_tillingham","bro","Tillingham",51.6960,0.8740,6,"Wednesday, midday","Book I, ch. XVII",2,"A quiet, nearly deserted village; beyond it, the sea and a crowd of shipping.");
+E("b_blackwater","bro","Off the Blackwater",51.7350,0.9550,6,"Wednesday, about 2 p.m.","Book I, ch. XVII",2,"They board a paddle steamer bound for Ostend. It lies off the estuary until about five.");
+E("m_thunder","mars","Thunder Child",51.6400,1.0100,6,"Wednesday, about 5 p.m.","Book I, ch. XVII",1,"Three Martians wade out from the Foulness side toward the fleeing ships. The ironclad Thunder Child charges through their Black Smoke, destroys one and takes a second down with her as she sinks. The steamer escapes; at dusk something large and flat rises over the land to the west.");
+
+E("n_putney","nar","Putney Hill",51.4520,-0.2220,7,"About two weeks later","Book II, ch. VII",1,"Out of the ruin at last, he sleeps at the inn at the top of the hill, then spends a day with the artilleryman in a house here, where he is digging a tunnel toward the main drain to live under the Martians.");
+E("n_wimbledon","nar","Wimbledon Common",51.4380,-0.2290,7,"About two weeks later","Book II, ch. VII",3,"He meets the artilleryman again at the edge of the common.");
+E("m_hammersmith","mars","Hammersmith",51.4920,-0.2230,7,"In the intervening days","Book II, ch. VII",3,"The artilleryman saw two Martians here carrying something large.");
+E("m_wandsworth","mars","Wandsworth",51.4570,-0.1910,7,"In the intervening days","Book II, ch. VII",3,"The artilleryman saw a Martian tearing houses apart.");
+E("n_fulham","nar","Fulham",51.4705,-0.2050,7,"The next day","Book II, ch. VIII",3,"He crosses the river into London. The black dust thickens; he finds bread in a baker’s shop.");
+E("n_kensington","nar","South Kensington",51.4940,-0.1740,7,"Afternoon","Book II, ch. VIII",2,"The streets are clear of dust. He first hears the Martian’s long wailing cry.");
+E("n_marble","nar","Marble Arch",51.5130,-0.1590,7,"Evening","Book II, ch. VIII",3,"He breaks into a public house, eats and sleeps.");
+E("n_regents","nar","Regent’s Park",51.5280,-0.1600,7,"Dusk","Book II, ch. VIII",3,"A Martian’s hood stands motionless above the trees, crying.");
+E("n_stjw","nar","St John’s Wood",51.5340,-0.1760,7,"Night","Book II, ch. VIII",3,"A wrecked handling-machine lies in the road, smeared with blood.");
+E("n_kilburn","nar","Kilburn",51.5340,-0.1960,7,"Night","Book II, ch. VIII",3,"He shelters in a cabmen’s shelter off the Harrow Road.");
+E("n_pit","nar","The pit on Primrose Hill",51.5405,-0.1580,7,"Dawn","Book II, ch. VIII",2,"He climbs through the red weed to the redoubt. Some fifty Martians lie dead in and around their machines, killed by the bacteria of the Earth, with a flying-machine on the far lip. London lies below him, largely intact.",{nolabel:true});
+
+var BY={}; EV.forEach(function(e,i){e.i=i;e.xy=P(e.lat,e.lon);BY[e.id]=e;});
+
+/* ---------- routes ---------- */
+function W(lat,lon,d){return {at:[lat,lon],d:d};}
+var ROUTES=[
+ {t:"mars",style:"mars",pts:["c1","m_oriental","m_woking","c2","m_chertsey","m_shepperton",W(51.3990,-0.4320,3),"m_sunbury","m_hampton","c4","m_richmond","m_barnes",W(51.4840,-0.1700,4),"m_lambeth","m_limehouse"]},
+ {t:"mars",style:"mars",pts:["c3","m_ripley","m_painshill","m_cobham","m_esher","m_ditton","m_kingston","c6"]},
+ {t:"mars",style:"mars",pts:["c2","m_stgeorge"]},
+ {t:"mars",style:"mars",pts:["c7","m_highgate","m_waltham","m_thunder"]},
+ {t:"nar",style:"solid",pts:["n_maybury","c1",{id:"n_maybury",d:1},"n_oldwoking","n_send",W(51.3000,-0.4920,2),W(51.2980,-0.4500,2),"n_leatherhead",W(51.2980,-0.4500,2),W(51.3000,-0.4920,2),W(51.3120,-0.5070,2),"n_mayburyhill",W(51.3250,-0.5150,3),"n_byfleet","n_weybridge","n_confluence",W(51.3880,-0.4470,3),"n_halliford",W(51.4045,-0.4100,4),W(51.4060,-0.3450,4),W(51.4180,-0.3350,4),W(51.4460,-0.3310,4),"n_richmond","n_kew",W(51.4700,-0.2800,4),"c5",{id:"n_putney"},"n_wimbledon",{id:"n_putney"},W(51.4660,-0.2130,7),"n_fulham",W(51.4800,-0.1950,7),W(51.4930,-0.1780,7),"n_kensington",W(51.5020,-0.1730,7),"n_marble","n_regents","n_stjw",W(51.5370,-0.1640,7),"n_kilburn","n_pit"]},
+ {t:"nar",style:"train",pts:[{id:"n_pit"},W(51.5030,-0.1130,7),{id:"n_maybury",d:7}]},
+ {t:"bro",style:"solid",pts:["b_waterloo",W(51.4990,-0.1250,3),"b_lodgings","b_chalkfarm",W(51.5490,-0.1620,4),W(51.5450,-0.1900,4),"b_edgware","b_rescue","b_barnet",W(51.6610,-0.1900,4),"b_eastbarnet"]},
+ {t:"bro",style:"vague",pts:["b_eastbarnet",{id:"b_chelmsford"}]},
+ {t:"bro",style:"solid",pts:["b_chelmsford","b_tillingham","b_blackwater","m_thunder",W(51.6900,1.2800,6)]}
+];
+ROUTES.forEach(function(r){r.P=r.pts.map(function(p){
+  if(typeof p==="string"){var e=BY[p];return {xy:e.xy,d:e.d};}
+  if(p.id){var e2=BY[p.id];return {xy:e2.xy,d:p.d!=null?p.d:e2.d};}
+  return {xy:P(p.at[0],p.at[1]),d:p.d};});});
+
+/* ---------- geography ---------- */
+function line(a){return a.map(function(p,i){var q=P(p[0],p[1]);return (i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1);}).join("");}
+var THAMES_UP=[[51.432,-0.513],[51.418,-0.497],[51.405,-0.489],[51.392,-0.486],[51.386,-0.470],[51.3825,-0.4615],[51.388,-0.447],[51.392,-0.437],[51.396,-0.424],[51.403,-0.405],[51.408,-0.385],[51.411,-0.369],[51.405,-0.350],[51.403,-0.339],[51.396,-0.330],[51.392,-0.322],[51.400,-0.309],[51.412,-0.307],[51.422,-0.312],[51.431,-0.321]];
+var THAMES_TIDE=[[51.431,-0.321],[51.440,-0.326],[51.448,-0.316],[51.457,-0.307],[51.466,-0.312],[51.472,-0.316],[51.481,-0.300],[51.487,-0.286],[51.487,-0.268],[51.479,-0.262],[51.472,-0.258],[51.473,-0.247],[51.481,-0.238],[51.489,-0.229],[51.484,-0.222],[51.473,-0.216],[51.466,-0.213],[51.463,-0.198],[51.468,-0.182],[51.479,-0.172],[51.482,-0.158],[51.485,-0.140],[51.488,-0.126],[51.497,-0.123],[51.506,-0.120],[51.509,-0.107],[51.508,-0.090],[51.506,-0.074],[51.505,-0.060],[51.509,-0.040],[51.505,-0.026],[51.494,-0.020],[51.486,-0.016],[51.484,-0.002],[51.494,0.004],[51.505,0.006],[51.502,0.030],[51.497,0.065],[51.493,0.100],[51.490,0.140],[51.483,0.180],[51.478,0.230],[51.466,0.290],[51.452,0.340],[51.449,0.365]];
+var WEY=[[51.270,-0.556],[51.285,-0.530],[51.300,-0.508],[51.315,-0.495],[51.335,-0.476],[51.352,-0.470],[51.372,-0.462],[51.3825,-0.4615]];
+var CANAL=[[51.317,-0.625],[51.320,-0.590],[51.3225,-0.560],[51.326,-0.535],[51.335,-0.517],[51.346,-0.493],[51.352,-0.471]];
+var MOLE=[[51.272,-0.318],[51.296,-0.331],[51.312,-0.372],[51.325,-0.404],[51.345,-0.398],[51.370,-0.364],[51.390,-0.354],[51.402,-0.346]];
+var CROUCH=[[51.625,0.945],[51.629,0.860],[51.628,0.810],[51.623,0.700],[51.612,0.620]];
+var BLACKWATER=[[51.742,0.935],[51.748,0.860],[51.736,0.760],[51.731,0.690]];
+var SEA=[[51.455,0.360],[51.500,0.500],[51.515,0.580],[51.538,0.650],[51.530,0.715],[51.525,0.795],[51.545,0.840],[51.615,0.955],[51.625,0.945],[51.640,0.935],[51.680,0.950],[51.735,0.935],[51.745,0.930],[51.775,0.950],[51.780,1.020],[51.775,1.050],[51.787,1.155],[51.830,1.250],[51.865,1.290],[51.945,1.290],[52.050,1.330],[52.050,1.900],[51.250,1.900],[51.392,1.385],[51.375,1.130],[51.360,1.020],[51.410,0.900],[51.442,0.760],[51.455,0.700],[51.470,0.500],[51.443,0.370]];
+var BASE=[
+ {t:"R. Thames",lat:51.414,lon:-0.478,c:"base"},{t:"R. Thames",lat:51.497,lon:-0.050,c:"base"},
+ {t:"R. Wey",lat:51.300,lon:-0.522,c:"base"},{t:"Basingstoke Canal",lat:51.326,lon:-0.598,c:"base"},
+ {t:"R. Mole",lat:51.343,lon:-0.385,c:"base"},{t:"R. Crouch",lat:51.615,lon:0.740,c:"base"},
+ {t:"Thames Estuary",lat:51.488,lon:0.640,c:"base"},{t:"North Sea",lat:51.560,lon:1.300,c:"base"},
+ {t:"SURREY",lat:51.290,lon:-0.420,c:"county",maxkm:14},{t:"MIDDLESEX",lat:51.465,lon:-0.430,c:"county",maxkm:14},
+ {t:"LONDON",lat:51.522,lon:-0.090,c:"county",maxkm:7},{t:"ESSEX",lat:51.735,lon:0.250,c:"county",maxkm:14},
+ {t:"KENT",lat:51.395,lon:0.450,c:"county",maxkm:14}
+];
+
+/* ---------- views ---------- */
+var VIEWS={
+ woking:{label:"Woking",n:51.395,s:51.272,w:-0.625,e:-0.310},
+ thames:{label:"Thames valley",n:51.565,s:51.272,w:-0.625,e:-0.040},
+ london:{label:"London",n:51.565,s:51.425,w:-0.330,e:-0.020},
+ essex:{label:"Essex coast",n:51.800,s:51.420,w:-0.340,e:1.300},
+ all:{label:"Whole campaign",n:51.800,s:51.272,w:-0.625,e:1.300}
+};
+var VORDER=["woking","thames","london","essex","all"];
+var FIT_ORDER=["woking","london","thames","essex","all"];
+
+/* ---------- state ---------- */
+var state={day:7,view:"thames",sel:"c1",layers:{cyl:true,mars:true,smoke:true,nar:true,bro:true}};
+var vb={cx:0,cy:0,w:100};
+var svg=document.getElementById("map");
+function el(tag,attrs,parent){var n=document.createElementNS(NS,tag);for(var k in attrs)n.setAttribute(k,attrs[k]);if(parent)parent.appendChild(n);return n;}
+
+/* build geography */
+var gGrat=document.getElementById("grat"), gWater=document.getElementById("water"), gGL=document.getElementById("gl");
+var GRAT=[];
+(function(){
+  var step=1/12;
+  for(var lat=51+3*step;lat<=52.0001;lat+=step){GRAT.push({k:"lat",v:lat,node:el("path",{d:line([[lat,-0.75],[lat,1.9]])},gGrat)});}
+  for(var lon=-0.75;lon<=1.9001;lon+=step){var mer=Math.abs(lon)<1e-6;GRAT.push({k:"lon",v:lon,node:el("path",{d:line([[51.25,lon],[52.05,lon]]),"class":mer?"meridian":""},gGrat)});}
+})();
+var WATER=[
+ {node:el("path",{d:line(SEA)+"Z","class":"sea"},gWater),w:1},
+ {node:el("path",{d:line(THAMES_UP),"class":"river"},gWater),w:2.6},
+ {node:el("path",{d:line(THAMES_TIDE),"class":"river"},gWater),w:3.6},
+ {node:el("path",{d:line(WEY),"class":"river"},gWater),w:1.8},
+ {node:el("path",{d:line(CANAL),"class":"river","stroke-dasharray":""},gWater),w:1.3,dash:[5,3]},
+ {node:el("path",{d:line(MOLE),"class":"river"},gWater),w:1.5},
+ {node:el("path",{d:line(CROUCH),"class":"river"},gWater),w:2.4},
+ {node:el("path",{d:line(BLACKWATER),"class":"river"},gWater),w:3}
+];
+var gBase=document.getElementById("baselbl");
+BASE.forEach(function(b){b.xy=P(b.lat,b.lon);b.node=el("text",{"class":b.c,"text-anchor":"middle"},gBase);b.node.textContent=b.t;});
+
+/* smoke */
+var gSmoke=document.getElementById("smoke");
+EV.forEach(function(e){if(e.smoke){e.smokeNode=el("circle",{cx:e.xy[0],cy:e.xy[1],r:KM*1.7,"class":"smoke"},gSmoke);}});
+
+/* routes */
+var gRoutes=document.getElementById("routes");
+ROUTES.forEach(function(r){r.node=el("path",{"class":"route r-"+r.t},gRoutes);});
+
+/* markers + labels */
+var gMk=document.getElementById("markers"), gLb=document.getElementById("labels");
+EV.forEach(function(e){
+  var g=el("g",{"class":"mk m-"+e.t,"data-id":e.id},gMk);
+  var t=document.createElementNS(NS,"title");t.textContent=e.name;g.appendChild(t);
+  if(e.t==="cyl"){e.glow=el("circle",{"class":"glow",cx:e.xy[0],cy:e.xy[1]},g);}
+  e.core=el(e.t==="mars"?"path":"circle",{"class":"core"},g);
+  if(e.t==="cyl"){e.numNode=el("text",{x:e.xy[0]},g);e.numNode.textContent=e.num;}
+  e.hit=el("circle",{"class":"hit",cx:e.xy[0],cy:e.xy[1]},g);
+  e.g=g;
+  if(!e.nolabel){e.lbl=el("text",{"class":"lbl p"+e.p},gLb);e.lbl.textContent=e.name;}
+});
+var gSel=document.getElementById("selg");
+var selRing=el("circle",{"class":"selring"},gSel);
+
+/* ---------- view fitting ---------- */
+function size(){return {W:Math.max(svg.clientWidth,1),H:Math.max(svg.clientHeight,1)};}
+function viewBoxFor(v){
+  var a=P(v.n,v.w), b=P(v.s,v.e), s=size();
+  var w=(b[0]-a[0])*1.06, h=(b[1]-a[1])*1.06, asp=s.W/s.H;
+  if(w/h<asp) w=h*asp;
+  return {cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2,w:w};
+}
+var anim=null;
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function flyTo(t){
+  if(anim)cancelAnimationFrame(anim.raf);
+  if(reduce){vb=t;render();return;}
+  var from={cx:vb.cx,cy:vb.cy,w:vb.w},t0=performance.now(),D=650;
+  function step(now){
+    var k=Math.min(1,(now-t0)/D),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    var lw=Math.log(from.w)+(Math.log(t.w)-Math.log(from.w))*e;
+    vb={cx:from.cx+(t.cx-from.cx)*e,cy:from.cy+(t.cy-from.cy)*e,w:Math.exp(lw)};
+    render();
+    if(k<1)anim.raf=requestAnimationFrame(step);else anim=null;
+  }
+  anim={raf:requestAnimationFrame(step)};
+}
+function setView(name,instant){
+  state.view=name;
+  var t=viewBoxFor(VIEWS[name]);
+  if(instant){vb=t;render();}else flyTo(t);
+  syncButtons();
+}
+
+/* ---------- rendering ---------- */
+var dashT=0;
+function visible(e){return state.layers[e.t]&&e.d<=state.day;}
+function fmtDeg(v,isLat){
+  var a=Math.abs(v),deg=Math.floor(a+1e-9),min=Math.round((a-deg)*60);
+  if(min===60){deg++;min=0;}
+  if(!isLat&&deg===0&&min===0)return "0° Greenwich";
+  return deg+"°"+(min<10?"0":"")+min+"′"+(isLat?"N":(v<0?"W":"E"));
+}
+function render(){
+  var s=size(), u=vb.w/s.W, h=s.H*u, x0=vb.cx-vb.w/2, y0=vb.cy-h/2;
+  svg.setAttribute("viewBox",x0+" "+y0+" "+vb.w+" "+h);
+  var pxkm=KM/u;
+
+  /* graticule */
+  gGrat.setAttribute("stroke-width",(0.7*u).toFixed(3));
+  GRAT.forEach(function(g){ if(g.node.getAttribute("class")==="meridian")g.node.setAttribute("stroke-width",(1.4*u).toFixed(3)); });
+  while(gGL.firstChild)gGL.removeChild(gGL.firstChild);
+  var fs=10*u,lastY=-1e9,lastX=-1e9;
+  GRAT.forEach(function(g){
+    if(g.k==="lat"){var y=P(g.v,0)[1];if(y<y0+14*u||y>y0+h-30*u)return;if((y-lastY)/u<56)return;lastY=y;
+      var t=el("text",{"class":"gl",x:x0+6*u,y:y-3*u,"font-size":fs},gGL);t.textContent=fmtDeg(g.v,true);}
+    else{var x=P(51.5,g.v)[0];if(x<x0+30*u||x>x0+vb.w-60*u)return;if((x-lastX)/u<90)return;lastX=x;
+      var t2=el("text",{"class":"gl",x:x+3*u,y:y0+13*u,"font-size":fs},gGL);t2.textContent=fmtDeg(g.v,false);}
+  });
+
+  /* water */
+  WATER.forEach(function(wt){
+    var px=wt.w*Math.max(0.8,Math.min(2.2,Math.sqrt(pxkm/4)));
+    wt.node.setAttribute("stroke-width",(px*u).toFixed(3));
+    if(wt.dash)wt.node.setAttribute("stroke-dasharray",(wt.dash[0]*u)+" "+(wt.dash[1]*u));
+  });
+
+  /* smoke */
+  EV.forEach(function(e){if(e.smokeNode)e.smokeNode.setAttribute("display",state.layers.smoke&&e.d<=state.day?"inline":"none");});
+  document.querySelector("#blur feGaussianBlur").setAttribute("stdDeviation",(KM*0.55).toFixed(2));
+
+  /* routes */
+  ROUTES.forEach(function(r){
+    if(!state.layers[r.t]){r.node.setAttribute("d","");return;}
+    var d="",n=0;
+    for(var i=0;i<r.P.length;i++){var p=r.P[i];if(p.d>state.day)break;d+=(n?"L":"M")+p.xy[0].toFixed(1)+" "+p.xy[1].toFixed(1);n++;}
+    r.node.setAttribute("d",n>1?d:"");
+    var sw=r.style==="mars"?2.6:r.style==="train"?2:2.2;
+    r.node.setAttribute("stroke-width",(sw*u).toFixed(3));
+    if(r.style==="mars"){r.node.setAttribute("stroke-dasharray",(8*u)+" "+(5*u));r.node.setAttribute("stroke-dashoffset",(-dashT*u).toFixed(2));}
+    else if(r.style==="train"){r.node.setAttribute("stroke-dasharray",(0.1*u)+" "+(6*u));}
+    else if(r.style==="vague"){r.node.setAttribute("stroke-dasharray",(4*u)+" "+(4*u));}
+    else r.node.removeAttribute("stroke-dasharray");
+    r.node.setAttribute("opacity",r.style==="mars"?0.85:0.9);
+  });
+
+  /* markers */
+  EV.forEach(function(e){
+    var on=visible(e);
+    e.g.setAttribute("display",on?"inline":"none");
+    if(!on)return;
+    var X=e.xy[0],Y=e.xy[1];
+    e.hit.setAttribute("r",(13*u).toFixed(3));
+    if(e.t==="cyl"){
+      e.glow.setAttribute("r",(15*u).toFixed(3));
+      e.core.setAttribute("cx",X);e.core.setAttribute("cy",Y);e.core.setAttribute("r",(8*u).toFixed(3));e.core.setAttribute("stroke-width",(1.5*u).toFixed(3));
+      e.numNode.setAttribute("y",(Y+3.4*u).toFixed(2));e.numNode.setAttribute("font-size",(10*u).toFixed(3));
+    }else if(e.t==="mars"){
+      var k=5.6*u;
+      e.core.setAttribute("d","M"+X+" "+(Y+k)+"L"+(X-k)+" "+(Y-k*0.75)+"L"+(X+k)+" "+(Y-k*0.75)+"Z");
+      e.core.setAttribute("stroke-width",(1.3*u).toFixed(3));
+    }else{
+      e.core.setAttribute("cx",X);e.core.setAttribute("cy",Y);e.core.setAttribute("r",(4.6*u).toFixed(3));e.core.setAttribute("stroke-width",(1.3*u).toFixed(3));
+    }
+  });
+
+  /* selection ring */
+  var se=BY[state.sel];
+  if(se&&state.layers[se.t]&&se.d<=state.day){selRing.setAttribute("display","inline");selRing.setAttribute("cx",se.xy[0]);selRing.setAttribute("cy",se.xy[1]);selRing.setAttribute("r",(18*u).toFixed(3));selRing.setAttribute("stroke-width",(1.6*u).toFixed(3));}
+  else selRing.setAttribute("display","none");
+
+  layoutLabels(u,x0,y0,h,pxkm);
+  scaleBar(u);
+}
+
+function layoutLabels(u,x0,y0,h,pxkm){
+  var placed=[], s=size();
+  // obstacles: visible markers
+  EV.forEach(function(e){if(visible(e)){var sx=(e.xy[0]-x0)/u,sy=(e.xy[1]-y0)/u,r=e.t==="cyl"?9:5;placed.push([sx-r,sy-r,sx+r,sy+r]);}});
+  function free(b){if(b[0]<2||b[1]<16||b[2]>s.W-48||b[3]>s.H-24)return false;for(var i=0;i<placed.length;i++){var q=placed[i];if(b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1])return false;}return true;}
+  var items=[];
+  EV.forEach(function(e){
+    if(!e.lbl)return;
+    e.lbl.setAttribute("display","none");
+    if(!visible(e))return;
+    var need=e.p===1?0:e.p===2?2.6:6.5;
+    if(e.id!==state.sel&&pxkm<need)return;
+    items.push({e:e,rank:e.id===state.sel?-1:e.p*10+(e.t==="cyl"?0:e.t==="mars"?1:e.t==="nar"?2:3)});
+  });
+  items.sort(function(a,b){return a.rank-b.rank||a.e.i-b.e.i;});
+  items.forEach(function(it){
+    var e=it.e, fsz=e.p===1?13:12, sx=(e.xy[0]-x0)/u, sy=(e.xy[1]-y0)/u;
+    var w=e.name.length*fsz*0.53+4, hh=fsz*1.15, r=(e.t==="cyl"?11:7);
+    var cands=[[sx+r,sy-hh/2,"start"],[sx-r-w,sy-hh/2,"start"],[sx-w/2,sy-r-hh,"start"],[sx-w/2,sy+r,"start"],[sx+r-2,sy-r-hh+2,"start"],[sx+r-2,sy+r-2,"start"]];
+    for(var i=0;i<cands.length;i++){
+      var c=cands[i],b=[c[0],c[1],c[0]+w,c[1]+hh];
+      if(free(b)){
+        placed.push(b);
+        e.lbl.setAttribute("display","inline");
+        e.lbl.setAttribute("x",(x0+(c[0]+2)*u).toFixed(2));
+        e.lbl.setAttribute("y",(y0+(c[1]+hh*0.8)*u).toFixed(2));
+        e.lbl.setAttribute("font-size",(fsz*u).toFixed(3));
+        e.lbl.setAttribute("stroke-width",(3.2*u).toFixed(3));
+        e.lbl.setAttribute("class","lbl p"+e.p+(e.id===state.sel?" sel":""));
+        return;
+      }
+    }
+  });
+  BASE.forEach(function(b){
+    b.node.setAttribute("display","none");
+    if(b.maxkm&&pxkm>b.maxkm)return;
+    var fsz=b.c==="county"?13:11.5, sx=(b.xy[0]-x0)/u, sy=(b.xy[1]-y0)/u;
+    var w=b.t.length*fsz*(b.c==="county"?0.95:0.5), hh=fsz*1.2, bx=[sx-w/2,sy-hh*0.8,sx+w/2,sy+hh*0.4];
+    if(!free(bx))return;
+    placed.push(bx);
+    b.node.setAttribute("display","inline");
+    b.node.setAttribute("x",b.xy[0]);b.node.setAttribute("y",b.xy[1]);
+    b.node.setAttribute("font-size",(fsz*u).toFixed(3));
+  });
+}
+
+function scaleBar(u){
+  var pxMile=MILE/u, opts=[0.25,0.5,1,2,5,10,20,50], best=opts[0];
+  for(var i=0;i<opts.length;i++){if(opts[i]*pxMile<=120)best=opts[i];}
+  var sb=document.getElementById("scale");
+  sb.querySelector(".bar").style.width=(best*pxMile).toFixed(1)+"px";
+  sb.querySelector("span").textContent=(best<1?(best===0.5?"½":"¼"):best)+(best===1?" mile":" miles");
+}
+
+/* ---------- side panel ---------- */
+function glyph(t,small){
+  var c=t==="cyl"?"var(--cyl)":t==="mars"?"var(--mars)":t==="nar"?"var(--nar)":"var(--bro)";
+  if(t==="mars")return '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 12.5L1.5 3h11z" fill="'+c+'"/></svg>';
+  if(t==="cyl")return '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6.5" fill="var(--cyl-glow)"/><circle cx="7" cy="7" r="4.2" fill="'+c+'"/></svg>';
+  return '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4" fill="'+c+'"/></svg>';
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function renderDetail(){
+  var e=BY[state.sel], d=document.getElementById("detail");
+  var tl=e.t==="cyl"?"Cylinder "+e.num:TRACKS[e.t];
+  d.innerHTML='<div class="dmeta"><span class="trk"><span style="width:14px;height:14px;display:inline-block">'+glyph(e.t)+'</span>'+tl+'</span><span>'+DAYS[e.d]+'</span><span>'+e.ch+'</span></div>'+
+    '<h2>'+esc(e.name)+'</h2><p class="when">'+esc(e.when)+'</p><p>'+esc(e.note)+'</p>';
+}
+function renderList(){
+  var L=document.getElementById("list"), html="", cur=0, any=false;
+  EV.slice().sort(function(a,b){return a.d-b.d||a.i-b.i;}).forEach(function(e){
+    if(!visible(e))return;
+    any=true;
+    if(e.d!==cur){cur=e.d;html+='<div class="dayh">'+DAYS[e.d]+'</div>';}
+    html+='<button type="button" class="ev" data-id="'+e.id+'"'+(e.id===state.sel?' aria-current="true"':'')+'>'+glyph(e.t)+'<span>'+esc(e.name)+'</span><span class="ch">'+e.ch.replace("Book ","").replace(", ch. "," · ")+'</span></button>';
+  });
+  L.innerHTML=any?html:'<div class="empty">Nothing to show with these layers.</div>';
+}
+document.getElementById("list").addEventListener("click",function(ev){var b=ev.target.closest(".ev");if(b)select(b.getAttribute("data-id"),true);});
+
+function inView(e){
+  var s=size(),u=vb.w/s.W,h=s.H*u,x0=vb.cx-vb.w/2,y0=vb.cy-h/2,m=0.07;
+  return e.xy[0]>x0+vb.w*m&&e.xy[0]<x0+vb.w*(1-m)&&e.xy[1]>y0+h*m&&e.xy[1]<y0+h*(1-m);
+}
+function select(id,move){
+  state.sel=id;var e=BY[id];
+  if(e.d>state.day)state.day=7;
+  if(!state.layers[e.t])state.layers[e.t]=true;
+  if(move&&!inView(e)){
+    for(var i=0;i<FIT_ORDER.length;i++){var v=VIEWS[FIT_ORDER[i]];if(e.lat<=v.n&&e.lat>=v.s&&e.lon>=v.w&&e.lon<=v.e){setView(FIT_ORDER[i]);break;}}
+  }
+  syncButtons();renderDetail();renderList();render();
+  var cur=document.querySelector('.ev[aria-current="true"]');
+  if(cur&&move!=="fromlist"){var L=document.getElementById("list");var top=cur.offsetTop-L.offsetTop;if(top<L.scrollTop+30||top>L.scrollTop+L.clientHeight-40)L.scrollTop=top-80;}
+}
+
+/* ---------- controls ---------- */
+var vEl=document.getElementById("views");
+VORDER.forEach(function(k){var b=document.createElement("button");b.type="button";b.textContent=VIEWS[k].label;b.dataset.v=k;b.onclick=function(){setView(k);};vEl.appendChild(b);});
+var dEl=document.getElementById("days");
+for(var di=1;di<=7;di++){(function(n){var b=document.createElement("button");b.type="button";b.textContent=DSHORT[n];b.dataset.d=n;b.title=DAYS[n];b.onclick=function(){stopPlay();state.day=n;refresh();};dEl.appendChild(b);})(di);}
+var LEG=[["cyl","Cylinder landings",'<svg class="glyph" viewBox="0 0 22 12"><circle cx="11" cy="6" r="5.5" fill="var(--cyl-glow)"/><circle cx="11" cy="6" r="3.5" fill="var(--cyl)"/></svg>'],
+ ["mars","Martian advance",'<svg class="glyph" viewBox="0 0 22 12"><path d="M1 6H21" stroke="var(--mars)" stroke-width="2.2" stroke-dasharray="5 3"/></svg>'],
+ ["smoke","Black Smoke",'<svg class="glyph" viewBox="0 0 22 12"><circle cx="11" cy="6" r="5.5" fill="var(--smoke)"/></svg>'],
+ ["nar","Narrator",'<svg class="glyph" viewBox="0 0 22 12"><path d="M1 6H21" stroke="var(--nar)" stroke-width="2.2"/></svg>'],
+ ["bro","Brother",'<svg class="glyph" viewBox="0 0 22 12"><path d="M1 6H21" stroke="var(--bro)" stroke-width="2.2"/></svg>']];
+var lEl=document.getElementById("legend");
+LEG.forEach(function(l){var b=document.createElement("button");b.type="button";b.className="chip";b.dataset.l=l[0];b.innerHTML=l[2]+l[1];b.onclick=function(){state.layers[l[0]]=!state.layers[l[0]];refresh();};lEl.appendChild(b);});
+var trainNote=document.createElement("span");trainNote.className="chip";trainNote.style.cursor="default";trainNote.innerHTML='<svg class="glyph" viewBox="0 0 22 12"><path d="M2 6H21" stroke="var(--nar)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="0.1 4.5"/></svg>Return by rail';lEl.appendChild(trainNote);
+
+function syncButtons(){
+  [].forEach.call(vEl.children,function(b){b.setAttribute("aria-pressed",b.dataset.v===state.view?"true":"false");});
+  [].forEach.call(dEl.children,function(b){b.setAttribute("aria-pressed",+b.dataset.d===state.day?"true":"false");});
+  [].forEach.call(lEl.querySelectorAll("button.chip"),function(b){b.setAttribute("aria-pressed",state.layers[b.dataset.l]?"true":"false");});
+}
+function refresh(){syncButtons();renderList();render();}
+
+var playTimer=null, playBtn=document.getElementById("play");
+function stopPlay(){if(playTimer){clearInterval(playTimer);playTimer=null;playBtn.textContent="▶ Play";}}
+playBtn.onclick=function(){
+  if(playTimer){stopPlay();return;}
+  state.day=1;refresh();playBtn.textContent="❚❚ Pause";
+  playTimer=setInterval(function(){if(state.day>=7){stopPlay();return;}state.day++;refresh();},1700);
+};
+
+/* ---------- pan / zoom ---------- */
+function zoomAt(f,sx,sy){
+  var s=size(),u=vb.w/s.W,h=s.H*u;
+  var wx=vb.cx-vb.w/2+sx*u, wy=vb.cy-h/2+sy*u;
+  var nw=Math.max(KM*2.5,Math.min(3000,vb.w*f)), k=nw/vb.w;
+  vb={cx:wx+(vb.cx-wx)*k,cy:wy+(vb.cy-wy)*k,w:nw};
+  render();
+}
+document.getElementById("zin").onclick=function(){var s=size();zoomAt(1/1.6,s.W/2,s.H/2);};
+document.getElementById("zout").onclick=function(){var s=size();zoomAt(1.6,s.W/2,s.H/2);};
+svg.addEventListener("wheel",function(ev){ev.preventDefault();if(anim){cancelAnimationFrame(anim.raf);anim=null;}var r=svg.getBoundingClientRect();zoomAt(Math.exp(ev.deltaY*0.0016),ev.clientX-r.left,ev.clientY-r.top);},{passive:false});
+var ptrs={}, drag=null;
+svg.addEventListener("pointerdown",function(ev){
+  if(anim){cancelAnimationFrame(anim.raf);anim=null;}
+  ptrs[ev.pointerId]={x:ev.clientX,y:ev.clientY};
+  try{svg.setPointerCapture(ev.pointerId);}catch(_){}
+  var ids=Object.keys(ptrs);
+  if(ids.length===1){var m=ev.target.closest&&ev.target.closest(".mk");drag={sx:ev.clientX,sy:ev.clientY,moved:0,tid:m?m.getAttribute("data-id"):null};}
+  else{drag=null;}
+});
+svg.addEventListener("pointermove",function(ev){
+  var p=ptrs[ev.pointerId];if(!p)return;
+  var ids=Object.keys(ptrs), s=size(), u=vb.w/s.W;
+  if(ids.length===1&&drag){
+    var dx=ev.clientX-p.x, dy=ev.clientY-p.y;
+    drag.moved+=Math.abs(dx)+Math.abs(dy);
+    if(drag.moved>4)svg.classList.add("dragging");
+    vb={cx:vb.cx-dx*u,cy:vb.cy-dy*u,w:vb.w};
+    p.x=ev.clientX;p.y=ev.clientY;render();
+  }else if(ids.length===2){
+    var a=ptrs[ids[0]],b=ptrs[ids[1]];
+    var d0=Math.hypot(a.x-b.x,a.y-b.y);
+    p.x=ev.clientX;p.y=ev.clientY;
+    var d1=Math.hypot(ptrs[ids[0]].x-ptrs[ids[1]].x,ptrs[ids[0]].y-ptrs[ids[1]].y);
+    var r=svg.getBoundingClientRect();
+    if(d1>0)zoomAt(d0/d1,(ptrs[ids[0]].x+ptrs[ids[1]].x)/2-r.left,(ptrs[ids[0]].y+ptrs[ids[1]].y)/2-r.top);
+  }
+});
+function endPtr(ev){
+  if(drag&&drag.moved<6&&drag.tid&&Object.keys(ptrs).length===1)select(drag.tid,false);
+  delete ptrs[ev.pointerId];
+  if(!Object.keys(ptrs).length){drag=null;svg.classList.remove("dragging");}
+}
+svg.addEventListener("pointerup",endPtr);
+svg.addEventListener("pointercancel",function(ev){delete ptrs[ev.pointerId];drag=null;svg.classList.remove("dragging");});
+
+/* marching dashes on the Martian line */
+if(!reduce){
+  var last=0;
+  (function tick(now){
+    if(now-last>60&&!document.hidden&&state.layers.mars){dashT=(dashT+0.9)%13;var s=size(),u=vb.w/s.W;ROUTES.forEach(function(r){if(r.style==="mars")r.node.setAttribute("stroke-dashoffset",(-dashT*u).toFixed(2));});last=now;}
+    requestAnimationFrame(tick);
+  })(0);
+}
+
+/* ---------- boot ---------- */
+var lastSize=null;
+new ResizeObserver(function(){var s=size();if(!lastSize){lastSize=s;return;}if(s.W!==lastSize.W||s.H!==lastSize.H){lastSize=s;render();}}).observe(svg);
+setView(state.view,true);
+renderDetail();renderList();syncButtons();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+})();
+</script>
+
+</body></html>
