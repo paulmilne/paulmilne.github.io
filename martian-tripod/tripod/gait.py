@@ -209,7 +209,7 @@ class PredictiveGait:
     """
 
     def __init__(self, p: Tripod, model: mujoco.MjModel, data: mujoco.MjData, cfg: PredictiveConfig | None = None,
-                 controller: BodyController | None = None, start_delay: float = 0.6):
+                 controller: BodyController | None = None, start_delay: float = 0.6, com_height: float | None = None):
         from .planner import Schedule, COMPlanner
         self.p, self.m, self.cfg = p, model, cfg or PredictiveConfig()
         self.ctl = controller or BodyController(p, model)
@@ -219,7 +219,7 @@ class PredictiveGait:
         mujoco.mj_forward(model, data)
         self.t0 = data.time
         com, _ = self.ctl.com_state(data)
-        self.com_z = com[2]
+        self.com_z = com[2] if com_height is None else com_height
         R = data.xmat[self.hood].reshape(3, 3)
         self.yaw0 = math.atan2(R[1, 0], R[0, 0])
         self.planted = []

@@ -135,6 +135,18 @@ steps and then fall: the swing legs saturate their 40 MN·m motors, and doubling
 the motor torque does not fix it, so the next limit is in the planning, not the
 hardware.
 
+## Looking round
+
+The fighting-machines in the book halt and rear up to stand scanning the
+country. Every 22 s the Martian (`martian.py`) stops at the end of a step, with
+all three feet down, and raises its centre of mass 7 m. The hood goes from 30 m
+to about 39 m and the thighs, roughly level while walking, slope down to the
+knees at about 30°. It slews the hood 25° to each side, settles back to walking
+height, and a fresh gait takes over from wherever the feet are, starting with
+the rearmost foot. It has to stop to do this: raised that high, the legs are at
+about 90% of their reach and cannot take a full stride. Over 75 s (two walks and
+two looks) the hood tilts at most 3.1°. `Martian(look_every=0)` turns it off.
+
 ## Result 4: the Heat-Ray
 
 The beam is a ray cast from the projector along its axis (`mj_ray`), so it is
