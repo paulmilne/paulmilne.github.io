@@ -276,7 +276,7 @@
         </body>
       </body>
     </body>
-    <camera name="witness" mode="targetbody" target="hood" pos="170 18 1.7" fovy="40" />
+    <camera name="witness" mode="targetbody" target="hood" pos="150 75 1.7" fovy="42" />
   </worldbody>
   <actuator>
     <motor name="leg0_yaw" joint="leg0_yaw" class="leg" />

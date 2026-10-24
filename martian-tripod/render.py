@@ -3,7 +3,7 @@
     uv run render.py                          # the attack: walk into the village, Heat-Ray firing
     uv run render.py --camera track           # follow the machine instead of watching from the village
     uv run render.py --scene stand            # stand, turn the hood and sweep the ray
-    uv run render.py --seconds 30 --speed 2   # 30 s of simulated time, played at double speed
+    uv run render.py --gait transfer --seconds 120 --speed 2   # the slow edge-to-edge gait
     uv run render.py --still --at 25          # one PNG, 25 s in
 
 Cameras: witness (eye height in the village, always looking at the hood),
@@ -25,9 +25,11 @@ from tripod.martian import Martian
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--scene", choices=["attack", "stand"], default="attack")
+ap.add_argument("--gait", choices=["predictive", "transfer"], default="predictive",
+                help="predictive: model-predictive COM, about 6 mph; transfer: stop at each edge, about 1 mph")
 ap.add_argument("--camera", default="witness")
-ap.add_argument("--seconds", type=float, default=120.0, help="simulated time to render")
-ap.add_argument("--speed", type=float, default=2.0, help="playback speed-up")
+ap.add_argument("--seconds", type=float, default=60.0, help="simulated time to render")
+ap.add_argument("--speed", type=float, default=1.0, help="playback speed-up")
 ap.add_argument("--fps", type=int, default=30)
 ap.add_argument("--width", type=int, default=1280)
 ap.add_argument("--height", type=int, default=720)
@@ -44,7 +46,7 @@ mujoco.mj_forward(model, data)
 renderer = mujoco.Renderer(model, args.height, args.width)
 cam = model.camera(args.camera).id
 
-martian = Martian(model, data, walk=(args.scene == "attack"))
+martian = Martian(model, data, gait=args.gait, walk=(args.scene == "attack"))
 hold = BodyController(DEFAULT, model) if args.scene == "stand" else None
 com0 = hold.com_state(data)[0] if hold else None
 

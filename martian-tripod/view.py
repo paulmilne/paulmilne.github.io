@@ -19,6 +19,8 @@ from tripod.martian import Martian
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--scene", choices=["attack", "stand"], default="attack")
+ap.add_argument("--gait", choices=["predictive", "transfer"], default="predictive",
+                help="predictive: model-predictive COM, about 6 mph; transfer: stop at each edge, about 1 mph")
 ap.add_argument("--speed", type=float, default=1.0)
 args = ap.parse_args()
 
@@ -26,7 +28,7 @@ model = mujoco.MjModel.from_xml_path(str(write()))
 data = mujoco.MjData(model)
 mujoco.mj_resetDataKeyframe(model, data, model.key("stand").id)
 mujoco.mj_forward(model, data)
-martian = Martian(model, data, walk=(args.scene == "attack"))
+martian = Martian(model, data, gait=args.gait, walk=(args.scene == "attack"))
 if args.scene == "stand":
     from tripod.control import BodyController
     from tripod.kinematics import rotz

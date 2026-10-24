@@ -1,8 +1,8 @@
 # Martian tripod
 
 A MuJoCo model of a Wells-style fighting-machine: a 248-tonne, 30-metre tripod
-that walks with a three-dimensional tumbling gait and burns what it passes
-with a Heat-Ray.
+that walks with a three-dimensional tumbling gait at about 5.5 mph, planned by
+model-predictive control, and burns what it passes with a Heat-Ray.
 
 ## Setup (macOS)
 
@@ -18,12 +18,13 @@ uv run render.py                    # out/tripod_attack_witness.mp4: the walk in
 uv run render.py --camera track     # the same, following the machine
 uv run render.py --still --at 100   # one frame, 100 s in
 uv run mjpython view.py             # live, interactive (SPACE holds fire)
-uv run walk_test.py                 # three gait cycles, with numbers
+uv run walk_test.py                 # three gait cycles, with numbers (--gait transfer for the slow one)
 uv run stand_test.py                # balance controller holding the stance
 uv run rimless_wheel.py             # why a tripod cannot simply roll
 ```
 
-`render.py` plays at double speed by default (`--speed 1` for real time).
+`render.py` renders in real time; `--gait transfer --speed 2` shows the slow,
+edge-to-edge gait instead.
 
 ## Files
 
@@ -33,7 +34,8 @@ uv run rimless_wheel.py             # why a tripod cannot simply roll
 | `tripod/build.py` | Generates `models/tripod.xml` (MJCF), including the village |
 | `tripod/kinematics.py` | Leg forward and inverse kinematics in the world frame |
 | `tripod/control.py` | Whole-body balance controller (torque-controlled legs) |
-| `tripod/gait.py` | The tumbling gait |
+| `tripod/gait.py` | The two gaits: edge-to-edge transfer, and predictive |
+| `tripod/planner.py` | Model-predictive centre-of-mass planner (inverted pendulum, OSQP) |
 | `tripod/heatray.py` | Heat-Ray turret, ray casting, fire, and beam drawing |
 | `tripod/martian.py` | Gait plus Heat-Ray: walks, picks targets, burns them |
 | `render.py`, `view.py` | Offline video / stills, and the live viewer |
@@ -98,7 +100,36 @@ step, and carrying 248 t that far any faster saturates the motors and shifts
 the ground load enough to lift a foot. Gentle spin (about 6° per step) and any
 heading work. At 12° per step the hip-yaw joints run out of range.
 
-## Result 3: the Heat-Ray
+## Result 3: planning the fall makes it five times faster
+
+The transfer gait wastes most of each step parking the centre of mass at an
+edge. The predictive gait (`PredictiveGait`, `planner.py`) keeps it moving. It
+treats the machine as a linear inverted pendulum, c'' = ω²(c − z) with
+ω = √(g/h) and h ≈ 26.5 m, where z is the zero-moment point: the point the net
+ground force acts through. z must lie inside the support polygon, which is the
+triangle of the feet, or, with a leg in the air, the line between the other two.
+That line constraint is the hinge again: across it the centre of mass can only
+fall, until the next foot lands.
+
+Given the footstep rhythm, a quadratic programme (OSQP, 0.1 s knots, 14 s
+horizon) chooses the ZMP trajectory that keeps the centre of mass moving at
+walking speed. It is re-solved from the measured state at every change of
+support and every 0.4 s, which makes it model-predictive control. Footholds not
+yet taken are re-planned from where the body actually is, so a body that falls
+behind or drifts sideways is not left reaching for feet placed on the original
+timeline. The balance controller tracks the plan, with the planned pendulum
+acceleration as feed-forward.
+
+`walk_test.py`, ten cycles (30 steps, 0.8 s on three feet and 1.2 s swinging
+per step): 150 m in 61 s, **5.5 mph**, maximum hood tilt **2.6°**, on two feet
+59% of the time. That is five times the transfer gait's speed, with a sixth of
+its tilt: planning the fall is both faster and steadier than waiting it out.
+Faster rhythms (1.0 s swings, or longer strides) manage 6–7 mph for a dozen
+steps and then fall: the swing legs saturate their 40 MN·m motors, and doubling
+the motor torque does not fix it, so the next limit is in the planning, not the
+hardware.
+
+## Result 4: the Heat-Ray
 
 The beam is a ray cast from the projector along its axis (`mj_ray`), so it is
 stopped by the first thing in the village it meets; it passes through the
@@ -107,13 +138,13 @@ invisible sword of heat, so the beam is drawn only as a faint shimmer; what you
 see is the flash where it lands, then flames. Anything it rests on heats up,
 catches after 1.5 s of beam, spreads fire to the rest of the same building or
 tree, burns, and is left charred. The Martian (`martian.py`) burns the nearest
-target within 80 m and holds fire while on two feet.
+target within 80 m and holds fire whenever the hood tilts more than 3°.
 
 ## Next steps
 
-1. A faster gait: plan the centre of mass with a model-predictive controller
-   instead of a fixed transfer-then-swing pattern, so the machine can let itself
-   fall further and keep moving.
-2. Pre-emptive push-off from the trailing leg, which should cut the collision loss.
+1. Choose footholds and step timing inside the planner too (they are fixed by a
+   rhythm now), which is where the remaining speed limit seems to be.
+2. Model the swing legs' momentum in the planner: at 24 t each they are not the
+   massless sticks the inverted pendulum assumes.
 3. Bake the joint trajectories onto a Blender armature built from the same
    `params.py`, for a proper render with smoke and fire.

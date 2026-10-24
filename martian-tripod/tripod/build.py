@@ -124,7 +124,7 @@ def build(p: Tripod = DEFAULT) -> ET.Element:
 
     hood = ET.SubElement(wb, "body", name="hood", pos=f(0, 0, p.stance_height))
     # an onlooker at eye height beyond the cottage, always looking at the hood
-    ET.SubElement(wb, "camera", name="witness", mode="targetbody", target="hood", pos="170 18 1.7", fovy="40")
+    ET.SubElement(wb, "camera", name="witness", mode="targetbody", target="hood", pos="150 75 1.7", fovy="42")
     ET.SubElement(hood, "freejoint", name="root")
     ET.SubElement(hood, "geom", name="hood", type="ellipsoid", size=f(p.hood_radius, p.hood_radius, p.hood_height),
                   mass=f(p.hood_mass), material="brass", group="1")

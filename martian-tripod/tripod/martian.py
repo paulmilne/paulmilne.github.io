@@ -4,8 +4,8 @@ Ties the tumbling gait to the Heat-Ray. Each target is a building or a tree
 (a body whose geoms are named "burn_..."). The Martian picks the nearest one
 not yet alight, swings the projector onto it, and holds the beam there until
 it catches; fire spreads through the rest of that building on its own. The
-ray only fires when the projector is on target and the machine is on three
-feet, so the swing-phase topple does not sweep the beam across the fields.
+ray only fires when the projector is on target and the hood is nearly level,
+so a topple does not sweep the beam across the fields.
 """
 from __future__ import annotations
 
@@ -13,17 +13,23 @@ import numpy as np
 import mujoco
 
 from .params import Tripod, DEFAULT
-from .gait import GaitConfig, TumbleGait
+import math
+
+from .gait import GaitConfig, TumbleGait, PredictiveConfig, PredictiveGait
 from .heatray import HeatRay
 
 
 class Martian:
     def __init__(self, model: mujoco.MjModel, data: mujoco.MjData, p: Tripod = DEFAULT,
-                 gait: GaitConfig | None = None, reach: float = 80.0, walk: bool = True):
+                 gait: str = "predictive", reach: float = 80.0, walk: bool = True, max_tilt_deg: float = 3.0):
         self.m = model
         self.walk = walk
         self.armed = True                         # set False to hold fire
-        self.gait = TumbleGait(p, model, data, gait or GaitConfig())
+        if gait == "transfer":
+            self.gait = TumbleGait(p, model, data, GaitConfig())
+        else:
+            self.gait = PredictiveGait(p, model, data, PredictiveConfig())
+        self.max_tilt = math.radians(max_tilt_deg)
         self.ray = HeatRay(model)
         self.reach = reach
         self.targets: dict[int, list[int]] = {}
@@ -56,7 +62,8 @@ class Martian:
             self.target = self.pick(data)
         if self.target is not None:
             self.ray.aim(data, self.target_point(data, self.target))
-            self.ray.firing = self.armed and self.ray.on_target() and not info["two_legged"]
+            level = data.xmat[self.hood][8] > math.cos(self.max_tilt)
+            self.ray.firing = self.armed and self.ray.on_target() and level
         else:
             self.ray.firing = False
         self.ray.step(data, self.m.opt.timestep)

@@ -8,6 +8,8 @@ dependencies = [
     "numpy>=1.26",
     "matplotlib>=3.8",
     "imageio[ffmpeg]>=2.34",
+    "osqp>=0.6.3",
+    "scipy>=1.11",
 ]
 
 [tool.uv]
