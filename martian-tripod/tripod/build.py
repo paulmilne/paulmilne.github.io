@@ -82,6 +82,45 @@ def village(wb):
         haystack(wb, f"hay{k}", x, y)
 
 
+# ---------------------------------------------------------------- the carrier
+def carrier(hood, p: Tripod):
+    """An open metal basket on the back of the hood (-x), held out on two struts.
+
+    A rigid part of the hood: a floor, a ring of upright bars, two hoops, and the
+    struts. Its mass sits well behind the hood's centre, so the balance controller
+    has to carry it, as it would on the real thing.
+    """
+    r, h = p.carrier_radius, p.carrier_height
+    cx = -(p.hood_radius + p.carrier_gap + r)
+    z0 = -p.carrier_drop
+    b = ET.SubElement(hood, "body", name="carrier", pos=f(cx, 0, z0))
+    bars, n = [], 14
+    m_bar = p.carrier_mass * 0.45 / n
+    ET.SubElement(b, "geom", name="carrier_floor", type="cylinder", size=f(r, 0.18), pos="0 0 0",
+                  material="steel", mass=f(p.carrier_mass * 0.3), group="1", contype="0", conaffinity="0")
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        x, y = r * math.cos(a), r * math.sin(a)
+        flare = 1.12                                          # a basket widens toward the top
+        ET.SubElement(b, "geom", type="capsule", fromto=f(x, y, 0, flare * x, flare * y, h), size="0.11",
+                      material="brass", mass=f(m_bar), group="1", contype="0", conaffinity="0")
+        bars.append(a)
+    for frac, rr, thick in ((0.5, 1.06, 0.09), (1.0, 1.12, 0.14)):
+        z = frac * h
+        for k in range(n):
+            a1, a2 = bars[k], bars[(k + 1) % n]
+            ET.SubElement(b, "geom", type="capsule",
+                          fromto=f(rr * r * math.cos(a1), rr * r * math.sin(a1), z, rr * r * math.cos(a2), rr * r * math.sin(a2), z),
+                          size=f(thick), material="steel", mass=f(p.carrier_mass * 0.25 / (2 * n)),
+                          group="1", contype="0", conaffinity="0")
+    # two struts from the back of the hood to the basket's near rim
+    for y in (1.3, -1.3):
+        ET.SubElement(hood, "geom", type="capsule",
+                      fromto=f(-p.hood_radius * 0.85, y, -0.3, cx + r * 0.9, y * 0.8, z0 + h * 0.55),
+                      size="0.28", material="steel", mass="1", group="1", contype="0", conaffinity="0")
+    ET.SubElement(b, "site", name="carrier", pos=f(0, 0, h * 0.4), size="0.3", rgba="0 0 0 0")
+
+
 def build(p: Tripod = DEFAULT) -> ET.Element:
     m = ET.Element("mujoco", model="martian_tripod")
     ET.SubElement(m, "compiler", angle="radian", autolimits="true")
@@ -140,6 +179,7 @@ def build(p: Tripod = DEFAULT) -> ET.Element:
     ET.SubElement(arm, "geom", type="cylinder", pos="2.6 0 0", euler="0 1.5708 0", size="0.55 0.45", material="ray",
                   mass=f(p.heatray_mass / 3), group="1", contype="0", conaffinity="0")
     ET.SubElement(arm, "site", name="muzzle", pos="3.1 0 0", size="0.25", rgba="1 0.9 0.6 1")
+    carrier(hood, p)
     ET.SubElement(hood, "camera", name="martian", pos=f(p.hood_radius + 1.0, 0, 0.5), xyaxes="0 -1 0 0.15 0 1", fovy="70")
     ET.SubElement(hood, "camera", name="track", mode="trackcom", pos=f(-70, -70, -5), xyaxes="0.7071 -0.7071 0 0.12 0.12 0.985", fovy="45")
     ET.SubElement(hood, "site", name="imu", pos="0 0 0", size="0.2")

@@ -39,6 +39,13 @@ class Tripod:
     hood_height: float = 3.2          # vertical semi-axis of the hood ellipsoid (m)
     hood_mass: float = 160e3          # kg
     heatray_mass: float = 1200.0      # arm + projector, kg
+    # the carrier: "the great metallic carrier which projected behind him ... much as
+    # a workman's basket hangs over his shoulder" (Book II, ch. I)
+    carrier_mass: float = 9000.0      # kg, empty
+    carrier_radius: float = 2.6       # m
+    carrier_height: float = 3.4       # m
+    carrier_gap: float = 1.2          # m between the hood's rim and the basket
+    carrier_drop: float = 1.0         # m the basket's floor sits below the hood centre
     hip_radius: float = 2.6           # hips sit on this circle under the hood (m)
     hip_drop: float = 2.0             # hips are this far below hood centre (m)
     stance_height: float = 30.0       # hood centre above ground when standing (m)
@@ -58,7 +65,7 @@ class Tripod:
         l = self.leg
         legs = 3 * (l.thigh_mass + l.shin_mass + l.mount_mass + l.knee_mass + l.foot_mass)
         tents = 2 * self.tentacle.links * self.tentacle.link_mass
-        return self.hood_mass + self.heatray_mass + legs + tents
+        return self.hood_mass + self.heatray_mass + self.carrier_mass + legs + tents
 
 
 def planar_ik(L1: float, L2: float, dx: float, dz: float, knee_up: bool = True) -> tuple[float, float]:

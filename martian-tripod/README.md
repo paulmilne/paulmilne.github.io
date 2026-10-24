@@ -1,6 +1,6 @@
 # Martian tripod
 
-A MuJoCo model of a Wells-style fighting-machine: a 248-tonne, 30-metre tripod
+A MuJoCo model of a Wells-style fighting-machine: a 257-tonne, 30-metre tripod
 that walks with a three-dimensional tumbling gait at about 5.5 mph, planned by
 model-predictive control, and burns what it passes with a Heat-Ray.
 
@@ -51,6 +51,11 @@ edge-to-edge gait instead.
 * **Heat-Ray**: a projector on a two-axis arm under the front of the hood, with
   position servos; yaw is unlimited.
 * **Tentacles**: two chains of passive spring-damper links.
+* **Carrier**: an open metal basket on the back of the hood, from Book II,
+  chapter I, where a fighting-machine near Kew tosses the people it catches into
+  "the great metallic carrier which projected behind him", hanging there "much as
+  a workman's basket hangs over his shoulder". It weighs 9 t empty and sits about
+  9 m behind the hood's centre, so the rear feet carry a little more of the load.
 * **Village**: a lodge, cottages, an inn, a church, haystacks and a stand of pines.
   Every geom whose name starts `burn_` can be set alight.
 
@@ -122,7 +127,8 @@ acceleration as feed-forward.
 
 `walk_test.py`, ten cycles (30 steps, 0.8 s on three feet and 1.2 s swinging
 per step): 150 m in 61 s, **5.5 mph**, maximum hood tilt **2.6°**, on two feet
-59% of the time. That is five times the transfer gait's speed, with a sixth of
+59% of the time. With the carrier added (9 t further back), five cycles give
+5.6 mph and 2.7°: the controller absorbs it. That is five times the transfer gait's speed, with a sixth of
 its tilt: planning the fall is both faster and steadier than waiting it out.
 Faster rhythms (1.0 s swings, or longer strides) manage 6–7 mph for a dozen
 steps and then fall: the swing legs saturate their 40 MN·m motors, and doubling
