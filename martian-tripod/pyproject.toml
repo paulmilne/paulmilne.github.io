@@ -1,0 +1,14 @@
+[project]
+name = "martian-tripod"
+version = "0.1.0"
+description = "A parametric MuJoCo model of a Wells-style Martian fighting-machine, and gait experiments"
+requires-python = ">=3.10"
+dependencies = [
+    "mujoco>=3.2",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "imageio[ffmpeg]>=2.34",
+]
+
+[tool.uv]
+package = false

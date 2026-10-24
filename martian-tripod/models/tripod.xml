@@ -1,0 +1,220 @@
+<mujoco model="martian_tripod">
+  <compiler angle="radian" autolimits="true" />
+  <option timestep="0.002" integrator="implicitfast" gravity="0 0 -9.81" />
+  <size memory="64M" />
+  <visual>
+    <global offwidth="1920" offheight="1080" azimuth="135" elevation="-12" />
+    <map haze="0.4" />
+    <headlight ambient="0.25 0.25 0.25" diffuse="0.5 0.5 0.5" />
+    <quality shadowsize="8192" />
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.55 0.6 0.62" rgb2="0.12 0.13 0.14" width="512" height="3072" />
+    <texture name="fields" type="2d" builtin="checker" rgb1="0.33 0.38 0.27" rgb2="0.29 0.34 0.24" width="512" height="512" mark="edge" markrgb="0.25 0.28 0.2" />
+    <material name="ground" texture="fields" texrepeat="40 40" reflectance="0" />
+    <material name="brass" rgba="0.62 0.5 0.27 1" specular="0.8" shininess="0.6" reflectance="0.15" />
+    <material name="steel" rgba="0.42 0.44 0.46 1" specular="0.6" shininess="0.5" />
+    <material name="flesh" rgba="0.36 0.4 0.33 1" specular="0.3" shininess="0.2" />
+    <material name="ray" rgba="0.9 0.85 0.6 1" emission="0.6" />
+  </asset>
+  <default>
+    <default class="leg">
+      <joint type="hinge" damping="2e6" armature="1e5" />
+      <geom material="steel" contype="0" conaffinity="0" />
+      <position kp="6e+08" kv="6e+07" forcerange="-6e9 6e9" />
+    </default>
+    <default class="tentacle">
+      <joint type="hinge" stiffness="200000" damping="60000" range="-0.6 0.6" />
+      <geom type="capsule" material="flesh" contype="0" conaffinity="0" />
+    </default>
+  </default>
+  <worldbody>
+    <light name="sun" mode="fixed" pos="90 -70 160" dir="-0.45 0.35 -0.82" cutoff="70" exponent="0" castshadow="true" diffuse="0.95 0.9 0.8" attenuation="1 0 0" />
+    <geom name="floor" type="plane" size="0 0 1" material="ground" friction="1.0 0.005 0.0001" />
+    <body name="cottage" pos="-30 18 0">
+      <geom type="box" size="4 3 2.5" pos="0 0 2.5" rgba="0.78 0.72 0.62 1" />
+      <geom type="box" size="4.2 2.4 0.25" pos="0 1.25 6" euler="-0.72 0 0" rgba="0.45 0.2 0.15 1" />
+      <geom type="box" size="4.2 2.4 0.25" pos="0 -1.25 6" euler="0.72 0 0" rgba="0.45 0.2 0.15 1" />
+    </body>
+    <body name="hood" pos="0 0 30">
+      <freejoint name="root" />
+      <geom name="hood" type="ellipsoid" size="4.5 4.5 3.2" mass="160000" material="brass" />
+      <geom name="cowl" type="cylinder" size="3.2 0.5" pos="0 0 -1.5" material="steel" mass="1" />
+      <body name="heatray" pos="3.6 0 1.28">
+        <joint name="ray_yaw" type="hinge" axis="0 0 1" range="-1.2 1.2" damping="1e5" />
+        <joint name="ray_pitch" type="hinge" axis="0 1 0" range="-0.6 1.0" damping="1e5" />
+        <geom type="capsule" fromto="0 0 0 2.2 0 0" size="0.3" material="steel" mass="800" />
+        <geom type="cylinder" pos="2.6 0 0" euler="0 1.5708 0" size="0.55 0.45" material="ray" mass="400" />
+      </body>
+      <camera name="martian" pos="5.5 0 0.5" xyaxes="0 -1 0 0.15 0 1" fovy="70" />
+      <camera name="track" mode="trackcom" pos="-70 -70 -5" xyaxes="0.7071 -0.7071 0 0.12 0.12 0.985" fovy="45" />
+      <site name="imu" pos="0 0 0" size="0.2" />
+      <body name="leg0_mount" pos="2.6 0 -2" euler="0 0 0">
+        <joint name="leg0_yaw" axis="0 0 1" range="-0.8 0.8" class="leg" />
+        <geom type="sphere" size="1.045" mass="2000" material="brass" class="leg" />
+        <body name="leg0_thigh">
+          <joint name="leg0_hip" axis="0 1 0" range="-1.2 1.4" class="leg" />
+          <geom type="capsule" fromto="0 0 0 16 0 0" size="0.55" mass="13000" class="leg" />
+          <body name="leg0_shin" pos="16 0 0">
+            <joint name="leg0_knee" axis="0 1 0" range="-0.3 2.6" class="leg" />
+            <geom type="sphere" size="0.825" mass="500" material="brass" class="leg" />
+            <geom type="capsule" fromto="0 0 0 28 0 0" size="0.44" mass="11000" class="leg" />
+            <geom name="foot0" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" friction="1.2 0.01 0.001" />
+            <site name="foot0" pos="28 0 0" size="1.43" rgba="0 0 0 0" />
+          </body>
+        </body>
+      </body>
+      <body name="leg1_mount" pos="-1.3 2.25167 -2" euler="0 0 2.0944">
+        <joint name="leg1_yaw" axis="0 0 1" range="-0.8 0.8" class="leg" />
+        <geom type="sphere" size="1.045" mass="2000" material="brass" class="leg" />
+        <body name="leg1_thigh">
+          <joint name="leg1_hip" axis="0 1 0" range="-1.2 1.4" class="leg" />
+          <geom type="capsule" fromto="0 0 0 16 0 0" size="0.55" mass="13000" class="leg" />
+          <body name="leg1_shin" pos="16 0 0">
+            <joint name="leg1_knee" axis="0 1 0" range="-0.3 2.6" class="leg" />
+            <geom type="sphere" size="0.825" mass="500" material="brass" class="leg" />
+            <geom type="capsule" fromto="0 0 0 28 0 0" size="0.44" mass="11000" class="leg" />
+            <geom name="foot1" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" friction="1.2 0.01 0.001" />
+            <site name="foot1" pos="28 0 0" size="1.43" rgba="0 0 0 0" />
+          </body>
+        </body>
+      </body>
+      <body name="leg2_mount" pos="-1.3 -2.25167 -2" euler="0 0 4.18879">
+        <joint name="leg2_yaw" axis="0 0 1" range="-0.8 0.8" class="leg" />
+        <geom type="sphere" size="1.045" mass="2000" material="brass" class="leg" />
+        <body name="leg2_thigh">
+          <joint name="leg2_hip" axis="0 1 0" range="-1.2 1.4" class="leg" />
+          <geom type="capsule" fromto="0 0 0 16 0 0" size="0.55" mass="13000" class="leg" />
+          <body name="leg2_shin" pos="16 0 0">
+            <joint name="leg2_knee" axis="0 1 0" range="-0.3 2.6" class="leg" />
+            <geom type="sphere" size="0.825" mass="500" material="brass" class="leg" />
+            <geom type="capsule" fromto="0 0 0 28 0 0" size="0.44" mass="11000" class="leg" />
+            <geom name="foot2" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" friction="1.2 0.01 0.001" />
+            <site name="foot2" pos="28 0 0" size="1.43" rgba="0 0 0 0" />
+          </body>
+        </body>
+      </body>
+      <body name="tent_l0" pos="2.475 1.6 -1.92">
+        <joint name="tent_l0_a" axis="0 1 0" class="tentacle" />
+        <joint name="tent_l0_b" axis="1 0 0" class="tentacle" />
+        <geom fromto="0 0 0 0 0 -1.3" size="0.22" mass="150" class="tentacle" />
+        <body name="tent_l1" pos="0 0 -1.3">
+          <joint name="tent_l1_a" axis="0 1 0" class="tentacle" />
+          <joint name="tent_l1_b" axis="1 0 0" class="tentacle" />
+          <geom fromto="0 0 0 0 0 -1.3" size="0.2068" mass="150" class="tentacle" />
+          <body name="tent_l2" pos="0 0 -1.3">
+            <joint name="tent_l2_a" axis="0 1 0" class="tentacle" />
+            <joint name="tent_l2_b" axis="1 0 0" class="tentacle" />
+            <geom fromto="0 0 0 0 0 -1.3" size="0.1936" mass="150" class="tentacle" />
+            <body name="tent_l3" pos="0 0 -1.3">
+              <joint name="tent_l3_a" axis="0 1 0" class="tentacle" />
+              <joint name="tent_l3_b" axis="1 0 0" class="tentacle" />
+              <geom fromto="0 0 0 0 0 -1.3" size="0.1804" mass="150" class="tentacle" />
+              <body name="tent_l4" pos="0 0 -1.3">
+                <joint name="tent_l4_a" axis="0 1 0" class="tentacle" />
+                <joint name="tent_l4_b" axis="1 0 0" class="tentacle" />
+                <geom fromto="0 0 0 0 0 -1.3" size="0.1672" mass="150" class="tentacle" />
+                <body name="tent_l5" pos="0 0 -1.3">
+                  <joint name="tent_l5_a" axis="0 1 0" class="tentacle" />
+                  <joint name="tent_l5_b" axis="1 0 0" class="tentacle" />
+                  <geom fromto="0 0 0 0 0 -1.3" size="0.154" mass="150" class="tentacle" />
+                  <body name="tent_l6" pos="0 0 -1.3">
+                    <joint name="tent_l6_a" axis="0 1 0" class="tentacle" />
+                    <joint name="tent_l6_b" axis="1 0 0" class="tentacle" />
+                    <geom fromto="0 0 0 0 0 -1.3" size="0.1408" mass="150" class="tentacle" />
+                    <body name="tent_l7" pos="0 0 -1.3">
+                      <joint name="tent_l7_a" axis="0 1 0" class="tentacle" />
+                      <joint name="tent_l7_b" axis="1 0 0" class="tentacle" />
+                      <geom fromto="0 0 0 0 0 -1.3" size="0.1276" mass="150" class="tentacle" />
+                      <body name="tent_l8" pos="0 0 -1.3">
+                        <joint name="tent_l8_a" axis="0 1 0" class="tentacle" />
+                        <joint name="tent_l8_b" axis="1 0 0" class="tentacle" />
+                        <geom fromto="0 0 0 0 0 -1.3" size="0.1144" mass="150" class="tentacle" />
+                        <body name="tent_l9" pos="0 0 -1.3">
+                          <joint name="tent_l9_a" axis="0 1 0" class="tentacle" />
+                          <joint name="tent_l9_b" axis="1 0 0" class="tentacle" />
+                          <geom fromto="0 0 0 0 0 -1.3" size="0.1012" mass="150" class="tentacle" />
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="tent_r0" pos="2.475 -1.6 -1.92">
+        <joint name="tent_r0_a" axis="0 1 0" class="tentacle" />
+        <joint name="tent_r0_b" axis="1 0 0" class="tentacle" />
+        <geom fromto="0 0 0 0 0 -1.3" size="0.22" mass="150" class="tentacle" />
+        <body name="tent_r1" pos="0 0 -1.3">
+          <joint name="tent_r1_a" axis="0 1 0" class="tentacle" />
+          <joint name="tent_r1_b" axis="1 0 0" class="tentacle" />
+          <geom fromto="0 0 0 0 0 -1.3" size="0.2068" mass="150" class="tentacle" />
+          <body name="tent_r2" pos="0 0 -1.3">
+            <joint name="tent_r2_a" axis="0 1 0" class="tentacle" />
+            <joint name="tent_r2_b" axis="1 0 0" class="tentacle" />
+            <geom fromto="0 0 0 0 0 -1.3" size="0.1936" mass="150" class="tentacle" />
+            <body name="tent_r3" pos="0 0 -1.3">
+              <joint name="tent_r3_a" axis="0 1 0" class="tentacle" />
+              <joint name="tent_r3_b" axis="1 0 0" class="tentacle" />
+              <geom fromto="0 0 0 0 0 -1.3" size="0.1804" mass="150" class="tentacle" />
+              <body name="tent_r4" pos="0 0 -1.3">
+                <joint name="tent_r4_a" axis="0 1 0" class="tentacle" />
+                <joint name="tent_r4_b" axis="1 0 0" class="tentacle" />
+                <geom fromto="0 0 0 0 0 -1.3" size="0.1672" mass="150" class="tentacle" />
+                <body name="tent_r5" pos="0 0 -1.3">
+                  <joint name="tent_r5_a" axis="0 1 0" class="tentacle" />
+                  <joint name="tent_r5_b" axis="1 0 0" class="tentacle" />
+                  <geom fromto="0 0 0 0 0 -1.3" size="0.154" mass="150" class="tentacle" />
+                  <body name="tent_r6" pos="0 0 -1.3">
+                    <joint name="tent_r6_a" axis="0 1 0" class="tentacle" />
+                    <joint name="tent_r6_b" axis="1 0 0" class="tentacle" />
+                    <geom fromto="0 0 0 0 0 -1.3" size="0.1408" mass="150" class="tentacle" />
+                    <body name="tent_r7" pos="0 0 -1.3">
+                      <joint name="tent_r7_a" axis="0 1 0" class="tentacle" />
+                      <joint name="tent_r7_b" axis="1 0 0" class="tentacle" />
+                      <geom fromto="0 0 0 0 0 -1.3" size="0.1276" mass="150" class="tentacle" />
+                      <body name="tent_r8" pos="0 0 -1.3">
+                        <joint name="tent_r8_a" axis="0 1 0" class="tentacle" />
+                        <joint name="tent_r8_b" axis="1 0 0" class="tentacle" />
+                        <geom fromto="0 0 0 0 0 -1.3" size="0.1144" mass="150" class="tentacle" />
+                        <body name="tent_r9" pos="0 0 -1.3">
+                          <joint name="tent_r9_a" axis="0 1 0" class="tentacle" />
+                          <joint name="tent_r9_b" axis="1 0 0" class="tentacle" />
+                          <geom fromto="0 0 0 0 0 -1.3" size="0.1012" mass="150" class="tentacle" />
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+    <camera name="witness" mode="targetbody" target="hood" pos="-95 70 1.7" fovy="38" />
+  </worldbody>
+  <actuator>
+    <position name="leg0_yaw" joint="leg0_yaw" class="leg" />
+    <position name="leg0_hip" joint="leg0_hip" class="leg" />
+    <position name="leg0_knee" joint="leg0_knee" class="leg" />
+    <position name="leg1_yaw" joint="leg1_yaw" class="leg" />
+    <position name="leg1_hip" joint="leg1_hip" class="leg" />
+    <position name="leg1_knee" joint="leg1_knee" class="leg" />
+    <position name="leg2_yaw" joint="leg2_yaw" class="leg" />
+    <position name="leg2_hip" joint="leg2_hip" class="leg" />
+    <position name="leg2_knee" joint="leg2_knee" class="leg" />
+  </actuator>
+  <sensor>
+    <touch name="foot0_touch" site="foot0" />
+    <touch name="foot1_touch" site="foot1" />
+    <touch name="foot2_touch" site="foot2" />
+    <framepos name="hood_pos" objtype="body" objname="hood" />
+  </sensor>
+  <keyframe>
+    <key name="stand" qpos="0 0 30 1 0 0 0 0 0 0 -0.055639 1.50382 0 -0.055639 1.50382 0 -0.055639 1.50382 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" ctrl="0 -0.055639 1.50382 0 -0.055639 1.50382 0 -0.055639 1.50382" />
+  </keyframe>
+</mujoco>

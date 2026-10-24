@@ -1,0 +1,159 @@
+"""Generate the MJCF (MuJoCo XML) for the tripod from tripod.params.
+
+    python -m tripod.build            # writes models/tripod.xml
+
+The model:
+  * hood   - free-floating body (6 DOF), an ellipsoid with a Heat-Ray arm
+  * 3 legs - hip_yaw (z), hip_pitch (y), knee (y): 9 actuated joints
+  * 2 tentacles - chains of capsules with passive spring/damper joints
+  * a "stand" keyframe computed by inverse kinematics
+"""
+from __future__ import annotations
+
+import math
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+from .params import DEFAULT, Tripod, leg_ik
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def f(*xs: float) -> str:
+    return " ".join(f"{x:.6g}" for x in xs)
+
+
+def build(p: Tripod = DEFAULT) -> ET.Element:
+    m = ET.Element("mujoco", model="martian_tripod")
+    ET.SubElement(m, "compiler", angle="radian", autolimits="true")
+    ET.SubElement(m, "option", timestep="0.002", integrator="implicitfast", gravity="0 0 -9.81")
+    ET.SubElement(m, "size", memory="64M")
+    vis = ET.SubElement(m, "visual")
+    ET.SubElement(vis, "global", offwidth="1920", offheight="1080", azimuth="135", elevation="-12")
+    ET.SubElement(vis, "map", haze="0.4")
+    ET.SubElement(vis, "headlight", ambient="0.25 0.25 0.25", diffuse="0.5 0.5 0.5")
+    ET.SubElement(vis, "quality", shadowsize="8192")
+
+    a = ET.SubElement(m, "asset")
+    ET.SubElement(a, "texture", type="skybox", builtin="gradient", rgb1="0.55 0.6 0.62",
+                  rgb2="0.12 0.13 0.14", width="512", height="3072")
+    ET.SubElement(a, "texture", name="fields", type="2d", builtin="checker", rgb1="0.33 0.38 0.27",
+                  rgb2="0.29 0.34 0.24", width="512", height="512", mark="edge", markrgb="0.25 0.28 0.2")
+    ET.SubElement(a, "material", name="ground", texture="fields", texrepeat="40 40", reflectance="0")
+    ET.SubElement(a, "material", name="brass", rgba="0.62 0.5 0.27 1", specular="0.8", shininess="0.6", reflectance="0.15")
+    ET.SubElement(a, "material", name="steel", rgba="0.42 0.44 0.46 1", specular="0.6", shininess="0.5")
+    ET.SubElement(a, "material", name="flesh", rgba="0.36 0.4 0.33 1", specular="0.3", shininess="0.2")
+    ET.SubElement(a, "material", name="ray", rgba="0.9 0.85 0.6 1", emission="0.6")
+
+    dflt = ET.SubElement(m, "default")
+    leg_d = ET.SubElement(dflt, "default", **{"class": "leg"})
+    ET.SubElement(leg_d, "joint", type="hinge", damping="2e6", armature="1e5")
+    ET.SubElement(leg_d, "geom", material="steel", contype="0", conaffinity="0")
+    ET.SubElement(leg_d, "position", kp=f(p.kp), kv=f(p.kv), forcerange="-6e9 6e9")
+    t_d = ET.SubElement(dflt, "default", **{"class": "tentacle"})
+    ET.SubElement(t_d, "joint", type="hinge", stiffness=f(p.tentacle.stiffness),
+                  damping=f(p.tentacle.damping), range="-0.6 0.6")
+    ET.SubElement(t_d, "geom", type="capsule", material="flesh", contype="0", conaffinity="0")
+
+    wb = ET.SubElement(m, "worldbody")
+    # a high spotlight standing in for the sun (MuJoCo's spot shadows are cleaner than directional ones)
+    ET.SubElement(wb, "light", name="sun", mode="fixed", pos="90 -70 160", dir="-0.45 0.35 -0.82",
+                  cutoff="70", exponent="0", castshadow="true", diffuse="0.95 0.9 0.8", attenuation="1 0 0")
+    ET.SubElement(wb, "geom", name="floor", type="plane", size="0 0 1", material="ground",
+                  friction="1.0 0.005 0.0001")
+    # a cottage for scale: 8 m x 6 m footprint, ~7 m to the ridge
+    house = ET.SubElement(wb, "body", name="cottage", pos="-30 18 0")
+    ET.SubElement(house, "geom", type="box", size="4 3 2.5", pos="0 0 2.5", rgba="0.78 0.72 0.62 1")
+    ET.SubElement(house, "geom", type="box", size="4.2 2.4 0.25", pos="0 1.25 6", euler="-0.72 0 0", rgba="0.45 0.2 0.15 1")
+    ET.SubElement(house, "geom", type="box", size="4.2 2.4 0.25", pos="0 -1.25 6", euler="0.72 0 0", rgba="0.45 0.2 0.15 1")
+
+
+    hood = ET.SubElement(wb, "body", name="hood", pos=f(0, 0, p.stance_height))
+    # an onlooker at eye height beyond the cottage, always looking at the hood
+    ET.SubElement(wb, "camera", name="witness", mode="targetbody", target="hood", pos="-95 70 1.7", fovy="38")
+    ET.SubElement(hood, "freejoint", name="root")
+    ET.SubElement(hood, "geom", name="hood", type="ellipsoid", size=f(p.hood_radius, p.hood_radius, p.hood_height),
+                  mass=f(p.hood_mass), material="brass")
+    ET.SubElement(hood, "geom", name="cowl", type="cylinder", size=f(p.hip_radius + 0.6, 0.5),
+                  pos=f(0, 0, -p.hip_drop + 0.5), material="steel", mass="1")  # cosmetic
+    # the Heat-Ray "camera" on a jointed arm at the front (+x)
+    arm = ET.SubElement(hood, "body", name="heatray", pos=f(p.hood_radius * 0.8, 0, p.hood_height * 0.4))
+    ET.SubElement(arm, "joint", name="ray_yaw", type="hinge", axis="0 0 1", range="-1.2 1.2", damping="1e5")
+    ET.SubElement(arm, "joint", name="ray_pitch", type="hinge", axis="0 1 0", range="-0.6 1.0", damping="1e5")
+    ET.SubElement(arm, "geom", type="capsule", fromto="0 0 0 2.2 0 0", size="0.3", material="steel", mass=f(p.heatray_mass * 2 / 3))
+    ET.SubElement(arm, "geom", type="cylinder", pos="2.6 0 0", euler="0 1.5708 0", size="0.55 0.45", material="ray", mass=f(p.heatray_mass / 3))
+    ET.SubElement(hood, "camera", name="martian", pos=f(p.hood_radius + 1.0, 0, 0.5), xyaxes="0 -1 0 0.15 0 1", fovy="70")
+    ET.SubElement(hood, "camera", name="track", mode="trackcom", pos=f(-70, -70, -5), xyaxes="0.7071 -0.7071 0 0.12 0.12 0.985", fovy="45")
+    ET.SubElement(hood, "site", name="imu", pos="0 0 0", size="0.2")
+
+    q_hip, q_knee = leg_ik(p)
+    for i, az_deg in enumerate(p.leg_azimuths_deg):
+        az = math.radians(az_deg)
+        hx, hy = p.hip_radius * math.cos(az), p.hip_radius * math.sin(az)
+        mount = ET.SubElement(hood, "body", name=f"leg{i}_mount", pos=f(hx, hy, -p.hip_drop), euler=f(0, 0, az))
+        ET.SubElement(mount, "joint", name=f"leg{i}_yaw", axis="0 0 1", range="-0.8 0.8", **{"class": "leg"})
+        ET.SubElement(mount, "geom", type="sphere", size=f(p.leg.radius * 1.9), mass=f(p.leg.mount_mass), material="brass", **{"class": "leg"})
+        thigh = ET.SubElement(mount, "body", name=f"leg{i}_thigh")
+        ET.SubElement(thigh, "joint", name=f"leg{i}_hip", axis="0 1 0", range="-1.2 1.4", **{"class": "leg"})
+        ET.SubElement(thigh, "geom", type="capsule", fromto=f(0, 0, 0, p.leg.thigh, 0, 0), size=f(p.leg.radius),
+                      mass=f(p.leg.thigh_mass), **{"class": "leg"})
+        shin = ET.SubElement(thigh, "body", name=f"leg{i}_shin", pos=f(p.leg.thigh, 0, 0))
+        ET.SubElement(shin, "joint", name=f"leg{i}_knee", axis="0 1 0", range="-0.3 2.6", **{"class": "leg"})
+        ET.SubElement(shin, "geom", type="sphere", size=f(p.leg.radius * 1.5), mass=f(p.leg.knee_mass), material="brass", **{"class": "leg"})
+        ET.SubElement(shin, "geom", type="capsule", fromto=f(0, 0, 0, p.leg.shin, 0, 0), size=f(p.leg.radius * 0.8),
+                      mass=f(p.leg.shin_mass), **{"class": "leg"})
+        ET.SubElement(shin, "geom", name=f"foot{i}", type="sphere", pos=f(p.leg.shin, 0, 0),
+                      size=f(p.leg.foot_radius), mass=f(p.leg.foot_mass), material="brass", contype="1", conaffinity="1",
+                      friction="1.2 0.01 0.001")
+        ET.SubElement(shin, "site", name=f"foot{i}", pos=f(p.leg.shin, 0, 0), size=f(p.leg.foot_radius * 1.3), rgba="0 0 0 0")
+
+    # two tentacles hanging from under the front of the hood
+    t = p.tentacle
+    for side, y in (("l", 1.6), ("r", -1.6)):
+        parent = ET.SubElement(hood, "body", name=f"tent_{side}0", pos=f(p.hood_radius * 0.55, y, -p.hood_height * 0.6))
+        body = parent
+        for k in range(t.links):
+            ET.SubElement(body, "joint", name=f"tent_{side}{k}_a", axis="0 1 0", **{"class": "tentacle"})
+            ET.SubElement(body, "joint", name=f"tent_{side}{k}_b", axis="1 0 0", **{"class": "tentacle"})
+            r = t.radius * (1 - 0.6 * k / t.links)
+            ET.SubElement(body, "geom", fromto=f(0, 0, 0, 0, 0, -t.link_length), size=f(r),
+                          mass=f(t.link_mass), **{"class": "tentacle"})
+            if k < t.links - 1:
+                body = ET.SubElement(body, "body", name=f"tent_{side}{k + 1}", pos=f(0, 0, -t.link_length))
+
+    act = ET.SubElement(m, "actuator")
+    for i in range(3):
+        for j in ("yaw", "hip", "knee"):
+            ET.SubElement(act, "position", name=f"leg{i}_{j}", joint=f"leg{i}_{j}", **{"class": "leg"})
+
+    sens = ET.SubElement(m, "sensor")
+    for i in range(3):
+        ET.SubElement(sens, "touch", name=f"foot{i}_touch", site=f"foot{i}")
+    ET.SubElement(sens, "framepos", name="hood_pos", objtype="body", objname="hood")
+
+    # keyframe: standing pose from IK. qpos = 7 (free) + 2 (ray) + 9 (legs) + tentacle joints
+    n_tent = 2 * t.links * 2
+    qpos = [0, 0, p.stance_height, 1, 0, 0, 0, 0, 0]
+    ctrl = []
+    for _ in range(3):
+        qpos += [0, q_hip, q_knee]
+        ctrl += [0, q_hip, q_knee]
+    # order in qpos follows the tree: hood free joint, heatray (2), then legs, then tentacles
+    qpos += [0] * n_tent
+    kf = ET.SubElement(m, "keyframe")
+    ET.SubElement(kf, "key", name="stand", qpos=f(*qpos), ctrl=f(*ctrl))
+    return m
+
+
+def write(path: Path | None = None, p: Tripod = DEFAULT) -> Path:
+    path = path or ROOT / "models" / "tripod.xml"
+    tree = ET.ElementTree(build(p))
+    ET.indent(tree, space="  ")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(path, encoding="unicode", xml_declaration=False)
+    return path
+
+
+if __name__ == "__main__":
+    out = write()
+    print(f"wrote {out}")
