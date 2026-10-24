@@ -20,31 +20,112 @@
   <default>
     <default class="leg">
       <joint type="hinge" damping="2e6" armature="1e5" />
-      <geom material="steel" contype="0" conaffinity="0" />
-      <position kp="6e+08" kv="6e+07" forcerange="-6e9 6e9" />
+      <geom material="steel" contype="0" conaffinity="0" group="1" />
+      <motor ctrlrange="-4e+07 4e+07" />
     </default>
     <default class="tentacle">
       <joint type="hinge" stiffness="200000" damping="60000" range="-0.6 0.6" />
-      <geom type="capsule" material="flesh" contype="0" conaffinity="0" />
+      <geom type="capsule" material="flesh" contype="0" conaffinity="0" group="1" />
     </default>
   </default>
   <worldbody>
     <light name="sun" mode="fixed" pos="90 -70 160" dir="-0.45 0.35 -0.82" cutoff="70" exponent="0" castshadow="true" diffuse="0.95 0.9 0.8" attenuation="1 0 0" />
     <geom name="floor" type="plane" size="0 0 1" material="ground" friction="1.0 0.005 0.0001" />
-    <body name="cottage" pos="-30 18 0">
-      <geom type="box" size="4 3 2.5" pos="0 0 2.5" rgba="0.78 0.72 0.62 1" />
-      <geom type="box" size="4.2 2.4 0.25" pos="0 1.25 6" euler="-0.72 0 0" rgba="0.45 0.2 0.15 1" />
-      <geom type="box" size="4.2 2.4 0.25" pos="0 -1.25 6" euler="0.72 0 0" rgba="0.45 0.2 0.15 1" />
+    <body name="lodge" pos="-30 18 0" euler="0 0 0">
+      <geom name="burn_lodge_walls" type="box" size="4 3 2.5" pos="0 0 2.5" rgba="0.80 0.74 0.62 1" />
+      <geom name="burn_lodge_roofn" type="box" size="4.3 2.2952 0.25" pos="0 1.5 6.3156" euler="-0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_lodge_roofs" type="box" size="4.3 2.2952 0.25" pos="0 -1.5 6.3156" euler="0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_lodge_chimney" type="box" size="0.5 0.5 1.4" pos="2.66667 0 7.2" rgba="0.55 0.3 0.25 1" />
+    </body>
+    <body name="cottage_a" pos="55 34 0" euler="0 0 0.2">
+      <geom name="burn_cottage_a_walls" type="box" size="4 3 2.5" pos="0 0 2.5" rgba="0.80 0.74 0.62 1" />
+      <geom name="burn_cottage_a_roofn" type="box" size="4.3 2.2952 0.25" pos="0 1.5 6.3156" euler="-0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_cottage_a_roofs" type="box" size="4.3 2.2952 0.25" pos="0 -1.5 6.3156" euler="0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_cottage_a_chimney" type="box" size="0.5 0.5 1.4" pos="2.66667 0 7.2" rgba="0.55 0.3 0.25 1" />
+    </body>
+    <body name="cottage_b" pos="68 40 0" euler="0 0 -0.1">
+      <geom name="burn_cottage_b_walls" type="box" size="4 3 2.5" pos="0 0 2.5" rgba="0.80 0.74 0.62 1" />
+      <geom name="burn_cottage_b_roofn" type="box" size="4.3 2.2952 0.25" pos="0 1.5 6.3156" euler="-0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_cottage_b_roofs" type="box" size="4.3 2.2952 0.25" pos="0 -1.5 6.3156" euler="0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_cottage_b_chimney" type="box" size="0.5 0.5 1.4" pos="2.66667 0 7.2" rgba="0.55 0.3 0.25 1" />
+    </body>
+    <body name="cottage_c" pos="82 -36 0" euler="0 0 0.15">
+      <geom name="burn_cottage_c_walls" type="box" size="4 3 2.5" pos="0 0 2.5" rgba="0.80 0.74 0.62 1" />
+      <geom name="burn_cottage_c_roofn" type="box" size="4.3 2.2952 0.25" pos="0 1.5 6.3156" euler="-0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_cottage_c_roofs" type="box" size="4.3 2.2952 0.25" pos="0 -1.5 6.3156" euler="0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_cottage_c_chimney" type="box" size="0.5 0.5 1.4" pos="2.66667 0 7.2" rgba="0.55 0.3 0.25 1" />
+    </body>
+    <body name="inn" pos="98 42 0" euler="0 0 0.05">
+      <geom name="burn_inn_walls" type="box" size="6 3.5 3.25" pos="0 0 3.25" rgba="0.80 0.74 0.62 1" />
+      <geom name="burn_inn_roofn" type="box" size="6.3 2.62773 0.25" pos="0 1.75 8.03487" euler="-0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_inn_roofs" type="box" size="6.3 2.62773 0.25" pos="0 -1.75 8.03487" euler="0.72 0 0" rgba="0.47 0.21 0.15 1" />
+      <geom name="burn_inn_chimney" type="box" size="0.5 0.5 1.4" pos="4 0 8.7" rgba="0.55 0.3 0.25 1" />
+    </body>
+    <body name="church" pos="120 -40 0">
+      <geom name="burn_church_nave" type="box" size="9 4.5 4.5" pos="0 0 4.5" rgba="0.70 0.68 0.62 1" />
+      <geom name="burn_church_naveroof" type="box" size="9.2 3.4 0.3" pos="0 1.7 10.2" euler="-0.6 0 0" rgba="0.36 0.36 0.38 1" />
+      <geom name="burn_church_naveroof2" type="box" size="9.2 3.4 0.3" pos="0 -1.7 10.2" euler="0.6 0 0" rgba="0.36 0.36 0.38 1" />
+      <geom name="burn_church_tower" type="box" size="3 3 9" pos="-11.5 0 9" rgba="0.68 0.66 0.60 1" />
+      <geom name="burn_church_spire" type="ellipsoid" size="2.4 2.4 7" pos="-11.5 0 23" rgba="0.30 0.30 0.33 1" />
+    </body>
+    <body name="pine0" pos="40 -40 0">
+      <geom name="burn_pine0_trunk" type="cylinder" size="0.35 3.6" pos="0 0 3.6" rgba="0.35 0.24 0.16 1" />
+      <geom name="burn_pine0_crown0" type="ellipsoid" size="3 3 1.92" pos="0 0 5.4" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine0_crown1" type="ellipsoid" size="2.3 2.3 1.92" pos="0 0 7.8" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine0_crown2" type="ellipsoid" size="1.5 1.5 1.92" pos="0 0 9.84" rgba="0.16 0.30 0.18 1" />
+    </body>
+    <body name="pine1" pos="45 -46 0">
+      <geom name="burn_pine1_trunk" type="cylinder" size="0.35 4.5" pos="0 0 4.5" rgba="0.35 0.24 0.16 1" />
+      <geom name="burn_pine1_crown0" type="ellipsoid" size="3 3 2.4" pos="0 0 6.75" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine1_crown1" type="ellipsoid" size="2.3 2.3 2.4" pos="0 0 9.75" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine1_crown2" type="ellipsoid" size="1.5 1.5 2.4" pos="0 0 12.3" rgba="0.16 0.30 0.18 1" />
+    </body>
+    <body name="pine2" pos="51 -42 0">
+      <geom name="burn_pine2_trunk" type="cylinder" size="0.35 5.4" pos="0 0 5.4" rgba="0.35 0.24 0.16 1" />
+      <geom name="burn_pine2_crown0" type="ellipsoid" size="3 3 2.88" pos="0 0 8.1" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine2_crown1" type="ellipsoid" size="2.3 2.3 2.88" pos="0 0 11.7" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine2_crown2" type="ellipsoid" size="1.5 1.5 2.88" pos="0 0 14.76" rgba="0.16 0.30 0.18 1" />
+    </body>
+    <body name="pine3" pos="36 -50 0">
+      <geom name="burn_pine3_trunk" type="cylinder" size="0.35 3.6" pos="0 0 3.6" rgba="0.35 0.24 0.16 1" />
+      <geom name="burn_pine3_crown0" type="ellipsoid" size="3 3 1.92" pos="0 0 5.4" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine3_crown1" type="ellipsoid" size="2.3 2.3 1.92" pos="0 0 7.8" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine3_crown2" type="ellipsoid" size="1.5 1.5 1.92" pos="0 0 9.84" rgba="0.16 0.30 0.18 1" />
+    </body>
+    <body name="pine4" pos="58 -48 0">
+      <geom name="burn_pine4_trunk" type="cylinder" size="0.35 4.5" pos="0 0 4.5" rgba="0.35 0.24 0.16 1" />
+      <geom name="burn_pine4_crown0" type="ellipsoid" size="3 3 2.4" pos="0 0 6.75" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine4_crown1" type="ellipsoid" size="2.3 2.3 2.4" pos="0 0 9.75" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine4_crown2" type="ellipsoid" size="1.5 1.5 2.4" pos="0 0 12.3" rgba="0.16 0.30 0.18 1" />
+    </body>
+    <body name="pine5" pos="47 -55 0">
+      <geom name="burn_pine5_trunk" type="cylinder" size="0.35 5.4" pos="0 0 5.4" rgba="0.35 0.24 0.16 1" />
+      <geom name="burn_pine5_crown0" type="ellipsoid" size="3 3 2.88" pos="0 0 8.1" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine5_crown1" type="ellipsoid" size="2.3 2.3 2.88" pos="0 0 11.7" rgba="0.16 0.30 0.18 1" />
+      <geom name="burn_pine5_crown2" type="ellipsoid" size="1.5 1.5 2.88" pos="0 0 14.76" rgba="0.16 0.30 0.18 1" />
+    </body>
+    <body name="hay0" pos="75 52 0">
+      <geom name="burn_hay0" type="cylinder" size="2.2 1.6" pos="0 0 1.6" rgba="0.78 0.66 0.35 1" />
+      <geom name="burn_hay0_top" type="ellipsoid" size="2.3 2.3 1.6" pos="0 0 3.2" rgba="0.78 0.66 0.35 1" />
+    </body>
+    <body name="hay1" pos="80 49 0">
+      <geom name="burn_hay1" type="cylinder" size="2.2 1.6" pos="0 0 1.6" rgba="0.78 0.66 0.35 1" />
+      <geom name="burn_hay1_top" type="ellipsoid" size="2.3 2.3 1.6" pos="0 0 3.2" rgba="0.78 0.66 0.35 1" />
+    </body>
+    <body name="hay2" pos="86 54 0">
+      <geom name="burn_hay2" type="cylinder" size="2.2 1.6" pos="0 0 1.6" rgba="0.78 0.66 0.35 1" />
+      <geom name="burn_hay2_top" type="ellipsoid" size="2.3 2.3 1.6" pos="0 0 3.2" rgba="0.78 0.66 0.35 1" />
     </body>
     <body name="hood" pos="0 0 30">
       <freejoint name="root" />
-      <geom name="hood" type="ellipsoid" size="4.5 4.5 3.2" mass="160000" material="brass" />
-      <geom name="cowl" type="cylinder" size="3.2 0.5" pos="0 0 -1.5" material="steel" mass="1" />
+      <geom name="hood" type="ellipsoid" size="4.5 4.5 3.2" mass="160000" material="brass" group="1" />
+      <geom name="cowl" type="cylinder" size="3.2 0.5" pos="0 0 -1.5" material="steel" mass="1" group="1" />
       <body name="heatray" pos="3.6 0 1.28">
-        <joint name="ray_yaw" type="hinge" axis="0 0 1" range="-1.2 1.2" damping="1e5" />
-        <joint name="ray_pitch" type="hinge" axis="0 1 0" range="-0.6 1.0" damping="1e5" />
-        <geom type="capsule" fromto="0 0 0 2.2 0 0" size="0.3" material="steel" mass="800" />
-        <geom type="cylinder" pos="2.6 0 0" euler="0 1.5708 0" size="0.55 0.45" material="ray" mass="400" />
+        <joint name="ray_yaw" type="hinge" axis="0 0 1" damping="2e4" />
+        <joint name="ray_pitch" type="hinge" axis="0 1 0" range="-0.4 1.4" damping="2e4" />
+        <geom type="capsule" fromto="0 0 0 2.2 0 0" size="0.3" material="steel" mass="800" group="1" contype="0" conaffinity="0" />
+        <geom type="cylinder" pos="2.6 0 0" euler="0 1.5708 0" size="0.55 0.45" material="ray" mass="400" group="1" contype="0" conaffinity="0" />
+        <site name="muzzle" pos="3.1 0 0" size="0.25" rgba="1 0.9 0.6 1" />
       </body>
       <camera name="martian" pos="5.5 0 0.5" xyaxes="0 -1 0 0.15 0 1" fovy="70" />
       <camera name="track" mode="trackcom" pos="-70 -70 -5" xyaxes="0.7071 -0.7071 0 0.12 0.12 0.985" fovy="45" />
@@ -59,7 +140,7 @@
             <joint name="leg0_knee" axis="0 1 0" range="-0.3 2.6" class="leg" />
             <geom type="sphere" size="0.825" mass="500" material="brass" class="leg" />
             <geom type="capsule" fromto="0 0 0 28 0 0" size="0.44" mass="11000" class="leg" />
-            <geom name="foot0" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" friction="1.2 0.01 0.001" />
+            <geom name="foot0" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" group="1" friction="1.2 0.01 0.001" />
             <site name="foot0" pos="28 0 0" size="1.43" rgba="0 0 0 0" />
           </body>
         </body>
@@ -74,7 +155,7 @@
             <joint name="leg1_knee" axis="0 1 0" range="-0.3 2.6" class="leg" />
             <geom type="sphere" size="0.825" mass="500" material="brass" class="leg" />
             <geom type="capsule" fromto="0 0 0 28 0 0" size="0.44" mass="11000" class="leg" />
-            <geom name="foot1" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" friction="1.2 0.01 0.001" />
+            <geom name="foot1" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" group="1" friction="1.2 0.01 0.001" />
             <site name="foot1" pos="28 0 0" size="1.43" rgba="0 0 0 0" />
           </body>
         </body>
@@ -89,7 +170,7 @@
             <joint name="leg2_knee" axis="0 1 0" range="-0.3 2.6" class="leg" />
             <geom type="sphere" size="0.825" mass="500" material="brass" class="leg" />
             <geom type="capsule" fromto="0 0 0 28 0 0" size="0.44" mass="11000" class="leg" />
-            <geom name="foot2" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" friction="1.2 0.01 0.001" />
+            <geom name="foot2" type="sphere" pos="28 0 0" size="1.1" mass="1500" material="brass" contype="1" conaffinity="1" group="1" friction="1.2 0.01 0.001" />
             <site name="foot2" pos="28 0 0" size="1.43" rgba="0 0 0 0" />
           </body>
         </body>
@@ -195,18 +276,20 @@
         </body>
       </body>
     </body>
-    <camera name="witness" mode="targetbody" target="hood" pos="-95 70 1.7" fovy="38" />
+    <camera name="witness" mode="targetbody" target="hood" pos="170 18 1.7" fovy="40" />
   </worldbody>
   <actuator>
-    <position name="leg0_yaw" joint="leg0_yaw" class="leg" />
-    <position name="leg0_hip" joint="leg0_hip" class="leg" />
-    <position name="leg0_knee" joint="leg0_knee" class="leg" />
-    <position name="leg1_yaw" joint="leg1_yaw" class="leg" />
-    <position name="leg1_hip" joint="leg1_hip" class="leg" />
-    <position name="leg1_knee" joint="leg1_knee" class="leg" />
-    <position name="leg2_yaw" joint="leg2_yaw" class="leg" />
-    <position name="leg2_hip" joint="leg2_hip" class="leg" />
-    <position name="leg2_knee" joint="leg2_knee" class="leg" />
+    <motor name="leg0_yaw" joint="leg0_yaw" class="leg" />
+    <motor name="leg0_hip" joint="leg0_hip" class="leg" />
+    <motor name="leg0_knee" joint="leg0_knee" class="leg" />
+    <motor name="leg1_yaw" joint="leg1_yaw" class="leg" />
+    <motor name="leg1_hip" joint="leg1_hip" class="leg" />
+    <motor name="leg1_knee" joint="leg1_knee" class="leg" />
+    <motor name="leg2_yaw" joint="leg2_yaw" class="leg" />
+    <motor name="leg2_hip" joint="leg2_hip" class="leg" />
+    <motor name="leg2_knee" joint="leg2_knee" class="leg" />
+    <position name="ray_yaw" joint="ray_yaw" kp="5e6" kv="6e5" />
+    <position name="ray_pitch" joint="ray_pitch" kp="5e6" kv="6e5" />
   </actuator>
   <sensor>
     <touch name="foot0_touch" site="foot0" />
@@ -215,6 +298,6 @@
     <framepos name="hood_pos" objtype="body" objname="hood" />
   </sensor>
   <keyframe>
-    <key name="stand" qpos="0 0 30 1 0 0 0 0 0 0 -0.055639 1.50382 0 -0.055639 1.50382 0 -0.055639 1.50382 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" ctrl="0 -0.055639 1.50382 0 -0.055639 1.50382 0 -0.055639 1.50382" />
+    <key name="stand" qpos="0 0 30 1 0 0 0 0 0.3 0 -0.055639 1.50382 0 -0.055639 1.50382 0 -0.055639 1.50382 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0 0 0 0 0.3" />
   </keyframe>
 </mujoco>

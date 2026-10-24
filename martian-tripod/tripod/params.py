@@ -48,9 +48,10 @@ class Tripod:
     leg_azimuths_deg: tuple[float, float, float] = (0.0, 120.0, 240.0)
     knee_up: bool = True              # knees above the hip-foot line, spider-fashion
 
-    # actuator sizing: position servos on every leg joint
+    # leg actuators: torque motors; kp/kv are the joint PD gains for a swinging leg
     kp: float = 6.0e8                 # N m / rad
     kv: float = 6.0e7                 # N m s / rad
+    max_torque: float = 4.0e7         # N m, motor saturation (about 6x the standing load)
 
     @property
     def total_mass(self) -> float:
@@ -60,32 +61,26 @@ class Tripod:
         return self.hood_mass + self.heatray_mass + legs + tents
 
 
-def leg_ik(p: Tripod) -> tuple[float, float]:
-    """Hip-pitch and knee angles that put the foot on the ground at stance.
-
-    Leg frame: x points radially outward, z up, hinge axes along +y, so a
-    positive angle swings the link downward. At zero both links point
-    straight out along +x. Returns (q_hip, q_knee).
-    """
-    L1, L2 = p.leg.thigh, p.leg.shin
-    dx = p.stance_radius - p.hip_radius
-    dz = -(p.stance_height - p.hip_drop - p.leg.foot_radius)
+def planar_ik(L1: float, L2: float, dx: float, dz: float, knee_up: bool = True) -> tuple[float, float]:
+    """Two-link IK in the leg plane. Hinge axes along +y, so positive angles
+    swing the links downward; at zero both links point along +x.
+    Returns (q_hip, q_knee). Raises ValueError if the point is out of reach."""
     d2 = dx * dx + dz * dz
     c = (d2 - L1 * L1 - L2 * L2) / (2 * L1 * L2)
     if not -1.0 <= c <= 1.0:
-        raise ValueError(f"foot out of reach: |hip-foot|={math.sqrt(d2):.2f} m, legs {L1}+{L2} m")
-    beta = math.acos(c)                       # magnitude of the knee bend
-    beta = beta if not p.knee_up else -beta   # sign picks knee above or below the line
-    # elevation angles of thigh (phi1) and shin (phi2) above horizontal
+        raise ValueError(f"foot out of reach: distance {math.sqrt(d2):.2f} m, legs {L1}+{L2} m")
+    beta = math.acos(c)
+    beta = -beta if knee_up else beta         # sign picks knee above or below the hip-foot line
     phi1 = math.atan2(dz, dx) - math.atan2(L2 * math.sin(beta), L1 + L2 * math.cos(beta))
-    phi2 = phi1 + beta
-    q_hip = -phi1
-    q_knee = -(phi2 - phi1)
-    # forward-kinematics check
-    fx = L1 * math.cos(phi1) + L2 * math.cos(phi2)
-    fz = L1 * math.sin(phi1) + L2 * math.sin(phi2)
-    assert abs(fx - dx) < 1e-9 and abs(fz - dz) < 1e-9, "IK failed its own check"
-    return q_hip, q_knee
+    phi2 = phi1 + beta                        # elevation angles of thigh and shin
+    return -phi1, -(phi2 - phi1)
+
+
+def leg_ik(p: Tripod) -> tuple[float, float]:
+    """Hip-pitch and knee angles for the standing pose (feet on the stance circle)."""
+    dx = p.stance_radius - p.hip_radius
+    dz = -(p.stance_height - p.hip_drop - p.leg.foot_radius)
+    return planar_ik(p.leg.thigh, p.leg.shin, dx, dz, p.knee_up)
 
 
 DEFAULT = Tripod()
