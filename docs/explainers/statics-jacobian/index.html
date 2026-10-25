@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-25">
+<meta name="description" content="A worked introduction to the manipulator Jacobian and robot statics: velocity kinematics, singularities, manipulability and force ellipsoids, the virtual-work law τ = Jᵀf, gravity torques, and distributing a body’s weight between three feet, all checked against MuJoCo contact forces.">
+
+<title>Statics and the Jacobian: What the Motors Must Hold – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Statics and the Jacobian: What the Motors Must Hold – math-blog">
+<meta property="og:description" content="A worked introduction to the manipulator Jacobian and robot statics: velocity kinematics, singularities, manipulability and force ellipsoids, the virtual-work law τ = Jᵀf, gravity torques, and distributing a body’s weight between three feet, all checked against MuJoCo contact forces.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/statics-jacobian/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="482">
+<meta property="og:image:width" content="886">
+<meta name="twitter:title" content="Statics and the Jacobian: What the Motors Must Hold – math-blog">
+<meta name="twitter:description" content="A worked introduction to the manipulator Jacobian and robot statics: velocity kinematics, singularities, manipulability and force ellipsoids, the virtual-work law τ = Jᵀf, gravity torques, and distributing a body’s weight between three feet, all checked against MuJoCo contact forces.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/statics-jacobian/thumbnail.png">
+<meta name="twitter:image-height" content="482">
+<meta name="twitter:image-width" content="886">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Statics and the Jacobian: What the Motors Must Hold</h1>
+            <p class="subtitle lead">Velocity kinematics, virtual work, τ = Jᵀf, force ellipsoids and sharing a 257-tonne load between three feet (part 3 of 4)</p>
+                  <div>
+        <div class="description">
+          A worked introduction to the manipulator Jacobian and robot statics: velocity kinematics, singularities, manipulability and force ellipsoids, the virtual-work law τ = Jᵀf, gravity torques, and distributing a body’s weight between three feet, all checked against MuJoCo contact forces.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">robotics</div>
+                <div class="quarto-category">kinematics</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 25, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#velocity-kinematics" id="toc-velocity-kinematics" class="nav-link active" data-scroll-target="#velocity-kinematics">Velocity kinematics</a>
+  <ul class="collapse">
+  <li><a href="#singularities" id="toc-singularities" class="nav-link" data-scroll-target="#singularities">Singularities</a></li>
+  </ul></li>
+  <li><a href="#velocity-and-force-ellipsoids" id="toc-velocity-and-force-ellipsoids" class="nav-link" data-scroll-target="#velocity-and-force-ellipsoids">Velocity and force ellipsoids</a></li>
+  <li><a href="#virtual-work-τ-jᵀf" id="toc-virtual-work-τ-jᵀf" class="nav-link" data-scroll-target="#virtual-work-τ-jᵀf">Virtual work: τ = Jᵀf</a>
+  <ul class="collapse">
+  <li><a href="#adding-the-legs-own-weight" id="toc-adding-the-legs-own-weight" class="nav-link" data-scroll-target="#adding-the-legs-own-weight">Adding the legs’ own weight</a></li>
+  <li><a href="#the-check-torques-from-measured-contact-forces" id="toc-the-check-torques-from-measured-contact-forces" class="nav-link" data-scroll-target="#the-check-torques-from-measured-contact-forces">The check: torques from measured contact forces</a></li>
+  </ul></li>
+  <li><a href="#why-the-spider-stance" id="toc-why-the-spider-stance" class="nav-link" data-scroll-target="#why-the-spider-stance">Why the spider stance</a></li>
+  <li><a href="#sharing-the-weight-between-three-feet" id="toc-sharing-the-weight-between-three-feet" class="nav-link" data-scroll-target="#sharing-the-weight-between-three-feet">Sharing the weight between three feet</a>
+  <ul class="collapse">
+  <li><a href="#unloading-a-foot" id="toc-unloading-a-foot" class="nav-link" data-scroll-target="#unloading-a-foot">Unloading a foot</a></li>
+  <li><a href="#on-two-feet-the-machine-is-a-hinge" id="toc-on-two-feet-the-machine-is-a-hinge" class="nav-link" data-scroll-target="#on-two-feet-the-machine-is-a-hinge">On two feet, the machine is a hinge</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Third of four explainers behind <a href="../../sci-fi/martian-tripod/">The Martian Tripod</a>. <a href="../../explainers/forward-kinematics/">Part 1</a> found where the foot is; <a href="../../explainers/inverse-kinematics/">part 2</a> found the joint angles that put it there. Both were pure geometry. This part brings in force. The machine weighs 257 tonnes and stands on three point feet, so how hard must each motor push?</p>
+<p>One matrix answers that: the <strong>Jacobian</strong>, the derivative of forward kinematics. It maps joint velocities to foot velocity, and its transpose maps foot forces back to joint torques. This post derives it for the tripod’s leg, checks it against MuJoCo, and then uses it to explain the spider-like stance. It ends by sharing the weight between the feet, which sets up <a href="../../explainers/falling-walk/">part 4</a>.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> Path.cwd().resolve().parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"martian-tripod"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mujoco</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.linalg <span class="im">import</span> null_space</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.build <span class="im">import</span> write</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.params <span class="im">import</span> DEFAULT <span class="im">as</span> P, leg_ik</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.kinematics <span class="im">import</span> foot_fk, rotz</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.control <span class="im">import</span> BodyController, skew</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>BRASS, STEEL, RED, BLUE, GREEN, GREY <span class="op">=</span> <span class="st">"#b8860b"</span>, <span class="st">"#4a5a6a"</span>, <span class="st">"#c0392b"</span>, <span class="st">"#2c7fb8"</span>, <span class="st">"#2ca25f"</span>, <span class="st">"#7f8c8d"</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>np.set_printoptions(precision<span class="op">=</span><span class="dv">3</span>, suppress<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> mujoco.MjModel.from_xml_path(<span class="bu">str</span>(write()))</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fresh():</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> mujoco.MjData(model)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_resetDataKeyframe(model, d, model.key(<span class="st">"stand"</span>).<span class="bu">id</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_forward(model, d)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>L1, L2 <span class="op">=</span> P.leg.thigh, P.leg.shin</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>HOOD <span class="op">=</span> model.body(<span class="st">"hood"</span>).<span class="bu">id</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>MASS <span class="op">=</span> <span class="bu">float</span>(model.body_subtreemass[HOOD])</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>W <span class="op">=</span> MASS<span class="op">*</span><span class="fl">9.81</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"machine mass </span><span class="sc">{</span>MASS<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.1f}</span><span class="ss"> t, weight </span><span class="sc">{</span>W<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.2f}</span><span class="ss"> MN, </span><span class="sc">{</span>W<span class="op">/</span><span class="dv">3</span><span class="op">/</span><span class="fl">1e6</span><span class="sc">:.2f}</span><span class="ss"> MN per foot on average"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>machine mass 257.2 t, weight 2.52 MN, 0.84 MN per foot on average</code></pre>
+</div>
+</div>
+<section id="velocity-kinematics" class="level2">
+<h2 class="anchored" data-anchor-id="velocity-kinematics">Velocity kinematics</h2>
+<p>Forward kinematics gives the foot position as a function of the joints, <span class="math inline">\(\mathbf p = f(\mathbf q)\)</span>. Differentiate with respect to time:</p>
+<p><span class="math display">\[
+\dot{\mathbf p} = J(\mathbf q)\,\dot{\mathbf q}, \qquad J_{ij} = \frac{\partial f_i}{\partial q_j}.
+\]</span></p>
+<p><span class="math inline">\(J\)</span> is the <strong>Jacobian</strong>. For the tripod’s leg it is <span class="math inline">\(3\times3\)</span>: three joints in, three components of foot velocity out. Column <span class="math inline">\(j\)</span> is the foot’s velocity when joint <span class="math inline">\(j\)</span> alone turns at 1 rad/s.</p>
+<p>Part 1 gave the foot in the leg’s own plane, horizontal reach <span class="math inline">\(\rho\)</span> and height <span class="math inline">\(z\)</span> relative to the hip, in terms of the elevation angles <span class="math inline">\(\phi_1 = -q_h\)</span> and <span class="math inline">\(\phi_2 = -(q_h + q_k)\)</span>:</p>
+<p><span class="math display">\[
+\rho = L_1\cos\phi_1 + L_2\cos\phi_2, \qquad z = L_1\sin\phi_1 + L_2\sin\phi_2 .
+\]</span></p>
+<p>The yaw <span class="math inline">\(\psi\)</span> turns that plane about the vertical, so with <span class="math inline">\(\theta = a_i + \psi\)</span> (mount azimuth plus yaw) the foot is at <span class="math inline">\(\big(\rho\cos\theta,\ \rho\sin\theta,\ z\big)\)</span> relative to the hip. Differentiating term by term:</p>
+<p><span class="math display">\[
+J = \begin{pmatrix}
+-\rho\sin\theta &amp; \cos\theta\,\partial_h\rho &amp; \cos\theta\,\partial_k\rho \\
+\phantom{-}\rho\cos\theta &amp; \sin\theta\,\partial_h\rho &amp; \sin\theta\,\partial_k\rho \\
+0 &amp; \partial_h z &amp; \partial_k z
+\end{pmatrix},
+\qquad
+\begin{aligned}
+\partial_h\rho &amp;= L_1\sin\phi_1 + L_2\sin\phi_2, &amp; \partial_k\rho &amp;= L_2\sin\phi_2,\\
+\partial_h z &amp;= -(L_1\cos\phi_1 + L_2\cos\phi_2) = -\rho, &amp; \partial_k z &amp;= -L_2\cos\phi_2 .
+\end{aligned}
+\]</span></p>
+<p>The first column is the yaw: it moves the foot round a horizontal circle of radius <span class="math inline">\(\rho\)</span>. The other two act within the leg’s plane. MuJoCo computes Jacobians for any point on any body (<code>mj_jac</code>, <code>mj_jacSite</code>). Here they are side by side for all three legs in the standing pose.</p>
+<div id="jacobian" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> J_leg(q, az):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    psi, qh, qk <span class="op">=</span> q</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    p1, p2 <span class="op">=</span> <span class="op">-</span>qh, <span class="op">-</span>(qh <span class="op">+</span> qk)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    rho <span class="op">=</span> L1<span class="op">*</span>math.cos(p1) <span class="op">+</span> L2<span class="op">*</span>math.cos(p2)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    dr_h, dr_k <span class="op">=</span> L1<span class="op">*</span>math.sin(p1) <span class="op">+</span> L2<span class="op">*</span>math.sin(p2), L2<span class="op">*</span>math.sin(p2)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    dz_h, dz_k <span class="op">=</span> <span class="op">-</span>rho, <span class="op">-</span>L2<span class="op">*</span>math.cos(p2)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    c, s <span class="op">=</span> math.cos(az <span class="op">+</span> psi), math.sin(az <span class="op">+</span> psi)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([[<span class="op">-</span>s<span class="op">*</span>rho, c<span class="op">*</span>dr_h, c<span class="op">*</span>dr_k],</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                     [ c<span class="op">*</span>rho, s<span class="op">*</span>dr_h, s<span class="op">*</span>dr_k],</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                     [ <span class="fl">0.0</span>,   dz_h,   dz_k ]])</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> fresh()</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>jacp <span class="op">=</span> np.zeros((<span class="dv">3</span>, model.nv))</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    dof <span class="op">=</span> model.joint(<span class="ss">f"leg</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">_yaw"</span>).dofadr[<span class="dv">0</span>]<span class="op">;</span> qa <span class="op">=</span> model.joint(<span class="ss">f"leg</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">_yaw"</span>).qposadr[<span class="dv">0</span>]</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_jacSite(model, d, jacp, <span class="va">None</span>, model.site(<span class="ss">f"foot</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>).<span class="bu">id</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    J_mj <span class="op">=</span> jacp[:, dof:dof <span class="op">+</span> <span class="dv">3</span>]</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    J_an <span class="op">=</span> J_leg(d.qpos[qa:qa <span class="op">+</span> <span class="dv">3</span>], math.radians(P.leg_azimuths_deg[i]))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"leg </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: max |analytic - MuJoCo| = </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">abs</span>(J_an <span class="op">-</span> J_mj)<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1e}</span><span class="ss"> m/rad"</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">leg 0, standing (rows x, y, z; columns yaw, hip, knee), m/rad:</span><span class="ch">\n</span><span class="st">"</span>, J_leg(d.qpos[qa <span class="op">-</span> <span class="dv">6</span>:qa <span class="op">-</span> <span class="dv">3</span>], <span class="fl">0.0</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>leg 0: max |analytic - MuJoCo| = 3.6e-15 m/rad
+leg 1: max |analytic - MuJoCo| = 1.2e-04 m/rad
+leg 2: max |analytic - MuJoCo| = 4.9e-06 m/rad
+
+leg 0, standing (rows x, y, z; columns yaw, hip, knee), m/rad:
+ [[ -0.    -26.9   -27.79 ]
+ [ 19.4    -0.     -0.   ]
+ [  0.    -19.4    -3.425]]</code></pre>
+</div>
+</div>
+<p>The analytic Jacobian matches MuJoCo’s. Leg 0 agrees to machine precision; the others differ only by the six-figure rounding of their mount angles noted in part 1. For legs 1 and 2 the same numbers appear, rotated by 120° and 240°.</p>
+<section id="singularities" class="level3">
+<h3 class="anchored" data-anchor-id="singularities">Singularities</h3>
+<p>The Jacobian is invertible except where its determinant vanishes. Expanding along the bottom row and simplifying gives a compact result:</p>
+<p><span class="math display">\[
+\det J = \rho\,L_1L_2\sin q_k .
+\]</span></p>
+<p>There are three ways to lose a degree of freedom.</p>
+<ul>
+<li><strong><span class="math inline">\(\rho = 0\)</span></strong>: the foot is directly below the yaw axis, and turning the yaw does nothing. This is the yaw singularity from part 2.</li>
+<li><strong><span class="math inline">\(q_k = 0\)</span></strong>: the leg is straight. Hip and knee then both move the foot perpendicular to the leg, and nothing can move it along the leg. This is the edge of reach.</li>
+<li><strong><span class="math inline">\(q_k = \pi\)</span></strong>: the leg is folded back on itself. The joint limits rule this out.</li>
+</ul>
+<div id="det" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>qh0, qk0 <span class="op">=</span> leg_ik(P)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>J0 <span class="op">=</span> J_leg((<span class="dv">0</span>, qh0, qk0), <span class="fl">0.0</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>rho0 <span class="op">=</span> P.stance_radius <span class="op">-</span> P.hip_radius</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"det J (numerical) = </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>det(J0)<span class="sc">:.1f}</span><span class="ss">;   rho L1 L2 sin(q_k) = </span><span class="sc">{</span>rho0<span class="op">*</span>L1<span class="op">*</span>L2<span class="op">*</span>math<span class="sc">.</span>sin(qk0)<span class="sc">:.1f}</span><span class="ss">  (m^3)"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>sv <span class="op">=</span> np.linalg.svd(J0, compute_uv<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"singular values </span><span class="sc">{</span>sv<span class="sc">.</span><span class="bu">round</span>(<span class="dv">2</span>)<span class="sc">}</span><span class="ss"> m/rad: condition number </span><span class="sc">{</span>sv[<span class="dv">0</span>]<span class="op">/</span>sv[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>det J (numerical) = 8671.7;   rho L1 L2 sin(q_k) = 8671.7  (m^3)
+singular values [42.09 19.4  10.62] m/rad: condition number 4.0</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="velocity-and-force-ellipsoids" class="level2">
+<h2 class="anchored" data-anchor-id="velocity-and-force-ellipsoids">Velocity and force ellipsoids</h2>
+<p>Push unit-speed joint motions, <span class="math inline">\(\|\dot{\mathbf q}\| = 1\)</span>, through <span class="math inline">\(J\)</span> and the foot velocities fill an ellipsoid. Its axes are the singular vectors of <span class="math inline">\(J\)</span>, and its semi-axis lengths are the singular values. This is the <strong>manipulability ellipsoid</strong>. Where it is long the foot moves fast; where it is thin the leg is close to a singularity in that direction.</p>
+<p>Forces behave in the opposite way. As derived below, a foot force <span class="math inline">\(\mathbf f\)</span> needs joint torques <span class="math inline">\(\boldsymbol\tau = J^\top\mathbf f\)</span>. The foot forces that unit joint torques can produce, <span class="math inline">\(\|\boldsymbol\tau\| = 1\)</span>, form the <strong>force ellipsoid</strong> <span class="math inline">\(\mathbf f^\top(JJ^\top)\mathbf f = 1\)</span>. It has the same axes, with reciprocal lengths. A direction in which the leg moves fast is one in which it pushes weakly, and vice versa: the same trade as a bicycle’s gears.</p>
+<div id="cell-fig-ellipses" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> J2(qh, qk):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    p1, p2 <span class="op">=</span> <span class="op">-</span>qh, <span class="op">-</span>(qh <span class="op">+</span> qk)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([[L1<span class="op">*</span>math.sin(p1) <span class="op">+</span> L2<span class="op">*</span>math.sin(p2), L2<span class="op">*</span>math.sin(p2)],</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                     [<span class="op">-</span>(L1<span class="op">*</span>math.cos(p1) <span class="op">+</span> L2<span class="op">*</span>math.cos(p2)), <span class="op">-</span>L2<span class="op">*</span>math.cos(p2)]])</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ik2(rho, z):</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    c <span class="op">=</span> (rho<span class="op">*</span>rho <span class="op">+</span> z<span class="op">*</span>z <span class="op">-</span> L1<span class="op">*</span>L1 <span class="op">-</span> L2<span class="op">*</span>L2)<span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>L1<span class="op">*</span>L2)<span class="op">;</span> b <span class="op">=</span> <span class="op">-</span>math.acos(c)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    p1 <span class="op">=</span> math.atan2(z, rho) <span class="op">-</span> math.atan2(L2<span class="op">*</span>math.sin(b), L1 <span class="op">+</span> L2<span class="op">*</span>math.cos(b))</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>p1, <span class="op">-</span>b</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="dv">5</span>))</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span><span class="op">*</span>np.pi, <span class="dv">100</span>)<span class="op">;</span> circ <span class="op">=</span> np.vstack([np.cos(t), np.sin(t)])</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>foot0 <span class="op">=</span> np.array([rho0, <span class="op">-</span>(P.stance_height <span class="op">-</span> P.hip_drop <span class="op">-</span> P.leg.foot_radius)])</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pt <span class="kw">in</span> [foot0, (<span class="dv">10</span>, <span class="op">-</span><span class="dv">28</span>), (<span class="dv">30</span>, <span class="op">-</span><span class="dv">20</span>), (<span class="dv">38</span>, <span class="op">-</span><span class="dv">18</span>), (<span class="dv">25</span>, <span class="op">-</span><span class="dv">35</span>), (<span class="dv">8</span>, <span class="op">-</span><span class="dv">38</span>)]:</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    qh, qk <span class="op">=</span> ik2(<span class="op">*</span>pt)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    U, S, _ <span class="op">=</span> np.linalg.svd(J2(qh, qk))</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    vel <span class="op">=</span> U <span class="op">@</span> np.diag(S) <span class="op">@</span> circ<span class="op">;</span> frc <span class="op">=</span> U <span class="op">@</span> np.diag(<span class="dv">1</span><span class="op">/</span>S) <span class="op">@</span> circ</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    ax.plot(pt[<span class="dv">0</span>] <span class="op">+</span> <span class="fl">3.0</span><span class="op">*</span>vel[<span class="dv">0</span>]<span class="op">/</span>S.<span class="bu">max</span>(), pt[<span class="dv">1</span>] <span class="op">+</span> <span class="fl">3.0</span><span class="op">*</span>vel[<span class="dv">1</span>]<span class="op">/</span>S.<span class="bu">max</span>(), color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="fl">1.6</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    ax.plot(pt[<span class="dv">0</span>] <span class="op">+</span> <span class="fl">3.0</span><span class="op">*</span>frc[<span class="dv">0</span>]<span class="op">*</span>S.<span class="bu">min</span>(), pt[<span class="dv">1</span>] <span class="op">+</span> <span class="fl">3.0</span><span class="op">*</span>frc[<span class="dv">1</span>]<span class="op">*</span>S.<span class="bu">min</span>(), color<span class="op">=</span>RED, lw<span class="op">=</span><span class="fl">1.6</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    knee <span class="op">=</span> (L1<span class="op">*</span>math.cos(<span class="op">-</span>qh), L1<span class="op">*</span>math.sin(<span class="op">-</span>qh))</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    lw, al <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">1</span>) <span class="cf">if</span> np.allclose(pt, foot0) <span class="cf">else</span> (<span class="dv">1</span>, <span class="fl">0.35</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    ax.plot([<span class="dv">0</span>, knee[<span class="dv">0</span>], pt[<span class="dv">0</span>]], [<span class="dv">0</span>, knee[<span class="dv">1</span>], pt[<span class="dv">1</span>]], color<span class="op">=</span>STEEL, lw<span class="op">=</span>lw, alpha<span class="op">=</span>al)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>ax.plot([], [], color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="st">"velocity ellipse  J Jᵀ"</span>)<span class="op">;</span> ax.plot([], [], color<span class="op">=</span>RED, label<span class="op">=</span><span class="st">"force ellipse  (J Jᵀ)⁻¹"</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax.set_xlabel(<span class="st">"ρ (m)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"z (m)"</span>)<span class="op">;</span> ax.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"upper right"</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-ellipses" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ellipses-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-ellipses-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ellipses-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Velocity (blue) and force (red) ellipses for the hip–knee part of the leg at several foot positions in the leg plane, hip at the origin. Each is drawn to its own scale; only shape and orientation matter. Near full reach (right) the velocity ellipse collapses along the leg and the force ellipse stretches along it: a straight leg can hold a huge load along its length but cannot move that way at all. The thick leg is the standing pose.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="virtual-work-τ-jᵀf" class="level2">
+<h2 class="anchored" data-anchor-id="virtual-work-τ-jᵀf">Virtual work: τ = Jᵀf</h2>
+<p>Now the key result. Suppose the ground pushes on the foot with force <span class="math inline">\(\mathbf f\)</span>, and the leg is in equilibrium, held there by joint torques <span class="math inline">\(\boldsymbol\tau\)</span>. Imagine a tiny joint displacement <span class="math inline">\(\delta\mathbf q\)</span>. The foot moves <span class="math inline">\(\delta\mathbf p = J\,\delta\mathbf q\)</span>. In equilibrium the total work done in any such virtual displacement is zero. The work the motors do equals the work done against the ground:</p>
+<p><span class="math display">\[
+\boldsymbol\tau^\top\delta\mathbf q = \mathbf f^\top\delta\mathbf p = \mathbf f^\top J\,\delta\mathbf q \quad\text{for every } \delta\mathbf q
+\qquad\Longrightarrow\qquad
+\boldsymbol\tau = J^\top\mathbf f .
+\]</span></p>
+<p>This is the <strong>principle of virtual work</strong>. It needs no free-body diagrams, no reaction forces at the joints and no geometry beyond the Jacobian already computed. Each row of <span class="math inline">\(J^\top\mathbf f\)</span> is a dot product: joint <span class="math inline">\(j\)</span>’s torque is the foot force projected onto the direction joint <span class="math inline">\(j\)</span> moves the foot. For a hinge, <span class="math inline">\(\mathbf J_j = \boldsymbol\omega_j\times(\mathbf p - \mathbf r_j)\)</span>, so</p>
+<p><span class="math display">\[
+\tau_j = \mathbf f\cdot\big(\boldsymbol\omega_j\times(\mathbf p - \mathbf r_j)\big) = \boldsymbol\omega_j\cdot\big((\mathbf p - \mathbf r_j)\times\mathbf f\big),
+\]</span></p>
+<p>which is just the moment of the foot force about joint <span class="math inline">\(j\)</span>’s axis. That is the familiar lever law, recovered from the Jacobian.</p>
+<section id="adding-the-legs-own-weight" class="level3">
+<h3 class="anchored" data-anchor-id="adding-the-legs-own-weight">Adding the legs’ own weight</h3>
+<p>The legs themselves are heavy: each weighs 28 t. Gravity on each part does work too, so each part contributes its own <span class="math inline">\(J^\top\)</span> term, using the Jacobian of its centre of mass:</p>
+<p><span class="math display">\[
+\boldsymbol\tau = \underbrace{\sum_\text{parts} J_{c,j}^\top\,(-m_j\mathbf g)}_{\text{gravity torque } \mathbf g(\mathbf q)} \;-\; J^\top\mathbf f_\text{ground}.
+\]</span></p>
+<p>The sign follows the equations of motion, <span class="math inline">\(M\ddot{\mathbf q} + \mathbf c(\mathbf q, \dot{\mathbf q}) = \boldsymbol\tau + J^\top\mathbf f\)</span>. With everything at rest, the motor torque must cancel the gravity term <span class="math inline">\(\mathbf g(\mathbf q)\)</span> and the ground force. MuJoCo calls the term <span class="math inline">\(\mathbf c\)</span> (gravity plus Coriolis and centrifugal terms, which vanish at rest) <code>qfrc_bias</code>. The tripod’s balance controller computes exactly this: <code>bias - J.T @ force</code> for every planted leg.</p>
+</section>
+<section id="the-check-torques-from-measured-contact-forces" class="level3">
+<h3 class="anchored" data-anchor-id="the-check-torques-from-measured-contact-forces">The check: torques from measured contact forces</h3>
+<p>The strongest test is to let MuJoCo settle the standing machine and then <em>measure</em> the contact forces from its contact solver. Those are numbers the controller never sees directly. Then predict the joint torques from them with <span class="math inline">\(\boldsymbol\tau = \mathbf g(\mathbf q) - J^\top\mathbf f\)</span>, and compare with what the motors are actually commanding.</p>
+<div id="measured" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> fresh()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>ctl <span class="op">=</span> BodyController(P, model)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>goal, _ <span class="op">=</span> ctl.com_state(d)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> d.time <span class="op">&lt;</span> <span class="fl">6.0</span>:</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    ctl(d, [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>], goal, np.zeros(<span class="dv">3</span>), rotz(<span class="fl">0.0</span>))<span class="op">;</span> mujoco.mj_step(model, d)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>mujoco.mj_forward(model, d)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>floor <span class="op">=</span> model.geom(<span class="st">"floor"</span>).<span class="bu">id</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>contact <span class="op">=</span> {}</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(d.ncon):</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    c <span class="op">=</span> d.contact[k]</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> floor <span class="kw">not</span> <span class="kw">in</span> (c.geom1, c.geom2):</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    f6 <span class="op">=</span> np.zeros(<span class="dv">6</span>)<span class="op">;</span> mujoco.mj_contactForce(model, d, k, f6)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    F <span class="op">=</span> c.frame.reshape(<span class="dv">3</span>, <span class="dv">3</span>).T <span class="op">@</span> f6[:<span class="dv">3</span>]                  <span class="co"># contact frame -&gt; world</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> c.geom2 <span class="op">==</span> floor:                                   <span class="co"># make it the force *on the foot*</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        F <span class="op">=</span> <span class="op">-</span>F</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    other <span class="op">=</span> c.geom2 <span class="cf">if</span> c.geom1 <span class="op">==</span> floor <span class="cf">else</span> c.geom1</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    contact[model.geom(other).name] <span class="op">=</span> (F, c.pos.copy())</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"measured ground forces on the feet (MN):"</span>)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    F, pos <span class="op">=</span> contact[<span class="ss">f"foot</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>]</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  foot </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>F<span class="op">/</span><span class="fl">1e6</span><span class="sc">}</span><span class="ss"> at (</span><span class="sc">{</span>pos[<span class="dv">0</span>]<span class="sc">:6.2f}</span><span class="ss">, </span><span class="sc">{</span>pos[<span class="dv">1</span>]<span class="sc">:6.2f}</span><span class="ss">)"</span>)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  total vertical </span><span class="sc">{</span><span class="bu">sum</span>(contact[<span class="ss">f'foot</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">'</span>][<span class="dv">0</span>][<span class="dv">2</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>))<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.4f}</span><span class="ss"> MN; weight </span><span class="sc">{</span>W<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.4f}</span><span class="ss"> MN</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"joint torques (MN m)          predicted g(q) - J^T f        commanded by the controller"</span>)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    dof <span class="op">=</span> model.joint(<span class="ss">f"leg</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">_yaw"</span>).dofadr[<span class="dv">0</span>]</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    F, pos <span class="op">=</span> contact[<span class="ss">f"foot</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>]</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_jac(model, d, jacp, <span class="va">None</span>, pos, model.body(<span class="ss">f"leg</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">_shin"</span>).<span class="bu">id</span>)</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    tau <span class="op">=</span> d.qfrc_bias[dof:dof <span class="op">+</span> <span class="dv">3</span>] <span class="op">-</span> jacp[:, dof:dof <span class="op">+</span> <span class="dv">3</span>].T <span class="op">@</span> F</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  leg </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss"> (yaw, hip, knee):   </span><span class="sc">{</span>tau<span class="op">/</span><span class="fl">1e6</span><span class="sc">}</span><span class="ss">          </span><span class="sc">{</span>d<span class="sc">.</span>ctrl[<span class="dv">3</span><span class="op">*</span>i:<span class="dv">3</span><span class="op">*</span>i <span class="op">+</span> <span class="dv">3</span>]<span class="op">/</span><span class="fl">1e6</span><span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>measured ground forces on the feet (MN):
+  foot 0: [-0.     0.     0.823] at ( 22.00,  -0.00)
+  foot 1: [0.   0.   0.85] at (-11.00,  19.05)
+  foot 2: [ 0.   -0.    0.85] at (-11.00, -19.05)
+  total vertical 2.5232 MN; weight 2.5232 MN
+
+joint torques (MN m)          predicted g(q) - J^T f        commanded by the controller
+  leg 0 (yaw, hip, knee):   [-0.    12.672  2.583]          [-0.    12.672  2.583]
+  leg 1 (yaw, hip, knee):   [ 0.    13.201  2.676]          [ 0.    13.201  2.676]
+  leg 2 (yaw, hip, knee):   [-0.    13.202  2.676]          [-0.    13.202  2.676]</code></pre>
+</div>
+</div>
+<p>Prediction and simulation agree to every printed digit. The feet carry nearly pure vertical loads that add up to the machine’s weight. Foot 0 carries a little less than the others because the centre of mass sits about 0.24 m behind the hood’s centre, pulled back by the carrier basket.</p>
+</section>
+</section>
+<section id="why-the-spider-stance" class="level2">
+<h2 class="anchored" data-anchor-id="why-the-spider-stance">Why the spider stance</h2>
+<p>For a vertical foot load <span class="math inline">\(F_z\)</span> the virtual-work formula gives a striking result. The yaw column has no vertical component, so the yaw torque is zero. The hip and knee torques come from the bottom row of <span class="math inline">\(J\)</span>:</p>
+<p><span class="math display">\[
+\tau_h = -F_z\,\partial_h z = F_z\,\rho, \qquad \tau_k = -F_z\,\partial_k z = F_z\,L_2\cos\phi_2 .
+\]</span></p>
+<p>Here <span class="math inline">\(\rho\)</span> is the foot’s horizontal distance from the hip, and <span class="math inline">\(L_2\cos\phi_2\)</span> is its horizontal distance from the knee. <strong>A joint’s torque from a vertical load depends only on how far the foot is from it horizontally.</strong> The leg’s shape doesn’t matter, nor does its height or the angle of the thigh. The legs’ own weight modifies this. It hangs on the inboard side of the foot and partly offsets the load, which is why the hip’s 16.3 MN·m from the load alone becomes the 13.2 MN·m measured above.</p>
+<p>This is why a heavy walker stands like a harvestman. The hip must sit 19.4 m inboard of the foot, because the feet must be spread wide for stability, so the hip carries a large torque whatever happens. But the knee can be put almost directly <em>above</em> the foot. Then the knee torque is nearly zero, and the shin becomes a column in compression.</p>
+<div id="cell-fig-torque-map" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Fz <span class="op">=</span> W<span class="op">/</span><span class="dv">3</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>R_, Z_ <span class="op">=</span> np.meshgrid(np.linspace(<span class="dv">0</span>, <span class="dv">44</span>, <span class="dv">300</span>), np.linspace(<span class="op">-</span><span class="dv">44</span>, <span class="dv">10</span>, <span class="dv">300</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>TH <span class="op">=</span> np.full(R_.shape, np.nan)<span class="op">;</span> TK <span class="op">=</span> np.full(R_.shape, np.nan)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx <span class="kw">in</span> np.ndindex(R_.shape):</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    rho, z <span class="op">=</span> R_[idx], Z_[idx]</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    c <span class="op">=</span> (rho<span class="op">*</span>rho <span class="op">+</span> z<span class="op">*</span>z <span class="op">-</span> L1<span class="op">*</span>L1 <span class="op">-</span> L2<span class="op">*</span>L2)<span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>L1<span class="op">*</span>L2)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">abs</span>(c) <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    qh, qk <span class="op">=</span> ik2(rho, z)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> (<span class="op">-</span><span class="fl">1.2</span> <span class="op">&lt;=</span> qh <span class="op">&lt;=</span> <span class="fl">1.4</span> <span class="kw">and</span> <span class="op">-</span><span class="fl">0.3</span> <span class="op">&lt;=</span> qk <span class="op">&lt;=</span> <span class="fl">2.6</span>):</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    tau <span class="op">=</span> <span class="op">-</span>J2(qh, qk).T <span class="op">@</span> np.array([<span class="fl">0.0</span>, Fz])</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    TH[idx], TK[idx] <span class="op">=</span> <span class="bu">abs</span>(tau[<span class="dv">0</span>]), <span class="bu">abs</span>(tau[<span class="dv">1</span>])</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="fl">10.5</span>, <span class="fl">4.6</span>), sharey<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, Tm, name <span class="kw">in</span> ((axs[<span class="dv">0</span>], TH, <span class="st">"hip"</span>), (axs[<span class="dv">1</span>], TK, <span class="st">"knee"</span>)):</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    cs <span class="op">=</span> ax.contourf(R_, Z_, Tm<span class="op">/</span><span class="fl">1e6</span>, levels<span class="op">=</span>np.arange(<span class="dv">0</span>, <span class="dv">40</span>, <span class="fl">2.5</span>), cmap<span class="op">=</span><span class="st">"YlOrBr"</span>, extend<span class="op">=</span><span class="st">"max"</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    ax.plot(<span class="op">*</span>foot0, <span class="st">"x"</span>, color<span class="op">=</span><span class="st">"k"</span>, ms<span class="op">=</span><span class="dv">10</span>, mew<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    ax.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax.set_title(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss"> torque (MN·m)"</span>)<span class="op">;</span> ax.set_xlabel(<span class="st">"ρ (m)"</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>].set_ylabel(<span class="st">"z (m)"</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>fig.colorbar(cs, ax<span class="op">=</span>axs, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>qh, qk <span class="op">=</span> ik2(<span class="op">*</span>foot0)</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>tau0 <span class="op">=</span> <span class="op">-</span>J2(qh, qk).T <span class="op">@</span> np.array([<span class="fl">0.0</span>, Fz])</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"standing, load only (no leg weight): hip </span><span class="sc">{</span><span class="bu">abs</span>(tau0[<span class="dv">0</span>])<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.2f}</span><span class="ss"> MN m = Fz x </span><span class="sc">{</span>rho0<span class="sc">:.1f}</span><span class="ss"> m;"</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f" knee </span><span class="sc">{</span><span class="bu">abs</span>(tau0[<span class="dv">1</span>])<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.2f}</span><span class="ss"> MN m = Fz x </span><span class="sc">{</span><span class="bu">abs</span>(tau0[<span class="dv">1</span>])<span class="op">/</span>Fz<span class="sc">:.2f}</span><span class="ss"> m"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-torque-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-torque-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-torque-map-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-torque-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Joint torques needed to carry one third of the machine’s weight, for every foot position in the leg plane (knee-up solutions within joint limits), hip at the origin. Left: hip. Right: knee. The cross is the standing foot. Hip torque depends only on horizontal reach; knee torque is smallest when the shin is vertical.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>standing, load only (no leg weight): hip 16.32 MN m = Fz x 19.4 m; knee 2.88 MN m = Fz x 3.42 m</code></pre>
+</div>
+</div>
+<p>The hip torque map is a set of vertical bands: it depends only on <span class="math inline">\(\rho\)</span>. The knee map has a cool valley along the line where the knee sits above the foot. The standing pose sits near that valley, with the foot only 3.4 m horizontally from the knee. Statically the 40 MN·m motors could hold a third of the machine’s weight with the foot anywhere out to <span class="math inline">\(40/0.84 \approx 47\)</span> m from the hip, which is beyond reach. So standing is never torque-limited. The limit comes when walking. The motors have only about three times the standing hip torque in hand, and the main post found that the swing legs saturate once the gait is pushed much past 5–6 mph.</p>
+</section>
+<section id="sharing-the-weight-between-three-feet" class="level2">
+<h2 class="anchored" data-anchor-id="sharing-the-weight-between-three-feet">Sharing the weight between three feet</h2>
+<p>So far each leg had its own foot force. Where do those come from? The machine as a whole must be in equilibrium. The ground forces <span class="math inline">\(\mathbf f_1, \mathbf f_2, \mathbf f_3\)</span> acting at the feet <span class="math inline">\(\mathbf p_i\)</span> must balance the weight acting at the centre of mass <span class="math inline">\(\mathbf c\)</span>:</p>
+<p><span class="math display">\[
+\sum_i \mathbf f_i = m\mathbf g_\uparrow, \qquad \sum_i (\mathbf p_i - \mathbf c)\times\mathbf f_i = \mathbf 0,
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf g_\uparrow = (0, 0, g)\)</span>. Stack the nine force components into one vector and these six equations become linear:</p>
+<p><span class="math display">\[
+G\,\mathbf f = \mathbf w, \qquad
+G = \begin{pmatrix} I &amp; I &amp; I \\ [\mathbf p_1 - \mathbf c]_\times &amp; [\mathbf p_2 - \mathbf c]_\times &amp; [\mathbf p_3 - \mathbf c]_\times\end{pmatrix}\in\mathbb R^{6\times9},
+\qquad \mathbf w = \begin{pmatrix} m\mathbf g_\uparrow\\ \mathbf 0\end{pmatrix}.
+\]</span></p>
+<p><span class="math inline">\(G\)</span> is the <strong>grasp matrix</strong>, a name borrowed from robot hands, where fingers share the job of holding an object. Here the “object” is the machine itself and the “fingers” are the ground contacts. Nine unknowns and six equations leave a <strong>three-dimensional null space</strong>. Those are the <strong>internal forces</strong>: combinations of foot forces that cancel exactly, adding no net force or moment. For three point feet they are pairs of feet pushing against each other, squeezing or stretching along each edge of the triangle.</p>
+<div id="grasp" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>com <span class="op">=</span> d.subtree_com[HOOD].copy()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>feet <span class="op">=</span> [contact[<span class="ss">f"foot</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>][<span class="dv">1</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)]</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> np.zeros((<span class="dv">6</span>, <span class="dv">9</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(feet):</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    G[:<span class="dv">3</span>, <span class="dv">3</span><span class="op">*</span>i:<span class="dv">3</span><span class="op">*</span>i <span class="op">+</span> <span class="dv">3</span>] <span class="op">=</span> np.eye(<span class="dv">3</span>)<span class="op">;</span> G[<span class="dv">3</span>:, <span class="dv">3</span><span class="op">*</span>i:<span class="dv">3</span><span class="op">*</span>i <span class="op">+</span> <span class="dv">3</span>] <span class="op">=</span> skew(p <span class="op">-</span> com)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>w <span class="op">=</span> np.array([<span class="dv">0</span>, <span class="dv">0</span>, W, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>])</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rank G = </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>matrix_rank(G)<span class="sc">}</span><span class="ss">, null space dimension = </span><span class="sc">{</span><span class="dv">9</span> <span class="op">-</span> np<span class="sc">.</span>linalg<span class="sc">.</span>matrix_rank(G)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>f_min <span class="op">=</span> np.linalg.pinv(G) <span class="op">@</span> w                      <span class="co"># minimum-norm solution</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"minimum-norm foot forces (MN):</span><span class="ch">\n</span><span class="st">"</span>, f_min.reshape(<span class="dv">3</span>, <span class="dv">3</span>)<span class="op">/</span><span class="fl">1e6</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> null_space(G)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="co"># rotate the null-space basis to make it readable: one squeeze per edge</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>edges <span class="op">=</span> []</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, b <span class="kw">in</span> ((<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">1</span>, <span class="dv">2</span>), (<span class="dv">2</span>, <span class="dv">0</span>)):</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    v <span class="op">=</span> np.zeros(<span class="dv">9</span>)<span class="op">;</span> u <span class="op">=</span> (feet[b] <span class="op">-</span> feet[a])<span class="op">/</span>np.linalg.norm(feet[b] <span class="op">-</span> feet[a])</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    v[<span class="dv">3</span><span class="op">*</span>a:<span class="dv">3</span><span class="op">*</span>a <span class="op">+</span> <span class="dv">3</span>] <span class="op">=</span> <span class="op">-</span>u<span class="op">;</span> v[<span class="dv">3</span><span class="op">*</span>b:<span class="dv">3</span><span class="op">*</span>b <span class="op">+</span> <span class="dv">3</span>] <span class="op">=</span> u      <span class="co"># feet a and b pushed apart along their edge</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    edges.append(v)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> np.column_stack(edges)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"G times each edge-squeeze = </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">abs</span>(G <span class="op">@</span> E)<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1e}</span><span class="ss">  (they are internal forces)"</span>)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"edge-squeezes span the null space: rank [N E] = </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>matrix_rank(np.hstack([N, E]))<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="co"># vertical loads are the barycentric coordinates of the centre of mass</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.vstack([np.array(feet)[:, :<span class="dv">2</span>].T, np.ones(<span class="dv">3</span>)])</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.solve(A, [com[<span class="dv">0</span>], com[<span class="dv">1</span>], <span class="fl">1.0</span>])</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"vertical share of weight:  measured"</span>, np.<span class="bu">round</span>([contact[<span class="ss">f'foot</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">'</span>][<span class="dv">0</span>][<span class="dv">2</span>]<span class="op">/</span>W <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)], <span class="dv">4</span>),</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>      <span class="st">"  barycentric coords of COM"</span>, lam.<span class="bu">round</span>(<span class="dv">4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>rank G = 6, null space dimension = 3
+minimum-norm foot forces (MN):
+ [[ 0.    -0.     0.823]
+ [-0.     0.     0.85 ]
+ [-0.     0.     0.85 ]]
+G times each edge-squeeze = 3.8e-15  (they are internal forces)
+edge-squeezes span the null space: rank [N E] = 3
+vertical share of weight:  measured [0.326 0.337 0.337]   barycentric coords of COM [0.326 0.337 0.337]</code></pre>
+</div>
+</div>
+<p>Four results come out of this.</p>
+<ul>
+<li><strong>The minimum-norm solution is the one MuJoCo found.</strong> It is purely vertical, with no internal squeeze. The project’s controller solves the same least-squares problem (<code>BodyController.distribute</code>), with two extra conditions explained below.</li>
+<li><strong>The edge squeezes span the null space.</strong> Any amount of push-apart or pull-together along the three edges can be added without disturbing equilibrium. A real controller uses this freedom to keep the feet away from slipping, by pushing them inward so friction is not needed, or to reduce the hip torques.</li>
+<li><strong>Vertical loads are barycentric coordinates.</strong> For vertical forces, moment balance says the weighted average of the foot positions, weighted by each foot’s share of the load, must equal the centre of mass’s position over the ground. Those weights are exactly the <strong>barycentric coordinates</strong> of the centre of mass in the foot triangle. MuJoCo’s measured shares match them to four figures.</li>
+<li><strong>The ground can push but not pull.</strong> A foot’s vertical force must be positive, <span class="math inline">\(f_{i,z} \ge 0\)</span>. Its sideways force must stay inside the <strong>friction cone</strong>, <span class="math inline">\(\sqrt{f_{i,x}^2 + f_{i,y}^2} \le \mu f_{i,z}\)</span>. These inequalities turn the least-squares problem into a constrained one. The controller handles them with a small active-set loop: any foot that would have to pull is clamped to a light push, and the rest are re-solved.</li>
+</ul>
+<section id="unloading-a-foot" class="level3">
+<h3 class="anchored" data-anchor-id="unloading-a-foot">Unloading a foot</h3>
+<p>The barycentric picture explains how to take a step. Move the centre of mass towards the edge between two feet, and the third foot’s barycentric coordinate, and so its load, falls linearly to zero. Once it is unloaded it can be lifted without the machine noticing. Go any further and it would have to pull: the machine tips.</p>
+<div id="cell-fig-unload" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>F2 <span class="op">=</span> np.array(feet)[:, :<span class="dv">2</span>]</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mid <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(F2[<span class="dv">0</span>] <span class="op">+</span> F2[<span class="dv">2</span>])</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="fl">1.25</span>, <span class="dv">200</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>loads <span class="op">=</span> []</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> si <span class="kw">in</span> s:</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    cxy <span class="op">=</span> (<span class="dv">1</span> <span class="op">-</span> si)<span class="op">*</span>F2.mean(axis<span class="op">=</span><span class="dv">0</span>) <span class="op">+</span> si<span class="op">*</span>mid</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    loads.append(np.linalg.solve(A, [cxy[<span class="dv">0</span>], cxy[<span class="dv">1</span>], <span class="fl">1.0</span>])<span class="op">*</span>W<span class="op">/</span><span class="fl">1e6</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>loads <span class="op">=</span> np.array(loads)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">7.5</span>, <span class="fl">3.6</span>))</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, col <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">3</span>), (STEEL, RED, BRASS)):</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    ax.plot(s, loads[:, i], color<span class="op">=</span>col, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="ss">f"foot </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>ax.axvspan(<span class="dv">1</span>, s[<span class="op">-</span><span class="dv">1</span>], color<span class="op">=</span>GREY, alpha<span class="op">=</span><span class="fl">0.15</span>)<span class="op">;</span> ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"k"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"fraction of the way from the triangle's centre to the 0–2 edge"</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"vertical load (MN)"</span>)<span class="op">;</span> ax.legend(frameon<span class="op">=</span><span class="va">False</span>)<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-unload" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-unload-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-unload-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-unload-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Foot loads as the centre of mass is carried in a straight line from the centre of the support triangle towards the edge between feet 0 and 2 (and beyond it), from the barycentric formula. Foot 1’s load reaches zero exactly at the edge. Beyond that, keeping all three feet down would need foot 1 to pull on the ground (shaded).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="on-two-feet-the-machine-is-a-hinge" class="level3">
+<h3 class="anchored" data-anchor-id="on-two-feet-the-machine-is-a-hinge">On two feet, the machine is a hinge</h3>
+<p>Lift a foot and <span class="math inline">\(G\)</span> shrinks to <span class="math inline">\(6\times6\)</span>, with just two feet. You might expect six equations and six unknowns to have a unique solution. But one combination is impossible: no pair of forces applied <em>at two points</em> can make a moment about the line through those points, since every such force either passes through the line or crosses it. <span class="math inline">\(G\)</span> loses rank.</p>
+<div id="hinge" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># moments about a point on the hinge line (foot 0), so the missing direction comes out cleanly</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>G2 <span class="op">=</span> np.zeros((<span class="dv">6</span>, <span class="dv">6</span>))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k, i <span class="kw">in</span> <span class="bu">enumerate</span>((<span class="dv">0</span>, <span class="dv">2</span>)):</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    G2[:<span class="dv">3</span>, <span class="dv">3</span><span class="op">*</span>k:<span class="dv">3</span><span class="op">*</span>k <span class="op">+</span> <span class="dv">3</span>] <span class="op">=</span> np.eye(<span class="dv">3</span>)<span class="op">;</span> G2[<span class="dv">3</span>:, <span class="dv">3</span><span class="op">*</span>k:<span class="dv">3</span><span class="op">*</span>k <span class="op">+</span> <span class="dv">3</span>] <span class="op">=</span> skew(feet[i] <span class="op">-</span> feet[<span class="dv">0</span>])</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>U, S, Vt <span class="op">=</span> np.linalg.svd(G2)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>axis <span class="op">=</span> (feet[<span class="dv">2</span>] <span class="op">-</span> feet[<span class="dv">0</span>])<span class="op">/</span>np.linalg.norm(feet[<span class="dv">2</span>] <span class="op">-</span> feet[<span class="dv">0</span>])</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rank of the two-foot grasp matrix: </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>matrix_rank(G2)<span class="sc">}</span><span class="ss"> of 6 (smallest singular value </span><span class="sc">{</span>S[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1e}</span><span class="ss">)"</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"unreachable wrench direction (force; moment):"</span>, U[:, <span class="op">-</span><span class="dv">1</span>].<span class="bu">round</span>(<span class="dv">3</span>))</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"direction of the line through feet 0 and 2:          "</span>, axis.<span class="bu">round</span>(<span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>rank of the two-foot grasp matrix: 5 of 6 (smallest singular value 1.6e-21)
+unreachable wrench direction (force; moment): [-0.    -0.     0.     0.866  0.5    0.   ]
+direction of the line through feet 0 and 2:           [-0.866 -0.5   -0.   ]</code></pre>
+</div>
+</div>
+<p>The missing direction has no force part and a moment part along the line through the two feet: a pure moment about that line (the sign of a singular vector is arbitrary). Nothing the legs do can resist a tip about that line. Wherever the centre of mass is relative to it, the machine rotates about it freely, like a door on its hinges. The controller acknowledges this explicitly: on two feet it projects the hinge component out of the moment it asks for (the <code>hinge</code> argument of <code>distribute</code>) instead of fighting it.</p>
+<p>So a walking tripod is never in static equilibrium while a foot is in the air. It is always falling sideways about the hinge, and the next footfall has to catch it. Planning that fall is the subject of the final part.</p>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>The Jacobian <span class="math inline">\(J = \partial f/\partial\mathbf q\)</span> maps joint velocities to foot velocity. For the tripod’s leg, <span class="math inline">\(\det J = \rho\,L_1L_2\sin q_k\)</span>. It is singular with the foot under the hip, with the leg straight, or with the leg folded.</li>
+<li>Virtual work gives <span class="math inline">\(\boldsymbol\tau = J^\top\mathbf f\)</span>. Velocity and force are dual: the leg moves fast in the directions where it pushes weakly.</li>
+<li>With gravity, <span class="math inline">\(\boldsymbol\tau = \mathbf g(\mathbf q) - J^\top\mathbf f\)</span>. This predicts MuJoCo’s standing torques exactly, from contact forces measured in the simulation.</li>
+<li>A vertical load costs torque in proportion to horizontal distance. So the knee sits above the foot, and the hip does the work.</li>
+<li>Balance is a <span class="math inline">\(6\times9\)</span> linear system with a 3-D null space of internal forces. Vertical loads are the barycentric coordinates of the centre of mass. On two feet the system loses a rank: the hinge.</li>
+</ul>
+<p><strong>Next:</strong> <a href="../../explainers/falling-walk/">Planning the falling walk</a>.</p>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li>K. M. Lynch and F. C. Park, <em>Modern Robotics</em> (2017), chapter 5 (velocity kinematics and statics) and chapter 12 (grasping and the grasp matrix).</li>
+<li>R. M. Murray, Z. Li and S. S. Sastry, <em>A Mathematical Introduction to Robotic Manipulation</em> (CRC, 1994), chapter 5, for internal forces and friction cones.</li>
+<li>T. Yoshikawa, “Manipulability of robotic mechanisms”, <em>International Journal of Robotics Research</em> 4(2), 1985. The origin of the manipulability ellipsoid.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

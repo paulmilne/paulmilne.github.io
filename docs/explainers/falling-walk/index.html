@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-25">
+<meta name="description" content="How to plan a gait for a machine that is always falling: the linear inverted pendulum, the zero-moment point and support polygon, the divergent component of motion and capture point, a ZMP quadratic programme solved with OSQP, and receding-horizon MPC recovering from pushes.">
+
+<title>Planning the Falling Walk – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Planning the Falling Walk – math-blog">
+<meta property="og:description" content="How to plan a gait for a machine that is always falling: the linear inverted pendulum, the zero-moment point and support polygon, the divergent component of motion and capture point, a ZMP quadratic programme solved with OSQP, and receding-horizon MPC recovering from pushes.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/falling-walk/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="605">
+<meta property="og:image:width" content="979">
+<meta name="twitter:title" content="Planning the Falling Walk – math-blog">
+<meta name="twitter:description" content="How to plan a gait for a machine that is always falling: the linear inverted pendulum, the zero-moment point and support polygon, the divergent component of motion and capture point, a ZMP quadratic programme solved with OSQP, and receding-horizon MPC recovering from pushes.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/falling-walk/thumbnail.png">
+<meta name="twitter:image-height" content="605">
+<meta name="twitter:image-width" content="979">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Planning the Falling Walk</h1>
+            <p class="subtitle lead">Inverted pendulums, the zero-moment point, the capture point and model-predictive control, on a Martian tripod (part 4 of 4)</p>
+                  <div>
+        <div class="description">
+          How to plan a gait for a machine that is always falling: the linear inverted pendulum, the zero-moment point and support polygon, the divergent component of motion and capture point, a ZMP quadratic programme solved with OSQP, and receding-horizon MPC recovering from pushes.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">robotics</div>
+                <div class="quarto-category">control</div>
+                <div class="quarto-category">optimisation</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 25, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#from-a-falling-pole-to-a-linear-model" id="toc-from-a-falling-pole-to-a-linear-model" class="nav-link active" data-scroll-target="#from-a-falling-pole-to-a-linear-model">From a falling pole to a linear model</a></li>
+  <li><a href="#what-the-pendulum-does" id="toc-what-the-pendulum-does" class="nav-link" data-scroll-target="#what-the-pendulum-does">What the pendulum does</a>
+  <ul class="collapse">
+  <li><a href="#the-divergent-component-and-the-capture-point" id="toc-the-divergent-component-and-the-capture-point" class="nav-link" data-scroll-target="#the-divergent-component-and-the-capture-point">The divergent component and the capture point</a></li>
+  </ul></li>
+  <li><a href="#the-hinge-in-pendulum-terms" id="toc-the-hinge-in-pendulum-terms" class="nav-link" data-scroll-target="#the-hinge-in-pendulum-terms">The hinge, in pendulum terms</a></li>
+  <li><a href="#discretising-exactly" id="toc-discretising-exactly" class="nav-link" data-scroll-target="#discretising-exactly">Discretising exactly</a></li>
+  <li><a href="#the-zmp-planner-as-a-quadratic-programme" id="toc-the-zmp-planner-as-a-quadratic-programme" class="nav-link" data-scroll-target="#the-zmp-planner-as-a-quadratic-programme">The ZMP planner as a quadratic programme</a>
+  <ul class="collapse">
+  <li><a href="#a-one-dimensional-warm-up" id="toc-a-one-dimensional-warm-up" class="nav-link" data-scroll-target="#a-one-dimensional-warm-up">A one-dimensional warm-up</a></li>
+  <li><a href="#the-real-thing-the-tripod-in-the-plane" id="toc-the-real-thing-the-tripod-in-the-plane" class="nav-link" data-scroll-target="#the-real-thing-the-tripod-in-the-plane">The real thing: the tripod in the plane</a></li>
+  </ul></li>
+  <li><a href="#how-far-ahead-must-it-look" id="toc-how-far-ahead-must-it-look" class="nav-link" data-scroll-target="#how-far-ahead-must-it-look">How far ahead must it look?</a></li>
+  <li><a href="#model-predictive-control-replanning-from-what-actually-happened" id="toc-model-predictive-control-replanning-from-what-actually-happened" class="nav-link" data-scroll-target="#model-predictive-control-replanning-from-what-actually-happened">Model-predictive control: replanning from what actually happened</a></li>
+  <li><a href="#from-plan-to-torques" id="toc-from-plan-to-torques" class="nav-link" data-scroll-target="#from-plan-to-torques">From plan to torques</a></li>
+  <li><a href="#what-this-planner-leaves-out" id="toc-what-this-planner-leaves-out" class="nav-link" data-scroll-target="#what-this-planner-leaves-out">What this planner leaves out</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Last of four explainers behind <a href="../../sci-fi/martian-tripod/">The Martian Tripod</a>. Parts <a href="../../explainers/forward-kinematics/">1</a> and <a href="../../explainers/inverse-kinematics/">2</a> covered geometry: where the feet are and how to put them there. <a href="../../explainers/statics-jacobian/">Part 3</a> covered force, and ended on an awkward discovery. With a foot in the air, the tripod’s grasp matrix loses a rank: nothing the legs do can resist a tip about the line through the two planted feet. A walking tripod is never in static equilibrium. It is always falling, and each footfall catches it.</p>
+<p>There are two ways to walk like that. The <strong>static</strong> way, the project’s first gait, carries the centre of mass to the edge of the next two-foot support, stops, lifts the foot, lets the body topple onto the new foot, and settles. It works at about 1.1 mph. The <strong>dynamic</strong> way, which reaches 5.6 mph, plans the fall in advance and keeps the body moving throughout. This post builds that planner from the ground up.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> Path.cwd().resolve().parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"martian-tripod"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.sparse <span class="im">as</span> sp</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> osqp</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.integrate <span class="im">import</span> solve_ivp</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.params <span class="im">import</span> DEFAULT <span class="im">as</span> P</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.planner <span class="im">import</span> Schedule, COMPlanner</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tripod.kinematics <span class="im">import</span> slot</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>BRASS, STEEL, RED, BLUE, GREEN, GREY <span class="op">=</span> <span class="st">"#b8860b"</span>, <span class="st">"#4a5a6a"</span>, <span class="st">"#c0392b"</span>, <span class="st">"#2c7fb8"</span>, <span class="st">"#2ca25f"</span>, <span class="st">"#7f8c8d"</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> <span class="fl">9.81</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> <span class="fl">27.2</span>                       <span class="co"># centre-of-mass height of the standing machine (m)</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>w <span class="op">=</span> math.sqrt(g<span class="op">/</span>h)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"COM height h = </span><span class="sc">{</span>h<span class="sc">}</span><span class="ss"> m:  omega = sqrt(g/h) = </span><span class="sc">{</span>w<span class="sc">:.3f}</span><span class="ss"> 1/s,  time constant 1/omega = </span><span class="sc">{</span><span class="dv">1</span><span class="op">/</span>w<span class="sc">:.2f}</span><span class="ss"> s"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>COM height h = 27.2 m:  omega = sqrt(g/h) = 0.601 1/s,  time constant 1/omega = 1.67 s</code></pre>
+</div>
+</div>
+<section id="from-a-falling-pole-to-a-linear-model" class="level2">
+<h2 class="anchored" data-anchor-id="from-a-falling-pole-to-a-linear-model">From a falling pole to a linear model</h2>
+<p>Picture the machine’s whole mass <span class="math inline">\(m\)</span> at its centre of mass <span class="math inline">\(\mathbf c\)</span>, held at height <span class="math inline">\(h\)</span> above the ground by massless legs. The ground pushes on the feet, and the net ground force <span class="math inline">\(\mathbf F\)</span> acts through some point <span class="math inline">\(\mathbf z\)</span> on the ground. Two conditions fix everything.</p>
+<ul>
+<li><strong>Vertical:</strong> if the height is held constant, the vertical force just carries the weight: <span class="math inline">\(F_z = mg\)</span>.</li>
+<li><strong>Rotational:</strong> a point mass has no angular momentum about itself, so the net force on it must point through it. The force’s line of action runs from <span class="math inline">\(\mathbf z\)</span> on the ground to <span class="math inline">\(\mathbf c\)</span> in the air, so its horizontal and vertical components are in the ratio of the horizontal and vertical offsets: <span class="math display">\[\frac{F_x}{F_z} = \frac{c_x - z_x}{h}.\]</span></li>
+</ul>
+<p>Newton’s second law horizontally, <span class="math inline">\(m\ddot c_x = F_x\)</span>, then gives the <strong>linear inverted pendulum model</strong> (LIPM; Kajita and colleagues, 2001):</p>
+<p><span class="math display">\[
+\boxed{\;\ddot{\mathbf c} = \omega^2(\mathbf c - \mathbf z), \qquad \omega = \sqrt{g/h}\;}
+\]</span></p>
+<p>with the same equation in <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>, independently. It is linear, which is the whole point: an inverted pendulum with a fixed-length leg is nonlinear, but holding the height constant makes the dynamics exactly linear.</p>
+<p>The point <span class="math inline">\(\mathbf z\)</span> is the <strong>zero-moment point</strong> (ZMP, Vukobratović, 1972). It is the point on the ground about which the ground forces have no horizontal moment. When every foot is on flat ground, it is simply the <strong>centre of pressure</strong>, the load-weighted average of the foot positions:</p>
+<p><span class="math display">\[
+\mathbf z = \frac{\sum_i f_{i,z}\,\mathbf p_i}{\sum_i f_{i,z}} .
+\]</span></p>
+<p>Since every <span class="math inline">\(f_{i,z} \ge 0\)</span> (the ground can only push), <span class="math inline">\(\mathbf z\)</span> is a convex combination of the feet. It must lie inside the <strong>support polygon</strong>, their convex hull. This is the barycentric-coordinate result from <a href="../../explainers/statics-jacobian/">part 3</a> read backwards. There, the centre of mass’s position fixed the foot loads. Here, choosing the foot loads places the ZMP anywhere in the polygon, and the ZMP steers the centre of mass.</p>
+<p>That is the planner’s whole control authority. <strong>The legs choose where the ZMP is, within the support polygon, and the centre of mass falls away from it.</strong></p>
+</section>
+<section id="what-the-pendulum-does" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-pendulum-does">What the pendulum does</h2>
+<p>With <span class="math inline">\(\mathbf z\)</span> held still, write <span class="math inline">\(x = c - z\)</span> for one axis. The solution of <span class="math inline">\(\ddot x = \omega^2 x\)</span> is</p>
+<p><span class="math display">\[
+x(t) = x_0\cosh\omega t + \frac{\dot x_0}{\omega}\sinh\omega t .
+\]</span></p>
+<p>The quantity</p>
+<p><span class="math display">\[
+E = \tfrac12\dot x^2 - \tfrac12\omega^2x^2
+\]</span></p>
+<p>is conserved, so trajectories in the <span class="math inline">\((x, \dot x)\)</span> plane are hyperbolas. This is the LIPM’s <strong>orbital energy</strong> (Kajita &amp; Tani, 1991). If <span class="math inline">\(E &gt; 0\)</span>, the centre of mass has enough speed to pass over the ZMP and carry on. If <span class="math inline">\(E &lt; 0\)</span>, it falls back the way it came. The boundary lines <span class="math inline">\(\dot x = \pm\omega x\)</span> are the eigenvectors of the dynamics. Along <span class="math inline">\(\dot x = -\omega x\)</span> the body glides in and stops exactly above the ZMP. Along <span class="math inline">\(\dot x = +\omega x\)</span> it falls away exponentially.</p>
+<div id="cell-fig-phase" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">12</span>, <span class="dv">12</span>, <span class="dv">41</span>)<span class="op">;</span> vs <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">7</span>, <span class="dv">7</span>, <span class="dv">41</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>X, V <span class="op">=</span> np.meshgrid(xs, vs)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">7.5</span>, <span class="dv">5</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>ax.streamplot(X, V, V, w<span class="op">*</span>w<span class="op">*</span>X, color<span class="op">=</span>GREY, density<span class="op">=</span><span class="fl">1.1</span>, linewidth<span class="op">=</span><span class="fl">0.7</span>, arrowsize<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ax.plot(xs, w<span class="op">*</span>xs, color<span class="op">=</span>RED, lw<span class="op">=</span><span class="fl">2.2</span>, label<span class="op">=</span><span class="st">"unstable: ẋ = +ωx"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>ax.plot(xs, <span class="op">-</span>w<span class="op">*</span>xs, color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="fl">2.2</span>, label<span class="op">=</span><span class="st">"stable: ẋ = −ωx"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>v_walk <span class="op">=</span> <span class="fl">2.5</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>ax.axhline(v_walk, color<span class="op">=</span>BRASS, ls<span class="op">=</span><span class="st">"--"</span>, lw<span class="op">=</span><span class="fl">1.2</span>)<span class="op">;</span> ax.text(<span class="op">-</span><span class="fl">11.6</span>, v_walk <span class="op">+</span> <span class="fl">0.25</span>, <span class="st">"walking speed 2.5 m/s"</span>, color<span class="op">=</span>BRASS)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="op">-</span>v_walk<span class="op">/</span>w, v_walk, <span class="st">"o"</span>, color<span class="op">=</span>BLUE, ms<span class="op">=</span><span class="dv">7</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="op">-</span><span class="dv">12</span>, <span class="dv">12</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="dv">7</span>, <span class="dv">7</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x = c − z  (m)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"ẋ  (m/s)"</span>)<span class="op">;</span> ax.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"lower right"</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"to coast to a stop over the ZMP from </span><span class="sc">{</span>v_walk<span class="sc">}</span><span class="ss"> m/s, start </span><span class="sc">{</span>v_walk<span class="op">/</span>w<span class="sc">:.2f}</span><span class="ss"> m short of it"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-phase" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-phase-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-phase-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-phase-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Phase portrait of the linear inverted pendulum with the ZMP fixed at x = 0. Hyperbolas are lines of constant orbital energy. Red: the unstable direction, where the body falls away. Blue: the stable direction, where it comes to rest exactly over the ZMP. The tripod’s walking speed is marked: to stop dead over a point, the body has to start 4 m short of it.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>to coast to a stop over the ZMP from 2.5 m/s, start 4.16 m short of it</code></pre>
+</div>
+</div>
+<section id="the-divergent-component-and-the-capture-point" class="level3">
+<h3 class="anchored" data-anchor-id="the-divergent-component-and-the-capture-point">The divergent component and the capture point</h3>
+<p>Change variables to split the stable and unstable parts. Define the <strong>divergent component of motion</strong> (DCM)</p>
+<p><span class="math display">\[
+\boldsymbol\xi = \mathbf c + \frac{\dot{\mathbf c}}{\omega}.
+\]</span></p>
+<p>Differentiating and substituting the LIPM gives two first-order equations:</p>
+<p><span class="math display">\[
+\dot{\boldsymbol\xi} = \omega(\boldsymbol\xi - \mathbf z), \qquad \dot{\mathbf c} = \omega(\boldsymbol\xi - \mathbf c).
+\]</span></p>
+<p>The second equation is stable: the centre of mass simply chases <span class="math inline">\(\boldsymbol\xi\)</span> with time constant <span class="math inline">\(1/\omega\)</span>. All the instability is in the first. <span class="math inline">\(\boldsymbol\xi\)</span> runs away from the ZMP exponentially. The control problem has halved in size: <strong>keep <span class="math inline">\(\boldsymbol\xi\)</span> under control, and the centre of mass looks after itself.</strong></p>
+<p>There is a striking special case. Put the ZMP exactly at <span class="math inline">\(\boldsymbol\xi\)</span> and hold it there. Then <span class="math inline">\(\dot{\boldsymbol\xi} = 0\)</span>, and the centre of mass coasts to a halt directly above the ZMP. So <span class="math inline">\(\boldsymbol\xi\)</span> is the point on the ground where you must step, or put the centre of pressure, to stop. That is why it is also called the <strong>capture point</strong> (Pratt and colleagues, 2006). If the capture point leaves the region where any future support polygon could reach it, the fall can no longer be stopped.</p>
+<p>There is another way to read the equation for <span class="math inline">\(\boldsymbol\xi\)</span>. Solving it forward from time <span class="math inline">\(t\)</span> and asking that <span class="math inline">\(\boldsymbol\xi\)</span> stays bounded (the robot does not fall over) forces</p>
+<p><span class="math display">\[
+\boldsymbol\xi(t) = \omega\int_t^\infty e^{-\omega(s - t)}\,\mathbf z(s)\,ds .
+\]</span></p>
+<p><strong>The DCM now is a discounted average of all future ZMPs</strong>, with a discount time of <span class="math inline">\(1/\omega = 1.67\)</span> s. A walk that doesn’t fall must therefore be planned with the future in view: where the ZMP <em>will</em> be over the next few seconds determines what the body must do <em>now</em>. That one equation is why the tripod needs a <em>predictive</em> planner, and how far ahead it must look.</p>
+</section>
+</section>
+<section id="the-hinge-in-pendulum-terms" class="level2">
+<h2 class="anchored" data-anchor-id="the-hinge-in-pendulum-terms">The hinge, in pendulum terms</h2>
+<p>On three feet the ZMP can go anywhere in the triangle. On two feet the support polygon collapses to the line segment between them. Resolve the motion along and across that line. Along it, the ZMP can still slide, so that component is controlled. Across it, the ZMP is pinned at zero offset, and the equation becomes</p>
+<p><span class="math display">\[
+\ddot y = \omega^2 y ,
+\]</span></p>
+<p>a pure, uncontrolled fall: <a href="../../explainers/statics-jacobian/">part 3</a>’s hinge again. The tripod spends 60% of its walking time on two feet, so 60% of the time it is free-falling sideways. The fall is slow, because <span class="math inline">\(1/\omega = 1.67\)</span> s for a 27 m pendulum, but it cannot be stopped from two feet. The planner’s job on three feet is to set up the state so that the coming fall lands the body where the next footfall will catch it.</p>
+<div id="hinge-fall" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> y0, v0 <span class="kw">in</span> ((<span class="fl">1.0</span>, <span class="fl">0.0</span>), (<span class="fl">1.0</span>, <span class="fl">0.5</span>), (<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>)):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    y12 <span class="op">=</span> y0<span class="op">*</span>math.cosh(w<span class="op">*</span><span class="fl">1.2</span>) <span class="op">+</span> v0<span class="op">/</span>w<span class="op">*</span>math.sinh(w<span class="op">*</span><span class="fl">1.2</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    xi <span class="op">=</span> y0 <span class="op">+</span> v0<span class="op">/</span>w</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"start </span><span class="sc">{</span>y0<span class="sc">:+.1f}</span><span class="ss"> m from the hinge moving </span><span class="sc">{</span>v0<span class="sc">:+.1f}</span><span class="ss"> m/s: after a 1.2 s swing </span><span class="sc">{</span>y12<span class="sc">:+.2f}</span><span class="ss"> m  (DCM </span><span class="sc">{</span>xi<span class="sc">:+.2f}</span><span class="ss"> m)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>start +1.0 m from the hinge moving +0.0 m/s: after a 1.2 s swing +1.27 m  (DCM +1.00 m)
+start +1.0 m from the hinge moving +0.5 m/s: after a 1.2 s swing +1.92 m  (DCM +1.83 m)
+start -1.0 m from the hinge moving +1.0 m/s: after a 1.2 s swing +0.04 m  (DCM +0.67 m)</code></pre>
+</div>
+</div>
+<p>The last line shows the DCM’s predictive power. The body starts 1 m on one side of the hinge but moving towards it fast enough that its DCM is on the <em>other</em> side, so it crosses over. Where it ends up is decided by the side of the line the DCM is on, not the side the body is on.</p>
+</section>
+<section id="discretising-exactly" class="level2">
+<h2 class="anchored" data-anchor-id="discretising-exactly">Discretising exactly</h2>
+<p>The planner works on a time grid of <span class="math inline">\(\Delta t = 0.1\)</span> s, with the ZMP held constant during each interval. Because the LIPM is linear with constant coefficients, the state after one interval is exact, not an approximation like Euler’s method:</p>
+<p><span class="math display">\[
+\begin{pmatrix}c\\ \dot c\end{pmatrix}_{k+1} =
+\underbrace{\begin{pmatrix}\cosh\omega\Delta t &amp; \omega^{-1}\sinh\omega\Delta t\\ \omega\sinh\omega\Delta t &amp; \cosh\omega\Delta t\end{pmatrix}}_{A}
+\begin{pmatrix}c\\ \dot c\end{pmatrix}_k +
+\underbrace{\begin{pmatrix}1 - \cosh\omega\Delta t\\ -\omega\sinh\omega\Delta t\end{pmatrix}}_{B} z_k .
+\]</span></p>
+<div id="discrete" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>Ch, Sh <span class="op">=</span> math.cosh(w<span class="op">*</span>dt), math.sinh(w<span class="op">*</span>dt)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.array([[Ch, Sh<span class="op">/</span>w], [w<span class="op">*</span>Sh, Ch]])<span class="op">;</span> B <span class="op">=</span> np.array([<span class="dv">1</span> <span class="op">-</span> Ch, <span class="op">-</span>w<span class="op">*</span>Sh])</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>zs <span class="op">=</span> rng.uniform(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">40</span>)<span class="op">;</span> x <span class="op">=</span> np.array([<span class="fl">0.0</span>, <span class="fl">1.0</span>])<span class="op">;</span> traj <span class="op">=</span> [x]</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> z <span class="kw">in</span> zs:</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> A <span class="op">@</span> x <span class="op">+</span> B<span class="op">*</span>z<span class="op">;</span> traj.append(x)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>sol_c, sol_v <span class="op">=</span> <span class="fl">0.0</span>, <span class="fl">1.0</span>                                 <span class="co"># integrate the ODE numerically, piece by piece</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> z <span class="kw">in</span> zs:</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> solve_ivp(<span class="kw">lambda</span> t, y: [y[<span class="dv">1</span>], w<span class="op">*</span>w<span class="op">*</span>(y[<span class="dv">0</span>] <span class="op">-</span> z)], (<span class="dv">0</span>, dt), [sol_c, sol_v], rtol<span class="op">=</span><span class="fl">1e-12</span>, atol<span class="op">=</span><span class="fl">1e-12</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    sol_c, sol_v <span class="op">=</span> s.y[:, <span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"after 4 s of random ZMP moves: exact map </span><span class="sc">{</span>traj[<span class="op">-</span><span class="dv">1</span>]<span class="sc">.</span><span class="bu">round</span>(<span class="dv">9</span>)<span class="sc">}</span><span class="ss">, ODE solver </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>([sol_c, sol_v], <span class="dv">9</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"eigenvalues of A: </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>eigvals(A)<span class="sc">.</span><span class="bu">round</span>(<span class="dv">4</span>)<span class="sc">}</span><span class="ss">  = exp(+-omega dt) = </span><span class="sc">{</span>math<span class="sc">.</span>exp(w<span class="op">*</span>dt)<span class="sc">:.4f}</span><span class="ss">, </span><span class="sc">{</span>math<span class="sc">.</span>exp(<span class="op">-</span>w<span class="op">*</span>dt)<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>after 4 s of random ZMP moves: exact map [10.72000848  6.53920555], ODE solver [10.72000848  6.53920555]
+eigenvalues of A: [1.0619 0.9417]  = exp(+-omega dt) = 1.0619, 0.9417</code></pre>
+</div>
+</div>
+<p>The eigenvalues <span class="math inline">\(e^{\pm\omega\Delta t}\)</span> are the discrete version of the stable/unstable split. One mode shrinks by 6% per step, the other grows by 6%.</p>
+</section>
+<section id="the-zmp-planner-as-a-quadratic-programme" class="level2">
+<h2 class="anchored" data-anchor-id="the-zmp-planner-as-a-quadratic-programme">The ZMP planner as a quadratic programme</h2>
+<p>Now set up the planning problem. Stack everything over a horizon of <span class="math inline">\(N\)</span> steps into one vector of decision variables: the states <span class="math inline">\(\mathbf x_0, \dots, \mathbf x_N\)</span> (position and velocity, in <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>) and the ZMPs <span class="math inline">\(\mathbf z_0, \dots, \mathbf z_{N-1}\)</span>. Then</p>
+<p><span class="math display">\[
+\begin{aligned}
+\min_{\mathbf x, \mathbf z}\quad &amp; \sum_{k=1}^{N}\Big( w_v\|\dot{\mathbf c}_k - \mathbf v_\text{ref}\|^2 + w_p\|\mathbf c_k - \mathbf c^\text{nom}_k\|^2 \Big)
++ \sum_{k=0}^{N-1}\Big( w_{\Delta z}\|\mathbf z_k - \mathbf z_{k-1}\|^2 + w_z\|\mathbf z_k - \bar{\mathbf p}_k\|^2\Big)\\
+\text{subject to}\quad &amp; \mathbf x_0 = \text{measured state},\\
+&amp; \mathbf x_{k+1} = A\,\mathbf x_k + B\,\mathbf z_k \quad\text{(exact pendulum dynamics)},\\
+&amp; \mathbf z_k \in \text{support polygon at step } k \quad\text{(linear inequalities)}.
+\end{aligned}
+\]</span></p>
+<p>The cost asks for four things:</p>
+<ul>
+<li>keep the walking speed;</li>
+<li>keep up with the footstep timeline;</li>
+<li>move the ZMP smoothly;</li>
+<li>keep the ZMP near the middle of the support (around the centroid <span class="math inline">\(\bar{\mathbf p}_k\)</span> of the planted feet).</li>
+</ul>
+<p>The constraints are all linear. A triangle is three half-planes, <span class="math inline">\(\mathbf n_e^\top\mathbf z \le \mathbf n_e^\top\mathbf a_e - \text{margin}\)</span> for each edge <span class="math inline">\(e\)</span> with outward normal <span class="math inline">\(\mathbf n_e\)</span>. A two-foot line is an equality across it plus two bounds along it. A quadratic cost with linear constraints is a <strong>quadratic programme</strong> (QP). It is convex, so there is one global optimum and fast, reliable solvers find it. The tripod uses <strong>OSQP</strong>, an operator-splitting solver designed for exactly this kind of sparse, repeated problem.</p>
+<section id="a-one-dimensional-warm-up" class="level3">
+<h3 class="anchored" data-anchor-id="a-one-dimensional-warm-up">A one-dimensional warm-up</h3>
+<p>Before the full planar version, here is the same QP stripped to one dimension, written out from scratch: a walker on a line. The footsteps advance 7.33 m every 2 s. For 0.8 s of each step the ZMP may be anywhere between the rear and front feet; for the next 1.2 s it is confined to a 1 m patch around the front foot, the 1-D stand-in for the hinge.</p>
+<div id="cell-fig-toy" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>L, T_ds, T_ss, T_start <span class="op">=</span> <span class="fl">22.0</span><span class="op">/</span><span class="dv">3</span>, <span class="fl">0.8</span>, <span class="fl">1.2</span>, <span class="fl">2.0</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">240</span><span class="op">;</span> tk <span class="op">=</span> np.arange(N)<span class="op">*</span>dt <span class="op">+</span> dt<span class="op">/</span><span class="dv">2</span>               <span class="co"># plan 24 s, show the first 20</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bounds(t):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> t <span class="op">&lt;</span> T_start:                                <span class="co"># standing start: feet at -L and +L</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="op">-</span>L, L)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    k, tau <span class="op">=</span> <span class="bu">divmod</span>(t <span class="op">-</span> T_start, T_ds <span class="op">+</span> T_ss)<span class="op">;</span> k <span class="op">=</span> <span class="bu">int</span>(k)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    rear, front <span class="op">=</span> k<span class="op">*</span>L, (k <span class="op">+</span> <span class="dv">1</span>)<span class="op">*</span>L</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (rear, front) <span class="cf">if</span> tau <span class="op">&lt;</span> T_ds <span class="cf">else</span> (front <span class="op">-</span> <span class="fl">0.5</span>, front <span class="op">+</span> <span class="fl">0.5</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>lo_hi <span class="op">=</span> np.array([bounds(t) <span class="cf">for</span> t <span class="kw">in</span> tk])</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>v_ref <span class="op">=</span> L<span class="op">/</span>(T_ds <span class="op">+</span> T_ss)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>nx, nz <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>(N <span class="op">+</span> <span class="dv">1</span>), N                              <span class="co"># variables: (c, v) at each knot, then z</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>iC <span class="op">=</span> <span class="kw">lambda</span> k: <span class="dv">2</span><span class="op">*</span>k<span class="op">;</span> iV <span class="op">=</span> <span class="kw">lambda</span> k: <span class="dv">2</span><span class="op">*</span>k <span class="op">+</span> <span class="dv">1</span><span class="op">;</span> iZ <span class="op">=</span> <span class="kw">lambda</span> k: nx <span class="op">+</span> k</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>Pm <span class="op">=</span> sp.lil_matrix((nx <span class="op">+</span> nz, nx <span class="op">+</span> nz))<span class="op">;</span> q <span class="op">=</span> np.zeros(nx <span class="op">+</span> nz)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):                          <span class="co"># speed tracking</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    Pm[iV(k), iV(k)] <span class="op">+=</span> <span class="fl">1.0</span><span class="op">;</span> q[iV(k)] <span class="op">-=</span> v_ref</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(N):                                 <span class="co"># ZMP smoothness and centring</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    mid <span class="op">=</span> lo_hi[k].mean()</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    Pm[iZ(k), iZ(k)] <span class="op">+=</span> <span class="fl">0.01</span><span class="op">;</span> q[iZ(k)] <span class="op">-=</span> <span class="fl">0.01</span><span class="op">*</span>mid</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> k <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        Pm[iZ(k), iZ(k)] <span class="op">+=</span> <span class="dv">30</span><span class="op">;</span> Pm[iZ(k <span class="op">-</span> <span class="dv">1</span>), iZ(k <span class="op">-</span> <span class="dv">1</span>)] <span class="op">+=</span> <span class="dv">30</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        Pm[iZ(k), iZ(k <span class="op">-</span> <span class="dv">1</span>)] <span class="op">-=</span> <span class="dv">30</span><span class="op">;</span> Pm[iZ(k <span class="op">-</span> <span class="dv">1</span>), iZ(k)] <span class="op">-=</span> <span class="dv">30</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>rows, lo, hi <span class="op">=</span> [], [], []</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> con(coef, l, u): rows.append(coef)<span class="op">;</span> lo.append(l)<span class="op">;</span> hi.append(u)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>con({iC(<span class="dv">0</span>): <span class="dv">1</span>}, <span class="fl">0.0</span>, <span class="fl">0.0</span>)<span class="op">;</span> con({iV(<span class="dv">0</span>): <span class="dv">1</span>}, <span class="fl">0.0</span>, <span class="fl">0.0</span>)              <span class="co"># start at rest at x = 0, between the feet</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(N):</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    con({iC(k <span class="op">+</span> <span class="dv">1</span>): <span class="dv">1</span>, iC(k): <span class="op">-</span>A[<span class="dv">0</span>, <span class="dv">0</span>], iV(k): <span class="op">-</span>A[<span class="dv">0</span>, <span class="dv">1</span>], iZ(k): <span class="op">-</span>B[<span class="dv">0</span>]}, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    con({iV(k <span class="op">+</span> <span class="dv">1</span>): <span class="dv">1</span>, iC(k): <span class="op">-</span>A[<span class="dv">1</span>, <span class="dv">0</span>], iV(k): <span class="op">-</span>A[<span class="dv">1</span>, <span class="dv">1</span>], iZ(k): <span class="op">-</span>B[<span class="dv">1</span>]}, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    con({iZ(k): <span class="dv">1</span>}, <span class="op">*</span>lo_hi[k])</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>Am <span class="op">=</span> sp.lil_matrix((<span class="bu">len</span>(rows), nx <span class="op">+</span> nz))</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r, coef <span class="kw">in</span> <span class="bu">enumerate</span>(rows):</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> c_, v_ <span class="kw">in</span> coef.items(): Am[r, c_] <span class="op">=</span> v_</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> osqp.OSQP()</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>solver.setup(sp.csc_matrix(<span class="dv">2</span><span class="op">*</span>Pm), <span class="dv">2</span><span class="op">*</span>q, sp.csc_matrix(Am), np.array(lo), np.array(hi),</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>             verbose<span class="op">=</span><span class="va">False</span>, eps_abs<span class="op">=</span><span class="fl">1e-6</span>, eps_rel<span class="op">=</span><span class="fl">1e-6</span>, max_iter<span class="op">=</span><span class="dv">20000</span>, polishing<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> solver.solve()</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>xsol <span class="op">=</span> res.x[:nx].reshape(N <span class="op">+</span> <span class="dv">1</span>, <span class="dv">2</span>)<span class="op">;</span> zsol <span class="op">=</span> res.x[nx:]</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>c, v <span class="op">=</span> xsol[:, <span class="dv">0</span>], xsol[:, <span class="dv">1</span>]<span class="op">;</span> xi <span class="op">=</span> c <span class="op">+</span> v<span class="op">/</span>w</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"OSQP status: </span><span class="sc">{</span>res<span class="sc">.</span>info<span class="sc">.</span>status<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>res<span class="sc">.</span>info<span class="sc">.</span><span class="bu">iter</span><span class="sc">}</span><span class="ss"> iterations, </span><span class="sc">{</span>res<span class="sc">.</span>info<span class="sc">.</span>run_time<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.1f}</span><span class="ss"> ms;"</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f" </span><span class="sc">{</span>nx <span class="op">+</span> nz<span class="sc">}</span><span class="ss"> variables, </span><span class="sc">{</span><span class="bu">len</span>(rows)<span class="sc">}</span><span class="ss"> constraints"</span>)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>t_knots <span class="op">=</span> np.arange(N <span class="op">+</span> <span class="dv">1</span>)<span class="op">*</span>dt</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>show <span class="op">=</span> t_knots <span class="op">&lt;=</span> <span class="dv">20</span><span class="op">;</span> show_z <span class="op">=</span> tk <span class="op">&lt;=</span> <span class="dv">20</span></span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>fig, (a1, a2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">5.6</span>), sharex<span class="op">=</span><span class="va">True</span>, gridspec_kw<span class="op">=</span>{<span class="st">"height_ratios"</span>: [<span class="dv">2</span>, <span class="dv">1</span>]})</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>a1.fill_between(tk[show_z], lo_hi[show_z, <span class="dv">0</span>], lo_hi[show_z, <span class="dv">1</span>], step<span class="op">=</span><span class="st">"mid"</span>, color<span class="op">=</span>GREY, alpha<span class="op">=</span><span class="fl">0.2</span>, label<span class="op">=</span><span class="st">"allowed ZMP"</span>)</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>a1.step(tk[show_z], zsol[show_z], where<span class="op">=</span><span class="st">"mid"</span>, color<span class="op">=</span>RED, lw<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="st">"ZMP"</span>)</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a>a1.plot(t_knots[show], c[show], color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"centre of mass"</span>)</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>a1.plot(t_knots[show], xi[show], color<span class="op">=</span>BRASS, lw<span class="op">=</span><span class="fl">1.5</span>, ls<span class="op">=</span><span class="st">"--"</span>, label<span class="op">=</span><span class="st">"DCM ξ"</span>)</span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a>a1.set_ylabel(<span class="st">"position (m)"</span>)<span class="op">;</span> a1.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"upper left"</span>, ncol<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a>a2.plot(t_knots[show], v[show], color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="dv">2</span>)<span class="op">;</span> a2.axhline(v_ref, color<span class="op">=</span>GREY, ls<span class="op">=</span><span class="st">":"</span>)</span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>a2.set_ylabel(<span class="st">"speed (m/s)"</span>)<span class="op">;</span> a2.set_xlabel(<span class="st">"time (s)"</span>)</span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a><span class="co"># the DCM really is the discounted future ZMP (check at t = 6 s, ignoring the horizon's end)</span></span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>k0 <span class="op">=</span> <span class="dv">60</span><span class="op">;</span> s_ <span class="op">=</span> np.arange(k0, N)</span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a>xi_future <span class="op">=</span> np.<span class="bu">sum</span>(np.exp(<span class="op">-</span>w<span class="op">*</span>(s_ <span class="op">-</span> k0)<span class="op">*</span>dt)<span class="op">*</span>(<span class="dv">1</span> <span class="op">-</span> math.exp(<span class="op">-</span>w<span class="op">*</span>dt))<span class="op">*</span>zsol[s_])</span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"DCM at t = 6 s: from the state </span><span class="sc">{</span>xi[k0]<span class="sc">:.2f}</span><span class="ss"> m; as the discounted sum of future ZMPs </span><span class="sc">{</span>xi_future<span class="sc">:.2f}</span><span class="ss"> m"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>OSQP status: solved, 175 iterations, 2.9 ms; 722 variables, 722 constraints</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-toy" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-toy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-toy-output-2.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-toy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: A one-dimensional ZMP plan for the first 20 s of walking from a standing start (feet 7.3 m either side of the body for the first 2 s). Shaded: where the ZMP is allowed. Red: the planned ZMP. Blue: the centre of mass. Brass: the DCM (capture point), which always runs ahead of the body. Bottom: forward speed. The body never stops. Each time the support narrows to the front foot, the body vaults over it like an inverted pendulum, slowing as it approaches the foot and speeding up as it falls past: the ripple in the speed.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>DCM at t = 6 s: from the state 23.01 m; as the discounted sum of future ZMPs 23.01 m</code></pre>
+</div>
+</div>
+<p>Read the picture from left to right. To get going from rest, the planner first puts the ZMP well <em>behind</em> the body: the only way to accelerate forward is to fall forward. Once walking, each three-foot phase sweeps the ZMP forward from the rear foot to the front one. In the narrow phase the ZMP is pinned at the front foot while the body vaults over it, slowing as it climbs towards the foot and speeding up as it falls past. That is the steady ripple in the speed. The capture point <span class="math inline">\(\xi\)</span> always leads the body by <span class="math inline">\(\dot c/\omega\)</span>, about 6 m at this speed, and keeps ahead of the footsteps. The body has always just enough momentum to reach the next support. The last line confirms the integral formula: the DCM computed from the state equals the discounted sum of the planned future ZMPs. (The discrete version of the weight <span class="math inline">\(\omega\,dt\,e^{-\omega s}\)</span> is <span class="math inline">\((1 - e^{-\omega\Delta t})e^{-\omega s}\)</span>.)</p>
+</section>
+<section id="the-real-thing-the-tripod-in-the-plane" class="level3">
+<h3 class="anchored" data-anchor-id="the-real-thing-the-tripod-in-the-plane">The real thing: the tripod in the plane</h3>
+<p>The tripod’s planner (<code>tripod/planner.py</code>) is the same QP in two dimensions with the real support polygons. A footstep schedule says which leg swings when and where it lands. Steps take 2.0 s: 0.8 s on three feet, then 1.2 s with one leg in the air. Each step moves one foot by a 22 m stride, in the order 1, 2, 0. Over a 14 s horizon at 0.1 s resolution there are 140 ZMP knots and 141 states, about 850 variables, solved in roughly 10 ms.</p>
+<div id="cell-fig-plan" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>feet0 <span class="op">=</span> [slot(P, i) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)]</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>sched <span class="op">=</span> Schedule(P, [f.copy() <span class="cf">for</span> f <span class="kw">in</span> feet0], t0<span class="op">=</span><span class="fl">0.6</span>, ds_time<span class="op">=</span><span class="fl">0.8</span>, ss_time<span class="op">=</span><span class="fl">1.2</span>, stride<span class="op">=</span><span class="fl">22.0</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>plan <span class="op">=</span> COMPlanner(sched, h, horizon<span class="op">=</span><span class="fl">14.0</span>, margin<span class="op">=</span><span class="fl">1.5</span>, w_pos<span class="op">=</span><span class="fl">0.05</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.perf_counter()<span class="op">;</span> ok <span class="op">=</span> plan.solve(<span class="fl">0.0</span>, np.array([<span class="op">-</span><span class="fl">0.24</span>, <span class="fl">0.0</span>]), np.zeros(<span class="dv">2</span>))<span class="op">;</span> t_solve <span class="op">=</span> time.perf_counter() <span class="op">-</span> t0</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>X, Z <span class="op">=</span> plan.X, plan.Z</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">9.5</span>, <span class="fl">4.6</span>))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>seen <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(plan.N):</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    feet, swing <span class="op">=</span> sched.feet_at(j<span class="op">*</span>dt <span class="op">+</span> dt<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> feet <span class="cf">if</span> f <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>]</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    key <span class="op">=</span> <span class="bu">tuple</span>(np.<span class="bu">round</span>(np.concatenate(pts), <span class="dv">2</span>))</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> key <span class="kw">in</span> seen: <span class="cf">continue</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    seen.add(key)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    poly <span class="op">=</span> np.array(pts <span class="op">+</span> [pts[<span class="dv">0</span>]])</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    ax.plot(poly[:, <span class="dv">0</span>], poly[:, <span class="dv">1</span>], color<span class="op">=</span>GREY, lw<span class="op">=</span><span class="fl">0.8</span> <span class="cf">if</span> <span class="bu">len</span>(pts) <span class="op">==</span> <span class="dv">3</span> <span class="cf">else</span> <span class="fl">2.2</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(pts) <span class="op">==</span> <span class="dv">3</span>: ax.fill(poly[:, <span class="dv">0</span>], poly[:, <span class="dv">1</span>], color<span class="op">=</span>GREY, alpha<span class="op">=</span><span class="fl">0.05</span>)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>ax.plot(Z[:, <span class="dv">0</span>], Z[:, <span class="dv">1</span>], <span class="st">"."</span>, color<span class="op">=</span>RED, ms<span class="op">=</span><span class="dv">4</span>, label<span class="op">=</span><span class="st">"ZMP"</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>ax.plot(X[:, <span class="dv">0</span>], X[:, <span class="dv">1</span>], color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"centre of mass"</span>)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>ax.plot(X[:, <span class="dv">0</span>] <span class="op">+</span> X[:, <span class="dv">2</span>]<span class="op">/</span>w, X[:, <span class="dv">1</span>] <span class="op">+</span> X[:, <span class="dv">3</span>]<span class="op">/</span>w, <span class="st">"--"</span>, color<span class="op">=</span>BRASS, lw<span class="op">=</span><span class="fl">1.3</span>, label<span class="op">=</span><span class="st">"DCM"</span>)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax.set_xlabel(<span class="st">"x (m)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"y (m)"</span>)<span class="op">;</span> ax.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"upper left"</span>, ncol<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"solved: </span><span class="sc">{</span>ok<span class="sc">}</span><span class="ss"> in </span><span class="sc">{</span>t_solve<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms; </span><span class="sc">{</span>plan<span class="sc">.</span>N<span class="sc">}</span><span class="ss"> ZMP knots; schedule speed </span><span class="sc">{</span>sched<span class="sc">.</span>speed<span class="sc">:.2f}</span><span class="ss"> m/s"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-plan" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-plan-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-plan-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plan-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: One solve of the tripod’s planner from standing still, seen from above. Grey triangles and lines: the support polygon over time (three-foot triangles and two-foot hinge lines). Red: the planned ZMP, which hops between hinge lines and sweeps across triangles. Blue: the planned centre of mass, weaving from side to side as each new hinge appears in a different direction. Brass: the DCM. The far end of the plan is the least constrained part, and it curls away; it is never executed, because the plan is re-solved long before the body gets there.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>solved: True in 12 ms; 140 ZMP knots; schedule speed 3.67 m/s</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="how-far-ahead-must-it-look" class="level2">
+<h2 class="anchored" data-anchor-id="how-far-ahead-must-it-look">How far ahead must it look?</h2>
+<p>The DCM integral says the present depends on the future ZMP, discounted with a 1.67 s time constant. A planner that looks only a second or two ahead cannot see the supports it will need, so it plans motions that look fine within its horizon and are doomed just beyond it. It has no notion that the body must still be catchable when the horizon ends. This is easy to test: run the receding-horizon loop on the pendulum with different horizons.</p>
+<div id="horizon" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> walk(horizon, T<span class="op">=</span><span class="fl">30.0</span>, push<span class="op">=</span><span class="va">None</span>, replan<span class="op">=</span><span class="va">True</span>, sim_dt<span class="op">=</span><span class="fl">0.01</span>):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> Schedule(P, [f.copy() <span class="cf">for</span> f <span class="kw">in</span> feet0], <span class="fl">0.6</span>, <span class="fl">0.8</span>, <span class="fl">1.2</span>, <span class="fl">22.0</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    pl <span class="op">=</span> COMPlanner(s, h, horizon<span class="op">=</span>horizon, margin<span class="op">=</span><span class="fl">1.5</span>, w_pos<span class="op">=</span><span class="fl">0.05</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    c, v, t, last, last_sup, out <span class="op">=</span> np.array([<span class="op">-</span><span class="fl">0.24</span>, <span class="fl">0.0</span>]), np.zeros(<span class="dv">2</span>), <span class="fl">0.0</span>, <span class="op">-</span><span class="fl">1e9</span>, <span class="va">None</span>, []</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    Cs, Ss <span class="op">=</span> math.cosh(w<span class="op">*</span>sim_dt), math.sinh(w<span class="op">*</span>sim_dt)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> t <span class="op">&lt;</span> T:</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        k, _ <span class="op">=</span> s.step_of(t)<span class="op">;</span> _, sw <span class="op">=</span> s.feet_at(t)<span class="op">;</span> sup <span class="op">=</span> (k, sw)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        may_replan <span class="op">=</span> replan <span class="kw">or</span> (push <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> t <span class="op">&lt;</span> push[<span class="dv">0</span>])</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> pl.X <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> (may_replan <span class="kw">and</span> (sup <span class="op">!=</span> last_sup <span class="kw">or</span> t <span class="op">-</span> last <span class="op">&gt;=</span> <span class="fl">0.4</span>)):</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>            pl.solve(t, c, v)<span class="op">;</span> last, last_sup <span class="op">=</span> t, sup</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        z <span class="op">=</span> pl.reference(t)[<span class="dv">3</span>]</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        c, v <span class="op">=</span> z <span class="op">+</span> (c <span class="op">-</span> z)<span class="op">*</span>Cs <span class="op">+</span> v<span class="op">*</span>Ss<span class="op">/</span>w, (c <span class="op">-</span> z)<span class="op">*</span>w<span class="op">*</span>Ss <span class="op">+</span> v<span class="op">*</span>Cs      <span class="co"># the exact pendulum, ZMP held over the step</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> push <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="bu">abs</span>(t <span class="op">-</span> push[<span class="dv">0</span>]) <span class="op">&lt;</span> sim_dt<span class="op">/</span><span class="dv">2</span>:</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> v <span class="op">+</span> np.array([<span class="fl">0.0</span>, push[<span class="dv">1</span>]])</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        t <span class="op">+=</span> sim_dt<span class="op">;</span> out.append((t, <span class="op">*</span>c, <span class="op">*</span>v))</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.linalg.norm(c <span class="op">-</span> s.nominal(t)) <span class="op">&gt;</span> <span class="dv">40</span>: <span class="cf">break</span>           <span class="co"># fallen over</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(out), s</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"horizon   outcome"</span>)</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> H <span class="kw">in</span> (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">14</span>):</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    tr, s <span class="op">=</span> walk(H)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    fell <span class="op">=</span> tr[<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>] <span class="op">&lt;</span> <span class="fl">29.9</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>H<span class="sc">:5.0f}</span><span class="ss"> s   "</span> <span class="op">+</span> (<span class="ss">f"falls after </span><span class="sc">{</span>tr[<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>]<span class="sc">:.1f}</span><span class="ss"> s"</span> <span class="cf">if</span> fell <span class="cf">else</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>                              <span class="ss">f"walks 30 s: </span><span class="sc">{</span>tr[<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>] <span class="op">-</span> tr[<span class="dv">0</span>, <span class="dv">1</span>]<span class="sc">:.0f}</span><span class="ss"> m at </span><span class="sc">{</span>(tr[<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>] <span class="op">-</span> tr[<span class="dv">0</span>, <span class="dv">1</span>])<span class="op">/</span><span class="dv">30</span><span class="sc">:.2f}</span><span class="ss"> m/s"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>horizon   outcome
+    1 s   falls after 5.7 s
+    2 s   falls after 4.6 s
+    3 s   falls after 8.0 s
+    4 s   falls after 22.5 s
+    6 s   walks 30 s: 102 m at 3.42 m/s
+    8 s   walks 30 s: 105 m at 3.49 m/s
+   14 s   walks 30 s: 105 m at 3.49 m/s</code></pre>
+</div>
+</div>
+<p>Horizons of four seconds or less fail. Every individual QP is feasible, and the planner never reports a problem, yet the walk diverges: within a few steps for horizons of 1–3 s, after about ten steps at 4 s. From six seconds on, one full gait cycle (three steps of 2 s), the walk is stable and longer horizons change little. The rule of thumb in humanoid robotics is a preview of one to two steps; for this slow, tall pendulum on a three-step cycle, that means a whole cycle. The project uses 14 s for margin.</p>
+</section>
+<section id="model-predictive-control-replanning-from-what-actually-happened" class="level2">
+<h2 class="anchored" data-anchor-id="model-predictive-control-replanning-from-what-actually-happened">Model-predictive control: replanning from what actually happened</h2>
+<p>A plan computed once and followed blindly is <strong>open-loop</strong>. The pendulum is unstable, so any error — a gust, a misplaced foot, a modelling error — grows like <span class="math inline">\(e^{\omega t}\)</span>, doubling every 1.15 s. The cure is to re-solve the QP frequently from the <em>measured</em> state. Execute only the first part of each plan, then plan again. This is <strong>receding-horizon</strong> or <strong>model-predictive control</strong> (MPC). The tripod re-plans at every change of support and every 0.4 s in between.</p>
+<p>To see the difference, push the walking pendulum sideways at <span class="math inline">\(t = 10\)</span> s, and compare the MPC loop with one that stops re-planning at the moment of the push.</p>
+<div id="cell-fig-push" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>base, _ <span class="op">=</span> walk(<span class="fl">14.0</span>, T<span class="op">=</span><span class="fl">24.0</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>mpc, _ <span class="op">=</span> walk(<span class="fl">14.0</span>, T<span class="op">=</span><span class="fl">24.0</span>, push<span class="op">=</span>(<span class="fl">10.0</span>, <span class="fl">2.0</span>))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>frozen, _ <span class="op">=</span> walk(<span class="fl">14.0</span>, T<span class="op">=</span><span class="fl">15.0</span>, push<span class="op">=</span>(<span class="fl">10.0</span>, <span class="fl">2.0</span>), replan<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>fig, (a1, a2) <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="fl">10.5</span>, <span class="fl">3.8</span>))</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>a1.plot(base[:, <span class="dv">1</span>], base[:, <span class="dv">2</span>], color<span class="op">=</span>GREY, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"no push"</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>a1.plot(mpc[:, <span class="dv">1</span>], mpc[:, <span class="dv">2</span>], color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="st">"pushed, MPC"</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>a1.plot(frozen[:, <span class="dv">1</span>], frozen[:, <span class="dv">2</span>], color<span class="op">=</span>RED, lw<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="st">"pushed, plan frozen"</span>)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>a1.set_xlabel(<span class="st">"x (m)"</span>)<span class="op">;</span> a1.set_ylabel(<span class="st">"y (m)"</span>)<span class="op">;</span> a1.set_ylim(<span class="op">-</span><span class="dv">15</span>, <span class="dv">30</span>)<span class="op">;</span> a1.legend(frameon<span class="op">=</span><span class="va">False</span>, loc<span class="op">=</span><span class="st">"upper left"</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>dev_m <span class="op">=</span> np.linalg.norm(mpc[:, <span class="dv">1</span>:<span class="dv">3</span>] <span class="op">-</span> base[:<span class="bu">len</span>(mpc), <span class="dv">1</span>:<span class="dv">3</span>], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>dev_f <span class="op">=</span> np.linalg.norm(frozen[:, <span class="dv">1</span>:<span class="dv">3</span>] <span class="op">-</span> base[:<span class="bu">len</span>(frozen), <span class="dv">1</span>:<span class="dv">3</span>], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>a2.semilogy(mpc[:, <span class="dv">0</span>], np.maximum(dev_m, <span class="fl">1e-3</span>), color<span class="op">=</span>BLUE, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"MPC"</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>a2.semilogy(frozen[:, <span class="dv">0</span>], np.maximum(dev_f, <span class="fl">1e-3</span>), color<span class="op">=</span>RED, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"plan frozen"</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>a2.axvline(<span class="dv">10</span>, color<span class="op">=</span>GREY, ls<span class="op">=</span><span class="st">":"</span>)<span class="op">;</span> a2.set_xlabel(<span class="st">"time (s)"</span>)<span class="op">;</span> a2.set_ylabel(<span class="st">"distance from unpushed path (m)"</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>a2.legend(frameon<span class="op">=</span><span class="va">False</span>)<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>i <span class="op">=</span> <span class="kw">lambda</span> tr, t: np.searchsorted(tr[:, <span class="dv">0</span>], t)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"MPC: peak deviation </span><span class="sc">{</span>dev_m<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.2f}</span><span class="ss"> m; </span><span class="sc">{</span>dev_m[i(mpc, <span class="dv">15</span>)]<span class="sc">:.2f}</span><span class="ss"> m at 15 s; </span><span class="sc">{</span>dev_m[i(mpc, <span class="dv">20</span>)]<span class="sc">:.2f}</span><span class="ss"> m at 20 s; </span><span class="sc">{</span>dev_m[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.2f}</span><span class="ss"> m at 24 s"</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"frozen plan: </span><span class="sc">{</span>dev_f[i(frozen, <span class="dv">12</span>)]<span class="sc">:.1f}</span><span class="ss"> m at 12 s, </span><span class="sc">{</span>dev_f[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1f}</span><span class="ss"> m at 15 s"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-push" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-push-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-push-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-push-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Recovery from a sideways push at t = 10 s (a sudden 2 m/s change in lateral velocity, the equivalent of a 514 kN·s impulse on the 257-tonne machine). Grey: the unpushed walk. Blue: MPC, re-planning from the measured state; the deviation peaks at about 2 m and has shrunk to about 10 cm seven steps later. Red: the same push with the plan frozen at the moment of impact; the body falls away exponentially.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>MPC: peak deviation 2.34 m; 1.15 m at 15 s; 0.28 m at 20 s; 0.12 m at 24 s
+frozen plan: 3.8 m at 12 s, 31.7 m at 15 s</code></pre>
+</div>
+</div>
+<p>The frozen plan does not merely drift. Its error grows exponentially, the straight line on the log scale, because the push has moved the DCM and the old plan’s ZMP no longer contains it. MPC sees the new state at the next re-plan and moves the ZMP to absorb the push over the following steps. The deviation decays steadily, and the robot rejoins its path.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+In the full MuJoCo simulation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The tripod model has extra machinery on top of this. Its whole-body controller adds a spring-damper pulling the centre of mass towards the plan. While three feet are down, friction at the feet can resist sideways forces directly. In the full simulation, a 2 m/s lateral push of 0.5 s duration during the walk hardly disturbs it. The pure pendulum above, with nothing but the ZMP to steer with, shows the planner’s contribution on its own.</p>
+</div>
+</div>
+</section>
+<section id="from-plan-to-torques" class="level2">
+<h2 class="anchored" data-anchor-id="from-plan-to-torques">From plan to torques</h2>
+<p>The planner outputs a centre-of-mass trajectory and a ZMP. Turning those into motor commands uses everything from the earlier parts, about 500 times a second.</p>
+<ol type="1">
+<li><strong>Desired force.</strong> Compute the force that keeps the centre of mass on the plan: the planned acceleration <span class="math inline">\(m\ddot{\mathbf c}_\text{plan}\)</span> as feedforward, plus a spring-damper on the tracking error, plus the weight. Compute a moment that keeps the hood level.</li>
+<li><strong>Share it among the planted feet.</strong> Solve the grasp-matrix least-squares problem from <a href="../../explainers/statics-jacobian/">part 3</a>, with every foot pushing and inside its friction cone. On two feet, drop the moment component about the hinge, which can’t be produced.</li>
+<li><strong>Torques.</strong> Map each foot force through <span class="math inline">\(\boldsymbol\tau = \mathbf g(\mathbf q) - J^\top\mathbf f\)</span>, the virtual-work law of part 3.</li>
+<li><strong>Swing leg.</strong> Move the lifted foot along its task-space arc using closed-form IK (<a href="../../explainers/inverse-kinematics/">part 2</a>) and a joint servo, landing on the next scheduled foothold.</li>
+</ol>
+<p>The result in MuJoCo, from the main post:</p>
+<ul>
+<li>15 steps in 30.6 s, covering 77 m at 5.6 mph;</li>
+<li>59% of the time on two feet;</li>
+<li>the hood never tilting more than 2.7°.</li>
+</ul>
+<p>That is five times the speed of the wait-and-topple gait, with a sixth of its tilt.</p>
+</section>
+<section id="what-this-planner-leaves-out" class="level2">
+<h2 class="anchored" data-anchor-id="what-this-planner-leaves-out">What this planner leaves out</h2>
+<p>The LIPM and a fixed footstep schedule are the classic starting point, not the state of the art. Some refinements, roughly in order of how much they would help the tripod:</p>
+<ul>
+<li><strong>Footstep optimisation.</strong> Here the footholds are fixed in advance and only the ZMP moves. Letting the QP also choose where the feet land, as a capture-point stepping strategy does, gives far more authority against pushes. That matters on two feet, where the ZMP has no sideways authority at all.</li>
+<li><strong>Height and angular momentum.</strong> Holding the height constant is what made the model linear. Allowing the body to bob, or the hood to pitch, adds more ways to control the body. The usual tool is the <strong>centroidal dynamics</strong> model, solved by nonlinear MPC.</li>
+<li><strong>Leg dynamics.</strong> Each 28 t leg weighs a ninth of the machine, and swinging it shoves the body. The LIPM ignores this; whole-body MPC includes it.</li>
+<li><strong>Learning.</strong> Much of modern legged locomotion is trained by reinforcement learning in simulators like MuJoCo, often with a model-based planner like this one providing structure or reference motions. The main post discusses why MuJoCo became the standard simulator for that work.</li>
+</ul>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>Holding the centre of mass at constant height gives the linear inverted pendulum <span class="math inline">\(\ddot{\mathbf c} = \omega^2(\mathbf c - \mathbf z)\)</span>. The ZMP <span class="math inline">\(\mathbf z\)</span> is the centre of pressure and must stay in the support polygon.</li>
+<li>The divergent component <span class="math inline">\(\boldsymbol\xi = \mathbf c + \dot{\mathbf c}/\omega\)</span> carries all the instability. It equals the discounted future ZMP, so walking must be planned ahead. It is also the capture point: put the ZMP there to stop.</li>
+<li>On two feet the support polygon is a line, and the motion across it is a pure fall. A walking tripod is falling sideways 60% of the time.</li>
+<li>Exact discretisation plus linear support constraints make ZMP planning a convex QP, solved by OSQP in about 10 ms.</li>
+<li>The horizon must cover about one gait cycle; shorter horizons produce feasible plans that still fall.</li>
+<li>Re-planning from the measured state (MPC) turns an exponentially unstable open-loop plan into a robust walk.</li>
+</ul>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li>S. Kajita, F. Kanehiro, K. Kaneko, K. Yokoi and H. Hirukawa, “The 3D linear inverted pendulum mode”, <em>IROS</em> (2001), and “Biped walking pattern generation by using preview control of zero-moment point”, <em>ICRA</em> (2003). The LIPM and the first ZMP preview controller.</li>
+<li>M. Vukobratović and B. Borovac, “Zero-moment point — thirty five years of its life”, <em>International Journal of Humanoid Robotics</em> 1(1), 2004.</li>
+<li>J. Pratt, J. Carff, S. Drakunov and A. Goswami, “Capture point: a step toward humanoid push recovery”, <em>Humanoids</em> (2006).</li>
+<li>J. Englsberger, C. Ott and A. Albu-Schäffer, “Three-dimensional bipedal walking control based on divergent component of motion”, <em>IEEE Transactions on Robotics</em> 31(2), 2015.</li>
+<li>P.-B. Wieber, “Trajectory free linear model predictive control for stable walking in the presence of strong perturbations”, <em>Humanoids</em> (2006). ZMP planning as a receding-horizon QP.</li>
+<li>B. Stellato, G. Banjac, P. Goulart, A. Bemporad and S. Boyd, “OSQP: an operator splitting solver for quadratic programs”, <em>Mathematical Programming Computation</em> 12, 2020.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

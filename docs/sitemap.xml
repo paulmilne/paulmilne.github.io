@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://paulmilne.github.io/sci-fi/martian-tripod/index.html</loc>
-    <lastmod>2026-10-24T12:32:20.573Z</lastmod>
+    <lastmod>2026-10-25T08:42:24.918Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/probability/prosecutors-fallacy/index.html</loc>
@@ -29,12 +29,20 @@
     <lastmod>2026-09-06T11:35:07.873Z</lastmod>
   </url>
   <url>
-    <loc>https://paulmilne.github.io/explainers/mean-field-annealed-disorder/index.html</loc>
-    <lastmod>2026-09-06T12:50:47.528Z</lastmod>
+    <loc>https://paulmilne.github.io/explainers/statics-jacobian/index.html</loc>
+    <lastmod>2026-10-25T08:37:32.245Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/explainers/markov-chains-diffusion/index.html</loc>
+    <lastmod>2026-09-08T06:19:25.795Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/index.html</loc>
     <lastmod>2026-09-06T11:35:33.871Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/explainers/falling-walk/index.html</loc>
+    <lastmod>2026-10-25T08:41:29.611Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/bifurcation-vs-langevin/index.html</loc>
@@ -77,8 +85,16 @@
     <lastmod>2026-09-08T12:49:58.349Z</lastmod>
   </url>
   <url>
-    <loc>https://paulmilne.github.io/explainers/markov-chains-diffusion/index.html</loc>
-    <lastmod>2026-09-08T06:19:25.795Z</lastmod>
+    <loc>https://paulmilne.github.io/explainers/forward-kinematics/index.html</loc>
+    <lastmod>2026-10-25T08:31:09.939Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/explainers/inverse-kinematics/index.html</loc>
+    <lastmod>2026-10-25T08:34:35.696Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/explainers/mean-field-annealed-disorder/index.html</loc>
+    <lastmod>2026-09-06T12:50:47.528Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/toy-diffusion-model/index.html</loc>

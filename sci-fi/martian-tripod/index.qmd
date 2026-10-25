@@ -151,6 +151,11 @@ The model follows Wells where he is specific and makes engineering choices where
 
 Each leg hangs from the underside of the hood at azimuth $a_i \in \{0^\circ, 120^\circ, 240^\circ\}$, on a circle of radius $r_h = 2.6$ m, $d_h = 2$ m below the hood's centre. It has three joints: a yaw $\psi$ that swings the leg's plane round, then a hip pitch $q_h$ and knee $q_k$ that work in that plane like a two-link arm.
 
+::: {.callout-tip}
+## Explainer series
+This section and the gait planning below are covered in more depth in a four-part explainer series: [forward kinematics](/explainers/forward-kinematics/), [inverse kinematics](/explainers/inverse-kinematics/), [statics and the Jacobian](/explainers/statics-jacobian/) and [planning the falling walk](/explainers/falling-walk/).
+:::
+
 ### Forward kinematics
 
 Within the leg plane, measure the thigh and shin by their elevation angles $\phi_1 = -q_h$ and $\phi_2 = -(q_h + q_k)$. The foot, relative to the hip, is at

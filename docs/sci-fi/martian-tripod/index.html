@@ -490,6 +490,19 @@ Figure&nbsp;1: The MuJoCo model. Left: standing in the village, from the witness
 <section id="leg-kinematics" class="level2">
 <h2 class="anchored" data-anchor-id="leg-kinematics">Leg kinematics</h2>
 <p>Each leg hangs from the underside of the hood at azimuth <span class="math inline">\(a_i \in \{0^\circ, 120^\circ, 240^\circ\}\)</span>, on a circle of radius <span class="math inline">\(r_h = 2.6\)</span> m, <span class="math inline">\(d_h = 2\)</span> m below the hood’s centre. It has three joints: a yaw <span class="math inline">\(\psi\)</span> that swings the leg’s plane round, then a hip pitch <span class="math inline">\(q_h\)</span> and knee <span class="math inline">\(q_k\)</span> that work in that plane like a two-link arm.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Explainer series
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This section and the gait planning below are covered in more depth in a four-part explainer series: <a href="../../explainers/forward-kinematics/">forward kinematics</a>, <a href="../../explainers/inverse-kinematics/">inverse kinematics</a>, <a href="../../explainers/statics-jacobian/">statics and the Jacobian</a> and <a href="../../explainers/falling-walk/">planning the falling walk</a>.</p>
+</div>
+</div>
 <section id="forward-kinematics" class="level3">
 <h3 class="anchored" data-anchor-id="forward-kinematics">Forward kinematics</h3>
 <p>Within the leg plane, measure the thigh and shin by their elevation angles <span class="math inline">\(\phi_1 = -q_h\)</span> and <span class="math inline">\(\phi_2 = -(q_h + q_k)\)</span>. The foot, relative to the hip, is at</p>
