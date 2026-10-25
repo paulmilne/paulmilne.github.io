@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-25">
+<meta name="description" content="A worked introduction to the complex Ginzburg-Landau equation (CGLE): where amplitude equations come from, what the two free coefficients mean physically, the Benjamin-Feir-Newell stability criterion for plane waves, a 1D finite-difference simulation that separates what the amplitude field and the phase field are each responsible for, and a 2D extension showing spiral defects and the phase-turbulence regime when the plane wave is linearly unstable.">
+
+<title>The Complex Ginzburg-Landau Equation – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Complex Ginzburg-Landau Equation – math-blog">
+<meta property="og:description" content="A worked introduction to the complex Ginzburg-Landau equation (CGLE): where amplitude equations come from, what the two free coefficients mean physically, the Benjamin-Feir-Newell stability criterion for plane waves, a 1D finite-difference simulation that separates what the amplitude field and the phase field are each responsible for, and a 2D extension showing spiral defects and the phase-turbulence regime when the plane wave is linearly unstable.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/cgle-pattern-morphology/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="1728">
+<meta property="og:image:width" content="1824">
+<meta name="twitter:title" content="The Complex Ginzburg-Landau Equation – math-blog">
+<meta name="twitter:description" content="A worked introduction to the complex Ginzburg-Landau equation (CGLE): where amplitude equations come from, what the two free coefficients mean physically, the Benjamin-Feir-Newell stability criterion for plane waves, a 1D finite-difference simulation that separates what the amplitude field and the phase field are each responsible for, and a 2D extension showing spiral defects and the phase-turbulence regime when the plane wave is linearly unstable.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/cgle-pattern-morphology/thumbnail.png">
+<meta name="twitter:image-height" content="1728">
+<meta name="twitter:image-width" content="1824">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Complex Ginzburg-Landau Equation</h1>
+            <p class="subtitle lead">Amplitude equations, plane waves, and why a spatially extended oscillator self-organizes</p>
+                  <div>
+        <div class="description">
+          A worked introduction to the complex Ginzburg-Landau equation (CGLE): where amplitude equations come from, what the two free coefficients mean physically, the Benjamin-Feir-Newell stability criterion for plane waves, a 1D finite-difference simulation that separates what the amplitude field and the phase field are each responsible for, and a 2D extension showing spiral defects and the phase-turbulence regime when the plane wave is linearly unstable.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">pattern-formation</div>
+                <div class="quarto-category">nonlinear-dynamics</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 25, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#from-landaus-theory-of-phase-transitions-to-a-superconducting-order-parameter" id="toc-from-landaus-theory-of-phase-transitions-to-a-superconducting-order-parameter" class="nav-link active" data-scroll-target="#from-landaus-theory-of-phase-transitions-to-a-superconducting-order-parameter">From Landau’s theory of phase transitions to a superconducting order parameter</a></li>
+  <li><a href="#amplitude-equations-and-the-road-to-a-complex-equation" id="toc-amplitude-equations-and-the-road-to-a-complex-equation" class="nav-link" data-scroll-target="#amplitude-equations-and-the-road-to-a-complex-equation">Amplitude equations and the road to a complex equation</a></li>
+  <li><a href="#the-equation" id="toc-the-equation" class="nav-link" data-scroll-target="#the-equation">The equation</a></li>
+  <li><a href="#plane-waves-and-the-benjamin-feir-newell-criterion" id="toc-plane-waves-and-the-benjamin-feir-newell-criterion" class="nav-link" data-scroll-target="#plane-waves-and-the-benjamin-feir-newell-criterion">Plane waves and the Benjamin-Feir-Newell criterion</a>
+  <ul class="collapse">
+  <li><a href="#where-the-criterion-comes-from" id="toc-where-the-criterion-comes-from" class="nav-link" data-scroll-target="#where-the-criterion-comes-from">Where the criterion comes from</a></li>
+  </ul></li>
+  <li><a href="#simulating-the-equation" id="toc-simulating-the-equation" class="nav-link" data-scroll-target="#simulating-the-equation">Simulating the equation</a>
+  <ul class="collapse">
+  <li><a href="#checking-the-plane-wave-prediction-against-the-final-state" id="toc-checking-the-plane-wave-prediction-against-the-final-state" class="nav-link" data-scroll-target="#checking-the-plane-wave-prediction-against-the-final-state">Checking the plane-wave prediction against the final state</a></li>
+  </ul></li>
+  <li><a href="#reading-the-space-time-picture" id="toc-reading-the-space-time-picture" class="nav-link" data-scroll-target="#reading-the-space-time-picture">Reading the space-time picture</a></li>
+  <li><a href="#extending-to-two-dimensions-spiral-defects-and-phase-turbulence" id="toc-extending-to-two-dimensions-spiral-defects-and-phase-turbulence" class="nav-link" data-scroll-target="#extending-to-two-dimensions-spiral-defects-and-phase-turbulence">Extending to two dimensions: spiral defects and phase turbulence</a>
+  <ul class="collapse">
+  <li><a href="#detecting-a-topological-defect-numerically" id="toc-detecting-a-topological-defect-numerically" class="nav-link" data-scroll-target="#detecting-a-topological-defect-numerically">Detecting a topological defect numerically</a></li>
+  <li><a href="#choosing-two-parameter-sets-on-the-unstable-side-of-the-line" id="toc-choosing-two-parameter-sets-on-the-unstable-side-of-the-line" class="nav-link" data-scroll-target="#choosing-two-parameter-sets-on-the-unstable-side-of-the-line">Choosing two parameter sets on the unstable side of the line</a></li>
+  <li><a href="#the-two-regimes-side-by-side" id="toc-the-two-regimes-side-by-side" class="nav-link" data-scroll-target="#the-two-regimes-side-by-side">The two regimes, side by side</a></li>
+  </ul></li>
+  <li><a href="#how-literal-is-the-biological-framing" id="toc-how-literal-is-the-biological-framing" class="nav-link" data-scroll-target="#how-literal-is-the-biological-framing">How literal is the biological framing?</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Stir a shallow pan of fluid unevenly heated from below, run the Belousov-Zhabotinsky chemical reaction in a dish, or couple an array of lasers together, and — despite having nothing else in common — all three systems can pass through a transition where a uniform, quiescent state gives way to a sea of traveling waves. Remarkably, close to that transition, the <em>envelope</em> of the emerging pattern in all three systems obeys the same one equation: the complex Ginzburg-Landau equation (CGLE). This explainer works through where that equation comes from, what its two free parameters control, and what its exact plane-wave solutions predict — then checks those predictions numerically against a small 1D simulation, including a case where the amplitude field and the phase field turn out to be responsible for genuinely different pieces of the visible pattern.</p>
+<section id="from-landaus-theory-of-phase-transitions-to-a-superconducting-order-parameter" class="level2">
+<h2 class="anchored" data-anchor-id="from-landaus-theory-of-phase-transitions-to-a-superconducting-order-parameter">From Landau’s theory of phase transitions to a superconducting order parameter</h2>
+<p>The story starts with Lev Landau’s 1930s mean-field theory of second-order phase transitions: expand the free energy of a system as a power series in a small “order parameter” <span class="math inline">\(\psi\)</span> that vanishes above the critical temperature and grows continuously below it, keep only the lowest-order terms allowed by symmetry, and minimize. In 1950, Vitaly Ginzburg and Landau extended this idea to superconductivity, treating the density of superconducting charge carriers as a <em>complex</em> order parameter <span class="math inline">\(\psi(\mathbf{x})\)</span> whose phase encodes the macroscopic quantum coherence of the superconducting state, and whose magnitude vanishes at the transition to the normal metal <span class="citation" data-cites="ginzburg1950theory">(<a href="#ref-ginzburg1950theory" role="doc-biblioref">Ginzburg and Landau 1950</a>)</span>. The Ginzburg-Landau free energy functional, minimized over <span class="math inline">\(\psi\)</span>, gives a static nonlinear equation for <span class="math inline">\(\psi(\mathbf{x})\)</span> — a real diffusion-like term coupling neighboring points in space, plus a cubic term that saturates the growth of <span class="math inline">\(|\psi|\)</span>.</p>
+<p>That static, real-coefficient equation is the ancestor of the one simulated below, but two more ingredients are needed to get there: the equation has to become <em>dynamical</em> (an equation of motion, not just an energy to minimize), and its coefficients have to become <em>complex</em>.</p>
+</section>
+<section id="amplitude-equations-and-the-road-to-a-complex-equation" class="level2">
+<h2 class="anchored" data-anchor-id="amplitude-equations-and-the-road-to-a-complex-equation">Amplitude equations and the road to a complex equation</h2>
+<p>The dynamical step came from a different direction entirely: pattern formation in fluids. Near the onset of Rayleigh-Bénard convection — the striped or hexagonal patterns that appear when a fluid layer is heated from below past a critical temperature gradient — Newell and Whitehead showed that the <em>envelope</em> of the convection rolls (not the fast-oscillating roll pattern itself, but the slowly-varying amplitude modulating it) obeys a real Ginzburg-Landau equation, derived by a weakly nonlinear multiple-scales expansion around the instability threshold <span class="citation" data-cites="newellwhitehead1969">(<a href="#ref-newellwhitehead1969" role="doc-biblioref">Newell and Whitehead 1969</a>)</span>. This is the general mechanism by which Ginzburg-Landau-type equations arise: whenever a spatially extended system crosses a <em>bifurcation</em> — a stationary instability (Turing-type) or an oscillatory one (Hopf-type) — sufficiently close to onset, the details of the microscopic equations wash out, and the long-wavelength, slow-time envelope of the pattern is forced by symmetry and scaling into one of a small number of universal “normal form” equations. This is the same universality argument used throughout bifurcation theory (see the <a href="../../explainers/bifurcation-vs-langevin/">companion explainer on Langevin dynamics and bifurcation</a> for a related but distinct flavor of symmetry-breaking): the amplitude equation doesn’t care about the chemistry of the Belousov-Zhabotinsky reaction or the viscosity of the convecting fluid, only about the <em>type</em> of instability and a couple of real numbers describing it.</p>
+<p>The <em>complex</em> Ginzburg-Landau equation is what falls out of this same argument for an oscillatory (Hopf) instability in an extended medium: a spatially distributed field of identical, weakly coupled oscillators, each individually just past the threshold of sustained self-oscillation. Yoshiki Kuramoto derived exactly this reduction for reaction-diffusion systems modeling chemical oscillators — the mathematical root of both the CGLE and the more famous Kuramoto model of coupled-oscillator synchronization — and used it to explain the onset of “chemical turbulence” in the Belousov-Zhabotinsky reaction <span class="citation" data-cites="kuramoto1984chemical">(<a href="#ref-kuramoto1984chemical" role="doc-biblioref">Kuramoto 1984</a>)</span>. Because the underlying oscillation is complex (it has both an amplitude and a phase), its slowly-varying envelope <span class="math inline">\(A(x,t)\)</span> is a complex number too, and the coefficients that were real in the static Ginzburg-Landau theory pick up imaginary parts. Cross and Hohenberg’s canonical review of pattern formation situates the CGLE as one member of a small family of universal amplitude equations that recur across fluid dynamics, nonlinear optics, and chemical physics <span class="citation" data-cites="crosshohenberg1993pattern">(<a href="#ref-crosshohenberg1993pattern" role="doc-biblioref">Cross and Hohenberg 1993</a>)</span>, and Aranson and Kramer’s dedicated review catalogs just how rich its behavior is — plane waves, spiral defects, and full spatiotemporal chaos, all from the same three-term equation <span class="citation" data-cites="aransonkramer2002world">(<a href="#ref-aransonkramer2002world" role="doc-biblioref">Aranson and Kramer 2002</a>)</span>.</p>
+</section>
+<section id="the-equation" class="level2">
+<h2 class="anchored" data-anchor-id="the-equation">The equation</h2>
+<p>The version simulated here, in one spatial dimension with periodic boundary conditions, is</p>
+<p><span class="math display">\[
+\frac{\partial A}{\partial t} = A + (1 + i c_1)\frac{\partial^2 A}{\partial x^2} - (1 - i c_3)\,|A|^2 A,
+\]</span></p>
+<p>where <span class="math inline">\(A(x,t) \in \mathbb{C}\)</span> is the complex envelope, and <span class="math inline">\(c_1, c_3 \in \mathbb{R}\)</span> are the two free parameters of the model (their coefficients on the linear growth and cubic terms have been rescaled to 1 by an appropriate choice of time, space, and amplitude units — the genuinely universal content of the equation is just <span class="math inline">\(c_1\)</span> and <span class="math inline">\(c_3\)</span>). Reading it term by term:</p>
+<ul>
+<li><span class="math inline">\(A\)</span>: linear growth. Every point is individually just past a Hopf bifurcation, so left alone (no coupling), <span class="math inline">\(|A|\)</span> would grow exponentially from any small perturbation. This is what makes the flat <span class="math inline">\(A=0\)</span> state in the simulation below unstable to the tiny initial noise.</li>
+<li><span class="math inline">\((1+ic_1)\,\partial^2_x A\)</span>: spatial coupling between neighbors. The real part (coefficient 1) is ordinary diffusion, which smooths out spatial differences in amplitude. The imaginary part, <span class="math inline">\(ic_1\,\partial^2_x A\)</span>, has no analogue in the static Ginzburg-Landau theory: it couples spatial curvature into the local phase, which is what lets a spatially extended field of oscillators lock into traveling waves rather than just synchronizing to a spatially uniform, purely time-oscillating state. <span class="math inline">\(c_1\)</span> is often called the linear dispersion coefficient.</li>
+<li><span class="math inline">\(-(1-ic_3)\,|A|^2 A\)</span>: cubic self-saturation. The real part is the same amplitude-limiting nonlinearity as in the static theory — it’s what stops the linear growth term from blowing up, pinning <span class="math inline">\(|A|\)</span> near 1 once the system saturates. The imaginary part, <span class="math inline">\(ic_3|A|^2 A\)</span>, is a nonlinear frequency shift: the local oscillation frequency depends on the local amplitude, the way a Kerr-nonlinear optical medium’s refractive index depends on light intensity. <span class="math inline">\(c_3\)</span> is the nonlinear frequency-renormalization coefficient.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Warm editorial-styled color map (Alabaster to Terracotta/Crimson) for |A|</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>col_palette <span class="ot">&lt;-</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"#f7f5f0"</span>, <span class="st">"#e8e1d5"</span>, <span class="st">"#c5b8a5"</span>, <span class="st">"#a38d72"</span>, <span class="st">"#bd5d38"</span>, <span class="st">"#822c1a"</span>))(<span class="dv">100</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Circular/periodic color palette for the cyclic phase variable [-pi, pi]</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>phase_colors <span class="ot">&lt;-</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">"#4575b4"</span>, <span class="st">"#e0f3f8"</span>, <span class="st">"#fee090"</span>, <span class="st">"#d73027"</span>, <span class="st">"#4575b4"</span>))(<span class="dv">100</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>N   <span class="ot">&lt;-</span> <span class="dv">200</span>        <span class="co"># number of spatial grid points on the periodic ring</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>L   <span class="ot">&lt;-</span> <span class="fl">100.0</span>      <span class="co"># domain length</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>dx  <span class="ot">&lt;-</span> L <span class="sc">/</span> N      <span class="co"># spatial step</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>dt  <span class="ot">&lt;-</span> <span class="fl">0.04</span>       <span class="co"># time step (dt &lt; dx^2 / 2 keeps the explicit diffusion term stable)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>steps <span class="ot">&lt;-</span> <span class="dv">4000</span>     <span class="co"># total time steps</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>save_interval <span class="ot">&lt;-</span> <span class="dv">8</span> <span class="co"># save every 8th frame</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># c1 = -1.0, c3 = 1.5: checked against the Benjamin-Feir-Newell criterion below</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>c1  <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">1.0</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>c3  <span class="ot">&lt;-</span> <span class="fl">1.5</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="plane-waves-and-the-benjamin-feir-newell-criterion" class="level2">
+<h2 class="anchored" data-anchor-id="plane-waves-and-the-benjamin-feir-newell-criterion">Plane waves and the Benjamin-Feir-Newell criterion</h2>
+<p>Before running the simulation, it’s worth asking what the CGLE predicts analytically, because the prediction is exact and gives a sanity check for the numerics. The simplest nontrivial solutions are traveling plane waves, <span class="math inline">\(A(x,t) = R\,e^{i(kx - \omega t)}\)</span> with constant real amplitude <span class="math inline">\(R\)</span> and wavenumber <span class="math inline">\(k\)</span>. Substituting into the equation and separating real and imaginary parts gives</p>
+<p><span class="math display">\[
+R^2 = 1 - k^2, \qquad \omega = c_1 k^2 - c_3 R^2,
+\]</span></p>
+<p>so a family of plane-wave solutions exists for every <span class="math inline">\(|k| &lt; 1\)</span>, with larger <span class="math inline">\(|k|\)</span> forced to run at correspondingly smaller amplitude. But existence isn’t the same as stability: a plane wave can be an exact solution of the equation and still be destroyed by long-wavelength perturbations. Linearizing around a plane wave and analyzing the resulting perturbation growth rate gives the Benjamin-Feir-Newell instability criterion. In the sign convention used here (equation above has <span class="math inline">\(-(1-ic_3)|A|^2A\)</span>, i.e.&nbsp;an effective nonlinear coefficient of <span class="math inline">\(-c_3\)</span> in the more common <span class="math inline">\((1+ib)\nabla^2A - (1+ic)|A|^2A\)</span> convention with <span class="math inline">\(b=c_1\)</span>), the <span class="math inline">\(k=0\)</span> plane wave is linearly <strong>stable</strong> when</p>
+<p><span class="math display">\[
+1 - c_1 c_3 &gt; 0,
+\]</span></p>
+<p>and unstable otherwise. When it’s unstable, small perturbations to a plane wave grow rather than decay, and the system is driven toward “defect turbulence” or “phase turbulence” — spatiotemporal chaos with proliferating phase singularities, rather than a single coherent wave. This is the source of the CGLE’s reputation as a rich generator of chaos even though it’s just one field on a line; whether the reputation is earned depends entirely on the sign of <span class="math inline">\(1-c_1c_3\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>bfn <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> c1 <span class="sc">*</span> c3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>For the parameters used here, <span class="math inline">\(1 - c_1 c_3 = 1 - (-1)(1.5) = 2.5\)</span>, which is positive — so the plane-wave regime should be linearly stable, and the simulation should settle into a single coherent traveling wave rather than turbulence. That’s the prediction to check against the numerics below.</p>
+<section id="where-the-criterion-comes-from" class="level3">
+<h3 class="anchored" data-anchor-id="where-the-criterion-comes-from">Where the criterion comes from</h3>
+<p>The criterion is short enough to derive in full. Take the uniform (<span class="math inline">\(k=0\)</span>) plane wave, which from the formulas above has <span class="math inline">\(R=1\)</span> and <span class="math inline">\(\omega=-c_3\)</span>, so <span class="math inline">\(A_0 = e^{ic_3t}\)</span>. Perturb it, <span class="math inline">\(A = (1 + u + iv)\,e^{ic_3 t}\)</span>, with <span class="math inline">\(u\)</span> (amplitude) and <span class="math inline">\(v\)</span> (phase) small and real. Substituting and keeping terms linear in <span class="math inline">\(u, v\)</span> gives <span class="math inline">\(\partial_t(u+iv) = (1+ic_1)\,\partial_x^2(u+iv) - 2(1-ic_3)\,u\)</span>. Try a single Fourier mode, <span class="math inline">\((u, v) \propto e^{iqx + \sigma t}\)</span>:</p>
+<p><span class="math display">\[
+\sigma\begin{pmatrix}u\\v\end{pmatrix} =
+\begin{pmatrix} -q^2 - 2 &amp; c_1 q^2\\ 2c_3 - c_1q^2 &amp; -q^2\end{pmatrix}
+\begin{pmatrix}u\\v\end{pmatrix}.
+\]</span></p>
+<p>One eigenvalue is always close to <span class="math inline">\(-2\)</span>. That is the amplitude mode: disturb <span class="math inline">\(|A|\)</span> and it relaxes back to 1 quickly. The other is the <strong>phase mode</strong>, which for long waves (<span class="math inline">\(q \to 0\)</span>) is</p>
+<p><span class="math display">\[
+\sigma(q) \approx -(1 - c_1c_3)\,q^2 + O(q^4).
+\]</span></p>
+<p>To leading order, a slow modulation of the phase therefore obeys a diffusion equation, <span class="math inline">\(\partial_t\phi = (1-c_1c_3)\,\partial_x^2\phi\)</span>, with an <em>effective</em> diffusion coefficient <span class="math inline">\(D = 1 - c_1c_3\)</span>. When <span class="math inline">\(D &gt; 0\)</span>, phase ripples smooth out. When <span class="math inline">\(D &lt; 0\)</span> the diffusion runs backwards: every long-wavelength ripple grows, which is the Benjamin-Feir-Newell instability. Its growth is cut off at shorter wavelengths by the <span class="math inline">\(O(q^4)\)</span> terms. Near the threshold, those terms turn the phase equation into the Kuramoto-Sivashinsky equation, the classic model of phase turbulence <span class="citation" data-cites="kuramoto1984chemical">(<a href="#ref-kuramoto1984chemical" role="doc-biblioref">Kuramoto 1984</a>)</span>.</p>
+<p>This is checkable. The chunk below starts the 1-D equation from the uniform plane wave with a tiny phase ripple of wavenumber <span class="math inline">\(q\)</span>, measures how fast the ripple grows or decays, and compares that rate with the exact eigenvalue of the <span class="math inline">\(2\times2\)</span> matrix above. It does this for the stable parameters used in the 1-D run and for the two unstable sets used later in 2-D.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sigma_exact <span class="ot">&lt;-</span> <span class="cf">function</span>(q, c1, c3) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  M <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span>q<span class="sc">^</span><span class="dv">2</span> <span class="sc">-</span> <span class="dv">2</span>, c1 <span class="sc">*</span> q<span class="sc">^</span><span class="dv">2</span>, <span class="dv">2</span> <span class="sc">*</span> c3 <span class="sc">-</span> c1 <span class="sc">*</span> q<span class="sc">^</span><span class="dv">2</span>, <span class="sc">-</span>q<span class="sc">^</span><span class="dv">2</span>), <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(<span class="fu">Re</span>(<span class="fu">eigen</span>(M, <span class="at">only.values =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>values))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>measure_growth <span class="ot">&lt;-</span> <span class="cf">function</span>(c1, c3, n, <span class="at">N =</span> <span class="dv">200</span>, <span class="at">L =</span> <span class="dv">100</span>, <span class="at">dt =</span> <span class="fl">0.01</span>, <span class="at">T =</span> <span class="dv">15</span>, <span class="at">eps =</span> <span class="fl">1e-4</span>) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  dx <span class="ot">&lt;-</span> L <span class="sc">/</span> N; x <span class="ot">&lt;-</span> (<span class="dv">0</span><span class="sc">:</span>(N <span class="sc">-</span> <span class="dv">1</span>)) <span class="sc">*</span> dx; q <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> n <span class="sc">/</span> L</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  A <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="dv">1</span>i <span class="sc">*</span> eps <span class="sc">*</span> <span class="fu">cos</span>(q <span class="sc">*</span> x))                 <span class="co"># plane wave with a tiny phase ripple</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  ts <span class="ot">&lt;-</span> <span class="fu">c</span>(); amps <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">round</span>(T <span class="sc">/</span> dt)) {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    lap <span class="ot">&lt;-</span> (<span class="fu">c</span>(A[N], A[<span class="sc">-</span>N]) <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> A <span class="sc">+</span> <span class="fu">c</span>(A[<span class="sc">-</span><span class="dv">1</span>], A[<span class="dv">1</span>])) <span class="sc">/</span> dx<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    A <span class="ot">&lt;-</span> A <span class="sc">+</span> dt <span class="sc">*</span> (A <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span>i <span class="sc">*</span> c1) <span class="sc">*</span> lap <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="dv">1</span>i <span class="sc">*</span> c3) <span class="sc">*</span> <span class="fu">Mod</span>(A)<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> A)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (s <span class="sc">%%</span> <span class="dv">50</span> <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>      w <span class="ot">&lt;-</span> A <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="dv">1</span>i <span class="sc">*</span> c3 <span class="sc">*</span> s <span class="sc">*</span> dt)               <span class="co"># remove the carrier oscillation</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      ts <span class="ot">&lt;-</span> <span class="fu">c</span>(ts, s <span class="sc">*</span> dt); amps <span class="ot">&lt;-</span> <span class="fu">c</span>(amps, <span class="fu">sqrt</span>(<span class="fu">mean</span>(<span class="fu">Mod</span>(w <span class="sc">-</span> <span class="fu">mean</span>(w))<span class="sc">^</span><span class="dv">2</span>)))</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  keep <span class="ot">&lt;-</span> ts <span class="sc">&gt;</span> <span class="dv">3</span>                                    <span class="co"># after the fast amplitude mode has died away</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unname</span>(<span class="fu">coef</span>(<span class="fu">lm</span>(<span class="fu">log</span>(amps[keep]) <span class="sc">~</span> ts[keep]))[<span class="dv">2</span>])</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>param_sets <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">c1 =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>), <span class="at">c3 =</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.3</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">label =</span> <span class="fu">sprintf</span>(<span class="st">"c1 = %g, c3 = %g  (1 - c1 c3 = %g)"</span>, c1, c3, <span class="dv">1</span> <span class="sc">-</span> c1 <span class="sc">*</span> c3))</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>curves <span class="ot">&lt;-</span> param_sets <span class="sc">|&gt;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">crossing</span>(<span class="at">q =</span> <span class="fu">seq</span>(<span class="fl">0.005</span>, <span class="fl">1.0</span>, <span class="at">length.out =</span> <span class="dv">200</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sigma =</span> <span class="fu">mapply</span>(sigma_exact, q, c1, c3))</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>points <span class="ot">&lt;-</span> param_sets <span class="sc">|&gt;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">crossing</span>(<span class="at">n =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">12</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">q =</span> <span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> n <span class="sc">/</span> <span class="dv">100</span>,</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>         <span class="at">sigma_sim =</span> <span class="fu">mapply</span>(measure_growth, c1, c3, n),</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>         <span class="at">sigma_th  =</span> <span class="fu">mapply</span>(sigma_exact, q, c1, c3))</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(curves, <span class="fu">aes</span>(q, sigma, <span class="at">colour =</span> label)) <span class="sc">+</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">colour =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">20</span>, <span class="at">linetype =</span> <span class="st">"dotted"</span>, <span class="at">colour =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> points, <span class="fu">aes</span>(q, sigma_sim), <span class="at">size =</span> <span class="fl">2.2</span>) <span class="sc">+</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#4575b4"</span>, <span class="st">"#bd5d38"</span>, <span class="st">"#822c1a"</span>), <span class="at">name =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.6</span>, <span class="fl">0.3</span>)) <span class="sc">+</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"perturbation wavenumber q"</span>, <span class="at">y =</span> <span class="st">"growth rate σ"</span>) <span class="sc">+</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>, <span class="at">legend.direction =</span> <span class="st">"vertical"</span>)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>max_rel_err <span class="ot">&lt;-</span> points <span class="sc">|&gt;</span> <span class="fu">filter</span>(n <span class="sc">&lt;=</span> <span class="dv">4</span>) <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="at">e =</span> <span class="fu">max</span>(<span class="fu">abs</span>(sigma_sim <span class="sc">/</span> sigma_th <span class="sc">-</span> <span class="dv">1</span>))) <span class="sc">|&gt;</span> <span class="fu">pull</span>(e)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>peak_weak <span class="ot">&lt;-</span> curves <span class="sc">|&gt;</span> <span class="fu">filter</span>(c1 <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(sigma, <span class="at">n =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-bfn-check" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-bfn-check-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-bfn-check-1.png" class="img-fluid figure-img" width="768">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-bfn-check-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Growth rate of a small phase ripple on the uniform plane wave, against its wavenumber q. Lines: the exact eigenvalue of the linearised equation. Points: rates measured from direct simulation. For 1 - c1 c3 &gt; 0 every ripple decays; for 1 - c1 c3 &lt; 0 a band of long waves grows. The dotted line marks q = 2 pi/20, the longest wave that fits the small domain used for the phase-turbulence run below, which sits near the top of its unstable band.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The simulation reproduces the linear theory: for the longest waves the measured and predicted rates agree to within 2.6%. The residual comes from the forward-Euler time step and the finite-difference Laplacian. For the stable parameters every ripple decays. For both unstable sets a band of long waves grows, much faster for <span class="math inline">\(c_1 = 2\)</span> than for <span class="math inline">\(c_1 = 1\)</span>, and the curves explain the choices made in 2-D below. The weakly unstable set (<span class="math inline">\(c_1 = 1\)</span>, <span class="math inline">\(c_3 = 1.3\)</span>) has a peak growth rate of only 0.019, at a wavelength of about 17. That is why its run below uses a 20×20 domain and a long simulated time.</p>
+</section>
+</section>
+<section id="simulating-the-equation" class="level2">
+<h2 class="anchored" data-anchor-id="simulating-the-equation">Simulating the equation</h2>
+<p>The equation is solved by explicit finite differences on a periodic ring: the spatial Laplacian at each grid point is approximated by the standard second-order central difference, with the two boundary neighbors wrapped around the ring, and the whole field is advanced in time by a single forward-Euler step. The time step has to respect the explicit scheme’s stability limit, and the complex diffusion coefficient makes that limit tighter than for ordinary diffusion. The shortest grid mode has <span class="math inline">\(\partial_x^2 \to -4/dx^2\)</span>. Forward Euler multiplies it by <span class="math inline">\(1 - 4\,dt\,(1+ic_1)/dx^2\)</span> each step, and that factor has modulus below 1 only if <span class="math inline">\(dt &lt; dx^2/\big(2(1+c_1^2)\big)\)</span>. That is 0.0625 here, half the real-diffusion limit <span class="math inline">\(dx^2/2\)</span>, and <span class="math inline">\(dt = 0.04\)</span> is inside it. (In 2-D the limit halves again, to <span class="math inline">\(dx^2/(4(1+c_1^2))\)</span>. Both 2-D runs below respect it, the first with little room to spare.) The field starts from the unstable state <span class="math inline">\(A \approx 0\)</span>, seeded with tiny uniform random noise — a stand-in for the fact that any real physical realization of this instability starts from some unavoidable microscopic fluctuation, not from an exact, infinitely fine-tuned zero.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">runif</span>(N, <span class="sc">-</span><span class="fl">0.05</span>, <span class="fl">0.05</span>) <span class="sc">+</span> <span class="dv">1</span>i <span class="sc">*</span> <span class="fu">runif</span>(N, <span class="sc">-</span><span class="fl">0.05</span>, <span class="fl">0.05</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>n_saves <span class="ot">&lt;-</span> steps <span class="sc">/</span> save_interval</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>amplitude_history <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> n_saves, <span class="at">ncol =</span> N)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>phase_history     <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> n_saves, <span class="at">ncol =</span> N)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>save_idx <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (t_step <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>steps) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Periodic Laplacian: shift the field left/right by one grid point and</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># wrap around the ends, rather than truncating at a hard boundary.</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  left_neighbor  <span class="ot">&lt;-</span> <span class="fu">c</span>(A[N], A[<span class="dv">1</span><span class="sc">:</span>(N <span class="sc">-</span> <span class="dv">1</span>)])</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  right_neighbor <span class="ot">&lt;-</span> <span class="fu">c</span>(A[<span class="dv">2</span><span class="sc">:</span>N], A[<span class="dv">1</span>])</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  laplacian <span class="ot">&lt;-</span> (left_neighbor <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> A <span class="sc">+</span> right_neighbor) <span class="sc">/</span> dx<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  dA <span class="ot">&lt;-</span> A <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span>i <span class="sc">*</span> c1) <span class="sc">*</span> laplacian <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="dv">1</span>i <span class="sc">*</span> c3) <span class="sc">*</span> (<span class="fu">Mod</span>(A)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">*</span> A</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  A <span class="ot">&lt;-</span> A <span class="sc">+</span> dA <span class="sc">*</span> dt</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (t_step <span class="sc">%%</span> save_interval <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> save_idx <span class="sc">&lt;=</span> n_saves) {</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    amplitude_history[save_idx, ] <span class="ot">&lt;-</span> <span class="fu">Mod</span>(A)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    phase_history[save_idx, ]     <span class="ot">&lt;-</span> <span class="fu">Arg</span>(A)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    save_idx <span class="ot">&lt;-</span> save_idx <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>time_axis  <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, steps <span class="sc">*</span> dt, <span class="at">length.out =</span> n_saves)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>space_axis <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, L, <span class="at">length.out =</span> N)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>to_long <span class="ot">&lt;-</span> <span class="cf">function</span>(mat, value_name) {</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  mat <span class="sc">|&gt;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setNames</span>(space_axis) <span class="sc">|&gt;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">time =</span> time_axis) <span class="sc">|&gt;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="sc">-</span>time, <span class="at">names_to =</span> <span class="st">"space"</span>, <span class="at">values_to =</span> value_name) <span class="sc">|&gt;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">space =</span> <span class="fu">as.numeric</span>(space))</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>amplitude_df <span class="ot">&lt;-</span> <span class="fu">to_long</span>(amplitude_history, <span class="st">"amplitude"</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>phase_df     <span class="ot">&lt;-</span> <span class="fu">to_long</span>(phase_history, <span class="st">"phase"</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Spatial spread of the amplitude field at each point in time: this is what</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># quantifies the "saturation transient" discussed below.</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>amplitude_variance <span class="ot">&lt;-</span> amplitude_df <span class="sc">|&gt;</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(time) <span class="sc">|&gt;</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">sd_amplitude =</span> <span class="fu">sd</span>(amplitude), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>transient_end <span class="ot">&lt;-</span> amplitude_variance <span class="sc">|&gt;</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(sd_amplitude <span class="sc">&lt;</span> <span class="fl">0.01</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(time)</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co"># decay rate of the slow tail of the amplitude spread, after the transient</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>tail_fit  <span class="ot">&lt;-</span> amplitude_variance <span class="sc">|&gt;</span> <span class="fu">filter</span>(time <span class="sc">&gt;</span> transient_end)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>tail_rate <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fu">unname</span>(<span class="fu">coef</span>(<span class="fu">lm</span>(<span class="fu">log</span>(sd_amplitude) <span class="sc">~</span> time, <span class="at">data =</span> tail_fit))[<span class="dv">2</span>])</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>slowest_phase_rate <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fu">sigma_exact</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">/</span> L, c1, c3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="checking-the-plane-wave-prediction-against-the-final-state" class="level3">
+<h3 class="anchored" data-anchor-id="checking-the-plane-wave-prediction-against-the-final-state">Checking the plane-wave prediction against the final state</h3>
+<p>Before plotting the full space-time history, it’s worth directly comparing the simulation’s final state to the plane-wave formula derived above. The periodic domain only permits wavenumbers <span class="math inline">\(k = 2\pi n/L\)</span> for integer winding number <span class="math inline">\(n\)</span>, so unwrapping the final phase profile across the ring reads off exactly which <span class="math inline">\(k\)</span> the system selected.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>final_amplitude <span class="ot">&lt;-</span> <span class="fu">Mod</span>(A)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>final_phase     <span class="ot">&lt;-</span> <span class="fu">Arg</span>(A)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>unwrapped <span class="ot">&lt;-</span> final_phase</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="fu">length</span>(unwrapped)) {</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> unwrapped[i] <span class="sc">-</span> unwrapped[i <span class="sc">-</span> <span class="dv">1</span>]</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (d <span class="sc">&gt;</span> pi)  unwrapped[i<span class="sc">:</span><span class="fu">length</span>(unwrapped)] <span class="ot">&lt;-</span> unwrapped[i<span class="sc">:</span><span class="fu">length</span>(unwrapped)] <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> pi</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (d <span class="sc">&lt;</span> <span class="sc">-</span>pi) unwrapped[i<span class="sc">:</span><span class="fu">length</span>(unwrapped)] <span class="ot">&lt;-</span> unwrapped[i<span class="sc">:</span><span class="fu">length</span>(unwrapped)] <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> pi</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>winding_number <span class="ot">&lt;-</span> (unwrapped[<span class="fu">length</span>(unwrapped)] <span class="sc">-</span> unwrapped[<span class="dv">1</span>]) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> pi)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>k_selected     <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> <span class="fu">round</span>(winding_number) <span class="sc">/</span> L</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>R_predicted    <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">max</span>(<span class="dv">0</span>, <span class="dv">1</span> <span class="sc">-</span> k_selected<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># The forward-Euler map has its own fixed point: a uniform wave of amplitude R</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co"># keeps its modulus only if |1 + dt(1 - k^2 - R^2) + i dt (c1 k^2 + c3 R^2)| = 1.</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>R_euler <span class="ot">&lt;-</span> <span class="fu">uniroot</span>(<span class="cf">function</span>(R) <span class="fu">Mod</span>(<span class="dv">1</span> <span class="sc">+</span> dt <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> k_selected<span class="sc">^</span><span class="dv">2</span> <span class="sc">-</span> R<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                                     <span class="dv">1</span>i <span class="sc">*</span> dt <span class="sc">*</span> (c1 <span class="sc">*</span> k_selected<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> c3 <span class="sc">*</span> R<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">c</span>(<span class="fl">0.9</span>, <span class="fl">1.2</span>))<span class="sc">$</span>root</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">quantity =</span> <span class="fu">c</span>(<span class="st">"selected winding number"</span>, <span class="st">"selected wavenumber k"</span>, <span class="st">"predicted R = sqrt(1-k^2)"</span>,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>               <span class="st">"fixed point of the Euler scheme"</span>, <span class="st">"observed mean |A|"</span>, <span class="st">"observed sd |A|"</span>),</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(<span class="fu">round</span>(winding_number, <span class="dv">3</span>), <span class="fu">round</span>(k_selected, <span class="dv">4</span>), <span class="fu">round</span>(R_predicted, <span class="dv">4</span>),</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>            <span class="fu">round</span>(R_euler, <span class="dv">4</span>), <span class="fu">round</span>(<span class="fu">mean</span>(final_amplitude), <span class="dv">4</span>), <span class="fu">round</span>(<span class="fu">sd</span>(final_amplitude), <span class="dv">4</span>))</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 2
+  quantity                         value
+  &lt;chr&gt;                            &lt;dbl&gt;
+1 selected winding number         0.993 
+2 selected wavenumber k           0.0628
+3 predicted R = sqrt(1-k^2)       0.998 
+4 fixed point of the Euler scheme 1.02  
+5 observed mean |A|               1.02  
+6 observed sd |A|                 0.0013</code></pre>
+</div>
+</div>
+<p>The field settles into (almost exactly) a single winding of phase around the periodic domain — the lowest nonzero wavenumber the ring permits, <span class="math inline">\(k = 2\pi/L \approx 0.0628\)</span> — and the observed amplitude is uniform to a part in a thousand. It sits 2.4% above the plane-wave prediction <span class="math inline">\(R=\sqrt{1-k^2}\approx 0.998\)</span>. That gap is not noise. It is a systematic error of the forward-Euler time step: each Euler step slightly over-rotates and over-stretches a uniform oscillation, and the amplitude at which the <em>discrete</em> map stops growing is 1.0222, which matches the observed 1.0224. As <span class="math inline">\(dt \to 0\)</span> it converges on the exact <span class="math inline">\(R\)</span>. Apart from that numerical offset, this is the exact analytic solution derived above, reappearing as the attractor of the full nonlinear simulation.</p>
+</section>
+</section>
+<section id="reading-the-space-time-picture" class="level2">
+<h2 class="anchored" data-anchor-id="reading-the-space-time-picture">Reading the space-time picture</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(amplitude_df, <span class="fu">aes</span>(space, time, <span class="at">fill =</span> amplitude)) <span class="sc">+</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>() <span class="sc">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> col_palette) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"label"</span>, <span class="at">x =</span> L <span class="sc">*</span> <span class="fl">0.5</span>, <span class="at">y =</span> steps <span class="sc">*</span> dt <span class="sc">*</span> <span class="fl">0.05</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">label =</span> <span class="st">"Uniform state (unstable noise)"</span>, <span class="at">color =</span> <span class="st">"#444444"</span>, <span class="at">fill =</span> <span class="st">"#f7f5f0"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">fontface =</span> <span class="st">"italic"</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"segment"</span>, <span class="at">x =</span> L <span class="sc">*</span> <span class="fl">0.5</span>, <span class="at">xend =</span> L <span class="sc">*</span> <span class="fl">0.5</span>, <span class="at">y =</span> steps <span class="sc">*</span> dt <span class="sc">*</span> <span class="fl">0.1</span>, <span class="at">yend =</span> steps <span class="sc">*</span> dt <span class="sc">*</span> <span class="fl">0.25</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">arrow =</span> <span class="fu">arrow</span>(<span class="at">length =</span> <span class="fu">unit</span>(<span class="fl">0.08</span>, <span class="st">"inches"</span>)), <span class="at">color =</span> <span class="st">"#222222"</span>, <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"label"</span>, <span class="at">x =</span> L <span class="sc">*</span> <span class="fl">0.5</span>, <span class="at">y =</span> steps <span class="sc">*</span> dt <span class="sc">*</span> <span class="fl">0.75</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">label =</span> <span class="st">"Amplitude saturates to a</span><span class="sc">\n</span><span class="st">uniform plane wave, |A| ~ 1"</span>, <span class="at">color =</span> <span class="st">"#822c1a"</span>, <span class="at">fill =</span> <span class="st">"#f7f5f0"</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>           <span class="at">fontface =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">3</span>, <span class="at">alpha =</span> <span class="fl">0.85</span>) <span class="sc">+</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Spatial dimension (x)"</span>, <span class="at">y =</span> <span class="st">"Time (t)"</span>, <span class="at">fill =</span> <span class="st">"|A(x,t)|"</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"A: Amplitude |A(x,t)|"</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(phase_df, <span class="fu">aes</span>(space, time, <span class="at">fill =</span> phase)) <span class="sc">+</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>() <span class="sc">+</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> phase_colors, <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span>pi, pi)) <span class="sc">+</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">"label"</span>, <span class="at">x =</span> L <span class="sc">*</span> <span class="fl">0.5</span>, <span class="at">y =</span> steps <span class="sc">*</span> dt <span class="sc">*</span> <span class="fl">0.75</span>,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>           <span class="at">label =</span> <span class="st">"Whole ring oscillates almost in unison;</span><span class="sc">\n</span><span class="st">one phase winding tilts each stripe"</span>,</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> <span class="st">"#1a1a1a"</span>, <span class="at">fill =</span> <span class="st">"#f7f5f0"</span>, <span class="at">size =</span> <span class="dv">3</span>, <span class="at">alpha =</span> <span class="fl">0.85</span>) <span class="sc">+</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Spatial dimension (x)"</span>, <span class="at">y =</span> <span class="st">"Time (t)"</span>, <span class="at">fill =</span> <span class="st">"Arg(A)"</span>,</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"B: Phase Arg(A(x,t))"</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(amplitude_variance, <span class="fu">aes</span>(time, sd_amplitude)) <span class="sc">+</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"#822c1a"</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>  { <span class="cf">if</span> (<span class="fu">length</span>(transient_end) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">list</span>(</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> transient_end, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"#444444"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>),</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>        <span class="fu">annotate</span>(<span class="st">"text"</span>, <span class="at">x =</span> transient_end, <span class="at">y =</span> <span class="fu">max</span>(amplitude_variance<span class="sc">$</span>sd_amplitude) <span class="sc">*</span> <span class="fl">0.9</span>,</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>                 <span class="at">label =</span> <span class="st">"transient ends"</span>, <span class="at">hjust =</span> <span class="sc">-</span><span class="fl">0.1</span>, <span class="at">size =</span> <span class="dv">3</span>, <span class="at">color =</span> <span class="st">"#444444"</span>)</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    } } <span class="sc">+</span></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span></span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Time (t)"</span>, <span class="at">y =</span> <span class="st">"SD of |A(x,t)| across space (log scale)"</span>, <span class="at">title =</span> <span class="st">"C: Amplitude saturation transient"</span>)</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>(p1 <span class="sc">|</span> p2) <span class="sc">/</span> p3 <span class="sc">+</span></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_layout</span>(<span class="at">heights =</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_annotation</span>(</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Self-organization in the complex Ginzburg-Landau equation"</span>,</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="fu">sprintf</span>(<span class="st">"N = %d, dt = %.2f, dx = %.2f. c1 = %.1f, c3 = %.1f, 1 - c1*c3 = %.1f (plane waves linearly stable)."</span>,</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>                       N, dt, dx, c1, c3, bfn)</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-cgle-panels" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cgle-panels-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-cgle-panels-1.png" class="img-fluid figure-img" width="1056">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cgle-panels-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Space-time evolution of the 1D complex Ginzburg-Landau equation. (A) The amplitude |A(x,t)| grows from noise and saturates to a spatially uniform value. (B) The phase Arg(A(x,t)) carries all the remaining structure: after a ragged start, the ring settles into a single plane wave whose phase advances in time at frequency ω ≈ −c3 (the stripes) and winds once around the ring (the slight tilt of each stripe). (C) The spatial standard deviation of |A|: a fast saturation transient, then a slow exponential tail as the last phase irregularities relax.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The two top panels are plotting the same complex field, split into its polar coordinates, and they show almost entirely different things. Panel A (amplitude) grows out of the noisy initial condition and then goes essentially flat — the plane-wave analysis above is exact evidence that this <em>should</em> happen, not a numerical artifact, since <span class="math inline">\(|A|\)</span> genuinely is spatially uniform for an ideal plane wave. Panel C makes the transient legible. The spatial spread of <span class="math inline">\(|A|\)</span> peaks while patches of different phase are still competing. It falls below 0.01 by <span class="math inline">\(t \approx 24\)</span>, and after that it decays slowly and exponentially, at a rate of 0.014 per unit time. That slow tail is the phase mode of the previous section at work. The last long-wavelength phase irregularities relax diffusively, and the amplitude, slaved to the phase gradients, follows them down. The predicted rate for the slowest phase mode on this ring, <span class="math inline">\((1-c_1c_3)q^2\)</span> with <span class="math inline">\(q = 2\pi/L\)</span> from the exact eigenvalue, is 0.01. The tail rate is of the same order. The two need not match exactly, since the linear analysis was about the <span class="math inline">\(k=0\)</span> wave and the ring has selected <span class="math inline">\(k = 2\pi/L\)</span>.</p>
+<p>Panel B (phase) is where the structure lives, because for a plane wave <span class="math inline">\(\mathrm{Arg}(A) = kx - \omega t\)</span> is linear in both space and time. With <span class="math inline">\(k\)</span> as small as the ring allows, the field oscillates almost in unison at <span class="math inline">\(\omega \approx -c_3\)</span>, which gives the horizontal stripes. The single winding of phase round the ring tilts each stripe by exactly one period across the domain: the travelling wave. It is a <em>phase</em> phenomenon, encoded in the winding of the argument of <span class="math inline">\(A\)</span> around the periodic domain, not in any spatial modulation of its magnitude.</p>
+</section>
+<section id="extending-to-two-dimensions-spiral-defects-and-phase-turbulence" class="level2">
+<h2 class="anchored" data-anchor-id="extending-to-two-dimensions-spiral-defects-and-phase-turbulence">Extending to two dimensions: spiral defects and phase turbulence</h2>
+<p>Everything above stayed in one spatial dimension, where the Benjamin-Feir-Newell criterion has a clean binary reading: <span class="math inline">\(1-c_1c_3&gt;0\)</span> gives a stable traveling plane wave, and <span class="math inline">\(1-c_1c_3&lt;0\)</span> gives some form of spatiotemporal chaos. In two dimensions, the same instability opens onto a richer phase diagram, because the phase field <span class="math inline">\(\mathrm{Arg}(A)\)</span> can now wind around a <em>point</em> rather than only accumulating along a line. Where the phase winds by a full <span class="math inline">\(\pm 2\pi\)</span> around some point <span class="math inline">\((x,y)\)</span>, continuity forces the amplitude to vanish exactly at that point — these are the topological defects of the CGLE, and away from the defect core the surrounding phase field organizes itself into a rotating spiral wave. Aranson and Kramer’s review catalogs how, once <span class="math inline">\(1-c_1c_3&lt;0\)</span>, the system can settle into two qualitatively distinct chaotic regimes depending on how far into the unstable region the parameters sit: a defect-free <strong>phase turbulence</strong>, where the phase field is chaotic but the amplitude stays bounded away from zero everywhere, and a <strong>defect</strong> (or amplitude) <strong>turbulence</strong>, where point defects continually nucleate, wander, and annihilate in pairs, each one the core of a rotating spiral <span class="citation" data-cites="aransonkramer2002world">(<a href="#ref-aransonkramer2002world" role="doc-biblioref">Aranson and Kramer 2002</a>)</span>.</p>
+<p>The equation itself only needs the Laplacian promoted to two dimensions:</p>
+<p><span class="math display">\[
+\frac{\partial A}{\partial t} = A + (1 + i c_1)\left(\frac{\partial^2 A}{\partial x^2} + \frac{\partial^2 A}{\partial y^2}\right) - (1 - i c_3)\,|A|^2 A.
+\]</span></p>
+<section id="detecting-a-topological-defect-numerically" class="level3">
+<h3 class="anchored" data-anchor-id="detecting-a-topological-defect-numerically">Detecting a topological defect numerically</h3>
+<p>A defect is a point around which the phase winds by a full turn. On the grid, that’s checked by walking around each elementary 2x2 plaquette of grid points, summing the (wrapped, so always in <span class="math inline">\((-\pi,\pi]\)</span>) phase differences between adjacent corners, and dividing by <span class="math inline">\(2\pi\)</span>: a plaquette encloses a defect of charge <span class="math inline">\(+1\)</span> or <span class="math inline">\(-1\)</span> exactly when that sum is <span class="math inline">\(\pm 2\pi\)</span>, and encloses no defect when it’s zero. This is the same discrete circulation-counting argument used to find vortices in superfluids or dislocations in a crystal lattice — a defect is, by construction, a place where a per-point quantity (the phase) is discontinuous only because the field it lives on (<span class="math inline">\(A\)</span>) is forced through zero there.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>lap2d <span class="ot">&lt;-</span> <span class="cf">function</span>(A, dx) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  up    <span class="ot">&lt;-</span> <span class="fu">rbind</span>(A[<span class="fu">nrow</span>(A), , <span class="at">drop =</span> <span class="cn">FALSE</span>], A[<span class="sc">-</span><span class="fu">nrow</span>(A), , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  down  <span class="ot">&lt;-</span> <span class="fu">rbind</span>(A[<span class="sc">-</span><span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>], A[<span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  left  <span class="ot">&lt;-</span> <span class="fu">cbind</span>(A[, <span class="fu">ncol</span>(A), <span class="at">drop =</span> <span class="cn">FALSE</span>], A[, <span class="sc">-</span><span class="fu">ncol</span>(A), <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  right <span class="ot">&lt;-</span> <span class="fu">cbind</span>(A[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], A[, <span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  (up <span class="sc">+</span> down <span class="sc">+</span> left <span class="sc">+</span> right <span class="sc">-</span> <span class="dv">4</span> <span class="sc">*</span> A) <span class="sc">/</span> dx<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>wrap_pi <span class="ot">&lt;-</span> <span class="cf">function</span>(x) ((x <span class="sc">+</span> pi) <span class="sc">%%</span> (<span class="dv">2</span> <span class="sc">*</span> pi)) <span class="sc">-</span> pi</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Topological charge of every elementary plaquette on the periodic grid,</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># via the discrete phase circulation around its four corners.</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>defect_charge_grid <span class="ot">&lt;-</span> <span class="cf">function</span>(A) {</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  theta      <span class="ot">&lt;-</span> <span class="fu">Arg</span>(A)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  th_ip1_j   <span class="ot">&lt;-</span> <span class="fu">rbind</span>(theta[<span class="sc">-</span><span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>], theta[<span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  th_i_jp1   <span class="ot">&lt;-</span> <span class="fu">cbind</span>(theta[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], theta[, <span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  th_ip1_jp1 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(th_ip1_j[, <span class="sc">-</span><span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>], th_ip1_j[, <span class="dv">1</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  d1 <span class="ot">&lt;-</span> <span class="fu">wrap_pi</span>(th_ip1_j <span class="sc">-</span> theta);      d2 <span class="ot">&lt;-</span> <span class="fu">wrap_pi</span>(th_ip1_jp1 <span class="sc">-</span> th_ip1_j)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  d3 <span class="ot">&lt;-</span> <span class="fu">wrap_pi</span>(th_i_jp1 <span class="sc">-</span> th_ip1_jp1); d4 <span class="ot">&lt;-</span> <span class="fu">wrap_pi</span>(theta <span class="sc">-</span> th_i_jp1)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>((d1 <span class="sc">+</span> d2 <span class="sc">+</span> d3 <span class="sc">+</span> d4) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> pi))</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>simulate_cgle2d <span class="ot">&lt;-</span> <span class="cf">function</span>(c1, c3, N, L, dt, steps, seed, save_every,</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>                             <span class="at">init =</span> <span class="fu">c</span>(<span class="st">"noise"</span>, <span class="st">"perturbed_plane_wave"</span>), <span class="at">noise_amp =</span> <span class="fl">0.05</span>) {</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  init <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(init)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  dx <span class="ot">&lt;-</span> L <span class="sc">/</span> N</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(seed)</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (init <span class="sc">==</span> <span class="st">"noise"</span>) {</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>    A <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">complex</span>(<span class="at">real =</span> <span class="fu">runif</span>(N <span class="sc">*</span> N, <span class="sc">-</span>noise_amp, noise_amp),</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>                         <span class="at">imaginary =</span> <span class="fu">runif</span>(N <span class="sc">*</span> N, <span class="sc">-</span>noise_amp, noise_amp)), <span class="at">nrow =</span> N)</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Start from the exact k=0 plane wave (R=1) plus a small broadband</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># perturbation -- this is the state the BFN criterion is actually a</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># statement about the stability of, rather than the fully unstructured</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># A=0 noise used for the 1D run above.</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    A <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="dv">0</span>i, N, N) <span class="sc">+</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">complex</span>(<span class="at">real =</span> <span class="fu">runif</span>(N <span class="sc">*</span> N, <span class="sc">-</span>noise_amp, noise_amp),</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>                      <span class="at">imaginary =</span> <span class="fu">runif</span>(N <span class="sc">*</span> N, <span class="sc">-</span>noise_amp, noise_amp)), <span class="at">nrow =</span> N)</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>  n_saves <span class="ot">&lt;-</span> <span class="fu">floor</span>(steps <span class="sc">/</span> save_every)</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>  defect_count <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_saves); time_trace <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_saves); save_idx <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (step <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>steps) {</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>    lap <span class="ot">&lt;-</span> <span class="fu">lap2d</span>(A, dx)</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>    dA  <span class="ot">&lt;-</span> A <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span>i <span class="sc">*</span> c1) <span class="sc">*</span> lap <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="dv">1</span>i <span class="sc">*</span> c3) <span class="sc">*</span> (<span class="fu">Mod</span>(A)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">*</span> A</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>    A   <span class="ot">&lt;-</span> A <span class="sc">+</span> dA <span class="sc">*</span> dt</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (step <span class="sc">%%</span> save_every <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> save_idx <span class="sc">&lt;=</span> n_saves) {</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>      defect_count[save_idx] <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">defect_charge_grid</span>(A) <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>      time_trace[save_idx]   <span class="ot">&lt;-</span> step <span class="sc">*</span> dt</span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>      save_idx <span class="ot">&lt;-</span> save_idx <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">A =</span> A, <span class="at">defect_count =</span> defect_count, <span class="at">time_trace =</span> time_trace, <span class="at">dx =</span> dx, <span class="at">L =</span> L, <span class="at">N =</span> N)</span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="choosing-two-parameter-sets-on-the-unstable-side-of-the-line" class="level3">
+<h3 class="anchored" data-anchor-id="choosing-two-parameter-sets-on-the-unstable-side-of-the-line">Choosing two parameter sets on the unstable side of the line</h3>
+<p><span class="math inline">\(1-c_1c_3&lt;0\)</span> is necessary for either chaotic regime, but it’s a statement purely about the <em>linear</em> growth rate of long-wavelength perturbations to the <span class="math inline">\(k=0\)</span> plane wave, and that growth rate vanishes continuously as the parameters approach the line from the unstable side. That has a concrete numerical consequence: sitting just barely past the line, the instability takes a very long time (and a large domain, to admit small enough wavenumbers) to grow out of infinitesimal noise, and — checked directly, by starting a run near the line and simply watching for a long time — it does not automatically produce defects. Nucleating an actual point defect is a separate, finite-amplitude event: it requires some region of the field to be driven all the way to <span class="math inline">\(A=0\)</span>, which is a much larger fluctuation than “phase is a bit ragged.” So two runs are used here, both satisfying <span class="math inline">\(1-c_1c_3&lt;0\)</span>, chosen to sit on either side of that further, empirical threshold:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>c1_defect <span class="ot">&lt;-</span> <span class="fl">2.0</span>;  c3_defect <span class="ot">&lt;-</span> <span class="fl">1.5</span>   <span class="co"># deep in the unstable region</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>c1_phase  <span class="ot">&lt;-</span> <span class="fl">1.0</span>;  c3_phase  <span class="ot">&lt;-</span> <span class="fl">1.3</span>   <span class="co"># only just past the line</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>bfn_defect <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> c1_defect <span class="sc">*</span> c3_defect</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>bfn_phase  <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> c1_phase <span class="sc">*</span> c3_phase</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li><strong>Defect turbulence</strong>: <span class="math inline">\(c_1=2\)</span>, <span class="math inline">\(c_3=1.5\)</span>, giving <span class="math inline">\(1-c_1c_3=-2\)</span>. Started from the same kind of small uniform noise used for the 1D run, on a <span class="math inline">\(100\times100\)</span> periodic domain. This is deep enough into the unstable region that defects nucleate promptly and in large numbers.</li>
+<li><strong>Phase turbulence</strong>: <span class="math inline">\(c_1=1\)</span>, <span class="math inline">\(c_3=1.3\)</span>, giving <span class="math inline">\(1-c_1c_3=-0.3\)</span> — unstable, but only mildly so. Started instead from the exact <span class="math inline">\(k=0\)</span> plane wave plus a small perturbation, on a smaller <span class="math inline">\(20\times20\)</span> domain (which restricts the accessible wavenumbers to ones large enough for the weak instability to grow within a tractable simulated time) and run for roughly three times as long. This is the regime where, empirically, no defect ever nucleates.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sim_defect <span class="ot">&lt;-</span> <span class="fu">simulate_cgle2d</span>(<span class="at">c1 =</span> c1_defect, <span class="at">c3 =</span> c3_defect, <span class="at">N =</span> <span class="dv">100</span>, <span class="at">L =</span> <span class="dv">100</span>, <span class="at">dt =</span> <span class="fl">0.04</span>,</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                               <span class="at">steps =</span> <span class="dv">4000</span>, <span class="at">seed =</span> <span class="dv">909</span>, <span class="at">save_every =</span> <span class="dv">20</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">init =</span> <span class="st">"noise"</span>, <span class="at">noise_amp =</span> <span class="fl">0.05</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>sim_phase <span class="ot">&lt;-</span> <span class="fu">simulate_cgle2d</span>(<span class="at">c1 =</span> c1_phase, <span class="at">c3 =</span> c3_phase, <span class="at">N =</span> <span class="dv">64</span>, <span class="at">L =</span> <span class="dv">20</span>, <span class="at">dt =</span> <span class="fl">0.01</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">steps =</span> <span class="dv">45000</span>, <span class="at">seed =</span> <span class="dv">321</span>, <span class="at">save_every =</span> <span class="dv">300</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                              <span class="at">init =</span> <span class="st">"perturbed_plane_wave"</span>, <span class="at">noise_amp =</span> <span class="fl">0.25</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>field_to_df <span class="ot">&lt;-</span> <span class="cf">function</span>(A, L) {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  N  <span class="ot">&lt;-</span> <span class="fu">nrow</span>(A)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  ax <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, L, <span class="at">length.out =</span> N <span class="sc">+</span> <span class="dv">1</span>)[<span class="dv">1</span><span class="sc">:</span>N]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand.grid</span>(<span class="at">x =</span> ax, <span class="at">y =</span> ax) <span class="sc">|&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">amplitude =</span> <span class="fu">as.vector</span>(<span class="fu">Mod</span>(<span class="fu">t</span>(A))), <span class="at">phase =</span> <span class="fu">as.vector</span>(<span class="fu">Arg</span>(<span class="fu">t</span>(A))))</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>defect_coords <span class="ot">&lt;-</span> <span class="cf">function</span>(A, L) {</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  N <span class="ot">&lt;-</span> <span class="fu">nrow</span>(A); dx <span class="ot">&lt;-</span> L <span class="sc">/</span> N</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  charge <span class="ot">&lt;-</span> <span class="fu">defect_charge_grid</span>(A)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  idx <span class="ot">&lt;-</span> <span class="fu">which</span>(charge <span class="sc">!=</span> <span class="dv">0</span>, <span class="at">arr.ind =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(idx) <span class="sc">==</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="fu">tibble</span>(<span class="at">x =</span> <span class="fu">numeric</span>(<span class="dv">0</span>), <span class="at">y =</span> <span class="fu">numeric</span>(<span class="dv">0</span>), <span class="at">charge =</span> <span class="fu">numeric</span>(<span class="dv">0</span>)))</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">x =</span> (idx[, <span class="dv">1</span>] <span class="sc">-</span> <span class="fl">0.5</span>) <span class="sc">*</span> dx, <span class="at">y =</span> (idx[, <span class="dv">2</span>] <span class="sc">-</span> <span class="fl">0.5</span>) <span class="sc">*</span> dx, <span class="at">charge =</span> charge[idx])</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>field_defect_df <span class="ot">&lt;-</span> <span class="fu">field_to_df</span>(sim_defect<span class="sc">$</span>A, sim_defect<span class="sc">$</span>L)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>field_phase_df  <span class="ot">&lt;-</span> <span class="fu">field_to_df</span>(sim_phase<span class="sc">$</span>A, sim_phase<span class="sc">$</span>L)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>defects_final   <span class="ot">&lt;-</span> <span class="fu">defect_coords</span>(sim_defect<span class="sc">$</span>A, sim_defect<span class="sc">$</span>L)</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>defect_trace_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">time =</span> sim_defect<span class="sc">$</span>time_trace, <span class="at">n_defects =</span> sim_defect<span class="sc">$</span>defect_count,</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">regime =</span> <span class="fu">sprintf</span>(<span class="st">"Defect turbulence (c1=%.1f, c3=%.1f)"</span>, c1_defect, c3_defect)),</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">time =</span> sim_phase<span class="sc">$</span>time_trace, <span class="at">n_defects =</span> sim_phase<span class="sc">$</span>defect_count,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>         <span class="at">regime =</span> <span class="fu">sprintf</span>(<span class="st">"Phase turbulence (c1=%.1f, c3=%.1f)"</span>, c1_phase, c3_phase))</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>steady_defect_stats <span class="ot">&lt;-</span> defect_trace_df <span class="sc">|&gt;</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(regime <span class="sc">==</span> <span class="fu">sprintf</span>(<span class="st">"Defect turbulence (c1=%.1f, c3=%.1f)"</span>, c1_defect, c3_defect), time <span class="sc">&gt;</span> <span class="dv">20</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_n =</span> <span class="fu">mean</span>(n_defects), <span class="at">sd_n =</span> <span class="fu">sd</span>(n_defects))</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>steady_density_pct <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> steady_defect_stats<span class="sc">$</span>mean_n <span class="sc">/</span> sim_defect<span class="sc">$</span>N<span class="sc">^</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="co"># |A| at the four grid corners of each defect plaquette, against the field as a whole</span></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>amp_d <span class="ot">&lt;-</span> <span class="fu">Mod</span>(sim_defect<span class="sc">$</span>A); Nd <span class="ot">&lt;-</span> sim_defect<span class="sc">$</span>N</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>idx   <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">defect_charge_grid</span>(sim_defect<span class="sc">$</span>A) <span class="sc">!=</span> <span class="dv">0</span>, <span class="at">arr.ind =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>nxt   <span class="ot">&lt;-</span> <span class="cf">function</span>(i) <span class="fu">ifelse</span>(i <span class="sc">==</span> Nd, <span class="dv">1</span>, i <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>amp_at_defects <span class="ot">&lt;-</span> <span class="fu">pmin</span>(amp_d[idx], amp_d[<span class="fu">cbind</span>(<span class="fu">nxt</span>(idx[, <span class="dv">1</span>]), idx[, <span class="dv">2</span>])],</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>                       amp_d[<span class="fu">cbind</span>(idx[, <span class="dv">1</span>], <span class="fu">nxt</span>(idx[, <span class="dv">2</span>]))], amp_d[<span class="fu">cbind</span>(<span class="fu">nxt</span>(idx[, <span class="dv">1</span>]), <span class="fu">nxt</span>(idx[, <span class="dv">2</span>]))])</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>amp_range_phase <span class="ot">&lt;-</span> <span class="fu">range</span>(field_phase_df<span class="sc">$</span>amplitude)</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>phase_spread    <span class="ot">&lt;-</span> <span class="fu">diff</span>(<span class="fu">range</span>(field_phase_df<span class="sc">$</span>phase))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="the-two-regimes-side-by-side" class="level3">
+<h3 class="anchored" data-anchor-id="the-two-regimes-side-by-side">The two regimes, side by side</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>p_amp_defect <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(field_defect_df, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> amplitude)) <span class="sc">+</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>() <span class="sc">+</span> <span class="fu">coord_fixed</span>() <span class="sc">+</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> col_palette) <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Amplitude |A|"</span>, <span class="at">subtitle =</span> <span class="st">"Defect turbulence"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"|A|"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>p_phase_defect <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(field_defect_df, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> phase)) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>() <span class="sc">+</span> <span class="fu">coord_fixed</span>() <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> phase_colors, <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span>pi, pi)) <span class="sc">+</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> defects_final, <span class="fu">aes</span>(x, y, <span class="at">shape =</span> <span class="fu">factor</span>(<span class="fu">sign</span>(charge))),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">size =</span> <span class="fl">1.4</span>) <span class="sc">+</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_shape_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">-1</span><span class="st">`</span> <span class="ot">=</span> <span class="dv">4</span>, <span class="st">`</span><span class="at">1</span><span class="st">`</span> <span class="ot">=</span> <span class="dv">1</span>), <span class="at">name =</span> <span class="st">"defect</span><span class="sc">\n</span><span class="st">charge"</span>) <span class="sc">+</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Phase Arg(A)"</span>, <span class="at">subtitle =</span> <span class="st">"Spiral cores marked"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"Arg(A)"</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>p_amp_phase <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(field_phase_df, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> amplitude)) <span class="sc">+</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>() <span class="sc">+</span> <span class="fu">coord_fixed</span>() <span class="sc">+</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> col_palette, <span class="at">limits =</span> <span class="fu">range</span>(field_phase_df<span class="sc">$</span>amplitude)) <span class="sc">+</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Amplitude |A|"</span>, <span class="at">subtitle =</span> <span class="st">"Phase turbulence"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"|A|"</span>)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>p_phase_phase <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(field_phase_df, <span class="fu">aes</span>(x, y, <span class="at">fill =</span> phase)) <span class="sc">+</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>() <span class="sc">+</span> <span class="fu">coord_fixed</span>() <span class="sc">+</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradientn</span>(<span class="at">colors =</span> phase_colors, <span class="at">limits =</span> <span class="fu">c</span>(<span class="sc">-</span>pi, pi)) <span class="sc">+</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Phase Arg(A)"</span>, <span class="at">subtitle =</span> <span class="st">"No defects"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"Arg(A)"</span>)</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>(p_amp_defect <span class="sc">|</span> p_phase_defect) <span class="sc">/</span> (p_amp_phase <span class="sc">|</span> p_phase_phase)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-cgle2d-fields" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cgle2d-fields-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-cgle2d-fields-1.png" class="img-fluid figure-img" width="912">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cgle2d-fields-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Final-state amplitude and phase fields for the two regimes. Top: deep in the unstable region (<span class="math inline">\(1-c_1c_3=`r round(bfn_defect,2)`\)</span>), point defects (marked: circles and crosses for the two opposite topological charges) are scattered throughout the domain. Each sits at a pale spot in the amplitude, where |A| falls to zero, and the phase winds once round it. Dark ridges in the amplitude are where neighbouring waves collide. Bottom: only just past the instability line (<span class="math inline">\(1-c_1c_3=`r round(bfn_phase,2)`\)</span>), the phase develops a single smooth, domain-sized distortion. The amplitude (note its narrow colour scale) stays within a few per cent of 1, and no defects appear.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The amplitude field in the top-left panel makes the mechanism visible. It isn’t uniform the way the 1D plane wave’s amplitude was. In this colour scale pale means small <span class="math inline">\(|A|\)</span>, and the field is a patchwork of pale hollows separated by a network of thin, dark ridges where <span class="math inline">\(|A|\)</span> rises above 1 (up to 1.37). Those ridges are where waves sent out by neighbouring defects collide. The defects themselves sit in the palest spots. At the corners of the defect plaquettes the smallest <span class="math inline">\(|A|\)</span> averages 0.07, against a field-wide median of 0.7. That is as close to zero as a point lying <em>between</em> grid nodes can be resolved, and it confirms that the phase winds round places where the amplitude vanishes. After the initial transient (<span class="math inline">\(t &gt; 20\)</span>), this parameter set settles into a statistically steady population of 67 <span class="math inline">\(\pm\)</span> 6.6 defects (about 0.67% of grid plaquettes) — individual defects continually annihilate in <span class="math inline">\(\pm\)</span> pairs and new ones nucleate elsewhere, but the population size itself is not chaotic. The bottom row is the qualitatively different outcome. The phase is no longer perfectly flat: it varies by 0.81 rad across the box, in a single smooth bump about the size of the domain. That is close to the fastest-growing wavelength in the growth-rate plot above, about 17. A 20×20 periodic box can hold only a handful of unstable modes: wavelength 20 along each axis, and about 14 along the diagonals. The amplitude (bottom-left; note the very narrow colour scale) stays between 0.976 and 1.042 everywhere, nowhere near the zero a defect would require. This snapshot looks more like a gentle large-scale deformation than “turbulence” in the everyday sense, and that is a fair reading. With so few unstable modes available, so the weak instability can only modulate the phase, not break it up. Fully developed phase turbulence, a chaotic but defect-free phase field, needs a domain many unstable wavelengths across, and a correspondingly long and expensive simulation. “Phase turbulence” names the regime, chaotic in the dynamical-systems sense; it is not a promise of visual complexity at this size.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>defect_trace_df <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(time <span class="sc">&gt;</span> <span class="dv">2</span>) <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(time, n_defects, <span class="at">color =</span> regime)) <span class="sc">+</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>regime, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">setNames</span>(<span class="fu">c</span>(<span class="st">"#822c1a"</span>, <span class="st">"#4575b4"</span>), <span class="fu">unique</span>(defect_trace_df<span class="sc">$</span>regime)), <span class="at">guide =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Time"</span>, <span class="at">y =</span> <span class="st">"Number of topological defects (spiral cores)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-cgle2d-defect-trace" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cgle2d-defect-trace-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-cgle2d-defect-trace-1.png" class="img-fluid figure-img" width="864">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cgle2d-defect-trace-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Number of topological defects over time for the two regimes (each panel’s time axis is scaled to its own run). Left: after an initial transient in which spurious single-pixel defects seeded by the rough noisy start rapidly annihilate, the population settles into a statistically steady density with continual nucleation and annihilation of pairs. Right: the defect count is exactly zero for the entire run.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Both runs sit on the unstable side of the same Benjamin-Feir-Newell line derived in one dimension above — the criterion doesn’t care about dimensionality, since it comes from linearizing around the same uniform plane wave — but only one of them turns that linear instability into topological defects. This is the sense in which the two-dimensional CGLE is a genuinely richer object than its 1D restriction: a 1D “defect” would require the amplitude to hit zero at an isolated point <em>in spacetime</em>, an event fine-tuned enough to be essentially unobservable from generic initial conditions, whereas in 2D a defect is a robust, codimension-2 object (a point in a 2D space) that generic chaotic dynamics can and does create and destroy continually once the instability is strong enough.</p>
+</section>
+</section>
+<section id="how-literal-is-the-biological-framing" class="level2">
+<h2 class="anchored" data-anchor-id="how-literal-is-the-biological-framing">How literal is the biological framing?</h2>
+<p>It is tempting to describe <span class="math inline">\(A(x,t)\)</span> as a “morphogen field” and to draw an analogy with the segmentation clocks that lay down somites in vertebrate embryos. That framing should be treated as a narrative device, not a claim that this equation is a validated model of any particular developmental system. Real segmentation clocks (the traveling wavefront of Hes/Her gene expression oscillations in the vertebrate presomitic mesoderm) are usually modeled with delay-coupled genetic oscillator networks tied to a receding determination front, not a CGLE-type amplitude equation, and the classic Turing-type stripe patterns in, e.g., zebrafish pigmentation come from a <em>stationary</em> reaction-diffusion instability <span class="citation" data-cites="turing1952chemical">(<a href="#ref-turing1952chemical" role="doc-biblioref">Turing 1952</a>)</span>, not an oscillatory one.</p>
+<p>Where the CGLE genuinely does apply as a first-principles model — not just an analogy — is anywhere a spatially extended medium of near-identical oscillators is weakly coupled to its neighbors just past a Hopf bifurcation: coupled chemical oscillators in the Belousov-Zhabotinsky reaction, traveling and spiral waves in some models of cardiac tissue, arrays of coupled lasers, and convecting fluids with an oscillatory (rather than stationary) primary instability. The reason the same three-term equation keeps reappearing across such physically unrelated systems is precisely the universality argument from earlier: near onset, the equation doesn’t see the chemistry or the optics, only the bifurcation type and two real numbers.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Four things are worth taking away. First, the historical arc: a static, real mean-field theory for superconductivity became a dynamical, complex amplitude equation once the same symmetry-and-scaling argument was applied to oscillatory rather than stationary instabilities — and that equation turned out to be universal across a wide range of unrelated physical systems. Second, the concrete numerical lesson from the 1D simulation: splitting a complex field into <span class="math inline">\(|A|\)</span> and <span class="math inline">\(\mathrm{Arg}(A)\)</span> is not a neutral choice of coordinates. There, essentially all of the interesting spatiotemporal structure was carried by the phase, while the amplitude did something much simpler — it grows, then locks onto the single value the exact plane-wave solution predicts. Third, the stability of those plane waves comes down to one number. A slow phase modulation diffuses with coefficient <span class="math inline">\(1-c_1c_3\)</span>, and when that coefficient turns negative, long phase ripples grow instead of smoothing out: the Benjamin-Feir-Newell instability, confirmed above by direct measurement of growth rates. Fourth, moving to two dimensions changes the picture: past the same line, the amplitude stops being a passive, uniform background and can itself develop structure. It forms pale hollows where it vanishes at point defects, around which the phase winds, separated by ridges where their waves collide. Whether that happens at all is a further, empirical question beyond the sign of <span class="math inline">\(1-c_1c_3\)</span> alone.</p>
+</section>
+<section id="references" class="level2">
+
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-aransonkramer2002world" class="csl-entry" role="listitem">
+Aranson, Igor S., and Lorenz Kramer. 2002. <span>“The World of the Complex Ginzburg-Landau Equation.”</span> <em>Reviews of Modern Physics</em> 74: 99–143.
+</div>
+<div id="ref-crosshohenberg1993pattern" class="csl-entry" role="listitem">
+Cross, M. C., and P. C. Hohenberg. 1993. <span>“Pattern Formation Outside of Equilibrium.”</span> <em>Reviews of Modern Physics</em> 65: 851–1112.
+</div>
+<div id="ref-ginzburg1950theory" class="csl-entry" role="listitem">
+Ginzburg, V. L., and L. D. Landau. 1950. <span>“On the Theory of Superconductivity.”</span> <em>Zhurnal Eksperimental’noi i Teoreticheskoi Fiziki</em> 20: 1064–82.
+</div>
+<div id="ref-kuramoto1984chemical" class="csl-entry" role="listitem">
+Kuramoto, Yoshiki. 1984. <em>Chemical Oscillations, Waves, and Turbulence</em>. Berlin: Springer-Verlag.
+</div>
+<div id="ref-newellwhitehead1969" class="csl-entry" role="listitem">
+Newell, Alan C., and John A. Whitehead. 1969. <span>“Finite Bandwidth, Finite Amplitude Convection.”</span> <em>Journal of Fluid Mechanics</em> 38 (2): 279–303.
+</div>
+<div id="ref-turing1952chemical" class="csl-entry" role="listitem">
+Turing, Alan M. 1952. <span>“The Chemical Basis of Morphogenesis.”</span> <em>Philosophical Transactions of the Royal Society of London B</em> 237 (641): 37–72.
+</div>
+</div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

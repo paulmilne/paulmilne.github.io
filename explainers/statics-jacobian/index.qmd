@@ -252,7 +252,7 @@ $$
 
 Here $\rho$ is the foot's horizontal distance from the hip, and $L_2\cos\phi_2$ is its horizontal distance from the knee. **A joint's torque from a vertical load depends only on how far the foot is from it horizontally.** The leg's shape doesn't matter, nor does its height or the angle of the thigh. The legs' own weight modifies this. It hangs on the inboard side of the foot and partly offsets the load, which is why the hip's 16.3 MN·m from the load alone becomes the 13.2 MN·m measured above.
 
-This is why a heavy walker stands like a harvestman. The hip must sit 19.4 m inboard of the foot, because the feet must be spread wide for stability, so the hip carries a large torque whatever happens. But the knee can be put almost directly *above* the foot. Then the knee torque is nearly zero, and the shin becomes a column in compression.
+This is why a heavy walker stands like a daddy long-legs (harvestman). The hip must sit 19.4 m inboard of the foot, because the feet must be spread wide for stability, so the hip carries a large torque whatever happens. But the knee can be put almost directly *above* the foot. Then the knee torque is nearly zero, and the shin becomes a column in compression.
 
 ```{python}
 #| label: fig-torque-map

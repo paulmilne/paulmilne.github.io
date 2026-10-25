@@ -18,11 +18,11 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/cgle-pattern-morphology/index.html",
       "/explainers/falling-walk/index.html",
       "/explainers/forward-kinematics/index.html",
       "/explainers/inverse-kinematics/index.html",
       "/explainers/statics-jacobian/index.html",
-      "/explainers/cgle-pattern-morphology/index.html",
       "/explainers/bifurcation-vs-langevin/index.html",
       "/explainers/markov-chains-diffusion/index.html",
       "/explainers/mean-field-annealed-disorder/index.html",
