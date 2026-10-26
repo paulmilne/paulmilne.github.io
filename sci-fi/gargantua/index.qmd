@@ -7,6 +7,9 @@ author: "Paul Milne"
 date: "2026-10-26"
 categories: [sci-fi, general relativity, black holes, physics, python]
 jupyter: python3
+resources:
+  - gargantua_film.mp4
+  - gargantua_doppler.mp4
 format:
   html:
     toc: true
@@ -259,6 +262,37 @@ show(ax[1], full, "with Doppler and gravitational shifts")
 plt.tight_layout()
 plt.show()
 ```
+
+## Gargantua in motion
+
+The disk is not a still picture. Its gas orbits, the inner edge faster than the outer, so any pattern in it is sheared into a tighter and tighter spiral. With the camera held still the ray map never changes: it is traced once, and each frame rotates the gas underneath it, every ring at its own orbital angular velocity $\Omega(r)$.
+
+There is one subtlety. Light from different parts of the image has travelled for different times. The image of the disk curled under the shadow is light that went round the back of the hole, and it left the gas long before the light from the near side. The tracer records each ray's travel time, and each pixel shows the gas as it was when that light set out.
+
+```{python}
+#| label: motion
+G, c, M_sun = 6.674e-11, 2.998e8, 1.989e30
+t_M = G * 1e8 * M_sun / c**3            # one unit of time, GM/c^3, for Gargantua
+t_hit = tr_film["t_hit"][tr_film["outcome"] == kerr.DISK]
+P_in = 2 * np.pi / D.omega(D.isco(A_FILM), A_FILM)
+P_out = 2 * np.pi / D.omega(R_OUT, A_FILM)
+span = 90.0                            # the clip covers 90 M of coordinate time
+print(f"for a 10^8-solar-mass hole, M = GM/c^3 = {t_M:.0f} s")
+print(f"orbital period at the inner edge ({D.isco(A_FILM):.2f} M): {P_in:.0f} M = {P_in*t_M/3600:.1f} hours")
+print(f"orbital period at the outer edge ({R_OUT:g} M): {P_out:.0f} M = {P_out*t_M/3600:.0f} hours")
+print(f"the 15-second clips cover {span:g} M = {span*t_M/3600:.1f} hours")
+print(f"light reaching the camera from the disk left it between {-t_hit.max():.0f} M and {-t_hit.min():.0f} M earlier")
+```
+
+Each 15-second clip compresses about `{python} f"{span*t_M/3600:.0f}"` hours of Gargantua's time: the inner edge of the disk goes round almost twice, the outer edge less than a fifth of a turn. First as the film showed it:
+
+{{< video gargantua_film.mp4 title="Gargantua's disk turning, without frequency shifts, as in Interstellar" >}}
+
+and then with the Doppler and gravitational shifts. Now the gas brightens as it swings round towards the camera on the left and fades as it recedes on the right:
+
+{{< video gargantua_doppler.mp4 title="Gargantua's disk turning, with Doppler and gravitational frequency shifts" >}}
+
+The video's texture adds some clumpier structure to the gas so that the rotation is easy to follow. The ray map is the same 5.8 million rays for every frame, and the clips are rendered by `animate.py` in the `gargantua` project.
 
 ## How long it takes
 

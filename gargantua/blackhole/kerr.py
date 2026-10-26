@@ -21,6 +21,8 @@ from numba import njit, prange
 
 # outcome codes returned by trace()
 ESCAPED, CAPTURED, DISK, UNFINISHED = 0, 1, 2, 3
+# state: r, theta, phi, p_r, p_theta (error-controlled) and t (carried along)
+NS = 6
 
 
 # ----------------------------------------------------------------------------
@@ -72,7 +74,8 @@ def hamiltonian(r, th, pr, pth, b, a):
 @njit(cache=True, fastmath=False)
 def rhs(y, b, a, out):
     """Hamilton's equations d(r, th, phi, p_r, p_th)/dzeta for a photon with
-    E = 1 and axial angular momentum b."""
+    E = 1 and axial angular momentum b, plus the coordinate time dt/dzeta
+    (out[5]), which nothing else depends on."""
     r, th, pr, pth = y[0], y[1], y[3], y[4]
     s, c = math.sin(th), math.cos(th)
     s2 = s * s
@@ -89,6 +92,7 @@ def rhs(y, b, a, out):
     out[2] = (a * P / D + b / s2 - a) / rho2
     out[3] = -((dD * pr * pr - dF_r) / (2.0 * rho2) - N * 2.0 * r / (2.0 * rho2 * rho2))
     out[4] = -((-dF_th) / (2.0 * rho2) + N * 2.0 * a * a * s * c / (2.0 * rho2 * rho2))
+    out[5] = ((r * r + a * a) * P / D + a * (b - a * s2)) / rho2
 
 
 # Dormand-Prince 5(4) tableau
@@ -111,15 +115,15 @@ def _dp_step(y, h, b, a, sgn, k, ytmp, ynew, err):
     """One Dormand-Prince step of size h along sgn * rhs (sgn = -1 traces
     backward in time). Fills ynew and the embedded error estimate err."""
     for s in range(7):
-        for i in range(5):
+        for i in range(NS):
             acc = y[i]
             for j in range(s):
                 acc += h * _A[s, j] * k[j, i]
             ytmp[i] = acc
         rhs(ytmp, b, a, k[s])
-        for i in range(5):
+        for i in range(NS):
             k[s, i] *= sgn
-    for i in range(5):
+    for i in range(NS):
         y5 = y[i]
         y4 = y[i]
         for s in range(7):
@@ -138,10 +142,10 @@ def trace_one(y0, b, a, r_in, r_out, r_esc, tol, max_steps, sgn, path, record):
     crossing the equator between r_in and r_out (an opaque thin disk); a
     disk crossing is located to within 1e-10 in theta by secant iteration."""
     rplus = 1.0 + math.sqrt(1.0 - a * a)
-    k = np.empty((7, 5))
-    ytmp = np.empty(5)
-    ynew = np.empty(5)
-    err = np.empty(5)
+    k = np.empty((7, NS))
+    ytmp = np.empty(NS)
+    ynew = np.empty(NS)
+    err = np.empty(NS)
     y = y0.copy()
     h = 0.01 * y[0]
     disk_on = r_out > r_in
@@ -149,7 +153,7 @@ def trace_one(y0, b, a, r_in, r_out, r_esc, tol, max_steps, sgn, path, record):
     nrec = 0
     while n < max_steps:
         if record > 0 and nrec < record:
-            for i in range(5):
+            for i in range(NS):
                 path[nrec, i] = y[i]
             nrec += 1
         _dp_step(y, h, b, a, sgn, k, ytmp, ynew, err)
@@ -185,19 +189,19 @@ def trace_one(y0, b, a, r_in, r_out, r_esc, tol, max_steps, sgn, path, record):
                 if abs(f2) < 1e-10:
                     break
             if r_in <= ynew[0] <= r_out:
-                for i in range(5):
+                for i in range(NS):
                     y0[i] = ynew[i]
                 return DISK, n
             # missed the disk: take the full step again and carry on
             _dp_step(y, h, b, a, sgn, k, ytmp, ynew, err)
-        for i in range(5):
+        for i in range(NS):
             y[i] = ynew[i]
         if y[0] > r_esc:
-            for i in range(5):
+            for i in range(NS):
                 y0[i] = y[i]
             return ESCAPED, n
         if y[0] < rplus * (1.0 + 1e-5):
-            for i in range(5):
+            for i in range(NS):
                 y0[i] = y[i]
             return CAPTURED, n
         h *= min(5.0, 0.9 * max(e, 1e-10) ** -0.2)
@@ -205,14 +209,14 @@ def trace_one(y0, b, a, r_in, r_out, r_esc, tol, max_steps, sgn, path, record):
         hmax = 0.1 * y[0] * y[0] / (1.0 + abs(y[3]) * y[0] + abs(y[4]))
         if h > hmax:
             h = hmax
-    for i in range(5):
+    for i in range(NS):
         y0[i] = y[i]
     return UNFINISHED, n
 
 
 @njit(parallel=True, cache=True)
 def _trace_many(Y, B, a, r_in, r_out, r_esc, tol, max_steps, outcome, nsteps):
-    dummy = np.empty((1, 5))
+    dummy = np.empty((1, NS))
     for i in prange(Y.shape[0]):
         y = Y[i].copy()
         o, n = trace_one(y, B[i], a, r_in, r_out, r_esc, tol, max_steps, -1.0, dummy, 0)
@@ -225,8 +229,12 @@ def trace(Y0, B, a, r_in=0.0, r_out=0.0, r_esc=1000.0, tol=1e-9, max_steps=20000
     """Trace many rays backward from the camera.
 
     Y0 is (n, 5) of (r, theta, phi, p_r, p_theta) at the camera, B is (n,)
-    of b = p_phi. Returns the final states, outcome codes and step counts."""
-    Y = np.array(Y0, dtype=np.float64, copy=True)
+    of b = p_phi. Returns the final states (n, 6), the last column being
+    the coordinate time t elapsed (negative: the light left earlier),
+    outcome codes and step counts."""
+    Y0 = np.asarray(Y0, dtype=np.float64)
+    Y = np.zeros((len(Y0), NS))
+    Y[:, :5] = Y0[:, :5]
     B = np.ascontiguousarray(B, dtype=np.float64)
     outcome = np.empty(len(Y), dtype=np.int8)
     nsteps = np.empty(len(Y), dtype=np.int32)
@@ -236,9 +244,10 @@ def trace(Y0, B, a, r_in=0.0, r_out=0.0, r_esc=1000.0, tol=1e-9, max_steps=20000
 
 
 def trace_path(y0, b, a, r_in=0.0, r_out=0.0, r_esc=60.0, tol=1e-9, n=20000, sgn=-1.0):
-    """Trace one ray and return its recorded path (m, 5) and outcome."""
-    path = np.zeros((n, 5))
-    y = np.array(y0, dtype=np.float64)
+    """Trace one ray and return its recorded path (m, 6) and outcome."""
+    path = np.zeros((n, NS))
+    y = np.zeros(NS)
+    y[:5] = np.asarray(y0, dtype=np.float64)[:5]
     o, m = trace_one(y, float(b), float(a), float(r_in), float(r_out),
                      float(r_esc), tol, n - 1, sgn, path, n - 1)
     m = min(m + 1, n - 1)
@@ -346,7 +355,7 @@ def sky_direction(Y, B, a):
     """Unit vector (x, y, z) of the asymptotic direction in which each escaped
     backward ray leaves, i.e. the point on the celestial sphere it sees.
     Uses the local orthonormal momentum at the escape radius."""
-    r, th, ph, pr, pth = Y.T
+    r, th, ph, pr, pth = Y[:, :5].T
     D = r * r - 2 * r + a * a
     rho = np.sqrt(r * r + a * a * np.cos(th) ** 2)
     # backward ray: its direction of travel is minus the photon's momentum

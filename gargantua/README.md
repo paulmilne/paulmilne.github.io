@@ -18,6 +18,16 @@ cd ~/Dev/Quarto/math-blog
 .venv/bin/pip install -r gargantua/requirements.txt
 ```
 
+## Video
+
+```bash
+../.venv/bin/python animate.py        # 15 s clips of the disk turning, with and without Doppler shifts
+```
+
+The camera is fixed, so the ray map is traced once; each frame rotates the
+disk's gas at its own orbital speed, delayed by each ray's light-travel time.
+Writes `sci-fi/gargantua/gargantua_film.mp4` and `gargantua_doppler.mp4` (needs ffmpeg).
+
 ## Files
 
 | module | contents |

@@ -126,3 +126,33 @@ def streaks(r, phi, seed=3, n_modes=90, contrast=0.35):
         tot += amp * amp
     out /= math.sqrt(tot / 2)
     return np.clip(1.0 + contrast * out, 0.0, None)
+
+
+def streak_basis(r, seed=3, n_modes=90, m_range=(1, 6), k_range=(4, 60)):
+    """A streak texture split into azimuthal harmonics, so that it can be
+    rotated cheaply: texture(phi) = 1 + contrast * Re sum_m S_m e^{i m phi}.
+    Returns S, an (m_max + 1, n) complex array indexed by m. With the
+    default arguments it is exactly the texture of streaks()."""
+    rng = np.random.default_rng(seed)
+    L = np.log(np.maximum(r, 1e-9))
+    S = np.zeros((m_range[1] + 1,) + np.shape(r), dtype=np.complex128)
+    tot = 0.0
+    for _ in range(n_modes):
+        m = rng.integers(m_range[0], m_range[1] + 1)
+        k = rng.uniform(*k_range)
+        amp = 1.0 / math.sqrt(k)
+        S[m] += amp * np.exp(1j * (k * L + rng.uniform(0, 2 * math.pi)))
+        tot += amp * amp
+    return S / math.sqrt(tot / 2)
+
+
+def streaks_rotated(S, phi, contrast=0.35):
+    """Evaluate a streak_basis at azimuths phi."""
+    z = np.exp(1j * phi)
+    acc = np.zeros(np.shape(phi), dtype=np.complex128)
+    zm = np.ones_like(z)
+    for m in range(1, S.shape[0]):
+        zm = zm * z
+        if np.any(S[m]):
+            acc += S[m] * zm
+    return np.clip(1.0 + contrast * acc.real, 0.0, None)

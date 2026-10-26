@@ -78,6 +78,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/videojs/video.min.js"></script>
+<link href="../../site_libs/quarto-contrib/videojs/video-js.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -272,6 +274,7 @@ window.Quarto = {
   <li><a href="#step-2-spin" id="toc-step-2-spin" class="nav-link" data-scroll-target="#step-2-spin">Step 2: spin</a></li>
   <li><a href="#step-3-gargantua-as-the-film-showed-it" id="toc-step-3-gargantua-as-the-film-showed-it" class="nav-link" data-scroll-target="#step-3-gargantua-as-the-film-showed-it">Step 3: Gargantua as the film showed it</a></li>
   <li><a href="#step-4-switching-on-the-physics-the-film-left-out" id="toc-step-4-switching-on-the-physics-the-film-left-out" class="nav-link" data-scroll-target="#step-4-switching-on-the-physics-the-film-left-out">Step 4: switching on the physics the film left out</a></li>
+  <li><a href="#gargantua-in-motion" id="toc-gargantua-in-motion" class="nav-link" data-scroll-target="#gargantua-in-motion">Gargantua in motion</a></li>
   <li><a href="#how-long-it-takes" id="toc-how-long-it-takes" class="nav-link" data-scroll-target="#how-long-it-takes">How long it takes</a></li>
   <li><a href="#what-this-leaves-out" id="toc-what-this-leaves-out" class="nav-link" data-scroll-target="#what-this-leaves-out">What this leaves out</a></li>
   <li><a href="#thornes-other-image" id="toc-thornes-other-image" class="nav-link" data-scroll-target="#thornes-other-image">Thorne’s other image</a></li>
@@ -623,24 +626,57 @@ Figure&nbsp;6: The same black hole, disk and camera. Left: as Interstellar showe
 </div>
 </div>
 </section>
+<section id="gargantua-in-motion" class="level2">
+<h2 class="anchored" data-anchor-id="gargantua-in-motion">Gargantua in motion</h2>
+<p>The disk is not a still picture. Its gas orbits, the inner edge faster than the outer, so any pattern in it is sheared into a tighter and tighter spiral. With the camera held still the ray map never changes: it is traced once, and each frame rotates the gas underneath it, every ring at its own orbital angular velocity <span class="math inline">\(\Omega(r)\)</span>.</p>
+<p>There is one subtlety. Light from different parts of the image has travelled for different times. The image of the disk curled under the shadow is light that went round the back of the hole, and it left the gas long before the light from the near side. The tracer records each ray’s travel time, and each pixel shows the gas as it was when that light set out.</p>
+<div id="motion" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>G, c, M_sun <span class="op">=</span> <span class="fl">6.674e-11</span>, <span class="fl">2.998e8</span>, <span class="fl">1.989e30</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>t_M <span class="op">=</span> G <span class="op">*</span> <span class="fl">1e8</span> <span class="op">*</span> M_sun <span class="op">/</span> c<span class="op">**</span><span class="dv">3</span>            <span class="co"># one unit of time, GM/c^3, for Gargantua</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>t_hit <span class="op">=</span> tr_film[<span class="st">"t_hit"</span>][tr_film[<span class="st">"outcome"</span>] <span class="op">==</span> kerr.DISK]</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>P_in <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">/</span> D.omega(D.isco(A_FILM), A_FILM)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>P_out <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">/</span> D.omega(R_OUT, A_FILM)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>span <span class="op">=</span> <span class="fl">90.0</span>                            <span class="co"># the clip covers 90 M of coordinate time</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"for a 10^8-solar-mass hole, M = GM/c^3 = </span><span class="sc">{</span>t_M<span class="sc">:.0f}</span><span class="ss"> s"</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"orbital period at the inner edge (</span><span class="sc">{</span>D<span class="sc">.</span>isco(A_FILM)<span class="sc">:.2f}</span><span class="ss"> M): </span><span class="sc">{</span>P_in<span class="sc">:.0f}</span><span class="ss"> M = </span><span class="sc">{</span>P_in<span class="op">*</span>t_M<span class="op">/</span><span class="dv">3600</span><span class="sc">:.1f}</span><span class="ss"> hours"</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"orbital period at the outer edge (</span><span class="sc">{</span>R_OUT<span class="sc">:g}</span><span class="ss"> M): </span><span class="sc">{</span>P_out<span class="sc">:.0f}</span><span class="ss"> M = </span><span class="sc">{</span>P_out<span class="op">*</span>t_M<span class="op">/</span><span class="dv">3600</span><span class="sc">:.0f}</span><span class="ss"> hours"</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"the 15-second clips cover </span><span class="sc">{</span>span<span class="sc">:g}</span><span class="ss"> M = </span><span class="sc">{</span>span<span class="op">*</span>t_M<span class="op">/</span><span class="dv">3600</span><span class="sc">:.1f}</span><span class="ss"> hours"</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"light reaching the camera from the disk left it between </span><span class="sc">{</span><span class="op">-</span>t_hit<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.0f}</span><span class="ss"> M and </span><span class="sc">{</span><span class="op">-</span>t_hit<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.0f}</span><span class="ss"> M earlier"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>for a 10^8-solar-mass hole, M = GM/c^3 = 493 s
+orbital period at the inner edge (3.83 M): 51 M = 7.0 hours
+orbital period at the outer edge (20 M): 566 M = 77 hours
+the 15-second clips cover 90 M = 12.3 hours
+light reaching the camera from the disk left it between 57 M and 158 M earlier</code></pre>
+</div>
+</div>
+<p>Each 15-second clip compresses about 12 hours of Gargantua’s time: the inner edge of the disk goes round almost twice, the outer edge less than a fifth of a turn. First as the film showed it:</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="Gargantua's disk turning, without frequency shifts, as in Interstellar"><source src="gargantua_film.mp4"></video></div>
+<p>and then with the Doppler and gravitational shifts. Now the gas brightens as it swings round towards the camera on the left and fades as it recedes on the right:</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video2" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="Gargantua's disk turning, with Doppler and gravitational frequency shifts"><source src="gargantua_doppler.mp4"></video></div>
+<p>The video’s texture adds some clumpier structure to the gas so that the rotation is easy to follow. The ray map is the same 5.8 million rays for every frame, and the clips are rendered by <code>animate.py</code> in the <code>gargantua</code> project.</p>
+</section>
 <section id="how-long-it-takes" class="level2">
 <h2 class="anchored" data-anchor-id="how-long-it-takes">How long it takes</h2>
 <p>Computing power has moved on since 2014, and a still image at blog resolution is far less demanding than a 23-million-pixel IMAX frame traced as ray bundles.</p>
-<div id="timing" class="cell" data-execution_count="9">
+<div id="timing" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Show code</summary>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>n_rays <span class="op">=</span> tr_film[<span class="st">"outcome"</span>].size</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"film-geometry image: </span><span class="sc">{</span>n_rays<span class="sc">:,}</span><span class="ss"> rays (</span><span class="sc">{</span>NX<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>NY<span class="sc">}</span><span class="ss"> pixels, </span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss"> samples each)"</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"geodesic integration: </span><span class="sc">{</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="sc">:.1f}</span><span class="ss"> s on this machine "</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span>n_rays<span class="op">/</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> thousand rays per second)"</span>)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"integration steps per ray: median </span><span class="sc">{</span>np<span class="sc">.</span>median(tr_film[<span class="st">'steps'</span>])<span class="sc">:.0f}</span><span class="ss">, "</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"99th percentile </span><span class="sc">{</span>np<span class="sc">.</span>percentile(tr_film[<span class="st">'steps'</span>], <span class="dv">99</span>)<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.bincount(tr_film[<span class="st">"outcome"</span>].ravel(), minlength<span class="op">=</span><span class="dv">4</span>)</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rays escaping to the sky </span><span class="sc">{</span>counts[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">; into the hole </span><span class="sc">{</span>counts[<span class="dv">1</span>]<span class="sc">:,}</span><span class="ss">; onto the disk </span><span class="sc">{</span>counts[<span class="dv">2</span>]<span class="sc">:,}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>n_rays <span class="op">=</span> tr_film[<span class="st">"outcome"</span>].size</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"film-geometry image: </span><span class="sc">{</span>n_rays<span class="sc">:,}</span><span class="ss"> rays (</span><span class="sc">{</span>NX<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>NY<span class="sc">}</span><span class="ss"> pixels, </span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss"> samples each)"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"geodesic integration: </span><span class="sc">{</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="sc">:.1f}</span><span class="ss"> s on this machine "</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span>n_rays<span class="op">/</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> thousand rays per second)"</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"integration steps per ray: median </span><span class="sc">{</span>np<span class="sc">.</span>median(tr_film[<span class="st">'steps'</span>])<span class="sc">:.0f}</span><span class="ss">, "</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"99th percentile </span><span class="sc">{</span>np<span class="sc">.</span>percentile(tr_film[<span class="st">'steps'</span>], <span class="dv">99</span>)<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.bincount(tr_film[<span class="st">"outcome"</span>].ravel(), minlength<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rays escaping to the sky </span><span class="sc">{</span>counts[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">; into the hole </span><span class="sc">{</span>counts[<span class="dv">1</span>]<span class="sc">:,}</span><span class="ss">; onto the disk </span><span class="sc">{</span>counts[<span class="dv">2</span>]<span class="sc">:,}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>film-geometry image: 5,120,000 rays (1600x800 pixels, 2x2 samples each)
-geodesic integration: 18.8 s on this machine (272 thousand rays per second)
+geodesic integration: 21.2 s on this machine (242 thousand rays per second)
 integration steps per ray: median 130, 99th percentile 353
 rays escaping to the sky 2,962,609; into the hole 432,014; onto the disk 1,725,377</code></pre>
 </div>
@@ -1078,6 +1114,8 @@ rays escaping to the sky 2,962,609; into the hole 432,014; onto the disk 1,725,3
   });
   </script>
 </div> <!-- /content -->
+<script>videojs(video_shortcode_videojs_video1);</script>
+<script>videojs(video_shortcode_videojs_video2);</script>
 
 
 

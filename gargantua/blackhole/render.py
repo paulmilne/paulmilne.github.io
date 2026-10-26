@@ -28,7 +28,7 @@ def trace_image(r, theta_deg, a, nx, ny, fov, ss=2, beta=0.0, disk=True,
     redshift g of disk hits, plus the camera and run statistics."""
     params = dict(r=r, theta=theta_deg, a=a, nx=nx, ny=ny, fov=fov, ss=ss, beta=beta,
                   disk=disk, r_out=r_out, centre=list(centre), roll=roll, tol=tol,
-                  projection=projection, r_in=r_in, v=5)
+                  projection=projection, r_in=r_in, v=6)
     key = hashlib.sha1(json.dumps(params, sort_keys=True).encode()).hexdigest()[:16]
     path = CACHE / f"trace_{key}.npz"
     cam = kerr.Camera(r, math.radians(theta_deg), a, beta=beta, fov=fov, roll=roll)
@@ -59,6 +59,7 @@ def trace_image(r, theta_deg, a, nx, ny, fov, ss=2, beta=0.0, disk=True,
     out = dict(outcome=oc.reshape(NY, NX), sky=v.reshape(NY, NX, 3), cam=N.reshape(NY, NX, 3),
                r_hit=np.where(hit, Y[:, 0], 0.0).reshape(NY, NX),
                phi_hit=np.where(hit, Y[:, 2], 0.0).reshape(NY, NX),
+               t_hit=np.where(hit, Y[:, 5], 0.0).reshape(NY, NX),
                g=g.reshape(NY, NX), b=B.reshape(NY, NX), steps=ns.reshape(NY, NX),
                seconds=np.array(secs), beta=np.array(cam.beta))
     if cache:
