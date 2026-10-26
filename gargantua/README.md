@@ -26,7 +26,7 @@ cd ~/Dev/Quarto/math-blog
 
 The camera is fixed, so the ray map is traced once; each frame rotates the
 disk's gas at its own orbital speed, delayed by each ray's light-travel time.
-Writes `sci-fi/gargantua/gargantua_film.mp4` and `gargantua_doppler.mp4` (needs ffmpeg).
+Writes `sci-fi/gargantua/gargantua_film.mp4` and `gargantua_doppler.mp4` (needs ffmpeg). With `--audio FILE`, the opening of that file is muxed in as a soundtrack, faded in and out.
 
 ## Files
 

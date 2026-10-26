@@ -40,7 +40,10 @@ def main():
                     help="coordinate time covered by the clip, in units of M")
     ap.add_argument("--exposure", type=float, default=0.35)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "sci-fi" / "gargantua"))
+    ap.add_argument("--audio", default=None,
+                    help="optional soundtrack to mux in, faded in and out")
     args = ap.parse_args()
+    audio = Path(args.audio) if args.audio else None
 
     t0 = time.time()
     tr = R.trace_image(R_CAM, TH_CAM, A, args.width, args.height, args.fov, ss=args.ss,
@@ -74,9 +77,13 @@ def main():
         base *= fade[:, None]
         name = Path(args.out) / f"gargantua_{'film' if shift == 'none' else 'doppler'}.mp4"
         cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
-               "-s", f"{args.width}x{args.height}", "-r", str(args.fps), "-i", "-",
-               "-c:v", "libx264", "-preset", "slow", "-crf", "20", "-pix_fmt", "yuv420p",
-               "-movflags", "+faststart", str(name)]
+               "-s", f"{args.width}x{args.height}", "-r", str(args.fps), "-i", "-"]
+        if audio is not None:
+            fade = max(args.seconds - 2.5, 0)
+            cmd += ["-i", str(audio), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "160k",
+                    "-af", f"afade=t=in:d=0.5,afade=t=out:st={fade}:d=2.5", "-t", str(args.seconds)]
+        cmd += ["-c:v", "libx264", "-preset", "slow", "-crf", "20", "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart", str(name)]
         ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         n_frames = int(round(args.seconds * args.fps))
         img = np.zeros(tr["outcome"].shape + (3,))
