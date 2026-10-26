@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-26">
+<meta name="description" content="What a spinning black hole does to light: the Kerr metric, horizons and the ergosphere, frame dragging and zero-angular-momentum observers, the three conserved quantities of a light ray including Carter’s constant, the Hamiltonian ray equations used by DNGR, spherical photon orbits, Bardeen’s shadow, and the effect of the camera’s motion, all checked numerically.">
+
+<title>The Kerr Black Hole – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Kerr Black Hole – math-blog">
+<meta property="og:description" content="What a spinning black hole does to light: the Kerr metric, horizons and the ergosphere, frame dragging and zero-angular-momentum observers, the three conserved quantities of a light ray including Carter’s constant, the Hamiltonian ray equations used by DNGR, spherical photon orbits, Bardeen’s shadow, and the effect of the camera’s motion, all checked numerically.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/kerr-black-hole/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="371">
+<meta property="og:image:width" content="742">
+<meta name="twitter:title" content="The Kerr Black Hole – math-blog">
+<meta name="twitter:description" content="What a spinning black hole does to light: the Kerr metric, horizons and the ergosphere, frame dragging and zero-angular-momentum observers, the three conserved quantities of a light ray including Carter’s constant, the Hamiltonian ray equations used by DNGR, spherical photon orbits, Bardeen’s shadow, and the effect of the camera’s motion, all checked numerically.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/kerr-black-hole/thumbnail.png">
+<meta name="twitter:image-height" content="371">
+<meta name="twitter:image-width" content="742">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Kerr Black Hole</h1>
+            <p class="subtitle lead">Spin, frame dragging, the Carter constant and the D-shaped shadow, with a ray tracer for a spinning hole (part 3 of 4)</p>
+                  <div>
+        <div class="description">
+          What a spinning black hole does to light: the Kerr metric, horizons and the ergosphere, frame dragging and zero-angular-momentum observers, the three conserved quantities of a light ray including Carter’s constant, the Hamiltonian ray equations used by DNGR, spherical photon orbits, Bardeen’s shadow, and the effect of the camera’s motion, all checked numerically.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">general relativity</div>
+                <div class="quarto-category">black holes</div>
+                <div class="quarto-category">numerical methods</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 26, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-kerr-metric" id="toc-the-kerr-metric" class="nav-link active" data-scroll-target="#the-kerr-metric">The Kerr metric</a>
+  <ul class="collapse">
+  <li><a href="#observers-who-do-not-rotate" id="toc-observers-who-do-not-rotate" class="nav-link" data-scroll-target="#observers-who-do-not-rotate">Observers who do not rotate</a></li>
+  </ul></li>
+  <li><a href="#three-constants-for-a-light-ray" id="toc-three-constants-for-a-light-ray" class="nav-link" data-scroll-target="#three-constants-for-a-light-ray">Three constants for a light ray</a></li>
+  <li><a href="#the-ray-equations" id="toc-the-ray-equations" class="nav-link" data-scroll-target="#the-ray-equations">The ray equations</a>
+  <ul class="collapse">
+  <li><a href="#initial-conditions-from-a-pixel" id="toc-initial-conditions-from-a-pixel" class="nav-link" data-scroll-target="#initial-conditions-from-a-pixel">Initial conditions from a pixel</a></li>
+  <li><a href="#the-integrator" id="toc-the-integrator" class="nav-link" data-scroll-target="#the-integrator">The integrator</a></li>
+  </ul></li>
+  <li><a href="#photon-orbits" id="toc-photon-orbits" class="nav-link" data-scroll-target="#photon-orbits">Photon orbits</a></li>
+  <li><a href="#the-shadow" id="toc-the-shadow" class="nav-link" data-scroll-target="#the-shadow">The shadow</a></li>
+  <li><a href="#the-cameras-motion-matters-as-much-as-the-spin" id="toc-the-cameras-motion-matters-as-much-as-the-spin" class="nav-link" data-scroll-target="#the-cameras-motion-matters-as-much-as-the-spin">The camera’s motion matters as much as the spin</a></li>
+  <li><a href="#stars-round-a-spinning-hole" id="toc-stars-round-a-spinning-hole" class="nav-link" data-scroll-target="#stars-round-a-spinning-hole">Stars round a spinning hole</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>This is the third of four explainers behind <a href="../../sci-fi/gargantua/">Gargantua: Rebuilding Interstellar’s Black Hole</a>:</p>
+<ol type="1">
+<li><a href="../../explainers/light-bending-schwarzschild/"><strong>Bending light around a black hole</strong></a>: null geodesics, the photon sphere, and the exact deflection angle.</li>
+<li><a href="../../explainers/black-hole-ray-tracing/"><strong>Ray tracing a black hole</strong></a>: cameras, celestial spheres, Einstein rings and multiple images.</li>
+<li><strong>The Kerr black hole</strong> (this post): spin, frame dragging and the D-shaped shadow.</li>
+<li><a href="../../explainers/accretion-disk-light/"><strong>Light from the disk</strong></a>: orbits, temperature, redshift and Doppler beaming.</li>
+</ol>
+<p>Gargantua spins. In the story it spins within a whisker of the maximum, which is what makes an hour on Miller’s planet cost seven years on Earth. Spin breaks the spherical symmetry that made <a href="../../explainers/black-hole-ray-tracing/">part 2</a> so economical: a ray no longer stays in one plane, and no single function of one angle describes the image. This post sets up the equations that DNGR, the code behind <em>Interstellar</em>, actually integrated, builds a ray tracer from them, and checks it against the few results for a spinning hole that are known exactly.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, time, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> Path.cwd().resolve().parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"gargantua"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> blackhole <span class="im">import</span> kerr, render <span class="im">as</span> R, sky <span class="im">as</span> SK, disk <span class="im">as</span> D, schwarzschild <span class="im">as</span> S</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> blackhole.colour <span class="im">import</span> tonemap, bloom</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show(ax, img, title<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    ax.imshow(np.clip(img, <span class="dv">0</span>, <span class="dv">1</span>), interpolation<span class="op">=</span><span class="st">"lanczos"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    ax.set_axis_off()</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> title:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        ax.set_title(title, fontsize<span class="op">=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="the-kerr-metric" class="level2">
+<h2 class="anchored" data-anchor-id="the-kerr-metric">The Kerr metric</h2>
+<p>Roy Kerr found the spacetime of a spinning black hole in 1963. In Boyer–Lindquist coordinates <span class="math inline">\((t, r, \theta, \phi)\)</span>, with <span class="math inline">\(G = c = M = 1\)</span> and spin parameter <span class="math inline">\(a = J/M\)</span> (the angular momentum per unit mass, <span class="math inline">\(0 \le a &lt; 1\)</span>), it can be written, as in the DNGR paper, in a form that exposes its meaning:</p>
+<p><span class="math display">\[
+ds^2 = -\alpha^2\,dt^2 + \frac{\rho^2}{\Delta}\,dr^2 + \rho^2\,d\theta^2 + \varpi^2\left(d\phi - \omega\,dt\right)^2,
+\]</span></p>
+<p>with</p>
+<p><span class="math display">\[
+\rho^2 = r^2 + a^2\cos^2\theta, \quad \Delta = r^2 - 2r + a^2, \quad \Sigma^2 = (r^2 + a^2)^2 - a^2\Delta\sin^2\theta,
+\]</span> <span class="math display">\[
+\alpha = \frac{\rho\sqrt\Delta}{\Sigma}, \qquad \omega = \frac{2ar}{\Sigma^2}, \qquad \varpi = \frac{\Sigma\sin\theta}{\rho}.
+\]</span></p>
+<p>Each function has a job:</p>
+<ul>
+<li><span class="math inline">\(\alpha\)</span> is the <strong>lapse</strong>: how fast a local clock ticks relative to <span class="math inline">\(t\)</span>. It vanishes at the horizon.</li>
+<li><span class="math inline">\(\varpi\)</span> is the <strong>circumferential radius</strong>: a ring at fixed <span class="math inline">\(r, \theta\)</span> has circumference <span class="math inline">\(2\pi\varpi\)</span>.</li>
+<li><span class="math inline">\(\omega\)</span> is the <strong>frame-dragging angular velocity</strong>. The combination <span class="math inline">\(d\phi - \omega\,dt\)</span> means that “not rotating” near the hole means rotating at <span class="math inline">\(d\phi/dt = \omega\)</span> relative to the distant stars.</li>
+</ul>
+<p>Setting <span class="math inline">\(a = 0\)</span> gives <span class="math inline">\(\omega = 0\)</span>, <span class="math inline">\(\rho = \varpi/\sin\theta = r\)</span>, <span class="math inline">\(\alpha^2 = 1 - 2/r\)</span>, and the Schwarzschild metric of parts 1 and 2.</p>
+<p>The horizon is where <span class="math inline">\(\Delta = 0\)</span>, at <span class="math inline">\(r_+ = 1 + \sqrt{1 - a^2}\)</span>, which shrinks from <span class="math inline">\(2\)</span> to <span class="math inline">\(1\)</span> as the spin rises to its maximum. Outside it is the <strong>ergosphere</strong>, where <span class="math inline">\(g_{tt} &gt; 0\)</span>, out to <span class="math inline">\(r = 1 + \sqrt{1 - a^2\cos^2\theta}\)</span>. Inside the ergosphere frame dragging is so strong that nothing can stay still relative to the distant stars. Everything there is swept round with the hole.</p>
+<div id="cell-fig-geometry" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.4</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>th <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">400</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, a <span class="kw">in</span> <span class="bu">zip</span>(axs, [<span class="fl">0.0</span>, <span class="fl">0.6</span>, <span class="fl">0.9</span>, <span class="fl">0.999</span>]):</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    rp <span class="op">=</span> kerr.horizon(a)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    rerg <span class="op">=</span> <span class="dv">1</span> <span class="op">+</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> a<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> np.cos(th) <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    ax.fill(rerg <span class="op">*</span> np.sin(th), rerg <span class="op">*</span> np.cos(th), color<span class="op">=</span><span class="st">"0.8"</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> a <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        r1, r2 <span class="op">=</span> kerr.photon_orbit_radii(a)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        r1 <span class="op">=</span> r2 <span class="op">=</span> <span class="fl">3.0</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># photon region: where spherical orbits exist at this theta</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    rr <span class="op">=</span> np.linspace(r1, r2, <span class="dv">300</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> a <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        b, q <span class="op">=</span> kerr.spherical_photon_constants(rr, a)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> np.linspace(<span class="dv">0</span>, np.pi, <span class="dv">181</span>):</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> a <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>            ok <span class="op">=</span> q <span class="op">+</span> a <span class="op">*</span> a <span class="op">*</span> np.cos(t) <span class="op">**</span> <span class="dv">2</span> <span class="op">-</span> b <span class="op">*</span> b <span class="op">/</span> np.tan(t <span class="op">+</span> <span class="fl">1e-12</span>) <span class="op">**</span> <span class="dv">2</span> <span class="op">&gt;=</span> <span class="dv">0</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>            ax.plot(rr[ok] <span class="op">*</span> np.sin(t), rr[ok] <span class="op">*</span> np.cos(t), <span class="st">"."</span>, color<span class="op">=</span><span class="st">"C1"</span>, ms<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>            ax.plot(<span class="op">-</span>rr[ok] <span class="op">*</span> np.sin(t), rr[ok] <span class="op">*</span> np.cos(t), <span class="st">"."</span>, color<span class="op">=</span><span class="st">"C1"</span>, ms<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> a <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        ax.plot(<span class="dv">3</span> <span class="op">*</span> np.sin(th), <span class="dv">3</span> <span class="op">*</span> np.cos(th), color<span class="op">=</span><span class="st">"C1"</span>, lw<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    ax.fill(rp <span class="op">*</span> np.sin(th), rp <span class="op">*</span> np.cos(th), color<span class="op">=</span><span class="st">"k"</span>)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    ri <span class="op">=</span> D.isco(a)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    ax.plot(ri <span class="op">*</span> np.sin(th), ri <span class="op">*</span> np.cos(th), <span class="st">"k--"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    ax.set_xlim(<span class="op">-</span><span class="fl">6.5</span>, <span class="fl">6.5</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    ax.set_ylim(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"a = </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">"</span>, fontsize<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks([])</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    ax.set_yticks([])</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'a'</span><span class="sc">:&gt;6}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'horizon'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'prograde photon'</span><span class="sc">:&gt;16}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'retrograde photon'</span><span class="sc">:&gt;18}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'ISCO'</span><span class="sc">:&gt;7}</span><span class="ss">"</span>)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> [<span class="fl">0.0</span>, <span class="fl">0.6</span>, <span class="fl">0.9</span>, <span class="fl">0.999</span>]:</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    r1, r2 <span class="op">=</span> kerr.photon_orbit_radii(a) <span class="cf">if</span> a <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> (<span class="fl">3.0</span>, <span class="fl">3.0</span>)</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>a<span class="sc">:6g}</span><span class="ss"> </span><span class="sc">{</span>kerr<span class="sc">.</span>horizon(a)<span class="sc">:8.4f}</span><span class="ss"> </span><span class="sc">{</span>r1<span class="sc">:16.4f}</span><span class="ss"> </span><span class="sc">{</span>r2<span class="sc">:18.4f}</span><span class="ss"> </span><span class="sc">{</span>D<span class="sc">.</span>isco(a)<span class="sc">:7.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-geometry" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-geometry-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-geometry-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-geometry-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Cross-sections through Kerr holes of increasing spin, the spin axis vertical (Boyer-Lindquist r and θ drawn as if they were polar coordinates). Black: horizon. Grey: the ergosphere. Orange: the region swept by spherical photon orbits, between the prograde and retrograde circular photon orbits in the equator. Dashed: the innermost stable circular orbit (ISCO) for matter. As the spin rises, prograde orbits move in towards the horizon.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     a  horizon  prograde photon  retrograde photon    ISCO
+     0   2.0000           3.0000             3.0000  6.0000
+   0.6   1.8000           2.1889             3.6298  3.8291
+   0.9   1.4359           1.5579             3.9103  2.3209
+ 0.999   1.0447           1.0521             3.9991  1.1818</code></pre>
+</div>
+</div>
+<section id="observers-who-do-not-rotate" class="level3">
+<h3 class="anchored" data-anchor-id="observers-who-do-not-rotate">Observers who do not rotate</h3>
+<p>Which observer should hold the camera? Near a spinning hole there are no static observers inside the ergosphere, and outside it they are not the natural choice either. The natural one is the <strong>zero-angular-momentum observer</strong> (ZAMO), the “fiducial observer” or FIDO of the DNGR paper. It moves on the line <span class="math inline">\(\phi = \omega t + \text{const}\)</span>, carried round by frame dragging but with no angular momentum of its own. Its orthonormal basis vectors point along the coordinate lines:</p>
+<p><span class="math display">\[
+\mathbf e_{\hat r} = \frac{\sqrt\Delta}{\rho}\,\partial_r, \qquad
+\mathbf e_{\hat\theta} = \frac{1}{\rho}\,\partial_\theta, \qquad
+\mathbf e_{\hat\phi} = \frac{1}{\varpi}\,\partial_\phi .
+\]</span></p>
+<p>Any real camera moves relative to the local ZAMO with some velocity <span class="math inline">\(\beta\)</span>, and its view is the ZAMO’s view, aberrated as in <a href="../../explainers/black-hole-ray-tracing/#a-moving-camera-aberration">part 2</a>.</p>
+</section>
+</section>
+<section id="three-constants-for-a-light-ray" class="level2">
+<h2 class="anchored" data-anchor-id="three-constants-for-a-light-ray">Three constants for a light ray</h2>
+<p>In Schwarzschild spacetime a ray has energy <span class="math inline">\(E\)</span> and angular momentum <span class="math inline">\(L\)</span>, and spherical symmetry supplies the rest. The Kerr metric is independent of <span class="math inline">\(t\)</span> and <span class="math inline">\(\phi\)</span>, which again gives <span class="math inline">\(E = -p_t\)</span> and <span class="math inline">\(L_z = p_\phi\)</span>. But it is only axially symmetric, so total angular momentum is no longer conserved, and two constants are not enough to determine a path in three dimensions.</p>
+<p>In 1968 Brandon Carter found a third. Write the Hamilton–Jacobi equation for null geodesics,</p>
+<p><span class="math display">\[
+g^{\mu\nu}\,\frac{\partial S}{\partial x^\mu}\frac{\partial S}{\partial x^\nu} = 0,
+\]</span></p>
+<p>and try <span class="math inline">\(S = -Et + L_z\phi + S_r(r) + S_\theta(\theta)\)</span>. With <span class="math inline">\(E = 1\)</span> (so that <span class="math inline">\(b = L_z/E\)</span> is the axial impact parameter), the inverse Kerr metric turns the equation into</p>
+<p><span class="math display">\[
+\Delta\,S_r'^2 - \frac{P^2}{\Delta} + (b - a)^2 \;=\; -\,S_\theta'^2 - \cos^2\theta\left(\frac{b^2}{\sin^2\theta} - a^2\right),
+\qquad P = r^2 + a^2 - ab .
+\]</span></p>
+<p>The left side depends only on <span class="math inline">\(r\)</span> and the right side only on <span class="math inline">\(\theta\)</span>, so both equal a constant, <span class="math inline">\(-q\)</span>. That <strong>separability</strong> is the hidden symmetry of the Kerr metric, and <span class="math inline">\(q\)</span> is the <strong>Carter constant</strong> (divided by <span class="math inline">\(E^2\)</span>). The radial and polar motions then decouple:</p>
+<p><span class="math display">\[
+p_r^2\,\Delta^2 = R(r) \equiv P^2 - \Delta\left[(b - a)^2 + q\right],
+\qquad
+p_\theta^2 = \Theta(\theta) \equiv q - \cos^2\theta\left(\frac{b^2}{\sin^2\theta} - a^2\right).
+\]</span></p>
+<p>A ray can only be where <span class="math inline">\(R \ge 0\)</span> and <span class="math inline">\(\Theta \ge 0\)</span>. A ray that crosses the equator has <span class="math inline">\(q \ge 0\)</span>, and <span class="math inline">\(q = 0\)</span> means a ray confined to the equatorial plane.</p>
+</section>
+<section id="the-ray-equations" class="level2">
+<h2 class="anchored" data-anchor-id="the-ray-equations">The ray equations</h2>
+<p>Integrating <span class="math inline">\(p_r = \pm\sqrt R/\Delta\)</span> directly runs into trouble at every turning point, where the square root changes sign. DNGR instead integrated Hamilton’s equations for the <strong>super-Hamiltonian</strong> <span class="math inline">\(H = \tfrac12 g^{\mu\nu}p_\mu p_\nu\)</span>, which handle turning points smoothly. With <span class="math inline">\(p_t = -1\)</span> and <span class="math inline">\(p_\phi = b\)</span> fixed,</p>
+<p><span class="math display">\[
+H = \frac{\Delta}{2\rho^2}\,p_r^2 + \frac{1}{2\rho^2}\,p_\theta^2 - \frac{R + \Delta\Theta}{2\Delta\rho^2} = 0,
+\]</span></p>
+<p>and Hamilton’s equations, <span class="math inline">\(\dot x = \partial H/\partial p\)</span> and <span class="math inline">\(\dot p = -\partial H/\partial x\)</span>, give the five equations that are the heart of the renderer:</p>
+<p><span class="math display">\[
+\frac{dr}{d\zeta} = \frac{\Delta}{\rho^2}\,p_r, \qquad
+\frac{d\theta}{d\zeta} = \frac{p_\theta}{\rho^2}, \qquad
+\frac{d\phi}{d\zeta} = -\frac{\partial}{\partial b}\left(\frac{R + \Delta\Theta}{2\Delta\rho^2}\right),
+\]</span> <span class="math display">\[
+\frac{dp_r}{d\zeta} = \frac{\partial}{\partial r}\left[-\frac{\Delta}{2\rho^2}p_r^2 - \frac{p_\theta^2}{2\rho^2} + \frac{R + \Delta\Theta}{2\Delta\rho^2}\right], \qquad
+\frac{dp_\theta}{d\zeta} = \frac{\partial}{\partial \theta}\left[\;\cdots\;\right].
+\]</span></p>
+<p>These are equations (A.15) of the DNGR paper. The combination <span class="math inline">\((R + \Delta\Theta)/\Delta = P^2/\Delta - (b-a)^2 - \cos^2\theta\,(b^2/\sin^2\theta - a^2)\)</span> does not involve <span class="math inline">\(q\)</span> at all, so <span class="math inline">\(q\)</span> is never used during integration. Its conservation is therefore a genuine test of the integrator. Working out the derivatives,</p>
+<p><span class="math display">\[
+\frac{d\phi}{d\zeta} = \frac{1}{\rho^2}\left(\frac{aP}{\Delta} + \frac{b}{\sin^2\theta} - a\right),
+\]</span></p>
+<p>which for <span class="math inline">\(a = 0\)</span> is the familiar <span class="math inline">\(b/(r^2\sin^2\theta)\)</span>.</p>
+<section id="initial-conditions-from-a-pixel" class="level3">
+<h3 class="anchored" data-anchor-id="initial-conditions-from-a-pixel">Initial conditions from a pixel</h3>
+<p>The camera supplies a direction. A pixel’s unit vector <span class="math inline">\(\mathbf N\)</span> (from camera to sky) in the camera frame becomes, for the arriving photon, a propagation direction <span class="math inline">\(\mathbf n = -\mathbf N\)</span>. Aberration converts it to the ZAMO frame, giving <span class="math inline">\(\mathbf n_F\)</span>. The photon’s energy measured by the ZAMO is then</p>
+<p><span class="math display">\[
+E_F = \frac{1}{\alpha + \omega\varpi\,n_{F\hat\phi}},
+\]</span></p>
+<p>and its covariant momenta are</p>
+<p><span class="math display">\[
+p_r = E_F\frac{\rho}{\sqrt\Delta}\,n_{F\hat r}, \qquad
+p_\theta = E_F\,\rho\,n_{F\hat\theta}, \qquad
+b = p_\phi = E_F\,\varpi\,n_{F\hat\phi}.
+\]</span></p>
+<p>These satisfy <span class="math inline">\(H = 0\)</span> automatically. The ray is then integrated backwards, <span class="math inline">\(\zeta \to -\infty\)</span>, until it escapes, reaches the horizon, or hits the disk.</p>
+</section>
+<section id="the-integrator" class="level3">
+<h3 class="anchored" data-anchor-id="the-integrator">The integrator</h3>
+<p>The tracer (<code>kerr.trace</code>) is a Dormand–Prince 5(4) Runge–Kutta integrator with adaptive steps. It is compiled with numba and runs one ray per thread. Steps are small where the ray bends sharply near the hole and long far away. A ray that crosses the equator inside the disk’s radius is stopped there, the crossing located to <span class="math inline">\(10^{-10}\)</span> in <span class="math inline">\(\theta\)</span> by secant iteration (<a href="../../explainers/accretion-disk-light/">part 4</a>). Here it traces the rays of one image of a fast-spinning hole and checks the constants it is not told about:</p>
+<div id="conservation" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> <span class="fl">0.999</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>cam <span class="op">=</span> kerr.Camera(<span class="fl">6.03</span>, math.pi <span class="op">/</span> <span class="dv">2</span>, a, beta<span class="op">=</span><span class="st">"orbit"</span>, fov<span class="op">=</span><span class="dv">90</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> cam.directions(<span class="dv">480</span>, <span class="dv">480</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>Y0, B, E_cam <span class="op">=</span> cam.initial_conditions(N)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>q0 <span class="op">=</span> kerr.carter_q(Y0[:, <span class="dv">0</span>], Y0[:, <span class="dv">1</span>], Y0[:, <span class="dv">4</span>], B, a)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>H0 <span class="op">=</span> kerr.hamiltonian(Y0[:, <span class="dv">0</span>], Y0[:, <span class="dv">1</span>], Y0[:, <span class="dv">3</span>], Y0[:, <span class="dv">4</span>], B, a)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>Y, oc, ns <span class="op">=</span> kerr.trace(Y0, B, a, tol<span class="op">=</span><span class="fl">1e-9</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>secs <span class="op">=</span> time.time() <span class="op">-</span> t0</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>q1 <span class="op">=</span> kerr.carter_q(Y[:, <span class="dv">0</span>], Y[:, <span class="dv">1</span>], Y[:, <span class="dv">4</span>], B, a)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>H1 <span class="op">=</span> kerr.hamiltonian(Y[:, <span class="dv">0</span>], Y[:, <span class="dv">1</span>], Y[:, <span class="dv">3</span>], Y[:, <span class="dv">4</span>], B, a)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>esc <span class="op">=</span> oc <span class="op">==</span> kerr.ESCAPED</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>dq <span class="op">=</span> np.<span class="bu">abs</span>(q1 <span class="op">-</span> q0)[esc] <span class="op">/</span> np.maximum(<span class="dv">1</span>, np.<span class="bu">abs</span>(q0[esc]))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(Y)<span class="sc">}</span><span class="ss"> rays in </span><span class="sc">{</span>secs<span class="sc">:.2f}</span><span class="ss"> s: </span><span class="sc">{</span>esc<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss"> escaped, </span><span class="sc">{</span>(oc <span class="op">==</span> kerr.CAPTURED)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss"> captured"</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"steps per ray: median </span><span class="sc">{</span>np<span class="sc">.</span>median(ns)<span class="sc">:.0f}</span><span class="ss">, max </span><span class="sc">{</span>ns<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"|H| at the camera:   max </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">abs</span>(H0)<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1e}</span><span class="ss">"</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"|H| at the end:      max </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">abs</span>(H1[esc])<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1e}</span><span class="ss">"</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Carter constant drift (relative): median </span><span class="sc">{</span>np<span class="sc">.</span>median(dq)<span class="sc">:.1e}</span><span class="ss">, max </span><span class="sc">{</span>dq<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1e}</span><span class="ss">"</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>dq_max <span class="op">=</span> dq.<span class="bu">max</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>230400 rays in 7.01 s: 153574 escaped, 76826 captured
+steps per ray: median 154, max 2581
+|H| at the camera:   max 9.8e-16
+|H| at the end:      max 4.4e-08
+Carter constant drift (relative): median 1.8e-10, max 3.1e-08</code></pre>
+</div>
+</div>
+<p>The Carter constant, which the equations never use, is conserved to 3e-08 or better along every ray, through every turning point.</p>
+</section>
+</section>
+<section id="photon-orbits" class="level2">
+<h2 class="anchored" data-anchor-id="photon-orbits">Photon orbits</h2>
+<p>A Schwarzschild hole has one photon sphere. A Kerr hole has a whole shell of <strong>spherical photon orbits</strong>: rays that stay at constant <span class="math inline">\(r\)</span> while oscillating in <span class="math inline">\(\theta\)</span> and winding round the axis. They exist where <span class="math inline">\(R(r) = 0\)</span> and <span class="math inline">\(R'(r) = 0\)</span> at once, which fixes the two constants as functions of the radius (Bardeen 1973; equations (A.5) of DNGR):</p>
+<p><span class="math display">\[
+b(r) = -\frac{r^3 - 3r^2 + a^2 r + a^2}{a\,(r - 1)}, \qquad
+q(r) = -\frac{r^3\left(r^3 - 6r^2 + 9r - 4a^2\right)}{a^2\,(r - 1)^2},
+\]</span></p>
+<p>for <span class="math inline">\(r\)</span> between the prograde and retrograde equatorial photon orbits,</p>
+<p><span class="math display">\[
+r_{1,2} = 2\left\{1 + \cos\!\left[\tfrac23\arccos(\mp a)\right]\right\}.
+\]</span></p>
+<p>These orbits are all unstable. A ray launched exactly onto one stays there only as long as rounding error allows, and then peels off exponentially. The tracer shows both behaviours:</p>
+<div id="cell-fig-spherical" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> <span class="fl">0.999</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>r_o <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>b_o, q_o <span class="op">=</span> kerr.spherical_photon_constants(r_o, a)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>path, outcome <span class="op">=</span> kerr.trace_path([r_o, math.pi <span class="op">/</span> <span class="dv">2</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>, math.sqrt(q_o)], b_o, a,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                r_esc<span class="op">=</span><span class="dv">30</span>, tol<span class="op">=</span><span class="fl">1e-12</span>, n<span class="op">=</span><span class="dv">200000</span>, sgn<span class="op">=</span><span class="fl">1.0</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">3.4</span>))</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>turns <span class="op">=</span> path[:, <span class="dv">2</span>] <span class="op">/</span> (<span class="dv">2</span> <span class="op">*</span> np.pi)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>dev <span class="op">=</span> np.<span class="bu">abs</span>(path[:, <span class="dv">0</span>] <span class="op">-</span> r_o)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> np.argmax(dev <span class="op">&gt;</span> <span class="fl">1e-3</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].plot(turns[:k], np.degrees(path[:k, <span class="dv">1</span>]), <span class="st">"C1"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_xlabel(<span class="st">"turns round the axis, φ/2π"</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_ylabel(<span class="st">"θ (degrees)"</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].invert_yaxis()</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].semilogy(turns, np.maximum(dev, <span class="fl">1e-16</span>), <span class="st">"k"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_xlabel(<span class="st">"turns round the axis, φ/2π"</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_ylabel(<span class="st">"|r - 2| / M"</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>th_range <span class="op">=</span> np.degrees([path[:k, <span class="dv">1</span>].<span class="bu">min</span>(), path[:k, <span class="dv">1</span>].<span class="bu">max</span>()])</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co"># growth rate of the deviation, fitted between 1e-11 and 1e-2</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> (dev <span class="op">&gt;</span> <span class="fl">1e-11</span>) <span class="op">&amp;</span> (dev <span class="op">&lt;</span> <span class="fl">1e-2</span>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>growth <span class="op">=</span> <span class="dv">10</span> <span class="op">**</span> np.polyfit(turns[fit], np.log10(dev[fit]), <span class="dv">1</span>)[<span class="dv">0</span>]</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"b = </span><span class="sc">{</span>b_o<span class="sc">:.4f}</span><span class="ss">, q = </span><span class="sc">{</span>q_o<span class="sc">:.4f}</span><span class="ss">; latitude range </span><span class="sc">{</span>th_range[<span class="dv">0</span>]<span class="sc">:.1f}</span><span class="ss">° to </span><span class="sc">{</span>th_range[<span class="dv">1</span>]<span class="sc">:.1f}</span><span class="ss">°; "</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"</span><span class="sc">{</span>turns[k]<span class="sc">:.1f}</span><span class="ss"> turns before |r - 2| &gt; 1e-3"</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"the deviation grows by a factor of </span><span class="sc">{</span>growth<span class="sc">:.1f}</span><span class="ss"> per turn"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-spherical" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-spherical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-spherical-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-spherical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: A spherical photon orbit at r = 2 M around a hole with a = 0.999, launched from the equator with the b and q of the formula above. Left: its path on the sphere (θ against φ, unrolled) is a steady oscillation between two latitudes while it winds round the axis. Right: the radius starts at 2 to within rounding error, and the instability amplifies that error exponentially, by a constant factor per turn, until the ray leaves the orbit and escapes.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>b = 1.0070, q = 15.9680; latitude range 13.8° to 166.2°; 9.5 turns before |r - 2| &gt; 1e-3
+the deviation grows by a factor of 11.9 per turn</code></pre>
+</div>
+</div>
+<p>The deviation from the orbit grows by a factor of about 12 with every turn round the axis. This is the Kerr version of the winding rays of <a href="../../explainers/light-bending-schwarzschild/#close-to-the-photon-sphere-winding-without-limit">part 1</a>, and the DNGR paper pictures one such orbit (their Figure 11). Rays that pass close to this shell are what pile up the multiple images near the shadow’s edge.</p>
+</section>
+<section id="the-shadow" class="level2">
+<h2 class="anchored" data-anchor-id="the-shadow">The shadow</h2>
+<p>The edge of the shadow is made of rays that, followed backwards, approach a spherical photon orbit asymptotically. For a distant observer at inclination <span class="math inline">\(\theta_o\)</span> from the spin axis, each orbit radius <span class="math inline">\(r\)</span> gives two points on the observer’s sky (Bardeen 1973):</p>
+<p><span class="math display">\[
+x = -\frac{b(r)}{\sin\theta_o}, \qquad
+y = \pm\sqrt{q(r) + a^2\cos^2\theta_o - b(r)^2\cot^2\theta_o},
+\]</span></p>
+<p>in units of <span class="math inline">\(M\)</span>. Here <span class="math inline">\(x\)</span> runs in the direction of the hole’s rotation and <span class="math inline">\(y\)</span> along the projected spin axis. This curve is an exact, independent result, so it is the natural test of the ray tracer. The test is to place a camera very far away (<span class="math inline">\(r = 10^5 M\)</span>) and bisect, along rays out from the shadow’s centre, for the boundary between captured and escaping rays:</p>
+<div id="shadow-check" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> traced_edge(a, theta_o, n_ang<span class="op">=</span><span class="dv">120</span>, r_cam<span class="op">=</span><span class="fl">1e5</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    cam <span class="op">=</span> kerr.Camera(r_cam, theta_o, a)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    xb, yb <span class="op">=</span> kerr.shadow_edge(a, theta_o)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    cx <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> (xb.<span class="bu">max</span>() <span class="op">+</span> xb.<span class="bu">min</span>())</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    ang <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, n_ang, endpoint<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    lo, hi <span class="op">=</span> np.full(n_ang, <span class="fl">0.5</span>), np.full(n_ang, <span class="fl">12.0</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">40</span>):</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        mid <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> (lo <span class="op">+</span> hi)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        X, Yy <span class="op">=</span> cx <span class="op">+</span> mid <span class="op">*</span> np.cos(ang), mid <span class="op">*</span> np.sin(ang)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        Nv <span class="op">=</span> np.stack([np.ones(n_ang), X <span class="op">/</span> r_cam, Yy <span class="op">/</span> r_cam], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        Nv <span class="op">/=</span> np.linalg.norm(Nv, axis<span class="op">=</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        Y0, B, _ <span class="op">=</span> cam.initial_conditions(Nv)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        _, o, _ <span class="op">=</span> kerr.trace(Y0, B, a, r_esc<span class="op">=</span><span class="dv">2</span> <span class="op">*</span> r_cam, tol<span class="op">=</span><span class="fl">1e-11</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        cap <span class="op">=</span> o <span class="op">==</span> kerr.CAPTURED</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        lo, hi <span class="op">=</span> np.where(cap, mid, lo), np.where(cap, hi, mid)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> cx <span class="op">+</span> lo <span class="op">*</span> np.cos(ang), lo <span class="op">*</span> np.sin(ang), cx</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>worst <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, inc <span class="kw">in</span> [(<span class="fl">0.999</span>, <span class="dv">90</span>), (<span class="fl">0.999</span>, <span class="dv">60</span>), (<span class="fl">0.6</span>, <span class="fl">86.56</span>)]:</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    xt, yt, cx <span class="op">=</span> traced_edge(a, math.radians(inc))</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    xb, yb <span class="op">=</span> kerr.shadow_edge(a, math.radians(inc), n<span class="op">=</span><span class="dv">4000</span>)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># distance from each traced point to the nearest segment of Bardeen's curve</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    P0 <span class="op">=</span> np.c_[xb[:<span class="op">-</span><span class="dv">1</span>], yb[:<span class="op">-</span><span class="dv">1</span>]]</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    dP <span class="op">=</span> np.c_[np.diff(xb), np.diff(yb)]</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> np.c_[xt, yt]</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    tpar <span class="op">=</span> np.clip(((pts[:, <span class="va">None</span>, :] <span class="op">-</span> P0[<span class="va">None</span>]) <span class="op">*</span> dP[<span class="va">None</span>]).<span class="bu">sum</span>(<span class="op">-</span><span class="dv">1</span>) <span class="op">/</span> (dP <span class="op">**</span> <span class="dv">2</span>).<span class="bu">sum</span>(<span class="op">-</span><span class="dv">1</span>)[<span class="va">None</span>], <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>    dmin <span class="op">=</span> np.linalg.norm(pts[:, <span class="va">None</span>, :] <span class="op">-</span> (P0[<span class="va">None</span>] <span class="op">+</span> tpar[..., <span class="va">None</span>] <span class="op">*</span> dP[<span class="va">None</span>]), axis<span class="op">=-</span><span class="dv">1</span>).<span class="bu">min</span>(<span class="dv">1</span>)</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    worst <span class="op">=</span> <span class="bu">max</span>(worst, dmin.<span class="bu">max</span>())</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"a = </span><span class="sc">{</span>a<span class="sc">:5g}</span><span class="ss">, inclination </span><span class="sc">{</span>inc<span class="sc">:5.2f}</span><span class="ss">°: largest distance from Bardeen's curve </span><span class="sc">{</span>dmin<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1e}</span><span class="ss"> M"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>a = 0.999, inclination 90.00°: largest distance from Bardeen's curve 7.0e-05 M
+a = 0.999, inclination 60.00°: largest distance from Bardeen's curve 6.7e-05 M
+a =   0.6, inclination 86.56°: largest distance from Bardeen's curve 6.3e-05 M</code></pre>
+</div>
+</div>
+<p>The traced shadow lies on Bardeen’s curve to within 7e-05 <span class="math inline">\(M\)</span> at every inclination tested. That is the size of error expected from putting the camera at <span class="math inline">\(10^5 M\)</span> rather than at infinity: corrections of relative order <span class="math inline">\(M/r\)</span> applied to a shadow about <span class="math inline">\(5\,M\)</span> across.</p>
+<div id="cell-fig-shadows" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.6</span>))</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, inc <span class="kw">in</span> <span class="bu">zip</span>(axs, [<span class="dv">90</span>, <span class="dv">60</span>]):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">300</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    ax.fill(S.B_CRIT <span class="op">*</span> np.cos(t), S.B_CRIT <span class="op">*</span> np.sin(t), color<span class="op">=</span><span class="st">"0.9"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> a, col <span class="kw">in</span> [(<span class="fl">0.3</span>, <span class="st">"C0"</span>), (<span class="fl">0.6</span>, <span class="st">"C2"</span>), (<span class="fl">0.9</span>, <span class="st">"C1"</span>), (<span class="fl">0.999</span>, <span class="st">"C3"</span>)]:</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        xb, yb <span class="op">=</span> kerr.shadow_edge(a, math.radians(inc), n<span class="op">=</span><span class="dv">4000</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        ax.plot(xb, yb, color<span class="op">=</span>col, lw<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="ss">f"a = </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"0.7"</span>, lw<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    ax.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"0.7"</span>, lw<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">"x / M (direction of rotation)"</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">"y / M"</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"inclination </span><span class="sc">{</span>inc<span class="sc">}</span><span class="ss">°"</span>, fontsize<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>].legend(frameon<span class="op">=</span><span class="va">False</span>, fontsize<span class="op">=</span><span class="dv">8</span>, loc<span class="op">=</span><span class="st">"upper right"</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-shadows" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-shadows-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-shadows-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-shadows-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Shadows of black holes of increasing spin, seen from the equatorial plane (left) and from 60° (right). The hole rotates so that its left side (x &lt; 0) moves towards the viewer. The shadow is pushed sideways and flattened on the approaching side, where prograde photons can orbit closer to the hole, and bulges on the receding side. The grey circle is the Schwarzschild shadow, radius 3√3 M.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This flattened edge is why <em>Interstellar</em> did not show Gargantua at its story spin. Christopher Nolan and Paul Franklin judged that the flattened shadow, with the multiple disk images along it and an off-centre disk, would confuse a mass audience. For the pictures they turned the spin down to <span class="math inline">\(a = 0.6\)</span>, where the shadow is still almost round (<a href="../../explainers/accretion-disk-light/">part 4</a> and the <a href="../../sci-fi/gargantua/">main post</a>).</p>
+</section>
+<section id="the-cameras-motion-matters-as-much-as-the-spin" class="level2">
+<h2 class="anchored" data-anchor-id="the-cameras-motion-matters-as-much-as-the-spin">The camera’s motion matters as much as the spin</h2>
+<p>Close to a fast-spinning hole, the choice of camera changes the picture more than anything else. The DNGR paper makes this point with a checkerboard sky seen from <span class="math inline">\(r = 2.6\,M\)</span> around a hole with <span class="math inline">\(a = 0.999\)</span>, inside the photon region and just outside the ergosphere, by three cameras at the same point:</p>
+<ul>
+<li>one on a <strong>prograde circular orbit</strong>;</li>
+<li>one at rest relative to the local <strong>ZAMO</strong>;</li>
+<li>one <strong>static</strong> relative to the distant stars, which takes a rocket working very hard against frame dragging.</li>
+</ul>
+<div id="cell-fig-aberration" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>a, r26 <span class="op">=</span> <span class="fl">0.999</span>, <span class="fl">2.6</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>cam0 <span class="op">=</span> kerr.Camera(r26, math.pi <span class="op">/</span> <span class="dv">2</span>, a)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>beta_static <span class="op">=</span> <span class="op">-</span>cam0.omega <span class="op">*</span> cam0.varpi <span class="op">/</span> cam0.alpha</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>checker <span class="op">=</span> SK.Sky(SK.checkerboard(<span class="dv">1024</span>, n_lat<span class="op">=</span><span class="dv">12</span>, n_lon<span class="op">=</span><span class="dv">24</span>))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">3</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">13</span>))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>betas <span class="op">=</span> {}</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (beta, name) <span class="kw">in</span> <span class="bu">zip</span>(axs, [(<span class="st">"orbit"</span>, <span class="st">"prograde circular orbit"</span>), (<span class="fl">0.0</span>, <span class="st">"zero-angular-momentum observer"</span>),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                                  (beta_static, <span class="st">"static camera"</span>)]):</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    tr <span class="op">=</span> R.trace_image(r26, <span class="dv">90</span>, a, <span class="dv">720</span>, <span class="dv">360</span>, <span class="dv">0</span>, ss<span class="op">=</span><span class="dv">1</span>, beta<span class="op">=</span>beta, disk<span class="op">=</span><span class="va">False</span>, projection<span class="op">=</span><span class="st">"panorama"</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    lin <span class="op">=</span> np.where((tr[<span class="st">"outcome"</span>] <span class="op">==</span> kerr.ESCAPED)[..., <span class="va">None</span>], checker.sample(tr[<span class="st">"sky"</span>], SK.footprint(tr[<span class="st">"sky"</span>], tr[<span class="st">"outcome"</span>] <span class="op">==</span> kerr.ESCAPED)), <span class="dv">0</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    show(ax, lin, <span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: β = </span><span class="sc">{</span><span class="bu">float</span>(tr[<span class="st">'beta'</span>])<span class="sc">:+.3f}</span><span class="ss"> relative to the ZAMO"</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    betas[name] <span class="op">=</span> <span class="bu">float</span>(tr[<span class="st">"beta"</span>])</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>b_orb, b_st <span class="op">=</span> betas[<span class="st">"prograde circular orbit"</span>], betas[<span class="st">"static camera"</span>]</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>rel_static <span class="op">=</span> (b_orb <span class="op">-</span> b_st) <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> b_orb <span class="op">*</span> b_st)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ZAMO relative to orbiting camera: </span><span class="sc">{</span><span class="op">-</span>b_orb<span class="sc">:.3f}</span><span class="ss">c;  static relative to orbiting camera: </span><span class="sc">{</span><span class="op">-</span>rel_static<span class="sc">:.3f}</span><span class="ss">c"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-aberration" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-aberration-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-aberration-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-aberration-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: The whole sky seen from r = 2.6 M around a hole with a = 0.999, for three cameras at the same point: (top) on a prograde circular geodesic orbit; (middle) a ZAMO; (bottom) static relative to the distant stars. The hole’s centre is in the middle of each panorama. The rays and the multiplicity of images are the same in all three; only aberration differs. Compare Figure 12 of James et al.&nbsp;(2015).
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ZAMO relative to orbiting camera: -0.546c;  static relative to orbiting camera: -0.813c</code></pre>
+</div>
+</div>
+<p>The speeds match the DNGR paper’s figures exactly: relative to the orbiting camera, the ZAMO moves at 0.546c and the static camera at 0.813c (the paper gives 0.546c and 0.813c). The static camera, racing backwards against the hole’s rotation, sees the shadow swell to cover more than half its sky. The orbiting camera sees it shrink. Yet the pattern of images, how many copies of each piece of sky appear and where the critical curves fall, is the same for all three. The caustics belong to the light cone at that point, not to whoever is looking.</p>
+</section>
+<section id="stars-round-a-spinning-hole" class="level2">
+<h2 class="anchored" data-anchor-id="stars-round-a-spinning-hole">Stars round a spinning hole</h2>
+<p>The DNGR paper’s first image of a spinning hole (their Figure 4) is a star field seen from a camera in a circular equatorial orbit at <span class="math inline">\(r_c = 6.03\,M\)</span> around a hole with <span class="math inline">\(a = 0.999\)</span>. Here is the same configuration, with this renderer’s synthetic sky: a mip-mapped Milky Way and 30,000 point stars lensed by the triangle method of <a href="../../explainers/black-hole-ray-tracing/#point-stars-images-and-magnification">part 2</a>.</p>
+<div id="cell-fig-kerr-stars" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>a, r603 <span class="op">=</span> <span class="fl">0.999</span>, <span class="fl">6.03</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>milky <span class="op">=</span> SK.Sky(SK.milky_way(<span class="dv">2048</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>stars <span class="op">=</span> SK.star_catalogue()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>ss <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>tr <span class="op">=</span> R.trace_image(r603, <span class="dv">90</span>, a, <span class="dv">1200</span>, <span class="dv">600</span>, <span class="dv">0</span>, ss<span class="op">=</span>ss, beta<span class="op">=</span><span class="st">"orbit"</span>, disk<span class="op">=</span><span class="va">False</span>, projection<span class="op">=</span><span class="st">"panorama"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>img, lin <span class="op">=</span> R.compose(tr, a, ss, sky<span class="op">=</span>milky, stars<span class="op">=</span>stars, star_gain<span class="op">=</span><span class="fl">1.0</span>, exposure<span class="op">=</span><span class="fl">2.0</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">5.6</span>))</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>show(ax, img)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>plt.savefig(<span class="st">"thumbnail.png"</span>, dpi<span class="op">=</span><span class="dv">70</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>, pad_inches<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>tr[<span class="st">'outcome'</span>]<span class="sc">.</span>size<span class="sc">}</span><span class="ss"> rays traced in </span><span class="sc">{</span><span class="bu">float</span>(tr[<span class="st">'seconds'</span>])<span class="sc">:.1f}</span><span class="ss"> s; median </span><span class="sc">{</span>np<span class="sc">.</span>median(tr[<span class="st">'steps'</span>])<span class="sc">:.0f}</span><span class="ss"> steps per ray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-kerr-stars" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-kerr-stars-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-kerr-stars-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-kerr-stars-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: The whole sky from a camera in a circular equatorial orbit at r = 6.03 M around a hole with a = 0.999 (equirectangular panorama, hole at the centre, direction of motion to the right). The shadow is flattened on its left, the side where the hole’s rotation carries light towards the camera. Around it the Milky Way and the stars are repeated in nested, distorted copies between the critical curves.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>2880000 rays traced in 17.5 s; median 107 steps per ray</code></pre>
+</div>
+</div>
+<p>With a spinning hole there is nothing left to tabulate, so every pixel is a full geodesic integration. On a laptop with numba that takes seconds for an image of a few million rays. DNGR rendered 23-million-pixel IMAX frames with ray <em>bundles</em>, at 30 minutes to several hours per frame on 10 cores. The last ingredient is the light source <em>Interstellar</em> is remembered for, the accretion disk. That is <a href="../../explainers/accretion-disk-light/">part 4</a>.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Kerr, R. P. (1963). Gravitational field of a spinning mass as an example of algebraically special metrics. <em>Physical Review Letters</em> 11, 237–238.</li>
+<li>Boyer, R. H. and Lindquist, R. W. (1967). Maximal analytic extension of the Kerr metric. <em>Journal of Mathematical Physics</em> 8, 265–281.</li>
+<li>Carter, B. (1968). Global structure of the Kerr family of gravitational fields. <em>Physical Review</em> 174, 1559–1571.</li>
+<li>Bardeen, J. M., Press, W. H. and Teukolsky, S. A. (1972). Rotating black holes: locally nonrotating frames, energy extraction, and scalar synchrotron radiation. <em>Astrophysical Journal</em> 178, 347–369.</li>
+<li>Bardeen, J. M. (1973). Timelike and null geodesics in the Kerr metric. In <em>Black Holes (Les Houches 1972)</em>, eds.&nbsp;C. DeWitt and B. S. DeWitt, 215–239. Gordon and Breach.</li>
+<li>Teo, E. (2003). Spherical photon orbits around a Kerr black hole. <em>General Relativity and Gravitation</em> 35, 1909–1926.</li>
+<li>James, O., von Tunzelmann, E., Franklin, P. and Thorne, K. S. (2015). Gravitational lensing by spinning black holes in astrophysics, and in the movie <em>Interstellar</em>. <em>Classical and Quantum Gravity</em> 32, 065001. <a href="https://arxiv.org/abs/1502.03808">arXiv:1502.03808</a>.</li>
+<li>Thorne, K. S. (2014). <em>The Science of Interstellar</em>. W. W. Norton.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

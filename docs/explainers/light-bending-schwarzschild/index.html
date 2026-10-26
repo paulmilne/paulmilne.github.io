@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-26">
+<meta name="description" content="A worked introduction to light bending by a non-spinning black hole: the Schwarzschild metric, null geodesics and their conserved quantities, the photon sphere and critical impact parameter, the orbit equation, the exact deflection angle as an elliptic integral, and its weak- and strong-field limits, all checked numerically.">
+
+<title>Bending Light Around a Black Hole – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Bending Light Around a Black Hole – math-blog">
+<meta property="og:description" content="A worked introduction to light bending by a non-spinning black hole: the Schwarzschild metric, null geodesics and their conserved quantities, the photon sphere and critical impact parameter, the orbit equation, the exact deflection angle as an elliptic integral, and its weak- and strong-field limits, all checked numerically.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/light-bending-schwarzschild/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="567">
+<meta property="og:image:width" content="814">
+<meta name="twitter:title" content="Bending Light Around a Black Hole – math-blog">
+<meta name="twitter:description" content="A worked introduction to light bending by a non-spinning black hole: the Schwarzschild metric, null geodesics and their conserved quantities, the photon sphere and critical impact parameter, the orbit equation, the exact deflection angle as an elliptic integral, and its weak- and strong-field limits, all checked numerically.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/light-bending-schwarzschild/thumbnail.png">
+<meta name="twitter:image-height" content="567">
+<meta name="twitter:image-width" content="814">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Bending Light Around a Black Hole</h1>
+            <p class="subtitle lead">Null geodesics in the Schwarzschild metric: the photon sphere, the shadow, and the exact deflection of light (part 1 of 4)</p>
+                  <div>
+        <div class="description">
+          A worked introduction to light bending by a non-spinning black hole: the Schwarzschild metric, null geodesics and their conserved quantities, the photon sphere and critical impact parameter, the orbit equation, the exact deflection angle as an elliptic integral, and its weak- and strong-field limits, all checked numerically.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">general relativity</div>
+                <div class="quarto-category">black holes</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 26, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-schwarzschild-metric" id="toc-the-schwarzschild-metric" class="nav-link active" data-scroll-target="#the-schwarzschild-metric">The Schwarzschild metric</a></li>
+  <li><a href="#light-rays-are-null-geodesics" id="toc-light-rays-are-null-geodesics" class="nav-link" data-scroll-target="#light-rays-are-null-geodesics">Light rays are null geodesics</a></li>
+  <li><a href="#the-photon-sphere-and-the-critical-impact-parameter" id="toc-the-photon-sphere-and-the-critical-impact-parameter" class="nav-link" data-scroll-target="#the-photon-sphere-and-the-critical-impact-parameter">The photon sphere and the critical impact parameter</a></li>
+  <li><a href="#the-orbit-equation" id="toc-the-orbit-equation" class="nav-link" data-scroll-target="#the-orbit-equation">The orbit equation</a></li>
+  <li><a href="#the-exact-deflection-angle" id="toc-the-exact-deflection-angle" class="nav-link" data-scroll-target="#the-exact-deflection-angle">The exact deflection angle</a>
+  <ul class="collapse">
+  <li><a href="#far-from-the-hole-einsteins-1.75-arcseconds" id="toc-far-from-the-hole-einsteins-1.75-arcseconds" class="nav-link" data-scroll-target="#far-from-the-hole-einsteins-1.75-arcseconds">Far from the hole: Einstein’s 1.75 arcseconds</a></li>
+  <li><a href="#close-to-the-photon-sphere-winding-without-limit" id="toc-close-to-the-photon-sphere-winding-without-limit" class="nav-link" data-scroll-target="#close-to-the-photon-sphere-winding-without-limit">Close to the photon sphere: winding without limit</a></li>
+  </ul></li>
+  <li><a href="#where-this-leaves-us" id="toc-where-this-leaves-us" class="nav-link" data-scroll-target="#where-this-leaves-us">Where this leaves us</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>This is the first of four explainers behind <a href="../../sci-fi/gargantua/">Gargantua: Rebuilding Interstellar’s Black Hole</a>. That post renders the black hole from <em>Interstellar</em>, with and without the Doppler shifts the film left out. These explainers work through the mathematics it rests on:</p>
+<ol type="1">
+<li><strong>Bending light around a black hole</strong> (this post): how a non-spinning black hole deflects a light ray, and why it casts a shadow.</li>
+<li><a href="../../explainers/black-hole-ray-tracing/"><strong>Ray tracing a black hole</strong></a>: how to turn that deflection into a picture: cameras, celestial spheres, Einstein rings and multiple images.</li>
+<li><a href="../../explainers/kerr-black-hole/"><strong>The Kerr black hole</strong></a>: what spin adds: frame dragging, the Carter constant, and the D-shaped shadow.</li>
+<li><a href="../../explainers/accretion-disk-light/"><strong>Light from the disk</strong></a>: the accretion disk’s orbits, temperature, redshift and Doppler beaming.</li>
+</ol>
+<p>All the code is in the <code>gargantua</code> project alongside the blog, and every number below is computed when the page is built.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> Path.cwd().resolve().parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"gargantua"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.integrate <span class="im">import</span> solve_ivp</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> brentq</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> blackhole <span class="im">import</span> schwarzschild <span class="im">as</span> S</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># physical constants (SI)</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>G, c, M_sun <span class="op">=</span> <span class="fl">6.674e-11</span>, <span class="fl">2.998e8</span>, <span class="fl">1.989e30</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>AU, PC <span class="op">=</span> <span class="fl">1.496e11</span>, <span class="fl">3.086e16</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="the-schwarzschild-metric" class="level2">
+<h2 class="anchored" data-anchor-id="the-schwarzschild-metric">The Schwarzschild metric</h2>
+<p>In 1916, a few weeks after Einstein published his field equations, Karl Schwarzschild found their solution outside a spherical, non-rotating mass <span class="math inline">\(M\)</span>. In coordinates <span class="math inline">\((t, r, \theta, \phi)\)</span> the spacetime interval is</p>
+<p><span class="math display">\[
+ds^2 = -\left(1 - \frac{2GM}{c^2 r}\right)c^2\,dt^2 + \frac{dr^2}{1 - 2GM/(c^2 r)} + r^2\left(d\theta^2 + \sin^2\theta\,d\phi^2\right).
+\]</span></p>
+<p>The radius <span class="math inline">\(r\)</span> is defined so that a sphere at <span class="math inline">\(r\)</span> has area <span class="math inline">\(4\pi r^2\)</span>, and <span class="math inline">\(t\)</span> is the time kept by a clock at rest far away. The metric becomes singular at the <strong>Schwarzschild radius</strong> <span class="math inline">\(r_s = 2GM/c^2\)</span>. That singularity is a feature of the coordinates, not of spacetime, but the sphere at <span class="math inline">\(r_s\)</span> is real: it is the <strong>event horizon</strong>, from inside which nothing escapes.</p>
+<p>From here on we use <strong>geometrised units</strong>, <span class="math inline">\(G = c = 1\)</span>, and measure lengths in units of <span class="math inline">\(M\)</span> (strictly <span class="math inline">\(GM/c^2\)</span>). The metric is then</p>
+<p><span class="math display">\[
+ds^2 = -\left(1 - \frac{2}{r}\right)dt^2 + \frac{dr^2}{1 - 2/r} + r^2\,d\Omega^2,
+\]</span></p>
+<p>and the horizon is at <span class="math inline">\(r = 2\)</span>. To convert back, multiply lengths by <span class="math inline">\(GM/c^2\)</span>:</p>
+<div id="units" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> length_unit(mass_suns):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""GM/c^2 in metres."""</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> G <span class="op">*</span> mass_suns <span class="op">*</span> M_sun <span class="op">/</span> c<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, m <span class="kw">in</span> [(<span class="st">"Sun"</span>, <span class="fl">1.0</span>), (<span class="st">"Sagittarius A*"</span>, <span class="fl">4.3e6</span>), (<span class="st">"Gargantua"</span>, <span class="fl">1e8</span>), (<span class="st">"M87*"</span>, <span class="fl">6.5e9</span>)]:</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    L <span class="op">=</span> length_unit(m)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:15s}</span><span class="ss">  M = </span><span class="sc">{</span>m<span class="sc">:9.3g}</span><span class="ss"> suns   GM/c^2 = </span><span class="sc">{</span>L<span class="op">/</span><span class="fl">1e3</span><span class="sc">:12.4g}</span><span class="ss"> km = </span><span class="sc">{</span>L<span class="op">/</span>AU<span class="sc">:9.3g}</span><span class="ss"> AU"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Sun              M =         1 suns   GM/c^2 =        1.477 km =  9.87e-09 AU
+Sagittarius A*   M =   4.3e+06 suns   GM/c^2 =    6.351e+06 km =    0.0425 AU
+Gargantua        M =     1e+08 suns   GM/c^2 =    1.477e+08 km =     0.987 AU
+M87*             M =   6.5e+09 suns   GM/c^2 =      9.6e+09 km =      64.2 AU</code></pre>
+</div>
+</div>
+<p>In the film, Gargantua has a mass of 100 million Suns, so one unit of length is about 1.5 × 10⁸ km, which is roughly the distance from the Earth to the Sun.</p>
+</section>
+<section id="light-rays-are-null-geodesics" class="level2">
+<h2 class="anchored" data-anchor-id="light-rays-are-null-geodesics">Light rays are null geodesics</h2>
+<p>A free particle follows a <strong>geodesic</strong>, a path of extremal proper time. A geodesic <span class="math inline">\(x^\mu(\lambda)\)</span> extremises the action of the Lagrangian</p>
+<p><span class="math display">\[
+\mathcal{L} = \tfrac{1}{2} g_{\mu\nu}\,\dot{x}^\mu \dot{x}^\nu, \qquad \dot{x} = dx/d\lambda,
+\]</span></p>
+<p>where <span class="math inline">\(\lambda\)</span> is an <strong>affine parameter</strong> along the path. For light the interval vanishes, <span class="math inline">\(g_{\mu\nu}\dot x^\mu \dot x^\nu = 0\)</span>, so a light ray is a <strong>null geodesic</strong>.</p>
+<p>The Schwarzschild metric depends on neither <span class="math inline">\(t\)</span> nor <span class="math inline">\(\phi\)</span>, so the Euler–Lagrange equations for those coordinates give two conserved quantities:</p>
+<p><span class="math display">\[
+E = \left(1 - \frac{2}{r}\right)\dot t, \qquad L = r^2 \sin^2\theta\,\dot\phi .
+\]</span></p>
+<p><span class="math inline">\(E\)</span> is the photon’s energy as measured at infinity, and <span class="math inline">\(L\)</span> is its angular momentum about the axis. Spherical symmetry lets us choose the orbital plane to be the equator, <span class="math inline">\(\theta = \pi/2\)</span>. The null condition is then</p>
+<p><span class="math display">\[
+-\frac{E^2}{1 - 2/r} + \frac{\dot r^2}{1 - 2/r} + \frac{L^2}{r^2} = 0
+\quad\Longrightarrow\quad
+\dot r^2 = E^2 - \left(1 - \frac{2}{r}\right)\frac{L^2}{r^2}.
+\]</span></p>
+<p>Rescaling the affine parameter rescales <span class="math inline">\(E\)</span> and <span class="math inline">\(L\)</span> together, so only their ratio matters for the shape of a ray. That ratio is the <strong>impact parameter</strong></p>
+<p><span class="math display">\[
+b = \frac{L}{E},
+\]</span></p>
+<p>which, far from the hole, is the perpendicular distance between the incoming ray and a parallel line through the centre. Dividing by <span class="math inline">\(L^2\)</span>,</p>
+<p><span class="math display">\[
+\frac{\dot r^2}{L^2} = \frac{1}{b^2} - V(r), \qquad V(r) = \frac{1}{r^2}\left(1 - \frac{2}{r}\right).
+\]</span></p>
+<p>This is a one-dimensional problem. A ray coming in from infinity moves inwards while <span class="math inline">\(1/b^2 &gt; V(r)\)</span> and turns round where <span class="math inline">\(1/b^2 = V(r)\)</span>.</p>
+</section>
+<section id="the-photon-sphere-and-the-critical-impact-parameter" class="level2">
+<h2 class="anchored" data-anchor-id="the-photon-sphere-and-the-critical-impact-parameter">The photon sphere and the critical impact parameter</h2>
+<p><span class="math inline">\(V(r)\)</span> has a single maximum. Setting <span class="math inline">\(V'(r) = -2/r^3 + 6/r^4 = 0\)</span> gives</p>
+<p><span class="math display">\[
+r = 3, \qquad V_\text{max} = \frac{1}{27}.
+\]</span></p>
+<p>At <span class="math inline">\(r = 3M\)</span>, the <strong>photon sphere</strong>, light can travel on a circular orbit, an unstable one, balanced on top of the potential. A ray with</p>
+<p><span class="math display">\[
+b_c = \frac{1}{\sqrt{V_\text{max}}} = 3\sqrt{3} \approx 5.196
+\]</span></p>
+<p>spirals in towards that orbit forever. This splits all incoming rays into two families:</p>
+<ul>
+<li><span class="math inline">\(b &gt; 3\sqrt 3\)</span>: the ray meets the potential barrier, turns round at a radius <span class="math inline">\(r_0 &gt; 3\)</span>, and escapes back to infinity.</li>
+<li><span class="math inline">\(b &lt; 3\sqrt 3\)</span>: the ray passes over the barrier and falls through the horizon.</li>
+</ul>
+<div id="cell-fig-potential" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> np.linspace(<span class="fl">2.0</span>, <span class="dv">20</span>, <span class="dv">1000</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>V <span class="op">=</span> (<span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span> <span class="op">/</span> r) <span class="op">/</span> r<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="fl">3.6</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>ax.plot(r, V, <span class="st">"k"</span>, lw<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b, col <span class="kw">in</span> [(<span class="fl">4.5</span>, <span class="st">"C3"</span>), (S.B_CRIT, <span class="st">"C1"</span>), (<span class="fl">6.5</span>, <span class="st">"C0"</span>), (<span class="dv">10</span>, <span class="st">"C2"</span>)]:</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    ax.axhline(<span class="dv">1</span> <span class="op">/</span> b<span class="op">**</span><span class="dv">2</span>, color<span class="op">=</span>col, lw<span class="op">=</span><span class="dv">1</span>, ls<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    lab <span class="op">=</span> <span class="st">"b = 3√3 (critical)"</span> <span class="cf">if</span> <span class="bu">abs</span>(b <span class="op">-</span> S.B_CRIT) <span class="op">&lt;</span> <span class="fl">1e-9</span> <span class="cf">else</span> <span class="ss">f"b = </span><span class="sc">{</span>b<span class="sc">:g}</span><span class="ss">"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    ax.text(<span class="fl">19.8</span>, <span class="dv">1</span> <span class="op">/</span> b<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> <span class="fl">0.0008</span>, lab, ha<span class="op">=</span><span class="st">"right"</span>, color<span class="op">=</span>col, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> b <span class="op">&gt;</span> S.B_CRIT:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        r0 <span class="op">=</span> <span class="bu">float</span>(S.turning_point(b))</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        ax.plot(r0, <span class="dv">1</span> <span class="op">/</span> b<span class="op">**</span><span class="dv">2</span>, <span class="st">"o"</span>, color<span class="op">=</span>col, ms<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>ax.axvline(<span class="dv">3</span>, color<span class="op">=</span><span class="st">"0.6"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>ax.text(<span class="fl">3.1</span>, <span class="fl">0.0005</span>, <span class="st">"photon sphere r = 3"</span>, color<span class="op">=</span><span class="st">"0.4"</span>, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ax.axvspan(<span class="dv">0</span>, <span class="dv">2</span>, color<span class="op">=</span><span class="st">"k"</span>, alpha<span class="op">=</span><span class="fl">0.85</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="fl">1.5</span>, <span class="dv">20</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="dv">0</span>, <span class="fl">0.055</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"r  (units of M)"</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"V(r)"</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-potential" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-potential-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-potential-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-potential-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The effective potential for light, V(r) = (1 - 2/r)/r². A ray with impact parameter b reaches the radius where 1/b² meets the curve and turns back. Only rays with b below the critical value 3√3 clear the peak at the photon sphere, r = 3, and fall in.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The turning point <span class="math inline">\(r_0\)</span> and the impact parameter are related by <span class="math inline">\(1/b^2 = V(r_0)\)</span>, that is</p>
+<p><span class="math display">\[
+b = \frac{r_0}{\sqrt{1 - 2/r_0}},
+\]</span></p>
+<p>and inverting this means solving the cubic <span class="math inline">\(r_0^3 - b^2 r_0 + 2b^2 = 0\)</span>, whose largest root is <span class="math inline">\(r_0 = \tfrac{2b}{\sqrt 3}\cos\!\big[\tfrac13 \arccos(-3\sqrt3/b)\big]\)</span>. That is what <code>S.turning_point</code> evaluates.</p>
+<p>The consequence for a picture is immediate. Look towards the hole from far away: every line of sight with impact parameter less than <span class="math inline">\(3\sqrt3\,M\)</span> ends on the horizon, so the hole appears as a black disk of radius</p>
+<p><span class="math display">\[
+b_c = 3\sqrt{3}\,M \approx 2.6\,r_s,
+\]</span></p>
+<p>which is more than two and a half times the size of the horizon itself. This dark disk is the black hole’s <strong>shadow</strong>. In 2019 the Event Horizon Telescope imaged the ring of light around the shadow of M87*. For its mass and distance the formula predicts an angular diameter of</p>
+<div id="m87" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>m87 <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> S.B_CRIT <span class="op">*</span> length_unit(<span class="fl">6.5e9</span>) <span class="op">/</span> (<span class="fl">16.8e6</span> <span class="op">*</span> PC) <span class="op">*</span> <span class="fl">206264.806</span> <span class="op">*</span> <span class="fl">1e6</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"2 b_c / D = </span><span class="sc">{</span>m87<span class="sc">:.1f}</span><span class="ss"> micro-arcseconds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>2 b_c / D = 39.7 micro-arcseconds</code></pre>
+</div>
+</div>
+<p>which is close to the 42 ± 3 µas ring the collaboration reported. (The ring of emission sits slightly outside the shadow’s edge, so the agreement is as good as it should be.)</p>
+</section>
+<section id="the-orbit-equation" class="level2">
+<h2 class="anchored" data-anchor-id="the-orbit-equation">The orbit equation</h2>
+<p>To get the <em>shape</em> of a ray, trade the affine parameter for the angle <span class="math inline">\(\phi\)</span>. Using <span class="math inline">\(\dot\phi = L/r^2\)</span> and <span class="math inline">\(u = 1/r\)</span>,</p>
+<p><span class="math display">\[
+\left(\frac{dr}{d\phi}\right)^2 = \frac{\dot r^2}{\dot\phi^2}
+\quad\Longrightarrow\quad
+\left(\frac{du}{d\phi}\right)^2 = \frac{1}{b^2} - u^2 + 2u^3 \equiv P(u).
+\]</span></p>
+<p>Differentiating once with respect to <span class="math inline">\(\phi\)</span> removes the constant:</p>
+<p><span class="math display">\[
+\boxed{\;\frac{d^2u}{d\phi^2} + u = 3u^2\;}
+\]</span></p>
+<p>Without the right-hand side this is the equation of a straight line, <span class="math inline">\(u = \sin\phi / b\)</span>. The term <span class="math inline">\(3u^2\)</span> (in ordinary units <span class="math inline">\(3GMu^2/c^2\)</span>) is all of the bending. It is the same correction that makes Mercury’s orbit precess, here acting on a particle with no rest mass.</p>
+<p>Integrating it for a fan of parallel incoming rays shows the whole story at once:</p>
+<div id="cell-fig-rays" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ray_xy(b, x0<span class="op">=-</span><span class="fl">30.0</span>, phi_max<span class="op">=</span><span class="dv">4</span> <span class="op">*</span> np.pi):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Integrate u'' + u = 3u^2 from a point far to the left."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># start on the line y = b at x = x0</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    r0 <span class="op">=</span> math.hypot(x0, b)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    phi0 <span class="op">=</span> math.atan2(b, x0)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    u0 <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> r0</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># du/dphi from the straight-line approximation at the start, then exact</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    du0 <span class="op">=</span> <span class="op">-</span>math.sqrt(<span class="bu">max</span>(<span class="dv">1</span> <span class="op">/</span> b<span class="op">**</span><span class="dv">2</span> <span class="op">-</span> u0<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> u0<span class="op">**</span><span class="dv">3</span>, <span class="fl">0.0</span>))</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> f(phi, y):</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [y[<span class="dv">1</span>], <span class="op">-</span>y[<span class="dv">0</span>] <span class="op">+</span> <span class="dv">3</span> <span class="op">*</span> y[<span class="dv">0</span>] <span class="op">**</span> <span class="dv">2</span>]</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> horizon(phi, y):</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> y[<span class="dv">0</span>] <span class="op">-</span> <span class="fl">0.5</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> away(phi, y):</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> y[<span class="dv">0</span>] <span class="op">-</span> <span class="dv">1</span> <span class="op">/</span> <span class="dv">40</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    horizon.terminal <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    away.terminal <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    away.direction <span class="op">=</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    sol <span class="op">=</span> solve_ivp(f, [phi0, phi0 <span class="op">-</span> phi_max], [u0, du0], events<span class="op">=</span>[horizon, away],</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>                    max_step<span class="op">=</span><span class="fl">0.01</span>, rtol<span class="op">=</span><span class="fl">1e-10</span>, atol<span class="op">=</span><span class="fl">1e-12</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    rr <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> sol.y[<span class="dv">0</span>]</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> rr <span class="op">*</span> np.cos(sol.t), rr <span class="op">*</span> np.sin(sol.t)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">7.5</span>, <span class="dv">6</span>))</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> np.concatenate([np.linspace(<span class="dv">2</span>, <span class="fl">5.0</span>, <span class="dv">7</span>), [<span class="fl">5.2</span>, <span class="fl">5.22</span>, <span class="fl">5.3</span>, <span class="fl">5.5</span>], np.linspace(<span class="dv">6</span>, <span class="dv">9</span>, <span class="dv">4</span>)]):</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> ray_xy(b)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    col <span class="op">=</span> <span class="st">"C3"</span> <span class="cf">if</span> b <span class="op">&lt;</span> S.B_CRIT <span class="cf">else</span> (<span class="st">"C1"</span> <span class="cf">if</span> b <span class="op">&lt;</span> <span class="fl">5.6</span> <span class="cf">else</span> <span class="st">"C0"</span>)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    ax.plot(x, y, color<span class="op">=</span>col, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>th <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">300</span>)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>ax.fill(<span class="dv">2</span> <span class="op">*</span> np.cos(th), <span class="dv">2</span> <span class="op">*</span> np.sin(th), color<span class="op">=</span><span class="st">"k"</span>)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="dv">3</span> <span class="op">*</span> np.cos(th), <span class="dv">3</span> <span class="op">*</span> np.sin(th), <span class="st">"k:"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>ax.plot(S.B_CRIT <span class="op">*</span> np.cos(th), S.B_CRIT <span class="op">*</span> np.sin(th), color<span class="op">=</span><span class="st">"0.7"</span>, lw<span class="op">=</span><span class="fl">0.6</span>, ls<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="op">-</span><span class="dv">16</span>, <span class="dv">14</span>)</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="op">-</span><span class="dv">10</span>, <span class="dv">11</span>)</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x / M"</span>)</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"y / M"</span>)</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-rays" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-rays-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-rays-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-rays-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Light rays arriving from the left with impact parameters from 2 to 9 (units of M). Rays with b below 3√3 (red) fall into the hole. Those just above it (orange) wind round the photon sphere (dotted) before escaping, and the closer b is to the critical value, the more times they wind. Distant rays (blue) are bent only slightly.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="the-exact-deflection-angle" class="level2">
+<h2 class="anchored" data-anchor-id="the-exact-deflection-angle">The exact deflection angle</h2>
+<p>A ray from infinity that turns round at <span class="math inline">\(u_0 = 1/r_0\)</span> sweeps out an angle <span class="math inline">\(\int_0^{u_0} du/\sqrt{P(u)}\)</span> on the way in and the same on the way out. A straight line would sweep exactly <span class="math inline">\(\pi\)</span>, so the <strong>deflection</strong> is</p>
+<p><span class="math display">\[
+\alpha(b) = 2\int_0^{u_0}\frac{du}{\sqrt{1/b^2 - u^2 + 2u^3}} - \pi .
+\]</span></p>
+<p>Two ways to evaluate this are worth having, because each checks the other.</p>
+<p><strong>Quadrature.</strong> The integrand blows up like <span class="math inline">\((u_0 - u)^{-1/2}\)</span> at the turning point. The substitution <span class="math inline">\(u = u_0 - s^2\)</span> removes this, since <span class="math inline">\(du = -2s\,ds\)</span> and <span class="math inline">\(\sqrt{P} \approx s\sqrt{-P'(u_0)}\)</span>, which leaves a smooth integrand for adaptive quadrature.</p>
+<p><strong>Elliptic integrals.</strong> <span class="math inline">\(P(u)\)</span> is a cubic, <span class="math inline">\(2(u - u_1)(u - u_2)(u - u_3)\)</span>, with roots <span class="math inline">\(u_1 &lt; 0 &lt; u_2 = u_0 &lt; u_3\)</span> when <span class="math inline">\(b &gt; 3\sqrt3\)</span>. A standard reduction (Byrd and Friedman, formula 233.00) gives, for any starting point <span class="math inline">\(y\)</span>,</p>
+<p><span class="math display">\[
+\int_y^{u_2}\frac{du}{\sqrt{P(u)}} = \sqrt{\frac{2}{u_3 - u_1}}\;F(\varphi, k),
+\qquad k^2 = \frac{u_2 - u_1}{u_3 - u_1},
+\qquad \sin^2\varphi = \frac{(u_3 - u_1)(u_2 - y)}{(u_2 - u_1)(u_3 - y)},
+\]</span></p>
+<p>where <span class="math inline">\(F\)</span> is the incomplete elliptic integral of the first kind. With <span class="math inline">\(y = 0\)</span> this is half the swept angle, in closed form.</p>
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>bs <span class="op">=</span> [<span class="fl">5.2</span>, <span class="fl">5.3</span>, <span class="fl">5.5</span>, <span class="fl">6.0</span>, <span class="fl">8.0</span>, <span class="fl">10.0</span>, <span class="fl">30.0</span>, <span class="fl">100.0</span>, <span class="fl">1e4</span>]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> bs:</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    aq <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> S.sweep_quad(b) <span class="op">-</span> math.pi</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    ae <span class="op">=</span> <span class="bu">float</span>(S.deflection(b))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    rows.append((b, <span class="bu">float</span>(S.turning_point(b)), aq, ae, <span class="bu">abs</span>(aq <span class="op">-</span> ae)))</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'b'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'r0'</span><span class="sc">:&gt;9}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'quadrature'</span><span class="sc">:&gt;14}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'elliptic'</span><span class="sc">:&gt;14}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'difference'</span><span class="sc">:&gt;11}</span><span class="ss">"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b, r0, aq, ae, d <span class="kw">in</span> rows:</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>b<span class="sc">:8g}</span><span class="ss"> </span><span class="sc">{</span>r0<span class="sc">:9.4f}</span><span class="ss"> </span><span class="sc">{</span>aq<span class="sc">:14.10f}</span><span class="ss"> </span><span class="sc">{</span>ae<span class="sc">:14.10f}</span><span class="ss"> </span><span class="sc">{</span>d<span class="sc">:11.1e}</span><span class="ss">"</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>max_diff <span class="op">=</span> <span class="bu">max</span>(r[<span class="op">-</span><span class="dv">1</span>] <span class="cf">for</span> r <span class="kw">in</span> rows)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-deflection" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="6">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-deflection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: The deflection angle α(b) in radians, by adaptive quadrature and by the elliptic-integral formula.
+</figcaption>
+<div aria-describedby="tbl-deflection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-stdout">
+<pre><code>       b        r0     quadrature       elliptic  difference
+     5.2    3.0687   6.8103719567   6.8103719567     5.2e-11
+     5.3    3.4033   3.5579380425   3.5579380425     2.1e-12
+     5.5    3.7668   2.5530201823   2.5530201823     3.1e-13
+       6    4.4534   1.7193883102   1.7193883102     9.5e-13
+       8    6.7005   0.8587300181   0.8587300181     1.5e-12
+      10    8.7889   0.5903957876   0.5903957876     8.6e-13
+      30   28.9450   0.1482480873   0.1482480873     1.3e-12
+     100   98.9846   0.0412225397   0.0412225397     4.4e-13
+   10000 9998.9998   0.0004001179   0.0004001179     1.2e-13</code></pre>
+</div>
+</div>
+</figure>
+</div>
+<p>The two agree to 5e-11 radians over the whole range, from rays that graze the photon sphere to rays that pass <span class="math inline">\(10^4\,M\)</span> away.</p>
+<section id="far-from-the-hole-einsteins-1.75-arcseconds" class="level3">
+<h3 class="anchored" data-anchor-id="far-from-the-hole-einsteins-1.75-arcseconds">Far from the hole: Einstein’s 1.75 arcseconds</h3>
+<p>For <span class="math inline">\(b \gg 1\)</span>, expanding the integral in powers of <span class="math inline">\(1/b\)</span> gives</p>
+<p><span class="math display">\[
+\alpha(b) = \frac{4}{b} + \frac{15\pi}{4b^2} + \frac{128}{3b^3} + O(b^{-4}).
+\]</span></p>
+<p>Restoring units, the leading term is <span class="math inline">\(\alpha = 4GM/(c^2 b)\)</span>, twice what you get by treating light as a Newtonian particle, because space is curved as well as time. For a ray grazing the Sun this is</p>
+<div id="sun" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>R_sun <span class="op">=</span> <span class="fl">6.957e8</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>alpha_sun <span class="op">=</span> <span class="dv">4</span> <span class="op">*</span> G <span class="op">*</span> M_sun <span class="op">/</span> (c<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> R_sun) <span class="op">*</span> <span class="fl">206264.806</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"4GM/(c^2 R) = </span><span class="sc">{</span>alpha_sun<span class="sc">:.3f}</span><span class="ss"> arcseconds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>4GM/(c^2 R) = 1.752 arcseconds</code></pre>
+</div>
+</div>
+<p>which is the deflection the 1919 eclipse expeditions led by Eddington and Dyson set out to measure.</p>
+</section>
+<section id="close-to-the-photon-sphere-winding-without-limit" class="level3">
+<h3 class="anchored" data-anchor-id="close-to-the-photon-sphere-winding-without-limit">Close to the photon sphere: winding without limit</h3>
+<p>As <span class="math inline">\(b \to b_c\)</span> from above, the turning point approaches the photon sphere and the ray winds round it more and more times. Near the critical value the deflection diverges logarithmically. Bozza (2002) derived the strong-field limit</p>
+<p><span class="math display">\[
+\alpha(b) \approx -\ln\!\left(\frac{b}{b_c} - 1\right) + \ln\!\big[216\,(7 - 4\sqrt3)\big] - \pi .
+\]</span></p>
+<div id="cell-fig-deflection" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> np.concatenate([S.B_CRIT <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> np.geomspace(<span class="fl">1e-8</span>, <span class="fl">0.1</span>, <span class="dv">300</span>)), np.geomspace(S.B_CRIT <span class="op">*</span> <span class="fl">1.1</span>, <span class="fl">1e3</span>, <span class="dv">300</span>)])</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> S.deflection(b)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.8</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].loglog(b, alpha, <span class="st">"k"</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"exact"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].loglog(b, S.deflection_weak(b, <span class="dv">1</span>), <span class="st">"C0--"</span>, label<span class="op">=</span><span class="st">"4/b"</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].loglog(b, S.deflection_weak(b, <span class="dv">3</span>), <span class="st">"C2--"</span>, label<span class="op">=</span><span class="st">"4/b + 15π/4b² + 128/3b³"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>ms <span class="op">=</span> b <span class="op">&lt;</span> <span class="fl">1.3</span> <span class="op">*</span> S.B_CRIT</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].loglog(b[ms], S.deflection_strong(b[ms]), <span class="st">"C3:"</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"strong-field log"</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_xlabel(<span class="st">"impact parameter b / M"</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_ylabel(<span class="st">"deflection α (rad)"</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_ylim(<span class="fl">1e-3</span>, <span class="dv">30</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>, frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> b <span class="op">/</span> S.B_CRIT <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> x <span class="op">&lt;</span> <span class="fl">0.5</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].semilogx(x[m], alpha[m], <span class="st">"k"</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"exact"</span>)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].semilogx(x[m], S.deflection_strong(b[m]), <span class="st">"C3:"</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"strong-field log"</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">7</span>):</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    ax[<span class="dv">1</span>].axhline(n <span class="op">*</span> np.pi, color<span class="op">=</span><span class="st">"0.85"</span>, lw<span class="op">=</span><span class="fl">0.8</span>, zorder<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_xlabel(<span class="st">"b / b_c - 1"</span>)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_ylabel(<span class="st">"deflection α (rad)"</span>)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>, frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-deflection" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-deflection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-deflection-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-deflection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: The exact deflection angle (black) against impact parameter, with the weak-field series to first and third order and the strong-field logarithm. The weak-field series fails below about b = 10, while the strong-field formula, plotted against the distance from the critical value on the right, holds over many decades close to it.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The coefficient of the logarithm, exactly 1 for Schwarzschild, carries a physical meaning. Each extra half-turn round the hole adds <span class="math inline">\(\pi\)</span> to <span class="math inline">\(\alpha\)</span>. To add <span class="math inline">\(\pi\)</span>, the distance from the critical value, <span class="math inline">\(b - b_c\)</span>, must shrink by a factor of <span class="math inline">\(e^{-\pi} \approx 0.0432\)</span>. Solving <span class="math inline">\(\alpha(b) = n\pi\)</span> exactly confirms it:</p>
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>bn <span class="op">=</span> [brentq(<span class="kw">lambda</span> b: <span class="bu">float</span>(S.deflection(b)) <span class="op">-</span> n <span class="op">*</span> math.pi, S.B_CRIT <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> <span class="fl">1e-15</span>), <span class="dv">60</span>) <span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">7</span>)]</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'n'</span><span class="sc">:&gt;2}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'b_n'</span><span class="sc">:&gt;14}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'b_n - b_c'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'ratio'</span><span class="sc">:&gt;8}</span><span class="ss">"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>prev <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n, bb <span class="kw">in</span> <span class="bu">enumerate</span>(bn, <span class="dv">1</span>):</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> bb <span class="op">-</span> S.B_CRIT</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n<span class="sc">:2d}</span><span class="ss"> </span><span class="sc">{</span>bb<span class="sc">:14.10f}</span><span class="ss"> </span><span class="sc">{</span>d<span class="sc">:12.3e}</span><span class="ss"> </span><span class="sc">{</span><span class="st">''</span> <span class="cf">if</span> prev <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> <span class="ss">f'</span><span class="sc">{</span>d<span class="op">/</span>prev<span class="sc">:8.5f}</span><span class="ss">'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    prev <span class="op">=</span> d</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>ratio_last <span class="op">=</span> (bn[<span class="op">-</span><span class="dv">1</span>] <span class="op">-</span> S.B_CRIT) <span class="op">/</span> (bn[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> S.B_CRIT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-rings" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="9">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-rings-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Impact parameters at which a ray is turned through n half-turns, and the ratio of successive distances from the critical value.
+</figcaption>
+<div aria-describedby="tbl-rings-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-stdout">
+<pre><code> n            b_n    b_n - b_c    ratio
+ 1   5.3569586307    1.608e-01 
+ 2   5.2026804028    6.528e-03  0.04060
+ 3   5.1964335011    2.811e-04  0.04306
+ 4   5.1961645668    1.214e-05  0.04321
+ 5   5.1961529475    5.248e-07  0.04321
+ 6   5.1961524454    2.268e-08  0.04321</code></pre>
+</div>
+</div>
+</figure>
+</div>
+<p>The ratio settles to 0.0432, against <span class="math inline">\(e^{-\pi} = 0.0432\)</span>. The rate <span class="math inline">\(\gamma = \pi\)</span> at which neighbouring rays peel away from the photon sphere is its Lyapunov exponent per half-orbit. The same number reappears in a picture: next to the shadow’s edge sits a stack of ever-thinner rings, the second, third and later images of the whole sky, each about 23 times thinner than the last. Only the first one or two are ever visible, but they are there.</p>
+</section>
+</section>
+<section id="where-this-leaves-us" class="level2">
+<h2 class="anchored" data-anchor-id="where-this-leaves-us">Where this leaves us</h2>
+<p>For a non-spinning hole, everything a renderer needs is now in hand:</p>
+<ul>
+<li>rays with <span class="math inline">\(b &lt; 3\sqrt3\,M\)</span> end on the horizon, which gives the shadow;</li>
+<li>rays with <span class="math inline">\(b &gt; 3\sqrt3\,M\)</span> escape, deflected by the exact <span class="math inline">\(\alpha(b)\)</span> above;</li>
+<li>near the critical value, rays wind round the photon sphere, which gives infinite sequences of images packed against the shadow’s edge.</li>
+</ul>
+<p>What is missing is the camera. These formulas describe rays from infinity seen from infinity, while <em>Interstellar</em>’s camera sits a few dozen <span class="math inline">\(M\)</span> from the hole, and possibly moves. The <a href="../../explainers/black-hole-ray-tracing/">next explainer</a> puts the camera in place and turns <span class="math inline">\(\alpha(b)\)</span> into images.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Schwarzschild, K. (1916). Über das Gravitationsfeld eines Massenpunktes nach der Einsteinschen Theorie. <em>Sitzungsberichte der Preussischen Akademie der Wissenschaften</em>, 189–196.</li>
+<li>Darwin, C. (1959). The gravity field of a particle. <em>Proceedings of the Royal Society A</em> 249, 180–194.</li>
+<li>Byrd, P. F. and Friedman, M. D. (1971). <em>Handbook of Elliptic Integrals for Engineers and Scientists</em>, 2nd edn. Springer.</li>
+<li>Bozza, V. (2002). Gravitational lensing in the strong field limit. <em>Physical Review D</em> 66, 103001.</li>
+<li>Event Horizon Telescope Collaboration (2019). First M87 Event Horizon Telescope results. I. The shadow of the supermassive black hole. <em>Astrophysical Journal Letters</em> 875, L1.</li>
+<li>Misner, C. W., Thorne, K. S. and Wheeler, J. A. (1973). <em>Gravitation</em>, chapter 25. Freeman.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

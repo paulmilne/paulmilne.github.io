@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-26">
+<meta name="description" content="A from-scratch recreation of the black hole Gargantua from Interstellar: the general relativity of light around a spinning black hole, the DNGR renderer that Kip Thorne and Double Negative built for the film, the warped star field, the accretion disk as the film showed it, and the same disk with the Doppler and gravitational shifts a real observer would see.">
+
+<title>Gargantua: Rebuilding Interstellar’s Black Hole – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Gargantua: Rebuilding Interstellar’s Black Hole – math-blog">
+<meta property="og:description" content="A from-scratch recreation of the black hole Gargantua from Interstellar: the general relativity of light around a spinning black hole, the DNGR renderer that Kip Thorne and Double Negative built for the film, the warped star field, the accretion disk as the film showed it, and the same disk with the Doppler and gravitational shifts a real observer would see.">
+<meta property="og:image" content="https://paulmilne.github.io/sci-fi/gargantua/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="800">
+<meta property="og:image:width" content="1600">
+<meta name="twitter:title" content="Gargantua: Rebuilding Interstellar’s Black Hole – math-blog">
+<meta name="twitter:description" content="A from-scratch recreation of the black hole Gargantua from Interstellar: the general relativity of light around a spinning black hole, the DNGR renderer that Kip Thorne and Double Negative built for the film, the warped star field, the accretion disk as the film showed it, and the same disk with the Doppler and gravitational shifts a real observer would see.">
+<meta name="twitter:image" content="https://paulmilne.github.io/sci-fi/gargantua/thumbnail.png">
+<meta name="twitter:image-height" content="800">
+<meta name="twitter:image-width" content="1600">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Gargantua: Rebuilding Interstellar’s Black Hole</h1>
+            <p class="subtitle lead">Ray tracing a spinning black hole from Einstein’s equations, the way Kip Thorne and Double Negative did for the film, and then switching on the Doppler shifts the film left out</p>
+                  <div>
+        <div class="description">
+          A from-scratch recreation of the black hole Gargantua from Interstellar: the general relativity of light around a spinning black hole, the DNGR renderer that Kip Thorne and Double Negative built for the film, the warped star field, the accretion disk as the film showed it, and the same disk with the Doppler and gravitational shifts a real observer would see.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">sci-fi</div>
+                <div class="quarto-category">general relativity</div>
+                <div class="quarto-category">black holes</div>
+                <div class="quarto-category">physics</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 26, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#kip-thorne-and-the-double-negative-gravitational-renderer" id="toc-kip-thorne-and-the-double-negative-gravitational-renderer" class="nav-link active" data-scroll-target="#kip-thorne-and-the-double-negative-gravitational-renderer">Kip Thorne and the Double Negative Gravitational Renderer</a></li>
+  <li><a href="#the-mathematics-in-five-steps" id="toc-the-mathematics-in-five-steps" class="nav-link" data-scroll-target="#the-mathematics-in-five-steps">The mathematics in five steps</a></li>
+  <li><a href="#step-1-a-black-hole-in-front-of-the-stars" id="toc-step-1-a-black-hole-in-front-of-the-stars" class="nav-link" data-scroll-target="#step-1-a-black-hole-in-front-of-the-stars">Step 1: a black hole in front of the stars</a></li>
+  <li><a href="#step-2-spin" id="toc-step-2-spin" class="nav-link" data-scroll-target="#step-2-spin">Step 2: spin</a></li>
+  <li><a href="#step-3-gargantua-as-the-film-showed-it" id="toc-step-3-gargantua-as-the-film-showed-it" class="nav-link" data-scroll-target="#step-3-gargantua-as-the-film-showed-it">Step 3: Gargantua as the film showed it</a></li>
+  <li><a href="#step-4-switching-on-the-physics-the-film-left-out" id="toc-step-4-switching-on-the-physics-the-film-left-out" class="nav-link" data-scroll-target="#step-4-switching-on-the-physics-the-film-left-out">Step 4: switching on the physics the film left out</a></li>
+  <li><a href="#how-long-it-takes" id="toc-how-long-it-takes" class="nav-link" data-scroll-target="#how-long-it-takes">How long it takes</a></li>
+  <li><a href="#what-this-leaves-out" id="toc-what-this-leaves-out" class="nav-link" data-scroll-target="#what-this-leaves-out">What this leaves out</a></li>
+  <li><a href="#thornes-other-image" id="toc-thornes-other-image" class="nav-link" data-scroll-target="#thornes-other-image">Thorne’s other image</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<blockquote class="blockquote">
+<p><em>“Interstellar is the first Hollywood movie to attempt depicting a black hole as it would actually be seen by somebody nearby.”</em></p>
+<p>Oliver James, Eugénie von Tunzelmann, Paul Franklin and Kip Thorne, <em>Classical and Quantum Gravity</em> (2015)</p>
+</blockquote>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, time, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> Path.cwd().resolve().parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"gargantua"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> blackhole <span class="im">import</span> kerr, render <span class="im">as</span> R, sky <span class="im">as</span> SK, disk <span class="im">as</span> D, schwarzschild <span class="im">as</span> S</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> blackhole.colour <span class="im">import</span> tonemap, bloom</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show(ax, img, title<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    ax.imshow(np.clip(img, <span class="dv">0</span>, <span class="dv">1</span>), interpolation<span class="op">=</span><span class="st">"lanczos"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    ax.set_axis_off()</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> title:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        ax.set_title(title, fontsize<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> hero(img, name<span class="op">=</span><span class="va">None</span>, w<span class="op">=</span><span class="dv">11</span>):</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> w <span class="op">*</span> img.shape[<span class="dv">0</span>] <span class="op">/</span> img.shape[<span class="dv">1</span>]</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(w, h))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> fig.add_axes([<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>])</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    show(ax, img)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> name:</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        plt.imsave(name, np.clip(img, <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>milky <span class="op">=</span> SK.Sky(SK.milky_way(<span class="dv">2048</span>))</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>stars <span class="op">=</span> SK.star_catalogue()</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="co"># the film's geometry: spin 0.6, camera at r = 74.1 M, 3.44 degrees above the disk</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="co"># (Figures 13-16 of James et al. 2015)</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>A_FILM, R_CAM, TH_CAM, R_OUT <span class="op">=</span> <span class="fl">0.6</span>, <span class="fl">74.1</span>, <span class="fl">86.56</span>, <span class="fl">20.0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="cell-fig-hero" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>NX, NY, SS <span class="op">=</span> <span class="dv">1600</span>, <span class="dv">800</span>, <span class="dv">2</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tr_film <span class="op">=</span> R.trace_image(R_CAM, TH_CAM, A_FILM, NX, NY, <span class="dv">30</span>, ss<span class="op">=</span>SS, disk<span class="op">=</span><span class="va">True</span>, r_out<span class="op">=</span>R_OUT)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>film, film_lin <span class="op">=</span> R.compose(tr_film, A_FILM, SS, sky<span class="op">=</span>milky, stars<span class="op">=</span>stars, star_gain<span class="op">=</span><span class="fl">0.6</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                           disk<span class="op">=</span><span class="bu">dict</span>(model<span class="op">=</span><span class="st">"film"</span>, T<span class="op">=</span><span class="dv">4500</span>, shift<span class="op">=</span><span class="st">"none"</span>, r_out<span class="op">=</span>R_OUT), exposure<span class="op">=</span><span class="fl">0.35</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>hero(film, <span class="st">"thumbnail.png"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-hero" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-hero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-hero-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-hero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Gargantua as Interstellar showed it, recreated here from the equations: a black hole spinning at 0.6 of the maximum, its thin accretion disk glowing at a uniform 4500 K, seen from 74 M away and 3.4° above the disk, without the Doppler and gravitational frequency shifts (which the film left out) and with a soft lens glare (which the film added).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The black hole in Christopher Nolan’s <em>Interstellar</em> (2014) is one of the most recognisable images in modern cinema: a black disk with a band of glowing gas across its middle and the same band arched over its top and curled under its bottom. It is also one of the very few images in any film that was computed from general relativity rather than designed. The physicist Kip Thorne wrote down the equations, and a team at the visual-effects company Double Negative turned them into a renderer.</p>
+<p>This post rebuilds that image from scratch: the spacetime of a spinning black hole, the paths of light rays through it, a camera, a star field and an accretion disk. All of it is in a few hundred lines of Python. It also renders what the film chose not to show, the same disk as it would really appear, with its light shifted in colour and brightness by the motion of the gas and the pull of the hole.</p>
+<p>The mathematics is covered properly in a four-part explainer series, and this post links to it as it goes:</p>
+<ol type="1">
+<li><a href="../../explainers/light-bending-schwarzschild/">Bending light around a black hole</a>: geodesics, the photon sphere and the exact deflection of light;</li>
+<li><a href="../../explainers/black-hole-ray-tracing/">Ray tracing a black hole</a>: cameras, celestial spheres, Einstein rings and multiple images;</li>
+<li><a href="../../explainers/kerr-black-hole/">The Kerr black hole</a>: spin, frame dragging, the Carter constant and the D-shaped shadow;</li>
+<li><a href="../../explainers/accretion-disk-light/">Light from the disk</a>: orbits, temperature, redshift and Doppler beaming.</li>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About the sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The account of how the film’s images were made, and the parameters used to match them, come from the paper the Double Negative team and Thorne published afterwards: James, von Tunzelmann, Franklin and Thorne (2015), <em>Gravitational lensing by spinning black holes in astrophysics, and in the movie Interstellar</em>. Thorne’s book <em>The Science of Interstellar</em> (2014) tells the same story for a general reader. The star field and the disk’s texture here are synthetic, so these are recreations of the film’s physics, not copies of its frames. Every number in the code outputs is computed when the page is built.</p>
+</div>
+</div>
+<section id="kip-thorne-and-the-double-negative-gravitational-renderer" class="level2">
+<h2 class="anchored" data-anchor-id="kip-thorne-and-the-double-negative-gravitational-renderer">Kip Thorne and the Double Negative Gravitational Renderer</h2>
+<p>Kip Thorne is a theoretical physicist at Caltech who has spent his career on black holes, gravitational waves and the strange corners of general relativity. He co-wrote <em>Gravitation</em>, the standard graduate text, and co-founded LIGO, which detected gravitational waves from colliding black holes in 2015. For that he shared the 2017 Nobel Prize in Physics with Rainer Weiss and Barry Barish. <em>Interstellar</em> grew out of a film treatment he developed with the producer Lynda Obst, and he served as the film’s scientific adviser and an executive producer.</p>
+<p>According to the 2015 paper, work on the black hole began in May 2013, when Nolan asked Double Negative to build realistic images of a spinning black hole and its disk at IMAX resolution. Thorne wrote a step-by-step prescription for mapping light from the sky, or from a disk, onto a camera near a spinning hole, and checked it in Mathematica. A Double Negative team including Oliver James, Eugénie von Tunzelmann and the visual-effects supervisor Paul Franklin turned it into a production renderer, the <strong>Double Negative Gravitational Renderer</strong> (DNGR):</p>
+<ul>
+<li>about 40,000 lines of C++, running on Double Negative’s render farm of 1,633 blade servers;</li>
+<li>23 million pixels per IMAX frame, each traced as a <strong>ray bundle</strong>, a narrow beam whose cross-section is evolved through curved spacetime, so that stars stay sharp and smooth without flickering;</li>
+<li>from 30 minutes to several hours per frame on 10 CPU cores;</li>
+<li>the camera’s motion, relativistic aberration, Doppler shifts and gravitational redshift all built in.</li>
+</ul>
+<p>Then came the film-making decisions, and they matter for what follows:</p>
+<ul>
+<li><strong>Spin.</strong> Gargantua’s story needs an almost maximally spinning hole: that is what lets an hour on Miller’s planet cost seven years on Earth. At that spin the shadow is flattened on one side, the disk’s images pile up along the flat edge, and the disk looks off-centre. Nolan and Franklin judged that too confusing for a mass audience, so the images use spin <span class="math inline">\(a = 0.6\)</span> (in units of the hole’s mass) instead.</li>
+<li><strong>Doppler shifts.</strong> Gas in the disk orbits at a good fraction of the speed of light. A real observer would see the approaching side blue-shifted and blazing and the receding side red-shifted and dim. The film left these shifts out.</li>
+<li><strong>The disk.</strong> It is an “anaemic” artist’s disk, not a real quasar disk, which would fry anyone nearby with X-rays. It is thin, it is not accreting, and it shines as a blackbody at a uniform 4500 K.</li>
+<li><strong>Lens flare.</strong> Audiences expect images filmed through a real camera, so the final images were convolved with the measured point-spread function of an IMAX lens, which gives the soft “veiling flare” glow.</li>
+</ul>
+<p>The recreation follows the same recipe, with the same numbers wherever the paper gives them.</p>
+</section>
+<section id="the-mathematics-in-five-steps" class="level2">
+<h2 class="anchored" data-anchor-id="the-mathematics-in-five-steps">The mathematics in five steps</h2>
+<p>Everything rests on one idea. Light follows <strong>null geodesics</strong>, the straightest possible paths through curved spacetime with zero interval. Rendering means following those paths backwards, from the camera out to wherever the light came from.</p>
+<p><strong>1. The spacetime.</strong> A spinning black hole of mass <span class="math inline">\(M\)</span> and angular momentum <span class="math inline">\(J = aM\)</span> is described by the Kerr metric. In Boyer–Lindquist coordinates, with <span class="math inline">\(G = c = M = 1\)</span>,</p>
+<p><span class="math display">\[
+ds^2 = -\alpha^2\,dt^2 + \frac{\rho^2}{\Delta}\,dr^2 + \rho^2\,d\theta^2 + \varpi^2\,(d\phi - \omega\,dt)^2 .
+\]</span></p>
+<p>Here <span class="math inline">\(\alpha\)</span> is the slowing of clocks, <span class="math inline">\(\omega\)</span> the angular velocity at which space itself is dragged round, and <span class="math inline">\(\rho, \Delta, \varpi\)</span> simple functions of <span class="math inline">\(r\)</span> and <span class="math inline">\(\theta\)</span> (<a href="../../explainers/kerr-black-hole/#the-kerr-metric">part 3</a>).</p>
+<p><strong>2. Three conserved quantities.</strong> A light ray in this spacetime carries three constants: its energy, its angular momentum about the spin axis, <span class="math inline">\(b\)</span>, and <strong>Carter’s constant</strong>, <span class="math inline">\(q\)</span>. Carter discovered <span class="math inline">\(q\)</span> in 1968 from a hidden symmetry that lets the equations of motion separate (<a href="../../explainers/kerr-black-hole/#three-constants-for-a-light-ray">part 3</a>). Together they fix a ray’s path completely.</p>
+<p><strong>3. The ray equations.</strong> DNGR integrates Hamilton’s equations for the Hamiltonian <span class="math inline">\(H = \tfrac12 g^{\mu\nu}p_\mu p_\nu\)</span>:</p>
+<p><span class="math display">\[
+\frac{dr}{d\zeta} = \frac{\Delta}{\rho^2}\,p_r, \quad
+\frac{d\theta}{d\zeta} = \frac{p_\theta}{\rho^2}, \quad
+\frac{d\phi}{d\zeta} = -\frac{\partial}{\partial b}\!\left(\frac{R + \Delta\Theta}{2\Delta\rho^2}\right), \quad
+\frac{dp_{r,\theta}}{d\zeta} = \frac{\partial}{\partial(r,\theta)}\!\left[-\frac{\Delta p_r^2 + p_\theta^2}{2\rho^2} + \frac{R + \Delta\Theta}{2\Delta\rho^2}\right],
+\]</span></p>
+<p>with <span class="math inline">\(R(r)\)</span> and <span class="math inline">\(\Theta(\theta)\)</span> built from <span class="math inline">\(b\)</span> and <span class="math inline">\(q\)</span>. Five coupled ODEs per pixel.</p>
+<p><strong>4. The camera.</strong> Each pixel’s direction is converted, by relativistic aberration, from the camera’s frame to that of a local “zero-angular-momentum” observer swept round by frame dragging, and from there into the ray’s initial momenta (<a href="../../explainers/black-hole-ray-tracing/#a-moving-camera-aberration">part 2</a>, <a href="../../explainers/kerr-black-hole/#initial-conditions-from-a-pixel">part 3</a>).</p>
+<p><strong>5. Shading.</strong> A ray that escapes shows the point of the sky it reaches. Lensing conserves surface brightness, by Liouville’s theorem, so that point keeps its true brightness (<a href="../../explainers/black-hole-ray-tracing/#point-stars-images-and-magnification">part 2</a>). A ray that reaches the horizon is black. A ray that hits the disk shows the gas’s light, shifted in frequency by a factor <span class="math inline">\(g\)</span> that combines Doppler shift and gravitational redshift (<a href="../../explainers/accretion-disk-light/#the-frequency-shift-g">part 4</a>).</p>
+<p>The ray tracer behind this post integrates those equations with an adaptive Runge–Kutta method, compiled with numba, and checks itself against everything known exactly: the exact deflection angle for a non-spinning hole, Bardeen’s formula for the edge of a spinning hole’s shadow, the conservation of Carter’s constant (which the integrator never uses), and the camera speeds quoted in the DNGR paper. The details, and the checks, are in the explainers.</p>
+</section>
+<section id="step-1-a-black-hole-in-front-of-the-stars" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-a-black-hole-in-front-of-the-stars">Step 1: a black hole in front of the stars</h2>
+<p>Start with no disk at all: a non-spinning black hole and the night sky behind it, seen from a ship in orbit <span class="math inline">\(30\,M\)</span> from the hole. This is the classic image of gravitational lensing, the one Alain Riazuelo’s film clip made famous and that opens the DNGR paper’s discussion.</p>
+<div id="cell-fig-starfield" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>r_cam <span class="op">=</span> <span class="fl">30.0</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>tab <span class="op">=</span> S.sky_angle_table(r_cam)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>cam <span class="op">=</span> kerr.Camera(r_cam, math.pi <span class="op">/</span> <span class="dv">2</span>, <span class="fl">0.0</span>, beta<span class="op">=</span><span class="st">"orbit"</span>, fov<span class="op">=</span><span class="dv">90</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>NX2, NY2, ss <span class="op">=</span> <span class="dv">1000</span>, <span class="dv">680</span>, <span class="dv">2</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> cam.directions(NX2 <span class="op">*</span> ss, NY2 <span class="op">*</span> ss)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Ns <span class="op">=</span> S.aberrate(N, cam.beta)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> render_sky(v, cap):</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    fp <span class="op">=</span> SK.footprint(v, <span class="op">~</span>cap)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    diffuse <span class="op">=</span> R.downsample(np.where(cap[..., <span class="va">None</span>], <span class="dv">0</span>, milky.sample(v, fp)), ss)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    idx, x, y, mu, om <span class="op">=</span> SK.lensed_stars(kerr.Camera.right_handed(N), v, <span class="op">~</span>cap, stars)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> SK.paint_stars((NY2, NX2), stars, idx, (x <span class="op">+</span> <span class="fl">0.5</span>) <span class="op">/</span> ss <span class="op">-</span> <span class="fl">0.5</span>, (y <span class="op">+</span> <span class="fl">0.5</span>) <span class="op">/</span> ss <span class="op">-</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                         mu, <span class="dv">2</span> <span class="op">*</span> np.<span class="bu">abs</span>(om) <span class="op">*</span> ss <span class="op">*</span> ss)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tonemap(bloom(diffuse <span class="op">+</span> pts, weights<span class="op">=</span>(<span class="fl">0.03</span>, <span class="fl">0.02</span>, <span class="fl">0.01</span>)), <span class="fl">2.0</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># no hole: each (aberrated) pixel sees the sky straight ahead</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>v_flat <span class="op">=</span> np.stack([<span class="op">-</span>Ns[..., <span class="dv">0</span>], Ns[..., <span class="dv">1</span>], Ns[..., <span class="dv">2</span>]], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>img_flat <span class="op">=</span> render_sky(v_flat, np.zeros(v_flat.shape[:<span class="dv">2</span>], <span class="bu">bool</span>))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>v, cap <span class="op">=</span> S.lens_directions(Ns, r_cam, cam.theta, tab)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>img_hole <span class="op">=</span> render_sky(v, cap)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">4.2</span>))</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>show(ax[<span class="dv">0</span>], img_flat, <span class="st">"no black hole"</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>show(ax[<span class="dv">1</span>], img_hole, <span class="ss">f"black hole, ship in orbit at r = </span><span class="sc">{</span>r_cam<span class="sc">:g}</span><span class="ss"> M"</span>)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>psi_E <span class="op">=</span> math.degrees(S.einstein_ring(r_cam, tab))</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>psi_sh <span class="op">=</span> math.degrees(S.shadow_angle(r_cam))</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"orbital speed </span><span class="sc">{</span>cam<span class="sc">.</span>beta<span class="sc">:.3f}</span><span class="ss">c; for a hovering observer here: shadow radius </span><span class="sc">{</span>psi_sh<span class="sc">:.1f}</span><span class="ss">°, Einstein ring </span><span class="sc">{</span>psi_E<span class="sc">:.1f}</span><span class="ss">°"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-starfield" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-starfield-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-starfield-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-starfield-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The night sky seen from a ship orbiting a non-spinning black hole at 30 M (90° field of view). Left: the same sky with the hole removed. Right: with the hole. Light from behind the hole is bent round it: the Milky Way is split and wrapped round the Einstein ring, and a second, inverted image of the entire sky is squeezed into the bright annulus against the shadow.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>orbital speed 0.189c; for a hovering observer here: shadow radius 9.6°, Einstein ring 23.7°</code></pre>
+</div>
+</div>
+<p>The hole bends every ray that passes it, by an angle that grows without limit as the ray grazes the <strong>photon sphere</strong> at <span class="math inline">\(r = 3M\)</span>. Rays that pass inside the critical impact parameter <span class="math inline">\(b = 3\sqrt3\,M\)</span> fall in, which makes the shadow two and a half times wider than the horizon itself. Light from directly behind the hole arrives from every direction round the <strong>Einstein ring</strong>. Inside the ring sits a second image of the whole sky, and inside that a third, each about <span class="math inline">\(e^{\pi} \approx 23\)</span> times thinner than the last (<a href="../../explainers/light-bending-schwarzschild/#close-to-the-photon-sphere-winding-without-limit">part 1</a>).</p>
+</section>
+<section id="step-2-spin" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-spin">Step 2: spin</h2>
+<p>Now let the hole spin. Frame dragging carries light round with the hole: rays travelling with the rotation can skim closer before escaping, and rays travelling against it are captured further out. The shadow loses its circular symmetry.</p>
+<div id="cell-fig-spin" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">4.5</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, a <span class="kw">in</span> <span class="bu">zip</span>(axs, [<span class="fl">0.0</span>, <span class="fl">0.6</span>, <span class="fl">0.999</span>]):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    tr <span class="op">=</span> R.trace_image(R_CAM, TH_CAM, a, <span class="dv">600</span>, <span class="dv">600</span>, <span class="dv">12</span>, ss<span class="op">=</span><span class="dv">2</span>, disk<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    img, _ <span class="op">=</span> R.compose(tr, a, <span class="dv">2</span>, sky<span class="op">=</span>milky, stars<span class="op">=</span>stars, star_gain<span class="op">=</span><span class="fl">0.8</span>, exposure<span class="op">=</span><span class="fl">3.0</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    show(ax, img, <span class="ss">f"a = </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-spin" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-spin-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-spin-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-spin-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: The sky round black holes of three spins, seen from the film’s camera position, 74.1 M away. The hole rotates so that its left side moves towards the camera. As the spin rises the shadow shifts to the right and its approaching edge flattens: at Gargantua’s story spin it is a ‘D’.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This is the shape Nolan and Franklin turned down. At the film’s <span class="math inline">\(a = 0.6\)</span> the shadow is still nearly round and almost centred. At <span class="math inline">\(a = 0.999\)</span> it is a D flattened on the approaching side, which is the first thing a viewer would notice about a fast-spinning black hole (<a href="../../explainers/kerr-black-hole/#the-shadow">part 3</a>).</p>
+</section>
+<section id="step-3-gargantua-as-the-film-showed-it" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-gargantua-as-the-film-showed-it">Step 3: Gargantua as the film showed it</h2>
+<p>Add the disk: a thin sheet of gas in the equatorial plane, orbiting on circular geodesics from the innermost stable orbit (<span class="math inline">\(3.83\,M\)</span> for <span class="math inline">\(a = 0.6\)</span>) out to about <span class="math inline">\(20\,M\)</span>, glowing like a 4500 K blackbody and seen from the film’s camera position. The disk is a flat ring, yet the image wraps it over and under the hole. Light leaving the top face of the far side of the disk passes over the hole and is bent down towards the camera, so the far side appears arched above the shadow. Light from the underside of the far side passes beneath the hole and is bent up, forming the ring below the shadow. A third, thin image of the top face hugs the shadow’s edge.</p>
+<p>The difference spin makes is clearest with the disk in place. Here the same disk surrounds a hole at the film’s spin and at nearly the story’s spin (compare Figures 14 and 15a of the DNGR paper):</p>
+<div id="cell-fig-why-06" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">3.7</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, a <span class="kw">in</span> <span class="bu">zip</span>(axs, [<span class="fl">0.6</span>, <span class="fl">0.999</span>]):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    tr <span class="op">=</span> R.trace_image(R_CAM, TH_CAM, a, <span class="dv">800</span>, <span class="dv">400</span>, <span class="dv">30</span>, ss<span class="op">=</span><span class="dv">2</span>, disk<span class="op">=</span><span class="va">True</span>, r_out<span class="op">=</span>R_OUT, r_in<span class="op">=</span>D.isco(A_FILM))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    img, _ <span class="op">=</span> R.compose(tr, a, <span class="dv">2</span>, sky<span class="op">=</span>milky, stars<span class="op">=</span>stars, star_gain<span class="op">=</span><span class="fl">0.6</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                       disk<span class="op">=</span><span class="bu">dict</span>(model<span class="op">=</span><span class="st">"film"</span>, T<span class="op">=</span><span class="dv">4500</span>, shift<span class="op">=</span><span class="st">"none"</span>, r_out<span class="op">=</span>R_OUT), exposure<span class="op">=</span><span class="fl">0.35</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    show(ax, img, <span class="ss">f"a = </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-why-06" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-why-06-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-why-06-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-why-06-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: The same disk (from 3.83 M to 20 M, no frequency shifts) round a hole spinning at a = 0.6 (left) and at a = 0.999 (right), seen from the same camera. At high spin the shadow flattens on its left, approaching side, extra thin images of the disk crowd along the flat edge, and the disk looks off-centre: the confusion the film-makers avoided.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="step-4-switching-on-the-physics-the-film-left-out" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-switching-on-the-physics-the-film-left-out">Step 4: switching on the physics the film left out</h2>
+<p>The gas does not sit still. At the inner edge of the disk it orbits at more than half the speed of light, so its light is <strong>Doppler shifted</strong>: up in frequency on the approaching side and down on the receding side. Everywhere, it is also <strong>gravitationally redshifted</strong> as it climbs out of the hole’s well. Both are captured by one factor per ray,</p>
+<p><span class="math display">\[
+g = \frac{\nu_\text{camera}}{\nu_\text{emitted}} = \frac{E_\text{camera}}{u^t\,(1 - \Omega\,b)},
+\]</span></p>
+<p>where <span class="math inline">\(u^t\)</span> and <span class="math inline">\(\Omega\)</span> describe the orbiting gas and <span class="math inline">\(b\)</span> is the ray’s angular momentum (<a href="../../explainers/accretion-disk-light/#the-frequency-shift-g">part 4</a>). The shift changes the colour, and through Liouville’s theorem (<span class="math inline">\(I_\nu/\nu^3\)</span> is the same for every observer) it changes the brightness too. A blackbody at temperature <span class="math inline">\(T\)</span>, seen through a shift <span class="math inline">\(g\)</span>, is exactly a blackbody at <span class="math inline">\(gT\)</span>, so its total brightness scales as <span class="math inline">\(g^4\)</span>.</p>
+<div id="gfactor" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>hit <span class="op">=</span> tr_film[<span class="st">"outcome"</span>] <span class="op">==</span> kerr.DISK</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> tr_film[<span class="st">"g"</span>][hit]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rays hitting the disk: </span><span class="sc">{</span>hit<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">:,}</span><span class="ss"> of </span><span class="sc">{</span>hit<span class="sc">.</span>size<span class="sc">:,}</span><span class="ss">"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"frequency shift g: </span><span class="sc">{</span>g<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.2f}</span><span class="ss"> (receding side) to </span><span class="sc">{</span>g<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.2f}</span><span class="ss"> (approaching side)"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"apparent temperature of the 4500 K gas: </span><span class="sc">{</span><span class="dv">4500</span><span class="op">*</span>g<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.0f}</span><span class="ss"> K to </span><span class="sc">{</span><span class="dv">4500</span><span class="op">*</span>g<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.0f}</span><span class="ss"> K"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"total brightness, g^4: from </span><span class="sc">{</span>g<span class="sc">.</span><span class="bu">min</span>()<span class="op">**</span><span class="dv">4</span><span class="sc">:.3f}</span><span class="ss"> to </span><span class="sc">{</span>g<span class="sc">.</span><span class="bu">max</span>()<span class="op">**</span><span class="dv">4</span><span class="sc">:.2f}</span><span class="ss"> times the unshifted value"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>g_lo, g_hi <span class="op">=</span> g.<span class="bu">min</span>(), g.<span class="bu">max</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>rays hitting the disk: 1,725,377 of 5,120,000
+frequency shift g: 0.33 (receding side) to 1.51 (approaching side)
+apparent temperature of the 4500 K gas: 1476 K to 6805 K
+total brightness, g^4: from 0.012 to 5.23 times the unshifted value</code></pre>
+</div>
+</div>
+<p>The 4500 K gas appears anywhere from 1476 K to 6805 K. The DNGR paper quotes shift factors of “order 1.5 and 0.4” for its version of this disk, and the range here is 0.33 to 1.51. The paper also shows the effect in two steps, colour first and then brightness. Here are the same two steps:</p>
+<div class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> shift <span class="kw">in</span> [<span class="st">"colour"</span>, <span class="st">"full"</span>]:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    img, _ <span class="op">=</span> R.compose(tr_film, A_FILM, SS, sky<span class="op">=</span>milky, stars<span class="op">=</span>stars, star_gain<span class="op">=</span><span class="fl">0.6</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                       disk<span class="op">=</span><span class="bu">dict</span>(model<span class="op">=</span><span class="st">"film"</span>, T<span class="op">=</span><span class="dv">4500</span>, shift<span class="op">=</span>shift, r_out<span class="op">=</span>R_OUT), exposure<span class="op">=</span><span class="fl">0.35</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    hero(img)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="fig-doppler" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="7">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-doppler-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<div id="fig-doppler-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-doppler-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-doppler-output-1.png" class="img-fluid figure-img" data-ref-parent="fig-doppler">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-doppler-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Gargantua’s disk with the frequency shifts switched on. Top: the colour shift only, with brightness held at its unshifted value (the step shown in Figure 15b of the DNGR paper): the approaching left side shifts towards white (at 6800 K its gas is almost exactly the display’s white point), and the receding right side towards orange. Bottom: colour and brightness together. This is what an observer at the camera would actually see.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-doppler-2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-doppler-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-doppler-output-2.png" id="fig-doppler-2" class="img-fluid figure-img" data-ref-parent="fig-doppler">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-doppler-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-doppler-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5
+</figcaption>
+</figure>
+</div>
+</div>
+<p>The true image is lopsided. The approaching side is white-hot and the receding side dims to a dull red-brown, up to 86 times fainter in total light and far fainter still to the eye. The DNGR paper calls the fully realistic disk “exceedingly lopsided, with the hole’s shadow barely discernible”, and it was never a candidate for the film. Nature does not share Hollywood’s concerns. The asymmetry is real, and it is why the Event Horizon Telescope’s 2019 image of the black hole in M87 is a ring brighter on one side.</p>
+<p>Here is the film’s version beside the physical one:</p>
+<div id="cell-fig-compare" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>_, lin_full <span class="op">=</span> R.compose(tr_film, A_FILM, SS, sky<span class="op">=</span>milky, stars<span class="op">=</span>stars, star_gain<span class="op">=</span><span class="fl">0.6</span>,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                        disk<span class="op">=</span><span class="bu">dict</span>(model<span class="op">=</span><span class="st">"film"</span>, T<span class="op">=</span><span class="dv">4500</span>, shift<span class="op">=</span><span class="st">"full"</span>, r_out<span class="op">=</span>R_OUT), exposure<span class="op">=</span><span class="fl">0.35</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>full <span class="op">=</span> tonemap(bloom(lin_full), <span class="fl">0.35</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">3.5</span>))</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>show(ax[<span class="dv">0</span>], film, <span class="st">"as in the film"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>show(ax[<span class="dv">1</span>], full, <span class="st">"with Doppler and gravitational shifts"</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-compare" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-compare-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-compare-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-compare-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: The same black hole, disk and camera. Left: as Interstellar showed it, without frequency shifts. Right: as it would really look, with Doppler and gravitational shifts in colour and brightness.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="how-long-it-takes" class="level2">
+<h2 class="anchored" data-anchor-id="how-long-it-takes">How long it takes</h2>
+<p>Computing power has moved on since 2014, and a still image at blog resolution is far less demanding than a 23-million-pixel IMAX frame traced as ray bundles.</p>
+<div id="timing" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>n_rays <span class="op">=</span> tr_film[<span class="st">"outcome"</span>].size</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"film-geometry image: </span><span class="sc">{</span>n_rays<span class="sc">:,}</span><span class="ss"> rays (</span><span class="sc">{</span>NX<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>NY<span class="sc">}</span><span class="ss"> pixels, </span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss"> samples each)"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"geodesic integration: </span><span class="sc">{</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="sc">:.1f}</span><span class="ss"> s on this machine "</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span>n_rays<span class="op">/</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> thousand rays per second)"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"integration steps per ray: median </span><span class="sc">{</span>np<span class="sc">.</span>median(tr_film[<span class="st">'steps'</span>])<span class="sc">:.0f}</span><span class="ss">, "</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"99th percentile </span><span class="sc">{</span>np<span class="sc">.</span>percentile(tr_film[<span class="st">'steps'</span>], <span class="dv">99</span>)<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.bincount(tr_film[<span class="st">"outcome"</span>].ravel(), minlength<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rays escaping to the sky </span><span class="sc">{</span>counts[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">; into the hole </span><span class="sc">{</span>counts[<span class="dv">1</span>]<span class="sc">:,}</span><span class="ss">; onto the disk </span><span class="sc">{</span>counts[<span class="dv">2</span>]<span class="sc">:,}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>film-geometry image: 5,120,000 rays (1600x800 pixels, 2x2 samples each)
+geodesic integration: 18.8 s on this machine (272 thousand rays per second)
+integration steps per ray: median 130, 99th percentile 353
+rays escaping to the sky 2,962,609; into the hole 432,014; onto the disk 1,725,377</code></pre>
+</div>
+</div>
+<p>Each ray takes on the order of a hundred adaptive Runge–Kutta steps. Once a ray map is traced, shading it with a different disk model or a different set of frequency shifts takes a second or two, which is how the film, colour-shift and full versions above all come from one trace.</p>
+</section>
+<section id="what-this-leaves-out" class="level2">
+<h2 class="anchored" data-anchor-id="what-this-leaves-out">What this leaves out</h2>
+<p>A few things that DNGR did, and this recreation does not:</p>
+<ul>
+<li><strong>Ray bundles.</strong> DNGR evolved the cross-section of a narrow beam around each pixel’s ray using the equation of geodesic deviation, which gives exact magnifications and smooth, flicker-free motion. Here, the same information comes from differences between neighbouring rays: stars are placed by mapping triangles of the image grid onto the sky (<a href="../../explainers/black-hole-ray-tracing/#point-stars-images-and-magnification">part 2</a>), and extended light is filtered with a mip-map.</li>
+<li><strong>The disk.</strong> The film used a thin disk, a 17-million-voxel volumetric disk and procedurally textured close-ups. Here it is an infinitely thin, opaque disk with a simple streak texture.</li>
+<li><strong>The lens and the film stock.</strong> DNGR convolved images with an IMAX lens’s measured point-spread function and computed colours with the sensitivity curves of motion-picture film. Here a generic glare and the human eye’s colour response (CIE 1931) stand in.</li>
+<li><strong>Motion.</strong> In the film the camera moves, so stars stream round the critical curves and the images are motion-blurred. These are stills.</li>
+</ul>
+</section>
+<section id="thornes-other-image" class="level2">
+<h2 class="anchored" data-anchor-id="thornes-other-image">Thorne’s other image</h2>
+<p>The DNGR paper ends by noting that the same code produced <em>Interstellar</em>’s wormhole, described in a companion paper (James, von Tunzelmann, Franklin and Thorne 2015, <em>American Journal of Physics</em>). The paper’s own assessment is that its work on the disk “retreads largely known ground”, which goes back to Jean-Pierre Luminet’s 1979 image of a disk round a non-spinning hole, computed and then drawn by hand. Its lensing of a star field by a camera close to a fast-spinning hole, with the caustics and critical curves that structure it, was new. A Hollywood film paid for research in general relativity, and the equations to reproduce it fit in a few hundred lines of Python.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>James, O., von Tunzelmann, E., Franklin, P. and Thorne, K. S. (2015). Gravitational lensing by spinning black holes in astrophysics, and in the movie <em>Interstellar</em>. <em>Classical and Quantum Gravity</em> 32, 065001. <a href="https://arxiv.org/abs/1502.03808">arXiv:1502.03808</a>.</li>
+<li>James, O., von Tunzelmann, E., Franklin, P. and Thorne, K. S. (2015). Visualizing <em>Interstellar</em>’s wormhole. <em>American Journal of Physics</em> 83, 486–499.</li>
+<li>Thorne, K. S. (2014). <em>The Science of Interstellar</em>. W. W. Norton.</li>
+<li>Kerr, R. P. (1963). Gravitational field of a spinning mass as an example of algebraically special metrics. <em>Physical Review Letters</em> 11, 237–238.</li>
+<li>Carter, B. (1968). Global structure of the Kerr family of gravitational fields. <em>Physical Review</em> 174, 1559–1571.</li>
+<li>Bardeen, J. M. (1973). Timelike and null geodesics in the Kerr metric. In <em>Black Holes (Les Houches 1972)</em>, eds.&nbsp;C. DeWitt and B. S. DeWitt, 215–239.</li>
+<li>Luminet, J.-P. (1979). Image of a spherical black hole with thin accretion disk. <em>Astronomy and Astrophysics</em> 75, 228–235.</li>
+<li>Event Horizon Telescope Collaboration (2019). First M87 Event Horizon Telescope results. I. The shadow of the supermassive black hole. <em>Astrophysical Journal Letters</em> 875, L1.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

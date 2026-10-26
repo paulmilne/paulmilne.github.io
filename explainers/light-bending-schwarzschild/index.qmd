@@ -1,0 +1,377 @@
+---
+title: "Bending Light Around a Black Hole"
+subtitle: "Null geodesics in the Schwarzschild metric: the photon sphere, the shadow, and the exact deflection of light (part 1 of 4)"
+description: "A worked introduction to light bending by a non-spinning black hole: the Schwarzschild metric, null geodesics and their conserved quantities, the photon sphere and critical impact parameter, the orbit equation, the exact deflection angle as an elliptic integral, and its weak- and strong-field limits, all checked numerically."
+image: thumbnail.png
+author: "Paul Milne"
+date: "2026-10-26"
+categories: [explainer, general relativity, black holes, python]
+jupyter: python3
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-summary: "Show code"
+---
+
+This is the first of four explainers behind [Gargantua: Rebuilding Interstellar's Black Hole](/sci-fi/gargantua/). That post renders the black hole from *Interstellar*, with and without the Doppler shifts the film left out. These explainers work through the mathematics it rests on:
+
+1. **Bending light around a black hole** (this post): how a non-spinning black hole deflects a light ray, and why it casts a shadow.
+2. [**Ray tracing a black hole**](/explainers/black-hole-ray-tracing/): how to turn that deflection into a picture: cameras, celestial spheres, Einstein rings and multiple images.
+3. [**The Kerr black hole**](/explainers/kerr-black-hole/): what spin adds: frame dragging, the Carter constant, and the D-shaped shadow.
+4. [**Light from the disk**](/explainers/accretion-disk-light/): the accretion disk's orbits, temperature, redshift and Doppler beaming.
+
+All the code is in the `gargantua` project alongside the blog, and every number below is computed when the page is built.
+
+```{python}
+#| label: setup
+import sys, math, warnings
+from pathlib import Path
+warnings.filterwarnings("ignore")
+
+ROOT = Path.cwd().resolve().parents[1] / "gargantua"
+sys.path.insert(0, str(ROOT))
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from scipy.optimize import brentq
+
+from blackhole import schwarzschild as S
+
+plt.rcParams.update({"figure.dpi": 110, "axes.spines.top": False, "axes.spines.right": False})
+
+# physical constants (SI)
+G, c, M_sun = 6.674e-11, 2.998e8, 1.989e30
+AU, PC = 1.496e11, 3.086e16
+```
+
+## The Schwarzschild metric
+
+In 1916, a few weeks after Einstein published his field equations, Karl Schwarzschild found their solution outside a spherical, non-rotating mass $M$. In coordinates $(t, r, \theta, \phi)$ the spacetime interval is
+
+$$
+ds^2 = -\left(1 - \frac{2GM}{c^2 r}\right)c^2\,dt^2 + \frac{dr^2}{1 - 2GM/(c^2 r)} + r^2\left(d\theta^2 + \sin^2\theta\,d\phi^2\right).
+$$
+
+The radius $r$ is defined so that a sphere at $r$ has area $4\pi r^2$, and $t$ is the time kept by a clock at rest far away. The metric becomes singular at the **Schwarzschild radius** $r_s = 2GM/c^2$. That singularity is a feature of the coordinates, not of spacetime, but the sphere at $r_s$ is real: it is the **event horizon**, from inside which nothing escapes.
+
+From here on we use **geometrised units**, $G = c = 1$, and measure lengths in units of $M$ (strictly $GM/c^2$). The metric is then
+
+$$
+ds^2 = -\left(1 - \frac{2}{r}\right)dt^2 + \frac{dr^2}{1 - 2/r} + r^2\,d\Omega^2,
+$$
+
+and the horizon is at $r = 2$. To convert back, multiply lengths by $GM/c^2$:
+
+```{python}
+#| label: units
+def length_unit(mass_suns):
+    """GM/c^2 in metres."""
+    return G * mass_suns * M_sun / c**2
+
+for name, m in [("Sun", 1.0), ("Sagittarius A*", 4.3e6), ("Gargantua", 1e8), ("M87*", 6.5e9)]:
+    L = length_unit(m)
+    print(f"{name:15s}  M = {m:9.3g} suns   GM/c^2 = {L/1e3:12.4g} km = {L/AU:9.3g} AU")
+```
+
+In the film, Gargantua has a mass of 100 million Suns, so one unit of length is about 1.5 × 10⁸ km, which is roughly the distance from the Earth to the Sun.
+
+## Light rays are null geodesics
+
+A free particle follows a **geodesic**, a path of extremal proper time. A geodesic $x^\mu(\lambda)$ extremises the action of the Lagrangian
+
+$$
+\mathcal{L} = \tfrac{1}{2} g_{\mu\nu}\,\dot{x}^\mu \dot{x}^\nu, \qquad \dot{x} = dx/d\lambda,
+$$
+
+where $\lambda$ is an **affine parameter** along the path. For light the interval vanishes, $g_{\mu\nu}\dot x^\mu \dot x^\nu = 0$, so a light ray is a **null geodesic**.
+
+The Schwarzschild metric depends on neither $t$ nor $\phi$, so the Euler–Lagrange equations for those coordinates give two conserved quantities:
+
+$$
+E = \left(1 - \frac{2}{r}\right)\dot t, \qquad L = r^2 \sin^2\theta\,\dot\phi .
+$$
+
+$E$ is the photon's energy as measured at infinity, and $L$ is its angular momentum about the axis. Spherical symmetry lets us choose the orbital plane to be the equator, $\theta = \pi/2$. The null condition is then
+
+$$
+-\frac{E^2}{1 - 2/r} + \frac{\dot r^2}{1 - 2/r} + \frac{L^2}{r^2} = 0
+\quad\Longrightarrow\quad
+\dot r^2 = E^2 - \left(1 - \frac{2}{r}\right)\frac{L^2}{r^2}.
+$$
+
+Rescaling the affine parameter rescales $E$ and $L$ together, so only their ratio matters for the shape of a ray. That ratio is the **impact parameter**
+
+$$
+b = \frac{L}{E},
+$$
+
+which, far from the hole, is the perpendicular distance between the incoming ray and a parallel line through the centre. Dividing by $L^2$,
+
+$$
+\frac{\dot r^2}{L^2} = \frac{1}{b^2} - V(r), \qquad V(r) = \frac{1}{r^2}\left(1 - \frac{2}{r}\right).
+$$
+
+This is a one-dimensional problem. A ray coming in from infinity moves inwards while $1/b^2 > V(r)$ and turns round where $1/b^2 = V(r)$.
+
+## The photon sphere and the critical impact parameter
+
+$V(r)$ has a single maximum. Setting $V'(r) = -2/r^3 + 6/r^4 = 0$ gives
+
+$$
+r = 3, \qquad V_\text{max} = \frac{1}{27}.
+$$
+
+At $r = 3M$, the **photon sphere**, light can travel on a circular orbit, an unstable one, balanced on top of the potential. A ray with
+
+$$
+b_c = \frac{1}{\sqrt{V_\text{max}}} = 3\sqrt{3} \approx 5.196
+$$
+
+spirals in towards that orbit forever. This splits all incoming rays into two families:
+
+- $b > 3\sqrt 3$: the ray meets the potential barrier, turns round at a radius $r_0 > 3$, and escapes back to infinity.
+- $b < 3\sqrt 3$: the ray passes over the barrier and falls through the horizon.
+
+```{python}
+#| label: fig-potential
+#| fig-cap: "The effective potential for light, V(r) = (1 - 2/r)/r². A ray with impact parameter b reaches the radius where 1/b² meets the curve and turns back. Only rays with b below the critical value 3√3 clear the peak at the photon sphere, r = 3, and fall in."
+r = np.linspace(2.0, 20, 1000)
+V = (1 - 2 / r) / r**2
+fig, ax = plt.subplots(figsize=(7, 3.6))
+ax.plot(r, V, "k", lw=2)
+for b, col in [(4.5, "C3"), (S.B_CRIT, "C1"), (6.5, "C0"), (10, "C2")]:
+    ax.axhline(1 / b**2, color=col, lw=1, ls="--")
+    lab = "b = 3√3 (critical)" if abs(b - S.B_CRIT) < 1e-9 else f"b = {b:g}"
+    ax.text(19.8, 1 / b**2 + 0.0008, lab, ha="right", color=col, fontsize=9)
+    if b > S.B_CRIT:
+        r0 = float(S.turning_point(b))
+        ax.plot(r0, 1 / b**2, "o", color=col, ms=5)
+ax.axvline(3, color="0.6", lw=0.8)
+ax.text(3.1, 0.0005, "photon sphere r = 3", color="0.4", fontsize=9)
+ax.axvspan(0, 2, color="k", alpha=0.85)
+ax.set_xlim(1.5, 20)
+ax.set_ylim(0, 0.055)
+ax.set_xlabel("r  (units of M)")
+ax.set_ylabel("V(r)")
+plt.tight_layout()
+plt.show()
+```
+
+The turning point $r_0$ and the impact parameter are related by $1/b^2 = V(r_0)$, that is
+
+$$
+b = \frac{r_0}{\sqrt{1 - 2/r_0}},
+$$
+
+and inverting this means solving the cubic $r_0^3 - b^2 r_0 + 2b^2 = 0$, whose largest root is $r_0 = \tfrac{2b}{\sqrt 3}\cos\!\big[\tfrac13 \arccos(-3\sqrt3/b)\big]$. That is what `S.turning_point` evaluates.
+
+The consequence for a picture is immediate. Look towards the hole from far away: every line of sight with impact parameter less than $3\sqrt3\,M$ ends on the horizon, so the hole appears as a black disk of radius
+
+$$
+b_c = 3\sqrt{3}\,M \approx 2.6\,r_s,
+$$
+
+which is more than two and a half times the size of the horizon itself. This dark disk is the black hole's **shadow**. In 2019 the Event Horizon Telescope imaged the ring of light around the shadow of M87*. For its mass and distance the formula predicts an angular diameter of
+
+```{python}
+#| label: m87
+m87 = 2 * S.B_CRIT * length_unit(6.5e9) / (16.8e6 * PC) * 206264.806 * 1e6
+print(f"2 b_c / D = {m87:.1f} micro-arcseconds")
+```
+
+which is close to the 42 ± 3 µas ring the collaboration reported. (The ring of emission sits slightly outside the shadow's edge, so the agreement is as good as it should be.)
+
+## The orbit equation
+
+To get the *shape* of a ray, trade the affine parameter for the angle $\phi$. Using $\dot\phi = L/r^2$ and $u = 1/r$,
+
+$$
+\left(\frac{dr}{d\phi}\right)^2 = \frac{\dot r^2}{\dot\phi^2}
+\quad\Longrightarrow\quad
+\left(\frac{du}{d\phi}\right)^2 = \frac{1}{b^2} - u^2 + 2u^3 \equiv P(u).
+$$
+
+Differentiating once with respect to $\phi$ removes the constant:
+
+$$
+\boxed{\;\frac{d^2u}{d\phi^2} + u = 3u^2\;}
+$$
+
+Without the right-hand side this is the equation of a straight line, $u = \sin\phi / b$. The term $3u^2$ (in ordinary units $3GMu^2/c^2$) is all of the bending. It is the same correction that makes Mercury's orbit precess, here acting on a particle with no rest mass.
+
+Integrating it for a fan of parallel incoming rays shows the whole story at once:
+
+```{python}
+#| label: fig-rays
+#| fig-cap: "Light rays arriving from the left with impact parameters from 2 to 9 (units of M). Rays with b below 3√3 (red) fall into the hole. Those just above it (orange) wind round the photon sphere (dotted) before escaping, and the closer b is to the critical value, the more times they wind. Distant rays (blue) are bent only slightly."
+def ray_xy(b, x0=-30.0, phi_max=4 * np.pi):
+    """Integrate u'' + u = 3u^2 from a point far to the left."""
+    # start on the line y = b at x = x0
+    r0 = math.hypot(x0, b)
+    phi0 = math.atan2(b, x0)
+    u0 = 1 / r0
+    # du/dphi from the straight-line approximation at the start, then exact
+    du0 = -math.sqrt(max(1 / b**2 - u0**2 + 2 * u0**3, 0.0))
+    def f(phi, y):
+        return [y[1], -y[0] + 3 * y[0] ** 2]
+    def horizon(phi, y):
+        return y[0] - 0.5
+    def away(phi, y):
+        return y[0] - 1 / 40
+    horizon.terminal = True
+    away.terminal = True
+    away.direction = -1
+    sol = solve_ivp(f, [phi0, phi0 - phi_max], [u0, du0], events=[horizon, away],
+                    max_step=0.01, rtol=1e-10, atol=1e-12)
+    rr = 1 / sol.y[0]
+    return rr * np.cos(sol.t), rr * np.sin(sol.t)
+
+fig, ax = plt.subplots(figsize=(7.5, 6))
+for b in np.concatenate([np.linspace(2, 5.0, 7), [5.2, 5.22, 5.3, 5.5], np.linspace(6, 9, 4)]):
+    x, y = ray_xy(b)
+    col = "C3" if b < S.B_CRIT else ("C1" if b < 5.6 else "C0")
+    ax.plot(x, y, color=col, lw=1)
+th = np.linspace(0, 2 * np.pi, 300)
+ax.fill(2 * np.cos(th), 2 * np.sin(th), color="k")
+ax.plot(3 * np.cos(th), 3 * np.sin(th), "k:", lw=0.8)
+ax.plot(S.B_CRIT * np.cos(th), S.B_CRIT * np.sin(th), color="0.7", lw=0.6, ls="--")
+ax.set_aspect("equal")
+ax.set_xlim(-16, 14)
+ax.set_ylim(-10, 11)
+ax.set_xlabel("x / M")
+ax.set_ylabel("y / M")
+plt.tight_layout()
+plt.show()
+```
+
+## The exact deflection angle
+
+A ray from infinity that turns round at $u_0 = 1/r_0$ sweeps out an angle $\int_0^{u_0} du/\sqrt{P(u)}$ on the way in and the same on the way out. A straight line would sweep exactly $\pi$, so the **deflection** is
+
+$$
+\alpha(b) = 2\int_0^{u_0}\frac{du}{\sqrt{1/b^2 - u^2 + 2u^3}} - \pi .
+$$
+
+Two ways to evaluate this are worth having, because each checks the other.
+
+**Quadrature.** The integrand blows up like $(u_0 - u)^{-1/2}$ at the turning point. The substitution $u = u_0 - s^2$ removes this, since $du = -2s\,ds$ and $\sqrt{P} \approx s\sqrt{-P'(u_0)}$, which leaves a smooth integrand for adaptive quadrature.
+
+**Elliptic integrals.** $P(u)$ is a cubic, $2(u - u_1)(u - u_2)(u - u_3)$, with roots $u_1 < 0 < u_2 = u_0 < u_3$ when $b > 3\sqrt3$. A standard reduction (Byrd and Friedman, formula 233.00) gives, for any starting point $y$,
+
+$$
+\int_y^{u_2}\frac{du}{\sqrt{P(u)}} = \sqrt{\frac{2}{u_3 - u_1}}\;F(\varphi, k),
+\qquad k^2 = \frac{u_2 - u_1}{u_3 - u_1},
+\qquad \sin^2\varphi = \frac{(u_3 - u_1)(u_2 - y)}{(u_2 - u_1)(u_3 - y)},
+$$
+
+where $F$ is the incomplete elliptic integral of the first kind. With $y = 0$ this is half the swept angle, in closed form.
+
+```{python}
+#| label: tbl-deflection
+#| tbl-cap: "The deflection angle α(b) in radians, by adaptive quadrature and by the elliptic-integral formula."
+bs = [5.2, 5.3, 5.5, 6.0, 8.0, 10.0, 30.0, 100.0, 1e4]
+rows = []
+for b in bs:
+    aq = 2 * S.sweep_quad(b) - math.pi
+    ae = float(S.deflection(b))
+    rows.append((b, float(S.turning_point(b)), aq, ae, abs(aq - ae)))
+print(f"{'b':>8} {'r0':>9} {'quadrature':>14} {'elliptic':>14} {'difference':>11}")
+for b, r0, aq, ae, d in rows:
+    print(f"{b:8g} {r0:9.4f} {aq:14.10f} {ae:14.10f} {d:11.1e}")
+max_diff = max(r[-1] for r in rows)
+```
+
+The two agree to `{python} f"{max_diff:.0e}"` radians over the whole range, from rays that graze the photon sphere to rays that pass $10^4\,M$ away.
+
+### Far from the hole: Einstein's 1.75 arcseconds
+
+For $b \gg 1$, expanding the integral in powers of $1/b$ gives
+
+$$
+\alpha(b) = \frac{4}{b} + \frac{15\pi}{4b^2} + \frac{128}{3b^3} + O(b^{-4}).
+$$
+
+Restoring units, the leading term is $\alpha = 4GM/(c^2 b)$, twice what you get by treating light as a Newtonian particle, because space is curved as well as time. For a ray grazing the Sun this is
+
+```{python}
+#| label: sun
+R_sun = 6.957e8
+alpha_sun = 4 * G * M_sun / (c**2 * R_sun) * 206264.806
+print(f"4GM/(c^2 R) = {alpha_sun:.3f} arcseconds")
+```
+
+which is the deflection the 1919 eclipse expeditions led by Eddington and Dyson set out to measure.
+
+### Close to the photon sphere: winding without limit
+
+As $b \to b_c$ from above, the turning point approaches the photon sphere and the ray winds round it more and more times. Near the critical value the deflection diverges logarithmically. Bozza (2002) derived the strong-field limit
+
+$$
+\alpha(b) \approx -\ln\!\left(\frac{b}{b_c} - 1\right) + \ln\!\big[216\,(7 - 4\sqrt3)\big] - \pi .
+$$
+
+```{python}
+#| label: fig-deflection
+#| fig-cap: "The exact deflection angle (black) against impact parameter, with the weak-field series to first and third order and the strong-field logarithm. The weak-field series fails below about b = 10, while the strong-field formula, plotted against the distance from the critical value on the right, holds over many decades close to it."
+b = np.concatenate([S.B_CRIT * (1 + np.geomspace(1e-8, 0.1, 300)), np.geomspace(S.B_CRIT * 1.1, 1e3, 300)])
+alpha = S.deflection(b)
+fig, ax = plt.subplots(1, 2, figsize=(10, 3.8))
+ax[0].loglog(b, alpha, "k", lw=2, label="exact")
+ax[0].loglog(b, S.deflection_weak(b, 1), "C0--", label="4/b")
+ax[0].loglog(b, S.deflection_weak(b, 3), "C2--", label="4/b + 15π/4b² + 128/3b³")
+ms = b < 1.3 * S.B_CRIT
+ax[0].loglog(b[ms], S.deflection_strong(b[ms]), "C3:", lw=2, label="strong-field log")
+ax[0].set_xlabel("impact parameter b / M")
+ax[0].set_ylabel("deflection α (rad)")
+ax[0].set_ylim(1e-3, 30)
+ax[0].legend(fontsize=8, frameon=False)
+x = b / S.B_CRIT - 1
+m = x < 0.5
+ax[1].semilogx(x[m], alpha[m], "k", lw=2, label="exact")
+ax[1].semilogx(x[m], S.deflection_strong(b[m]), "C3:", lw=2, label="strong-field log")
+for n in range(1, 7):
+    ax[1].axhline(n * np.pi, color="0.85", lw=0.8, zorder=0)
+ax[1].set_xlabel("b / b_c - 1")
+ax[1].set_ylabel("deflection α (rad)")
+ax[1].legend(fontsize=8, frameon=False)
+plt.tight_layout()
+plt.show()
+```
+
+The coefficient of the logarithm, exactly 1 for Schwarzschild, carries a physical meaning. Each extra half-turn round the hole adds $\pi$ to $\alpha$. To add $\pi$, the distance from the critical value, $b - b_c$, must shrink by a factor of $e^{-\pi} \approx 0.0432$. Solving $\alpha(b) = n\pi$ exactly confirms it:
+
+```{python}
+#| label: tbl-rings
+#| tbl-cap: "Impact parameters at which a ray is turned through n half-turns, and the ratio of successive distances from the critical value."
+bn = [brentq(lambda b: float(S.deflection(b)) - n * math.pi, S.B_CRIT * (1 + 1e-15), 60) for n in range(1, 7)]
+print(f"{'n':>2} {'b_n':>14} {'b_n - b_c':>12} {'ratio':>8}")
+prev = None
+for n, bb in enumerate(bn, 1):
+    d = bb - S.B_CRIT
+    print(f"{n:2d} {bb:14.10f} {d:12.3e} {'' if prev is None else f'{d/prev:8.5f}'}")
+    prev = d
+ratio_last = (bn[-1] - S.B_CRIT) / (bn[-2] - S.B_CRIT)
+```
+
+The ratio settles to `{python} f"{ratio_last:.4f}"`, against $e^{-\pi} = 0.0432$. The rate $\gamma = \pi$ at which neighbouring rays peel away from the photon sphere is its Lyapunov exponent per half-orbit. The same number reappears in a picture: next to the shadow's edge sits a stack of ever-thinner rings, the second, third and later images of the whole sky, each about 23 times thinner than the last. Only the first one or two are ever visible, but they are there.
+
+## Where this leaves us
+
+For a non-spinning hole, everything a renderer needs is now in hand:
+
+- rays with $b < 3\sqrt3\,M$ end on the horizon, which gives the shadow;
+- rays with $b > 3\sqrt3\,M$ escape, deflected by the exact $\alpha(b)$ above;
+- near the critical value, rays wind round the photon sphere, which gives infinite sequences of images packed against the shadow's edge.
+
+What is missing is the camera. These formulas describe rays from infinity seen from infinity, while *Interstellar*'s camera sits a few dozen $M$ from the hole, and possibly moves. The [next explainer](/explainers/black-hole-ray-tracing/) puts the camera in place and turns $\alpha(b)$ into images.
+
+## References
+
+- Schwarzschild, K. (1916). Über das Gravitationsfeld eines Massenpunktes nach der Einsteinschen Theorie. *Sitzungsberichte der Preussischen Akademie der Wissenschaften*, 189–196.
+- Darwin, C. (1959). The gravity field of a particle. *Proceedings of the Royal Society A* 249, 180–194.
+- Byrd, P. F. and Friedman, M. D. (1971). *Handbook of Elliptic Integrals for Engineers and Scientists*, 2nd edn. Springer.
+- Bozza, V. (2002). Gravitational lensing in the strong field limit. *Physical Review D* 66, 103001.
+- Event Horizon Telescope Collaboration (2019). First M87 Event Horizon Telescope results. I. The shadow of the supermassive black hole. *Astrophysical Journal Letters* 875, L1.
+- Misner, C. W., Thorne, K. S. and Wheeler, J. A. (1973). *Gravitation*, chapter 25. Freeman.
