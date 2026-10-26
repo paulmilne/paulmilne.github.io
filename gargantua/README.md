@@ -41,3 +41,9 @@ Writes `sci-fi/gargantua/gargantua_film.mp4` and `gargantua_doppler.mp4` (needs 
 
 Units are geometrised, G = c = M = 1: lengths in units of the hole's mass.
 Traced ray maps are cached by parameter hash in `cache/`; delete it to retrace.
+
+## Soundtrack
+
+    ../.venv/bin/python soundtrack.py
+
+Synthesises an organ chord whose notes are the orbital frequencies of disk rings in resonance with the outer edge (1 : 3/2 : 2 : 3 : 4 : 6 : 8), raised 24 octaves. Writes `out/soundtrack.wav` and muxes it into both clips in `sci-fi/gargantua` and `docs`. Run it again after `animate.py`.

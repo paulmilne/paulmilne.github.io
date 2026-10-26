@@ -274,7 +274,10 @@ window.Quarto = {
   <li><a href="#step-2-spin" id="toc-step-2-spin" class="nav-link" data-scroll-target="#step-2-spin">Step 2: spin</a></li>
   <li><a href="#step-3-gargantua-as-the-film-showed-it" id="toc-step-3-gargantua-as-the-film-showed-it" class="nav-link" data-scroll-target="#step-3-gargantua-as-the-film-showed-it">Step 3: Gargantua as the film showed it</a></li>
   <li><a href="#step-4-switching-on-the-physics-the-film-left-out" id="toc-step-4-switching-on-the-physics-the-film-left-out" class="nav-link" data-scroll-target="#step-4-switching-on-the-physics-the-film-left-out">Step 4: switching on the physics the film left out</a></li>
-  <li><a href="#gargantua-in-motion" id="toc-gargantua-in-motion" class="nav-link" data-scroll-target="#gargantua-in-motion">Gargantua in motion</a></li>
+  <li><a href="#gargantua-in-motion" id="toc-gargantua-in-motion" class="nav-link" data-scroll-target="#gargantua-in-motion">Gargantua in motion</a>
+  <ul class="collapse">
+  <li><a href="#the-soundtrack" id="toc-the-soundtrack" class="nav-link" data-scroll-target="#the-soundtrack">The soundtrack</a></li>
+  </ul></li>
   <li><a href="#how-long-it-takes" id="toc-how-long-it-takes" class="nav-link" data-scroll-target="#how-long-it-takes">How long it takes</a></li>
   <li><a href="#what-this-leaves-out" id="toc-what-this-leaves-out" class="nav-link" data-scroll-target="#what-this-leaves-out">What this leaves out</a></li>
   <li><a href="#thornes-other-image" id="toc-thornes-other-image" class="nav-link" data-scroll-target="#thornes-other-image">Thorne’s other image</a></li>
@@ -658,21 +661,44 @@ light reaching the camera from the disk left it between 57 M and 158 M earlier</
 <p>and then with the Doppler and gravitational shifts. Now the gas brightens as it swings round towards the camera on the left and fades as it recedes on the right:</p>
 <div class="quarto-video"><video id="video_shortcode_videojs_video2" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="Gargantua's disk turning, with Doppler and gravitational frequency shifts"><source src="gargantua_doppler.mp4"></video></div>
 <p>The video’s texture adds some clumpier structure to the gas so that the rotation is easy to follow. The ray map is the same 5.8 million rays for every frame, and the clips are rendered by <code>animate.py</code> in the <code>gargantua</code> project.</p>
+<section id="the-soundtrack" class="level3">
+<h3 class="anchored" data-anchor-id="the-soundtrack">The soundtrack</h3>
+<p>The music is computed from the disk too. Each note is a ring of gas, and its pitch is the ring’s orbital frequency. Those frequencies are a few millionths of a hertz, far below hearing, so every one of them is raised by the same 24 octaves. That is a factor of <span class="math inline">\(2^{24} \approx 17\)</span> million, and it keeps every ratio between them, so the chord you hear is the chord the rings make. The rings are chosen to be in resonance with the outer edge, orbiting 1, 1½, 2, 3, 4, 6 and 8 times as fast. That gives the open fifths and octaves of an organ chord, a nod to the church organ in Hans Zimmer’s score.</p>
+<div id="soundtrack" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> soundtrack <span class="im">as</span> ST</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>r_n, f_true, f_hear, turn <span class="op">=</span> ST.notes()</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n, rr, f0, f <span class="kw">in</span> <span class="bu">zip</span>(ST.RATIOS, r_n, f_true, f_hear):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n<span class="sc">:&gt;4g}</span><span class="ss"> x outer edge: ring at r = </span><span class="sc">{</span>rr<span class="sc">:5.2f}</span><span class="ss"> M, </span><span class="sc">{</span>f0<span class="sc">:.2e}</span><span class="ss"> Hz -&gt; </span><span class="sc">{</span>f<span class="sc">:6.1f}</span><span class="ss"> Hz"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   1 x outer edge: ring at r = 20.00 M, 3.59e-06 Hz -&gt;   60.2 Hz
+ 1.5 x outer edge: ring at r = 15.23 M, 5.38e-06 Hz -&gt;   90.3 Hz
+   2 x outer edge: ring at r = 12.54 M, 7.18e-06 Hz -&gt;  120.4 Hz
+   3 x outer edge: ring at r =  9.53 M, 1.08e-05 Hz -&gt;  180.6 Hz
+   4 x outer edge: ring at r =  7.83 M, 1.44e-05 Hz -&gt;  240.8 Hz
+   6 x outer edge: ring at r =  5.92 M, 2.15e-05 Hz -&gt;  361.2 Hz
+   8 x outer edge: ring at r =  4.84 M, 2.87e-05 Hz -&gt;  481.6 Hz</code></pre>
+</div>
+</div>
+<p>The outer edge sounds first and the inner rings join one by one, every 1.5 seconds. Each note swells and fades once per turn of its ring in the clip. The voice is three slightly detuned pipes per note, with organ-like overtones and a synthetic stone-hall reverb. It is all generated by <code>soundtrack.py</code>, with no recorded or licensed audio.</p>
+</section>
 </section>
 <section id="how-long-it-takes" class="level2">
 <h2 class="anchored" data-anchor-id="how-long-it-takes">How long it takes</h2>
 <p>Computing power has moved on since 2014, and a still image at blog resolution is far less demanding than a 23-million-pixel IMAX frame traced as ray bundles.</p>
-<div id="timing" class="cell" data-execution_count="10">
+<div id="timing" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Show code</summary>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>n_rays <span class="op">=</span> tr_film[<span class="st">"outcome"</span>].size</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"film-geometry image: </span><span class="sc">{</span>n_rays<span class="sc">:,}</span><span class="ss"> rays (</span><span class="sc">{</span>NX<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>NY<span class="sc">}</span><span class="ss"> pixels, </span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss"> samples each)"</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"geodesic integration: </span><span class="sc">{</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="sc">:.1f}</span><span class="ss"> s on this machine "</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span>n_rays<span class="op">/</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> thousand rays per second)"</span>)</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"integration steps per ray: median </span><span class="sc">{</span>np<span class="sc">.</span>median(tr_film[<span class="st">'steps'</span>])<span class="sc">:.0f}</span><span class="ss">, "</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"99th percentile </span><span class="sc">{</span>np<span class="sc">.</span>percentile(tr_film[<span class="st">'steps'</span>], <span class="dv">99</span>)<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.bincount(tr_film[<span class="st">"outcome"</span>].ravel(), minlength<span class="op">=</span><span class="dv">4</span>)</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rays escaping to the sky </span><span class="sc">{</span>counts[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">; into the hole </span><span class="sc">{</span>counts[<span class="dv">1</span>]<span class="sc">:,}</span><span class="ss">; onto the disk </span><span class="sc">{</span>counts[<span class="dv">2</span>]<span class="sc">:,}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>n_rays <span class="op">=</span> tr_film[<span class="st">"outcome"</span>].size</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"film-geometry image: </span><span class="sc">{</span>n_rays<span class="sc">:,}</span><span class="ss"> rays (</span><span class="sc">{</span>NX<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>NY<span class="sc">}</span><span class="ss"> pixels, </span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>SS<span class="sc">}</span><span class="ss"> samples each)"</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"geodesic integration: </span><span class="sc">{</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="sc">:.1f}</span><span class="ss"> s on this machine "</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span>n_rays<span class="op">/</span><span class="bu">float</span>(tr_film[<span class="st">'seconds'</span>])<span class="op">/</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> thousand rays per second)"</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"integration steps per ray: median </span><span class="sc">{</span>np<span class="sc">.</span>median(tr_film[<span class="st">'steps'</span>])<span class="sc">:.0f}</span><span class="ss">, "</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"99th percentile </span><span class="sc">{</span>np<span class="sc">.</span>percentile(tr_film[<span class="st">'steps'</span>], <span class="dv">99</span>)<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.bincount(tr_film[<span class="st">"outcome"</span>].ravel(), minlength<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rays escaping to the sky </span><span class="sc">{</span>counts[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">; into the hole </span><span class="sc">{</span>counts[<span class="dv">1</span>]<span class="sc">:,}</span><span class="ss">; onto the disk </span><span class="sc">{</span>counts[<span class="dv">2</span>]<span class="sc">:,}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>film-geometry image: 5,120,000 rays (1600x800 pixels, 2x2 samples each)
