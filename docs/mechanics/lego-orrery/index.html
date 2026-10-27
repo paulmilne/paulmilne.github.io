@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-27">
+<meta name="description" content="An orrery built from LEGO Technic gears and simulated in MuJoCo. Why the year and the month cannot be geared exactly, why the classic fractions are useless with LEGO’s tooth counts, a search over every train the parts allow, the epicyclic trick that gives the solar day for free, and a simulated year measured against the sky.">
+
+<title>A Year in Gears: A LEGO Technic Orrery – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/videojs/video.min.js"></script>
+<link href="../../site_libs/quarto-contrib/videojs/video-js.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="A Year in Gears: A LEGO Technic Orrery – math-blog">
+<meta property="og:description" content="An orrery built from LEGO Technic gears and simulated in MuJoCo. Why the year and the month cannot be geared exactly, why the classic fractions are useless with LEGO’s tooth counts, a search over every train the parts allow, the epicyclic trick that gives the solar day for free, and a simulated year measured against the sky.">
+<meta property="og:image" content="https://paulmilne.github.io/mechanics/lego-orrery/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="660">
+<meta property="og:image:width" content="960">
+<meta name="twitter:title" content="A Year in Gears: A LEGO Technic Orrery – math-blog">
+<meta name="twitter:description" content="An orrery built from LEGO Technic gears and simulated in MuJoCo. Why the year and the month cannot be geared exactly, why the classic fractions are useless with LEGO’s tooth counts, a search over every train the parts allow, the epicyclic trick that gives the solar day for free, and a simulated year measured against the sky.">
+<meta name="twitter:image" content="https://paulmilne.github.io/mechanics/lego-orrery/thumbnail.png">
+<meta name="twitter:image-height" content="660">
+<meta name="twitter:image-width" content="960">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">A Year in Gears: A LEGO Technic Orrery</h1>
+            <p class="subtitle lead">Continued fractions, smooth numbers and epicyclic gearing: making the Sun, Earth and Moon keep time with eight sizes of gear</p>
+                  <div>
+        <div class="description">
+          An orrery built from LEGO Technic gears and simulated in MuJoCo. Why the year and the month cannot be geared exactly, why the classic fractions are useless with LEGO’s tooth counts, a search over every train the parts allow, the epicyclic trick that gives the solar day for free, and a simulated year measured against the sky.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">mechanics</div>
+                <div class="quarto-category">lego</div>
+                <div class="quarto-category">number theory</div>
+                <div class="quarto-category">astronomy</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 27, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-an-orrery-has-to-compute" id="toc-what-an-orrery-has-to-compute" class="nav-link active" data-scroll-target="#what-an-orrery-has-to-compute">What an orrery has to compute</a>
+  <ul class="collapse">
+  <li><a href="#two-kinds-of-day-two-kinds-of-month" id="toc-two-kinds-of-day-two-kinds-of-month" class="nav-link" data-scroll-target="#two-kinds-of-day-two-kinds-of-month">Two kinds of day, two kinds of month</a></li>
+  <li><a href="#the-epicyclic-trick" id="toc-the-epicyclic-trick" class="nav-link" data-scroll-target="#the-epicyclic-trick">The epicyclic trick</a></li>
+  </ul></li>
+  <li><a href="#fractions-that-cannot-be-built" id="toc-fractions-that-cannot-be-built" class="nav-link" data-scroll-target="#fractions-that-cannot-be-built">Fractions that cannot be built</a></li>
+  <li><a href="#searching-every-train" id="toc-searching-every-train" class="nav-link" data-scroll-target="#searching-every-train">Searching every train</a></li>
+  <li><a href="#the-machine" id="toc-the-machine" class="nav-link" data-scroll-target="#the-machine">The machine</a></li>
+  <li><a href="#running-it-for-a-year" id="toc-running-it-for-a-year" class="nav-link" data-scroll-target="#running-it-for-a-year">Running it for a year</a>
+  <ul class="collapse">
+  <li><a href="#the-moons-phases-and-eclipses" id="toc-the-moons-phases-and-eclipses" class="nav-link" data-scroll-target="#the-moons-phases-and-eclipses">The Moon’s phases, and eclipses</a></li>
+  </ul></li>
+  <li><a href="#what-would-make-it-better" id="toc-what-would-make-it-better" class="nav-link" data-scroll-target="#what-would-make-it-better">What would make it better</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>An <strong>orrery</strong> is a clockwork model of the solar system. They take their name from Charles Boyle, Earl of Orrery, for whom one was made in the early 1700s, but the idea is far older: the Antikythera mechanism, built in Greece some two thousand years ago, already modelled the Moon’s cycles with bronze gears. The hard part has never been the mechanism. It is the arithmetic. A pair of gears turns at a ratio of whole numbers of teeth, and the sky does not run on whole numbers: there are 365.2564 days in the year and 29.5306 days from one new Moon to the next.</p>
+<p>The <a href="../../mechanics/lego-numbers/index.html">previous post</a> found that LEGO Technic gears come in only eight sizes, with 8 to 40 teeth. This post asks how well an orrery built from those eight sizes can keep time, finds the best gear trains by search, builds the machine in <strong>MuJoCo</strong> with every gear a real moving part, and runs it for a simulated year.</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="The LEGO Technic orrery running for one year: MuJoCo simulation"><source src="orrery_year.mp4"></video></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About the model and the sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The astronomical periods are the standard modern values. The orrery is a design, simulated rather than built: every gear and every mesh is in the model, at real Technic sizes, but the layout has not been tested with physical parts. The history in the introduction is general knowledge; check details before quoting them.</p>
+</div>
+</div>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, time, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fractions <span class="im">import</span> Fraction</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>here <span class="op">=</span> Path.cwd().resolve()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> <span class="bu">next</span>(p <span class="cf">for</span> p <span class="kw">in</span> (here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"lego-bricks"</span>, here.parent <span class="op">/</span> <span class="st">"lego-bricks"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                        here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"mechanics"</span> <span class="op">/</span> <span class="st">"lego-bricks"</span>) <span class="cf">if</span> (p <span class="op">/</span> <span class="st">"bricks"</span>).exists())</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mujoco</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks <span class="im">import</span> gears <span class="im">as</span> G</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks <span class="im">import</span> orrery <span class="im">as</span> O</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>BLUE, RED, GOLD, GREEN, GREY <span class="op">=</span> <span class="st">"#2c7fb8"</span>, <span class="st">"#c0392b"</span>, <span class="st">"#d4a017"</span>, <span class="st">"#2ca25f"</span>, <span class="st">"#7f8c8d"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="what-an-orrery-has-to-compute" class="level2">
+<h2 class="anchored" data-anchor-id="what-an-orrery-has-to-compute">What an orrery has to compute</h2>
+<section id="two-kinds-of-day-two-kinds-of-month" class="level3">
+<h3 class="anchored" data-anchor-id="two-kinds-of-day-two-kinds-of-month">Two kinds of day, two kinds of month</h3>
+<p>The Earth turns once on its axis relative to the stars in a <strong>sidereal day</strong>, about 23 hours 56 minutes. But while it turns, it also moves a little way round its orbit, so it has to turn slightly further before the Sun is overhead again. That longer turn is the <strong>solar day</strong>, the 24 hours of the clock. Over a year the difference adds up to exactly one turn: the Earth turns <span class="math inline">\(366.2564\)</span> times relative to the stars in a year, but only <span class="math inline">\(365.2564\)</span> times relative to the Sun.</p>
+<p>The Moon has the same pair of periods. It goes round the Earth relative to the stars in a <strong>sidereal month</strong> of 27.32 days, but because the Earth has moved on round the Sun meanwhile, it takes 29.53 days to return to the same phase, the <strong>synodic month</strong>. The rates add like the days:</p>
+<p><span class="math display">\[
+\frac{1}{T_{\text{sidereal month}}} = \frac{1}{T_{\text{synodic month}}} + \frac{1}{T_{\text{year}}} .
+\]</span></p>
+<div id="periods" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"sidereal year            </span><span class="sc">{</span>G<span class="sc">.</span>SIDEREAL_YEAR<span class="sc">:12.6f}</span><span class="ss"> days"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"synodic month            </span><span class="sc">{</span>G<span class="sc">.</span>SYNODIC_MONTH<span class="sc">:12.6f}</span><span class="ss"> days"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"sidereal month           </span><span class="sc">{</span>G<span class="sc">.</span>SIDEREAL_MONTH<span class="sc">:12.6f}</span><span class="ss"> days"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  from the formula       </span><span class="sc">{</span><span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">/</span> G.SYNODIC_MONTH <span class="op">+</span> <span class="dv">1</span> <span class="op">/</span> G.SIDEREAL_YEAR)<span class="sc">:12.6f}</span><span class="ss"> days"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"sidereal day             </span><span class="sc">{</span>G<span class="sc">.</span>SIDEREAL_DAY <span class="op">*</span> <span class="dv">24</span><span class="sc">:12.6f}</span><span class="ss"> hours"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>sidereal year              365.256363 days
+synodic month               29.530589 days
+sidereal month              27.321662 days
+  from the formula          27.321662 days
+sidereal day                23.934472 hours</code></pre>
+</div>
+</div>
+</section>
+<section id="the-epicyclic-trick" class="level3">
+<h3 class="anchored" data-anchor-id="the-epicyclic-trick">The epicyclic trick</h3>
+<p>The orrery’s year arm carries the Earth round the Sun. Gears mounted on a moving arm form an <strong>epicyclic</strong> (planetary) train, and they obey Willis’s rule: what a gear train on an arm transmits is not the rotation of the input shaft but its rotation <em>relative to the arm</em>. If the central shaft turns at <span class="math inline">\(\omega_c\)</span> and the arm at <span class="math inline">\(\omega_a\)</span>, a train on the arm with ratio <span class="math inline">\(g\)</span> turns its output at</p>
+<p><span class="math display">\[
+\omega_\text{out} = \omega_a + g\,(\omega_c - \omega_a).
+\]</span></p>
+<p>The design uses this twice:</p>
+<ul>
+<li><strong>The Earth’s spin.</strong> Let the crank turn the central shaft once per <em>sidereal</em> day, and carry its turning out along the arm to the Earth through a chain of gears with <span class="math inline">\(g = 1\)</span>. Then <span class="math inline">\(\omega_\text{Earth} = \omega_c\)</span>: the Earth turns once per sidereal day relative to the stars. Relative to the arm, which always points at the Sun, it turns at <span class="math inline">\(\omega_c - \omega_a\)</span>, which is once per <em>solar</em> day. The solar day costs no gears at all; it falls out of the geometry, exactly as it does in the sky.</li>
+<li><strong>The Moon.</strong> A second train on the arm reduces <span class="math inline">\((\omega_c - \omega_a)\)</span>, the solar day, by a ratio <span class="math inline">\(R_m\)</span> to drive the Moon’s carrier relative to the arm. The Moon then goes round once per <span class="math inline">\(R_m\)</span> solar days relative to the Sun direction. So <span class="math inline">\(R_m\)</span> must be the <strong>synodic month</strong>, 29.5306, and the sidereal month comes out automatically.</li>
+</ul>
+<p>The third train is fixed to the table: it reduces the central shaft to the arm’s hub by <span class="math inline">\(R_y\)</span>, the number of sidereal days in a year, <strong>366.2564</strong>. So everything rests on two numbers that gears have to approximate: <span class="math inline">\(366.2564\)</span> and <span class="math inline">\(29.5306\)</span>.</p>
+</section>
+</section>
+<section id="fractions-that-cannot-be-built" class="level2">
+<h2 class="anchored" data-anchor-id="fractions-that-cannot-be-built">Fractions that cannot be built</h2>
+<p>The classic way to approximate a number by a fraction is its <strong>continued fraction</strong>. Its truncations, the convergents, are the best rational approximations for their size: no fraction with a smaller denominator comes closer. They give the famous calendar fractions: <span class="math inline">\(365\tfrac14\)</span> for the Julian year, and <span class="math inline">\(235/19\)</span> for the Moon, the Metonic cycle of 235 lunations in 19 years, which the Antikythera mechanism used.</p>
+<div id="convergents" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, x <span class="kw">in</span> ((<span class="st">"sidereal days per year"</span>, G.SIDEREAL_DAYS_PER_YEAR), (<span class="st">"synodic month (days)"</span>, G.MOON_REDUCTION),</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                (<span class="st">"lunations per year"</span>, G.SIDEREAL_YEAR <span class="op">/</span> G.SYNODIC_MONTH)):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    cf <span class="op">=</span> G.continued_fraction(x, <span class="dv">8</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>x<span class="sc">:.6f}</span><span class="ss"> = [</span><span class="sc">{</span>cf[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">; </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(<span class="bu">map</span>(<span class="bu">str</span>, cf[<span class="dv">1</span>:]))<span class="sc">}</span><span class="ss">, ...]"</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> c <span class="kw">in</span> G.convergents(cf)[:<span class="dv">6</span>]:</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"    </span><span class="sc">{</span><span class="bu">str</span>(c)<span class="sc">:&gt;14s}</span><span class="ss"> = </span><span class="sc">{</span><span class="bu">float</span>(c)<span class="sc">:12.6f}</span><span class="ss">   error </span><span class="sc">{</span><span class="bu">float</span>(c) <span class="op">-</span> x<span class="sc">:+.2e}</span><span class="ss">   largest prime factor </span><span class="sc">{</span>G<span class="sc">.</span>largest_prime(c)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>sidereal days per year: 366.256363 = [366; 3, 1, 9, 13, 1, 4, 3, ...]
+               366 =   366.000000   error -2.56e-01   largest prime factor 61
+            1099/3 =   366.333333   error +7.70e-02   largest prime factor 157
+            1465/4 =   366.250000   error -6.36e-03   largest prime factor 293
+          14284/39 =   366.256410   error +4.73e-05   largest prime factor 3571
+        187157/511 =   366.256360   error -2.92e-06   largest prime factor 887
+        201441/550 =   366.256364   error +6.36e-07   largest prime factor 809
+synodic month (days): 29.530589 = [29; 1, 1, 7, 1, 2, 17, 1, ...]
+                29 =    29.000000   error -5.31e-01   largest prime factor 29
+                30 =    30.000000   error +4.69e-01   largest prime factor 5
+              59/2 =    29.500000   error -3.06e-02   largest prime factor 59
+            443/15 =    29.533333   error +2.74e-03   largest prime factor 443
+            502/17 =    29.529412   error -1.18e-03   largest prime factor 251
+           1447/49 =    29.530612   error +2.32e-05   largest prime factor 1447
+lunations per year: 12.368746 = [12; 2, 1, 2, 2, 8, 10, 2, ...]
+                12 =    12.000000   error -3.69e-01   largest prime factor 3
+              25/2 =    12.500000   error +1.31e-01   largest prime factor 5
+              37/3 =    12.333333   error -3.54e-02   largest prime factor 37
+              99/8 =    12.375000   error +6.25e-03   largest prime factor 11
+            235/19 =    12.368421   error -3.25e-04   largest prime factor 47
+          1979/160 =    12.368750   error +3.71e-06   largest prime factor 1979</code></pre>
+</div>
+</div>
+<p>A gear train can make a fraction only if it can be factored into gear ratios. Its numerator must be the product of the driven gears’ tooth counts and its denominator the product of the drivers’. The Metonic <span class="math inline">\(235/19\)</span> needs a 47 and a 19; the year’s <span class="math inline">\(1465/4\)</span> needs a 293. The Antikythera mechanism’s makers cut whatever tooth counts they needed, including a gear of 223 teeth, a prime. LEGO’s tooth counts are 8, 12, 16, 20, 24, 28, 36 and 40, and every one of them is built from the primes 2, 3, 5 and 7. So every ratio a Technic gear train can make is a <strong>7-smooth</strong> rational number, of the form</p>
+<p><span class="math display">\[
+2^{a}\,3^{b}\,5^{c}\,7^{d}, \qquad a, b, c, d \in \mathbb{Z},
+\]</span></p>
+<p>and not one of the convergents above is of that form. The best fractions mathematics has to offer are unbuildable.</p>
+</section>
+<section id="searching-every-train" class="level2">
+<h2 class="anchored" data-anchor-id="searching-every-train">Searching every train</h2>
+<p>The alternative is brute force: try every train that can be built. A reducing stage is a pair of gears from the same family (spur with spur, or double-bevel with double-bevel, which the previous post showed are the pairs that mesh on the grid), or a worm driving a spur gear. Building the trains up a stage at a time, every ratio reachable with <span class="math inline">\(k\)</span> stages comes from one reachable with <span class="math inline">\(k-1\)</span>. Because all the ratios are 7-smooth with small exponents, the sets stay remarkably small.</p>
+<div id="search" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>levels <span class="op">=</span> G.reachable(<span class="dv">8</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>dt <span class="op">=</span> time.time() <span class="op">-</span> t0</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"distinct reductions reachable with up to k stages (searched in </span><span class="sc">{</span>dt<span class="sc">:.2f}</span><span class="ss"> s):"</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>total <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">9</span>):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    total <span class="op">+=</span> <span class="bu">len</span>(levels[k])</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"   k = </span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>total<span class="sc">:5d}</span><span class="ss">"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>best_year <span class="op">=</span> G.best_reachable(G.SIDEREAL_DAYS_PER_YEAR, levels)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>best_moon <span class="op">=</span> G.best_reachable(G.MOON_REDUCTION, levels)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show(name, best, target):</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">best </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss"> (target </span><span class="sc">{</span>target<span class="sc">:.6f}</span><span class="ss">):"</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">9</span>):</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        r, st, e <span class="op">=</span> best[k]</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"   </span><span class="sc">{</span>k<span class="sc">}</span><span class="ss"> stages: </span><span class="sc">{</span><span class="bu">str</span>(r)<span class="sc">:&gt;12s}</span><span class="ss"> = </span><span class="sc">{</span><span class="bu">float</span>(r)<span class="sc">:11.5f}</span><span class="ss">  error </span><span class="sc">{</span>e<span class="sc">:+.1e}</span><span class="ss">  "</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>              <span class="ss">f"</span><span class="sc">{</span><span class="st">' · '</span><span class="sc">.</span>join(<span class="ss">f'</span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">'</span> <span class="cf">if</span> a <span class="op">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> <span class="ss">f'worm:</span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">'</span> <span class="cf">for</span> a, b <span class="kw">in</span> st)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>show(<span class="st">"year train"</span>, best_year, G.SIDEREAL_DAYS_PER_YEAR)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>show(<span class="st">"Moon train"</span>, best_moon, G.MOON_REDUCTION)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>distinct reductions reachable with up to k stages (searched in 0.08 s):
+   k = 1:    13
+   k = 2:    75
+   k = 3:   255
+   k = 4:   639
+   k = 5:  1318
+   k = 6:  2399
+   k = 7:  4005
+   k = 8:  6275
+
+best year train (target 366.256363):
+   1 stages:           40 =    40.00000  error -8.9e-01  worm:40
+   2 stages:          200 =   200.00000  error -4.5e-01  8:40 · worm:40
+   3 stages:          360 =   360.00000  error -1.7e-02  8:24 · 8:24 · worm:40
+   4 stages:      9800/27 =   362.96296  error -9.0e-03  24:40 · 12:28 · 12:28 · worm:40
+   5 stages:      5488/15 =   365.86667  error -1.1e-03  8:16 · 12:28 · 12:28 · 20:28 · worm:24
+   6 stages:      5488/15 =   365.86667  error -1.1e-03  8:16 · 12:28 · 12:28 · 20:28 · worm:24
+   7 stages:    46875/128 =   366.21094  error -1.2e-04  16:24 · 16:40 · 16:40 · 16:40 · 16:40 · 16:40 · 16:40
+   8 stages:    46875/128 =   366.21094  error -1.2e-04  16:24 · 16:40 · 16:40 · 16:40 · 16:40 · 16:40 · 16:40
+
+best Moon train (target 29.530589):
+   1 stages:           24 =    24.00000  error -1.9e-01  worm:24
+   2 stages:        144/5 =    28.80000  error -2.5e-02  20:36 · worm:16
+   3 stages:        175/6 =    29.16667  error -1.2e-02  8:40 · 16:40 · 12:28
+   4 stages:      2401/81 =    29.64198  error +3.8e-03  12:28 · 12:28 · 12:28 · 12:28
+   5 stages:      2401/81 =    29.64198  error +3.8e-03  12:28 · 12:28 · 12:28 · 12:28
+   6 stages:       945/32 =    29.53125  error +2.2e-05  16:24 · 16:24 · 16:24 · 16:24 · 16:40 · 12:28
+   7 stages:       945/32 =    29.53125  error +2.2e-05  16:24 · 16:24 · 16:24 · 16:24 · 16:40 · 12:28
+   8 stages:       945/32 =    29.53125  error +2.2e-05  16:24 · 16:24 · 16:24 · 16:24 · 16:40 · 12:28</code></pre>
+</div>
+</div>
+<div id="cell-fig-search" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.8</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>ks <span class="op">=</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">9</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].semilogy(ks, [<span class="bu">abs</span>(best_year[k][<span class="dv">2</span>]) <span class="cf">for</span> k <span class="kw">in</span> ks], <span class="st">"o-"</span>, color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="st">"year (366.2564)"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].semilogy(ks, [<span class="bu">abs</span>(best_moon[k][<span class="dv">2</span>]) <span class="cf">for</span> k <span class="kw">in</span> ks], <span class="st">"s-"</span>, color<span class="op">=</span>GOLD, label<span class="op">=</span><span class="st">"synodic month (29.5306)"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_xlabel(<span class="st">"stages"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_ylabel(<span class="st">"best |relative error|"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].legend()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>cols <span class="op">=</span> plt.cm.viridis(np.linspace(<span class="dv">0</span>, <span class="fl">0.9</span>, <span class="dv">6</span>))</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">7</span>):</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    xs <span class="op">=</span> [<span class="bu">float</span>(r) <span class="cf">for</span> r <span class="kw">in</span> levels[k] <span class="cf">if</span> <span class="fl">28.8</span> <span class="op">&lt;</span> <span class="bu">float</span>(r) <span class="op">&lt;</span> <span class="fl">30.3</span>]</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    ax[<span class="dv">1</span>].vlines(xs, k <span class="op">-</span> <span class="fl">0.4</span>, k <span class="op">+</span> <span class="fl">0.4</span>, color<span class="op">=</span>cols[k <span class="op">-</span> <span class="dv">1</span>], lw<span class="op">=</span><span class="fl">1.2</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].axvline(G.MOON_REDUCTION, color<span class="op">=</span>RED, lw<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_yticks(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">7</span>))<span class="op">;</span> ax[<span class="dv">1</span>].set_ylabel(<span class="st">"stages"</span>)<span class="op">;</span> ax[<span class="dv">1</span>].set_xlabel(<span class="st">"reduction"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-search" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-search-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-search-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-search-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Left: the best relative error reachable with up to k stages, for the year and Moon trains. Right: every reduction between 28.8 and 30.3 that up to six stages can make, each drawn at the fewest stages that reach it, against the synodic month (red). The 7-smooth numbers are sparse, and the target falls between them.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The best trains are long. The Moon needs six stages to come within <span class="math inline">\(2\times10^{-5}\)</span>, using a fraction no textbook would suggest:</p>
+<p><span class="math display">\[
+\frac{945}{32} = \frac{24}{16}\cdot\frac{24}{16}\cdot\frac{24}{16}\cdot\frac{24}{16}\cdot\frac{40}{16}\cdot\frac{28}{12} = 29.53125 ,
+\]</span></p>
+<p>against the true <span class="math inline">\(29.530589\)</span>. Its numerator is <span class="math inline">\(945 = 3^3 \cdot 5 \cdot 7\)</span> and its denominator <span class="math inline">\(2^5\)</span>, both as smooth as the parts require. The year needs seven stages to reach <span class="math inline">\(46875/128 = 366.2109\)</span> (that is, <span class="math inline">\(3 \cdot 5^6 / 2^7\)</span>), about a part in eight thousand. Worms do not help either target: their single tooth makes big, coarse steps, and the best trains are built from the gentle ratios 3:2, 5:2 and 7:3 instead.</p>
+</section>
+<section id="the-machine" class="level2">
+<h2 class="anchored" data-anchor-id="the-machine">The machine</h2>
+<p>The orrery uses the two winning trains and a 1:1 chain for the Earth’s spin:</p>
+<ul>
+<li><strong>The year train</strong>, seven stages, is coiled round the central shaft on the base: the axles stand on a circle that starts and ends at the centre, so the last gear meshes with the year arm’s hub, coaxial with the shaft. A plain idler gear in the loop makes the arm turn the same way as the crank.</li>
+<li><strong>The spin chain</strong> runs out along the arm: 24, 40, 24, 40, 24 teeth. The first and last gears are equal, so the ratio is 1, and an even number of meshes keeps the direction.</li>
+<li><strong>The Moon train</strong>, six stages, runs along the arm above it, ending on a tube round the Earth’s column that carries the Moon on a short liftarm.</li>
+</ul>
+<p>Both trains on the arm are exactly 128 mm long, 16 studs, which is why the Earth sits there.</p>
+<p>In MuJoCo, every gear is a body on a hinge joint, carried either by the base or by the arm. Each mesh is a constraint on the joints’ angles. For two gears with <span class="math inline">\(N_1\)</span> and <span class="math inline">\(N_2\)</span> teeth, turning by <span class="math inline">\(\theta_1\)</span> and <span class="math inline">\(\theta_2\)</span> relative to whatever carries them, rolling without slipping means</p>
+<p><span class="math display">\[
+N_1\,(\theta_1 - \theta_{\text{carrier},1}) + N_2\,(\theta_2 - \theta_{\text{carrier},2}) = 0 .
+\]</span></p>
+<p>That is a linear combination of joint angles. MuJoCo calls such a combination a <em>fixed tendon</em>, and an equality constraint holds it at zero. The epicyclic meshes, between the central shaft and gears riding on the arm, are expressed exactly the same way, with the arm’s angle in the sum. The crank is driven by a velocity servo, and nothing else is told how to move.</p>
+<div id="cell-fig-machine" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>m, facts <span class="op">=</span> O.load()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> mujoco.MjData(m)<span class="op">;</span> d.ctrl[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> math.pi</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">int</span>(<span class="dv">40</span> <span class="op">/</span> m.opt.timestep)):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_step(m, d)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> mujoco.Renderer(m, <span class="dv">450</span>, <span class="dv">720</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> mujoco.MjvOption()<span class="op">;</span> opt.sitegroup[:] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>r.update_scene(d, camera<span class="op">=</span><span class="st">"overview"</span>, scene_option<span class="op">=</span>opt)<span class="op">;</span> img1 <span class="op">=</span> r.render().copy()</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>m2, _ <span class="op">=</span> O.load()<span class="op">;</span> O.sunlight_only(m2)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>d2 <span class="op">=</span> mujoco.MjData(m2)<span class="op">;</span> d2.qpos[:] <span class="op">=</span> d.qpos<span class="op">;</span> mujoco.mj_forward(m2, d2)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>r2 <span class="op">=</span> mujoco.Renderer(m2, <span class="dv">450</span>, <span class="dv">720</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>r2.update_scene(d2, camera<span class="op">=</span><span class="st">"earthcam"</span>, scene_option<span class="op">=</span>opt)<span class="op">;</span> img2 <span class="op">=</span> r2.render().copy()</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">3.6</span>))</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a_, im <span class="kw">in</span> <span class="bu">zip</span>(ax, (img1, img2)):</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    a_.imshow(im)<span class="op">;</span> a_.axis(<span class="st">"off"</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>facts[<span class="st">'n_gears'</span>]<span class="sc">}</span><span class="ss"> gears; year train coiled on a circle of radius </span><span class="sc">{</span>facts[<span class="st">'R_coil'</span>]<span class="sc">:.1f}</span><span class="ss"> mm; "</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"arm </span><span class="sc">{</span>facts[<span class="st">'arm_length'</span>]<span class="sc">:.0f}</span><span class="ss"> mm; </span><span class="sc">{</span>m<span class="sc">.</span>ntendon<span class="sc">}</span><span class="ss"> mesh constraints"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-machine" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-machine-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-machine-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-machine-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The orrery in MuJoCo. Left: the whole machine, with the year train coiled round the central shaft and the spin and Moon trains running out along the arm. Right: the Earth and Moon, lit only by the Sun.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>32 gears; year train coiled on a circle of radius 34.7 mm; arm 128 mm; 18 mesh constraints</code></pre>
+</div>
+</div>
+</section>
+<section id="running-it-for-a-year" class="level2">
+<h2 class="anchored" data-anchor-id="running-it-for-a-year">Running it for a year</h2>
+<p>Turning the crank until the arm has gone once round the Sun, and reading every angle from the simulation:</p>
+<div id="year" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>m, facts <span class="op">=</span> O.load()</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> mujoco.MjData(m)<span class="op">;</span> d.ctrl[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> math.pi           <span class="co"># one crank turn (sidereal day) per simulated second</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> O.angles(m, d, facts)[<span class="st">"arm"</span>] <span class="op">&lt;</span> <span class="dv">2</span> <span class="op">*</span> math.pi:</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_step(m, d)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> {k: v <span class="op">/</span> (<span class="dv">2</span> <span class="op">*</span> math.pi) <span class="cf">for</span> k, v <span class="kw">in</span> O.angles(m, d, facts).items()}</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>solar_days <span class="op">=</span> T[<span class="st">"earth"</span>] <span class="op">-</span> T[<span class="st">"arm"</span>]</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>lunations <span class="op">=</span> T[<span class="st">"moon"</span>] <span class="op">-</span> T[<span class="st">"arm"</span>]</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> [(<span class="st">"sidereal days in the year"</span>, T[<span class="st">"shaft"</span>], G.SIDEREAL_DAYS_PER_YEAR),</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"solar days in the year"</span>, solar_days, G.SIDEREAL_YEAR),</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"synodic month (days)"</span>, solar_days <span class="op">/</span> lunations, G.SYNODIC_MONTH),</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"sidereal month (days)"</span>, solar_days <span class="op">/</span> T[<span class="st">"moon"</span>], G.SIDEREAL_MONTH)]</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"simulated one year in </span><span class="sc">{</span>time<span class="sc">.</span>time() <span class="op">-</span> t0<span class="sc">:.1f}</span><span class="ss"> s of computing</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:28s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'orrery'</span><span class="sc">:&gt;12s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'sky'</span><span class="sc">:&gt;12s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'error'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, model_v, sky <span class="kw">in</span> rows:</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:28s}</span><span class="ss"> </span><span class="sc">{</span>model_v<span class="sc">:12.5f}</span><span class="ss"> </span><span class="sc">{</span>sky<span class="sc">:12.5f}</span><span class="ss"> </span><span class="sc">{</span>model_v <span class="op">-</span> sky<span class="sc">:+10.5f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>simulated one year in 1.6 s of computing
+
+                                   orrery          sky      error
+sidereal days in the year       366.21029    366.25636   -0.04607
+solar days in the year          365.21027    365.25636   -0.04609
+synodic month (days)             29.53125     29.53059   +0.00066
+sidereal month (days)            27.32196     27.32166   +0.00030</code></pre>
+</div>
+</div>
+<p>The machine does exactly what its gears say: 366.2109 sidereal days to the year, within a few millionths, and the constraints hold the meshes to within a fraction of a milliradian. Two numbers in the table were never put into the design. The solar days in the year come from the epicyclic arm, and so does the sidereal month, which comes out within a thousandth of a day of the real one.</p>
+<p>The errors are what the arithmetic allowed. The year is short by about 0.045 days, so the orrery’s Earth gains a day on the real one every 22 years or so. The Moon’s month is long by 0.0007 days, which takes over a century to add up to a day.</p>
+<div id="cell-fig-drift" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>years <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">100</span>, <span class="dv">200</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>year_err <span class="op">=</span> (G.SIDEREAL_DAYS_PER_YEAR <span class="op">-</span> <span class="bu">float</span>(facts[<span class="st">"year_ratio"</span>])) <span class="op">*</span> years   <span class="co"># days early</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>moon_err <span class="op">=</span> (<span class="bu">float</span>(facts[<span class="st">"moon_ratio"</span>]) <span class="op">-</span> G.SYNODIC_MONTH) <span class="op">*</span> years <span class="op">*</span> G.SIDEREAL_YEAR <span class="op">/</span> G.SYNODIC_MONTH</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">3.4</span>))</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>ax.plot(years, year_err, color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="ss">f"Earth's orbit: </span><span class="sc">{</span>year_err[<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> <span class="dv">100</span><span class="sc">:.3f}</span><span class="ss"> days a year"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>ax.plot(years, moon_err, color<span class="op">=</span>GOLD, label<span class="op">=</span><span class="ss">f"Moon's phase: </span><span class="sc">{</span>moon_err[<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> <span class="dv">100</span><span class="sc">:.4f}</span><span class="ss"> days a year"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"years of turning the crank"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"error (days)"</span>)<span class="op">;</span> ax.legend()</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-drift" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-drift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-drift-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-drift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: How far the orrery drifts from the sky, in days, over a century: the Earth’s place in its orbit (year train) and the Moon’s phase (Moon train).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="the-moons-phases-and-eclipses" class="level3">
+<h3 class="anchored" data-anchor-id="the-moons-phases-and-eclipses">The Moon’s phases, and eclipses</h3>
+<p>The Sun in the model is a light. MuJoCo’s lights are spotlights, so the sunlight that falls on the Earth and Moon comes from a lamp riding on the year arm at the Sun’s surface, aimed along the arm. It always faces the Earth, as the real Sun does. The video below rides on the arm beside the Earth for two months, lit by the Sun alone. The Earth turns its day side to the Sun once per solar day, and the Moon goes through its phases. Because this Moon orbits in the same plane as the Earth, it also passes through the Earth’s shadow at every full Moon: a lunar eclipse every month. The real Moon’s orbit is tilted by about 5°, which is why real eclipses are rare.</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video2" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="Two months beside the Earth: the Moon's phases, lit only by the Sun"><source src="orrery_moon.mp4"></video></div>
+</section>
+</section>
+<section id="what-would-make-it-better" class="level2">
+<h2 class="anchored" data-anchor-id="what-would-make-it-better">What would make it better</h2>
+<ul>
+<li><strong>A tilted Earth.</strong> A real orrery keeps the Earth’s axis pointing the same way all year, to show the seasons. That takes one more train: a fixed gear on the central shaft driving an equal gear on the Earth’s mount through idlers, so the mount turns backwards exactly as fast as the arm turns forwards.</li>
+<li><strong>Better arithmetic with a differential.</strong> A Technic differential averages two rotations, so trains can be combined into sums and differences as well as products. A sum of smooth numbers need not be smooth: <span class="math inline">\(1465/4 = 360 + 25/4\)</span>, for instance, is out of reach of any product of LEGO ratios but within reach of a sum.</li>
+<li><strong>The Moon’s tilt and nodes</strong>, which would make eclipses rare and predictable: the problem the Antikythera mechanism was built to solve.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script>videojs(video_shortcode_videojs_video1);</script>
+<script>videojs(video_shortcode_videojs_video2);</script>
+
+
+
+
+</body></html>

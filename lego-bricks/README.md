@@ -25,3 +25,28 @@ uv run python -c "from bricks.count import enumerate_buildings; print({n: len(s)
 
 Four bricks takes a few seconds. Five would be about ten million buildings,
 too many to hold in a Python set.
+
+## The Technic orrery
+
+Code behind *A Year in Gears: A LEGO Technic Orrery* (`mechanics/lego-orrery`).
+
+- `bricks/gears.py`: continued fractions, and an exhaustive search over Technic
+  gear trains. Every ratio is 7-smooth, of the form 2^a 3^b 5^c 7^d, so
+  `reachable(k)` builds up the whole set stage by stage. The orrery's two
+  targets are the sidereal days in a year (366.2564) and the synodic month
+  (29.5306).
+- `bricks/orrery.py`: the orrery in MuJoCo.
+  - **Year train:** seven stages coiled round the central shaft, giving
+    46875/128 = 366.2109.
+  - **Spin chain:** a 1:1 chain on the arm (the solar day falls out of the
+    epicyclic gearing).
+  - **Moon train:** six stages on the arm, giving 945/32 = 29.53125.
+  - Every mesh is a fixed tendon held at zero by an equality constraint.
+  - The Sun lights the Earth and Moon from a spotlight that rides on the arm.
+- `orrery_video.py`: films the orrery, with a day and lunation counter read
+  from the mechanism.
+
+```bash
+uv run python orrery_video.py                       # a year, 24 s
+uv run python orrery_video.py --camera earthcam --days 60 --seconds 20 --sunlight-only --name orrery_moon.mp4
+```

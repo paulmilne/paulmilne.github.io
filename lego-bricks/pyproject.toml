@@ -1,9 +1,10 @@
 [project]
 name = "lego-bricks"
 version = "0.1.0"
-description = "The LEGO lattice and the LEGO counting problem, with MuJoCo renders"
+description = "The LEGO lattice, the LEGO counting problem and a Technic orrery, with MuJoCo"
 requires-python = ">=3.10"
-dependencies = ["mujoco>=3.2", "numpy>=1.26", "matplotlib>=3.8", "imageio>=2.34"]
+dependencies = ["mujoco>=3.2", "numpy>=1.26", "matplotlib>=3.8", "imageio[ffmpeg]>=2.34", "pillow>=10",
+                "trimesh>=4.0", "shapely>=2.0", "mapbox-earcut>=1.0"]
 
 [tool.uv]
 package = false
