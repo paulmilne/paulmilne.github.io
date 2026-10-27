@@ -11,6 +11,7 @@
     "items": [
       "/mechanics/lego-numbers/index.html",
       "/mechanics/lego-orrery/index.html",
+      "/mechanics/lego-solar-system/index.html",
       "/mechanics/meccano-shovel/index.html"
     ]
   },
@@ -70,5 +71,9 @@
       "/sci-fi/gargantua/index.html",
       "/sci-fi/martian-tripod/index.html"
     ]
+  },
+  {
+    "listing": "/ai/index.html",
+    "items": []
   }
 ]

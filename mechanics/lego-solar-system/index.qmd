@@ -1,0 +1,217 @@
+---
+title: "The Whole Solar System in LEGO Gears"
+subtitle: "Eight planets, one crank, 84 Technic gears: a grand orrery designed by search and run in MuJoCo"
+description: "Extending the LEGO Technic orrery to all eight planets. One turn of the crank is one year; each planet gets its own gear train found by exhaustive search over LEGO's 7-smooth ratios; the trains stack into a tiered tower; and the simulated machine is started at today's planetary positions and run for a century to see how far it drifts from the sky."
+image: thumbnail.png
+author: "Paul Milne"
+date: "2026-10-27"
+categories: [mechanics, lego, number theory, astronomy, python]
+jupyter: python3
+resources:
+  - solar_jupiter_year.mp4
+  - solar_neptune_year.mp4
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-summary: "Show code"
+---
+
+The [Earth–Moon orrery](../lego-orrery/index.qmd) showed that LEGO Technic gears can only make ratios built from the primes 2, 3, 5 and 7, and that a search over every train the parts allow finds surprisingly good approximations to the year and the month. This post takes the same idea to its limit: a **grand orrery** with all eight planets, from Mercury, which goes round the Sun in under three months, to Neptune, which takes 165 years.
+
+{{< video solar_jupiter_year.mp4 title="Twelve years of the solar system, one turn of Jupiter, starting from the planets' positions on 27 October 2026" >}}
+
+::: {.callout-note}
+## About the model and the sources
+The planets' mean longitudes and their rates are from JPL's *Approximate Positions of the Planets* (link at the end). The orrery is a design, simulated in MuJoCo with every gear a moving part; it has not been built. Its sizes and distances are not to scale, as in every real orrery.
+:::
+
+```{python}
+#| label: setup
+import sys, math, time, datetime as dt, warnings
+from pathlib import Path
+from fractions import Fraction
+warnings.filterwarnings("ignore")
+
+here = Path.cwd().resolve()
+ROOT = next(p for p in (here.parents[1] / "lego-bricks", here.parent / "lego-bricks",
+                        here.parents[1] / "mechanics" / "lego-bricks") if (p / "bricks").exists())
+sys.path.insert(0, str(ROOT))
+
+import numpy as np
+import matplotlib.pyplot as plt
+import mujoco
+
+from bricks import gears as G
+from bricks import solar as S
+
+plt.rcParams.update({"figure.dpi": 110, "axes.grid": True, "grid.alpha": 0.25,
+                     "axes.spines.top": False, "axes.spines.right": False})
+PCOL = {"Mercury": "#8c8c8c", "Venus": "#d9b44a", "Earth": "#2c7fb8", "Mars": "#c0392b",
+        "Jupiter": "#b07d4f", "Saturn": "#c9a227", "Uranus": "#4fb3bf", "Neptune": "#2f4fa8"}
+```
+
+## One crank, eight ratios
+
+Let one turn of the crank be one year, and fix the Earth's arm straight to the crank shaft. Every other planet then needs a gear train whose ratio is its orbital period in Earth years. JPL tabulates each planet's mean longitude, the angle it would have reached if it moved round the Sun at a steady rate, and how fast that angle grows. The ratio of each planet's rate to the Earth's is the gear ratio the orrery needs.
+
+```{python}
+#| label: targets
+print(f"{'planet':8s} {'rate (°/century)':>18s} {'period (years)':>15s} {'orbits per century':>19s}")
+for p, (L0, rate) in G.PLANETS.items():
+    P = G.planet_ratio(p)
+    print(f"{p:8s} {rate:18.3f} {P:15.6f} {100 / P:19.3f}")
+```
+
+Mercury and Venus are faster than the Earth, so their trains must speed up rather than slow down. In the Earth–Moon orrery every stage was a reduction; here a stage may go either way, a small gear driving a big one or a big one driving a small one. A worm cannot be driven backwards, so worms are out.
+
+## Fast planets are hard
+
+How good does a ratio have to be? An orrery is judged by where its planets point, so the natural measure is the angle a planet drifts from the sky over a century. If a train's ratio is off by a fraction $\varepsilon$, a planet making $n$ orbits per century drifts by about
+
+$$
+\Delta\theta \approx 360^\circ \times n \times \varepsilon \quad\text{per century}.
+$$
+
+The same fractional error costs Mercury, with 415 orbits a century, nearly 700 times as much as it costs Neptune, with 0.6. A slow planet can be geared roughly; a fast one needs a fine ratio. The search below builds every train of up to eight stages, now with stages in both directions, and reports the best drift each planet can reach.
+
+```{python}
+#| label: search
+t0 = time.time()
+levels = G.reachable_mixed(8)
+print(f"{sum(len(v) for v in levels.values()):,} distinct ratios with up to 8 stages, found in {time.time() - t0:.2f} s\n")
+drift = {}
+print(f"{'planet':8s}" + "".join(f"{f'{k} stages':>11s}" for k in range(3, 9)) + "     (best drift, degrees per century)")
+for p in G.PLANETS:
+    if p == "Earth":
+        continue
+    x = G.planet_ratio(p)
+    best = G.best_reachable(x, levels)
+    drift[p] = {k: 360 * (100 / x) * (1 / (1 + best[k][2]) - 1) for k in range(1, 9)}
+    print(f"{p:8s}" + "".join(f"{drift[p][k]:+11.2f}" for k in range(3, 9)))
+```
+
+```{python}
+#| label: fig-drift
+#| fig-cap: "The best drift each planet's train can reach, in degrees per century, against the number of stages allowed. The slow outer planets are within a couple of degrees by four or five stages; Mercury, with 415 orbits a century, is still tens of degrees out with eight."
+fig, ax = plt.subplots(figsize=(8.5, 4))
+for p, dd in drift.items():
+    ks = range(2, 9)
+    ax.semilogy(ks, [max(abs(dd[k]), 1e-3) for k in ks], "o-", color=PCOL[p], label=p)
+ax.axhline(2, color="black", ls=":", lw=1); ax.text(8.05, 2, "2°", va="center", fontsize=8)
+ax.set_xlabel("stages"); ax.set_ylabel("best |drift| (degrees per century)")
+ax.legend(ncol=4, fontsize=8, loc="upper right")
+plt.tight_layout(); plt.show()
+```
+
+The orrery takes, for each planet, the shortest train that drifts less than 2° a century, or, where none does, the shortest train that reaches the best accuracy eight stages allow:
+
+```{python}
+#| label: trains
+trains = S.choose_trains()
+gearlist = lambda st: " · ".join(f"{a}→{b}" for a, b in st)
+for p in S.ORDER_OUT_IN[::-1]:
+    r, st, dr = trains[p]
+    if p == "Earth":
+        print(f"{p:8s} {'1':>18s} {'':>10s}  on the crank shaft itself")
+        continue
+    num, den = r.numerator, r.denominator
+    print(f"{p:8s} {str(r):>18s} = {float(r):9.5f}  {len(st)} stages, drift {dr:+6.2f}°/century")
+    print(f"{'':8s}   {gearlist(st)}")
+```
+
+Some of the winners are pleasingly simple. Uranus is $84$ to one, made as $2\cdot2\cdot3\cdot3\cdot\tfrac{7}{3}$, and drifts less than a tenth of a degree a century. Others are the opposite: Mercury's best eight-stage ratio is
+
+$$
+\frac{708588}{2941225} = \frac{2^2\cdot 3^{11}}{5^2\cdot 7^{6}},
+$$
+
+a fraction no one would write down by hand, and it still drifts by tens of degrees a century. Mercury is the planet a LEGO orrery cannot keep up with.
+
+## The machine
+
+The trains are stacked into a **tiered tower** round the crank shaft, the classic layout of a grand orrery:
+
+- **Order of the tiers.** The outer planets are at the bottom with the longest arms and the inner planets at the top with the shortest, so the post carrying each planet up to the common height never meets an arm above it.
+- **Each tier is one planet's train.** It starts with a gear on the shaft at the bottom of the tier and coils round the shaft on a circle of axles, ending on the planet's hub at the top. The hub is a tube on the shaft, carrying the planet's arm. A train with an odd number of meshes gets an idler, so that every planet goes round the same way.
+- **The Earth** has no tier of its own: its arm is fixed to the crank shaft.
+
+As in the Earth–Moon orrery, every mesh in MuJoCo is a fixed tendon, a linear combination of joint angles held at zero, so the crank is the only thing driven and everything else follows through the gears.
+
+```{python}
+#| label: fig-machine
+#| fig-cap: "The orrery in MuJoCo, on 27 October 2026. Left: the whole machine. Right: the gear tower, with Neptune's train at the bottom and Mercury's at the top."
+m, facts = S.load(trains=trains)
+d = mujoco.MjData(m); mujoco.mj_forward(m, d)
+r = mujoco.Renderer(m, 450, 720)
+opt = mujoco.MjvOption(); opt.sitegroup[:] = 0
+imgs = []
+for cam in ("overview", "tower"):
+    r.update_scene(d, camera=cam, scene_option=opt); imgs.append(r.render().copy())
+fig, ax = plt.subplots(1, 2, figsize=(11, 3.6))
+for a_, im in zip(ax, imgs):
+    a_.imshow(im); a_.axis("off")
+plt.tight_layout(); plt.show()
+print(f"{facts['n_gears']} gears, {facts['n_meshes']} meshes, tower {facts['height']:.0f} mm to the planets' plane")
+```
+
+One liberty: the hubs are concentric tubes on a single shaft, eight deep. Real LEGO has no nested tubes, so a physical build would carry the arms on stacked turntables or bring the drives in from outside. The arithmetic does not change.
+
+## Running it
+
+The arms are set at each planet's mean longitude for 27 October 2026. Turning the crank for a century of simulated years, and reading each planet's angle from the simulation:
+
+```{python}
+#| label: century
+m, facts = S.load(trains=trains)
+d = mujoco.MjData(m); d.ctrl[0] = 2 * math.pi          # one turn (year) per simulated second
+t0 = time.time()
+while S.turns(m, d, facts)["Earth"] < 100:
+    mujoco.mj_step(m, d)
+T = S.turns(m, d, facts)
+years = T["Earth"]
+days_per_turn = 36525 * 360 / G.PLANETS["Earth"][1]     # days in one turn of the Earth's mean longitude
+jd_end = S.JD_START + years * days_per_turn
+lon_model = S.longitudes(m, d, facts)
+print(f"ran {years:.2f} years in {time.time() - t0:.1f} s of computing\n")
+print(f"{'planet':8s} {'orbits':>9s} {'gear ratio check':>17s} {'orrery':>8s} {'sky':>8s} {'drift':>8s}")
+for p in S.ORDER_OUT_IN[::-1]:
+    sky = G.mean_longitude(p, jd_end)
+    diff = (lon_model[p] - sky + 180) % 360 - 180
+    check = years / T[p] if T[p] else float("nan")
+    print(f"{p:8s} {T[p]:9.3f} {check:12.5f}/{float(trains[p][0]):<9.5f} {lon_model[p]:7.1f}° {sky:7.1f}° {diff:+7.1f}°")
+```
+
+The simulation reproduces every train's ratio to five or six figures, and after a century the planets have drifted from the sky by just what the arithmetic predicted: a degree or two for the outer planets, 8° for Mars, 20° for Venus and 46° for Mercury.
+
+```{python}
+#| label: fig-sky
+#| fig-cap: "Where the planets are, seen from above the Sun: on the start date (left) and a century later (right). Filled circles: the orrery. Open circles: the sky (mean longitudes). Radii are the orrery's arm lengths, not the planets' distances."
+fig, axes = plt.subplots(1, 2, subplot_kw={"projection": "polar"}, figsize=(10, 5))
+m0, f0 = S.load(trains=trains); d0 = mujoco.MjData(m0); mujoco.mj_forward(m0, d0)
+for ax, (lon, jd, title) in zip(axes, ((S.longitudes(m0, d0, f0), S.JD_START, "27 October 2026"),
+                                         (lon_model, jd_end, "a century later"))):
+    for p in S.ORDER_OUT_IN:
+        rr = S.RADIUS[p]
+        ax.plot(math.radians(lon[p]), rr, "o", color=PCOL[p], ms=9 if p in ("Jupiter", "Saturn") else 7)
+        ax.plot(math.radians(G.mean_longitude(p, jd)), rr, "o", mfc="none", color=PCOL[p], ms=14, mew=1.5)
+        ax.text(math.radians(lon[p]), rr + 22, p, fontsize=7, ha="center")
+    ax.plot(0, 0, "o", color="#f5c518", ms=12)
+    ax.set_title(title, fontsize=10); ax.set_yticklabels([]); ax.set_ylim(0, 380)
+plt.tight_layout(); plt.show()
+```
+
+The second video looks straight down on the orrery for one whole orbit of Neptune, 165 years. Mercury goes round nearly seven hundred times, far too fast for the camera to follow.
+
+{{< video solar_neptune_year.mp4 title="One orbit of Neptune, 165 years, from above" >}}
+
+## What the gears cannot do
+
+Two things separate this machine from the sky, and only one is the arithmetic.
+
+- **Rational ratios.** Every LEGO train is a ratio of 7-smooth numbers, and the search shows how far that limits each planet. The cure is the one from the Earth–Moon orrery: differentials, which add rotations together, reach ratios no product of LEGO gears can. A watchmaker's alternative is simply to cut the tooth counts the sky asks for.
+- **Steady motion.** Gears turn at constant rates, so the orrery shows each planet's *mean* longitude. Real planets move on ellipses, faster near the Sun and slower far from it, by Kepler's second law. The true position swings either side of the mean by up to about twice the orbit's eccentricity, in radians: roughly 24° for Mercury, 11° for Mars and 2° for the Earth. Mechanical orreries have answered this since antiquity with eccentric gearing; the Antikythera mechanism used a pin-and-slot pair of gears to make its Moon speed up and slow down. A LEGO version, with a pin on one gear driving a slotted liftarm on the next, would be a good next build.
+
+## Sources
+
+- JPL Solar System Dynamics, [Approximate Positions of the Planets](https://ssd.jpl.nasa.gov/planets/approx_pos.html), Table 1 (mean longitudes and rates, valid 1800–2050).

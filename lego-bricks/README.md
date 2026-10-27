@@ -50,3 +50,29 @@ Code behind *A Year in Gears: A LEGO Technic Orrery* (`mechanics/lego-orrery`).
 uv run python orrery_video.py                       # a year, 24 s
 uv run python orrery_video.py --camera earthcam --days 60 --seconds 20 --sunlight-only --name orrery_moon.mp4
 ```
+
+## The whole solar system
+
+Code behind *The Whole Solar System in LEGO Gears*
+(`mechanics/lego-solar-system`).
+
+- `bricks/gears.py`:
+  - `PLANETS` holds JPL's mean longitudes and rates.
+  - `reachable_mixed(k)` finds every ratio with stages in either direction (no
+    worms), for Mercury and Venus, which must be geared up.
+- `bricks/solar.py`: the grand orrery.
+  - **Crank:** one turn is one year; the Earth's arm sits on the crank shaft.
+  - **Trains:** for each other planet, the shortest train within 2° a century.
+    Where none exists, the shortest that reaches the best accuracy eight stages
+    allow.
+  - **The tower:** each train is coiled on its own tier, with the outer planets
+    at the bottom.
+  - **Meshes:** 84 gears and 44 meshes, all fixed-tendon constraints.
+  - **Start:** the arms are set to the planets' mean longitudes on
+    27 October 2026.
+- `solar_video.py`: films it, with a date counter.
+
+```bash
+uv run python solar_video.py                                       # 12 years, 30 s
+uv run python solar_video.py --camera top --years 164.8 --seconds 24 --name solar_neptune_year.mp4
+```

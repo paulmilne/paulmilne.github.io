@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-27">
+<meta name="description" content="Extending the LEGO Technic orrery to all eight planets. One turn of the crank is one year; each planet gets its own gear train found by exhaustive search over LEGO’s 7-smooth ratios; the trains stack into a tiered tower; and the simulated machine is started at today’s planetary positions and run for a century to see how far it drifts from the sky.">
+
+<title>The Whole Solar System in LEGO Gears – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/videojs/video.min.js"></script>
+<link href="../../site_libs/quarto-contrib/videojs/video-js.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Whole Solar System in LEGO Gears – math-blog">
+<meta property="og:description" content="Extending the LEGO Technic orrery to all eight planets. One turn of the crank is one year; each planet gets its own gear train found by exhaustive search over LEGO’s 7-smooth ratios; the trains stack into a tiered tower; and the simulated machine is started at today’s planetary positions and run for a century to see how far it drifts from the sky.">
+<meta property="og:image" content="https://paulmilne.github.io/mechanics/lego-solar-system/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="660">
+<meta property="og:image:width" content="960">
+<meta name="twitter:title" content="The Whole Solar System in LEGO Gears – math-blog">
+<meta name="twitter:description" content="Extending the LEGO Technic orrery to all eight planets. One turn of the crank is one year; each planet gets its own gear train found by exhaustive search over LEGO’s 7-smooth ratios; the trains stack into a tiered tower; and the simulated machine is started at today’s planetary positions and run for a century to see how far it drifts from the sky.">
+<meta name="twitter:image" content="https://paulmilne.github.io/mechanics/lego-solar-system/thumbnail.png">
+<meta name="twitter:image-height" content="660">
+<meta name="twitter:image-width" content="960">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Whole Solar System in LEGO Gears</h1>
+            <p class="subtitle lead">Eight planets, one crank, 84 Technic gears: a grand orrery designed by search and run in MuJoCo</p>
+                  <div>
+        <div class="description">
+          Extending the LEGO Technic orrery to all eight planets. One turn of the crank is one year; each planet gets its own gear train found by exhaustive search over LEGO’s 7-smooth ratios; the trains stack into a tiered tower; and the simulated machine is started at today’s planetary positions and run for a century to see how far it drifts from the sky.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">mechanics</div>
+                <div class="quarto-category">lego</div>
+                <div class="quarto-category">number theory</div>
+                <div class="quarto-category">astronomy</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 27, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#one-crank-eight-ratios" id="toc-one-crank-eight-ratios" class="nav-link active" data-scroll-target="#one-crank-eight-ratios">One crank, eight ratios</a></li>
+  <li><a href="#fast-planets-are-hard" id="toc-fast-planets-are-hard" class="nav-link" data-scroll-target="#fast-planets-are-hard">Fast planets are hard</a></li>
+  <li><a href="#the-machine" id="toc-the-machine" class="nav-link" data-scroll-target="#the-machine">The machine</a></li>
+  <li><a href="#running-it" id="toc-running-it" class="nav-link" data-scroll-target="#running-it">Running it</a></li>
+  <li><a href="#what-the-gears-cannot-do" id="toc-what-the-gears-cannot-do" class="nav-link" data-scroll-target="#what-the-gears-cannot-do">What the gears cannot do</a></li>
+  <li><a href="#sources" id="toc-sources" class="nav-link" data-scroll-target="#sources">Sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>The <a href="../../mechanics/lego-orrery/index.html">Earth–Moon orrery</a> showed that LEGO Technic gears can only make ratios built from the primes 2, 3, 5 and 7, and that a search over every train the parts allow finds surprisingly good approximations to the year and the month. This post takes the same idea to its limit: a <strong>grand orrery</strong> with all eight planets, from Mercury, which goes round the Sun in under three months, to Neptune, which takes 165 years.</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="Twelve years of the solar system, one turn of Jupiter, starting from the planets' positions on 27 October 2026"><source src="solar_jupiter_year.mp4"></video></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About the model and the sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The planets’ mean longitudes and their rates are from JPL’s <em>Approximate Positions of the Planets</em> (link at the end). The orrery is a design, simulated in MuJoCo with every gear a moving part; it has not been built. Its sizes and distances are not to scale, as in every real orrery.</p>
+</div>
+</div>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, time, datetime <span class="im">as</span> dt, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fractions <span class="im">import</span> Fraction</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>here <span class="op">=</span> Path.cwd().resolve()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> <span class="bu">next</span>(p <span class="cf">for</span> p <span class="kw">in</span> (here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"lego-bricks"</span>, here.parent <span class="op">/</span> <span class="st">"lego-bricks"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                        here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"mechanics"</span> <span class="op">/</span> <span class="st">"lego-bricks"</span>) <span class="cf">if</span> (p <span class="op">/</span> <span class="st">"bricks"</span>).exists())</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mujoco</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks <span class="im">import</span> gears <span class="im">as</span> G</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks <span class="im">import</span> solar <span class="im">as</span> S</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>PCOL <span class="op">=</span> {<span class="st">"Mercury"</span>: <span class="st">"#8c8c8c"</span>, <span class="st">"Venus"</span>: <span class="st">"#d9b44a"</span>, <span class="st">"Earth"</span>: <span class="st">"#2c7fb8"</span>, <span class="st">"Mars"</span>: <span class="st">"#c0392b"</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Jupiter"</span>: <span class="st">"#b07d4f"</span>, <span class="st">"Saturn"</span>: <span class="st">"#c9a227"</span>, <span class="st">"Uranus"</span>: <span class="st">"#4fb3bf"</span>, <span class="st">"Neptune"</span>: <span class="st">"#2f4fa8"</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="one-crank-eight-ratios" class="level2">
+<h2 class="anchored" data-anchor-id="one-crank-eight-ratios">One crank, eight ratios</h2>
+<p>Let one turn of the crank be one year, and fix the Earth’s arm straight to the crank shaft. Every other planet then needs a gear train whose ratio is its orbital period in Earth years. JPL tabulates each planet’s mean longitude, the angle it would have reached if it moved round the Sun at a steady rate, and how fast that angle grows. The ratio of each planet’s rate to the Earth’s is the gear ratio the orrery needs.</p>
+<div id="targets" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'planet'</span><span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'rate (°/century)'</span><span class="sc">:&gt;18s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'period (years)'</span><span class="sc">:&gt;15s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'orbits per century'</span><span class="sc">:&gt;19s}</span><span class="ss">"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p, (L0, rate) <span class="kw">in</span> G.PLANETS.items():</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    P <span class="op">=</span> G.planet_ratio(p)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>p<span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span>rate<span class="sc">:18.3f}</span><span class="ss"> </span><span class="sc">{</span>P<span class="sc">:15.6f}</span><span class="ss"> </span><span class="sc">{</span><span class="dv">100</span> <span class="op">/</span> P<span class="sc">:19.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>planet     rate (°/century)  period (years)  orbits per century
+Mercury          149472.674        0.240842             415.209
+Venus             58517.815        0.615187             162.552
+Earth             35999.372        1.000000             100.000
+Mars              19140.303        1.880815              53.168
+Jupiter            3034.746       11.862400               8.430
+Saturn             1222.494       29.447493               3.396
+Uranus              428.482       84.016062               1.190
+Neptune             218.459      164.787433               0.607</code></pre>
+</div>
+</div>
+<p>Mercury and Venus are faster than the Earth, so their trains must speed up rather than slow down. In the Earth–Moon orrery every stage was a reduction; here a stage may go either way, a small gear driving a big one or a big one driving a small one. A worm cannot be driven backwards, so worms are out.</p>
+</section>
+<section id="fast-planets-are-hard" class="level2">
+<h2 class="anchored" data-anchor-id="fast-planets-are-hard">Fast planets are hard</h2>
+<p>How good does a ratio have to be? An orrery is judged by where its planets point, so the natural measure is the angle a planet drifts from the sky over a century. If a train’s ratio is off by a fraction <span class="math inline">\(\varepsilon\)</span>, a planet making <span class="math inline">\(n\)</span> orbits per century drifts by about</p>
+<p><span class="math display">\[
+\Delta\theta \approx 360^\circ \times n \times \varepsilon \quad\text{per century}.
+\]</span></p>
+<p>The same fractional error costs Mercury, with 415 orbits a century, nearly 700 times as much as it costs Neptune, with 0.6. A slow planet can be geared roughly; a fast one needs a fine ratio. The search below builds every train of up to eight stages, now with stages in both directions, and reports the best drift each planet can reach.</p>
+<div id="search" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>levels <span class="op">=</span> G.reachable_mixed(<span class="dv">8</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">sum</span>(<span class="bu">len</span>(v) <span class="cf">for</span> v <span class="kw">in</span> levels.values())<span class="sc">:,}</span><span class="ss"> distinct ratios with up to 8 stages, found in </span><span class="sc">{</span>time<span class="sc">.</span>time() <span class="op">-</span> t0<span class="sc">:.2f}</span><span class="ss"> s</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>drift <span class="op">=</span> {}</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'planet'</span><span class="sc">:8s}</span><span class="ss">"</span> <span class="op">+</span> <span class="st">""</span>.join(<span class="ss">f"</span><span class="sc">{</span><span class="ss">f'</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss"> stages'</span><span class="sc">:&gt;11s}</span><span class="ss">"</span> <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>, <span class="dv">9</span>)) <span class="op">+</span> <span class="st">"     (best drift, degrees per century)"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> G.PLANETS:</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> p <span class="op">==</span> <span class="st">"Earth"</span>:</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> G.planet_ratio(p)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> G.best_reachable(x, levels)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    drift[p] <span class="op">=</span> {k: <span class="dv">360</span> <span class="op">*</span> (<span class="dv">100</span> <span class="op">/</span> x) <span class="op">*</span> (<span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> best[k][<span class="dv">2</span>]) <span class="op">-</span> <span class="dv">1</span>) <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">9</span>)}</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>p<span class="sc">:8s}</span><span class="ss">"</span> <span class="op">+</span> <span class="st">""</span>.join(<span class="ss">f"</span><span class="sc">{</span>drift[p][k]<span class="sc">:+11.2f}</span><span class="ss">"</span> <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>, <span class="dv">9</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>17,185 distinct ratios with up to 8 stages, found in 0.39 s
+
+planet     3 stages   4 stages   5 stages   6 stages   7 stages   8 stages     (best drift, degrees per century)
+Mercury     +490.43    +490.43    -141.95     -79.72     -79.72     -45.57
+Venus       -198.84    -185.50    -185.50     +37.12     +19.83     +19.83
+Mars         +59.36     +59.36     -12.36      -7.98      -7.98      -7.98
+Jupiter      -34.80     -10.80      +1.44      +1.44      +1.44      +0.54
+Saturn       +11.77      +1.97      +1.97      +1.69      +1.69      +1.69
+Uranus       +51.51      +3.51      +0.08      +0.08      -0.02      -0.02
+Neptune      +69.54      +5.54      +1.94      -0.69      +0.15      +0.15</code></pre>
+</div>
+</div>
+<div id="cell-fig-drift" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="dv">4</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p, dd <span class="kw">in</span> drift.items():</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    ks <span class="op">=</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">9</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    ax.semilogy(ks, [<span class="bu">max</span>(<span class="bu">abs</span>(dd[k]), <span class="fl">1e-3</span>) <span class="cf">for</span> k <span class="kw">in</span> ks], <span class="st">"o-"</span>, color<span class="op">=</span>PCOL[p], label<span class="op">=</span>p)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">2</span>, color<span class="op">=</span><span class="st">"black"</span>, ls<span class="op">=</span><span class="st">":"</span>, lw<span class="op">=</span><span class="dv">1</span>)<span class="op">;</span> ax.text(<span class="fl">8.05</span>, <span class="dv">2</span>, <span class="st">"2°"</span>, va<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"stages"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"best |drift| (degrees per century)"</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>ax.legend(ncol<span class="op">=</span><span class="dv">4</span>, fontsize<span class="op">=</span><span class="dv">8</span>, loc<span class="op">=</span><span class="st">"upper right"</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-drift" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-drift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-drift-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-drift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The best drift each planet’s train can reach, in degrees per century, against the number of stages allowed. The slow outer planets are within a couple of degrees by four or five stages; Mercury, with 415 orbits a century, is still tens of degrees out with eight.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The orrery takes, for each planet, the shortest train that drifts less than 2° a century, or, where none does, the shortest train that reaches the best accuracy eight stages allow:</p>
+<div id="trains" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>trains <span class="op">=</span> S.choose_trains()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>gearlist <span class="op">=</span> <span class="kw">lambda</span> st: <span class="st">" · "</span>.join(<span class="ss">f"</span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">→</span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> a, b <span class="kw">in</span> st)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> S.ORDER_OUT_IN[::<span class="op">-</span><span class="dv">1</span>]:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    r, st, dr <span class="op">=</span> trains[p]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> p <span class="op">==</span> <span class="st">"Earth"</span>:</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>p<span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'1'</span><span class="sc">:&gt;18s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">''</span><span class="sc">:&gt;10s}</span><span class="ss">  on the crank shaft itself"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    num, den <span class="op">=</span> r.numerator, r.denominator</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>p<span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">str</span>(r)<span class="sc">:&gt;18s}</span><span class="ss"> = </span><span class="sc">{</span><span class="bu">float</span>(r)<span class="sc">:9.5f}</span><span class="ss">  </span><span class="sc">{</span><span class="bu">len</span>(st)<span class="sc">}</span><span class="ss"> stages, drift </span><span class="sc">{</span>dr<span class="sc">:+6.2f}</span><span class="ss">°/century"</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:8s}</span><span class="ss">   </span><span class="sc">{</span>gearlist(st)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mercury      708588/2941225 =   0.24092  8 stages, drift -45.57°/century
+           40→16 · 40→16 · 28→12 · 28→36 · 28→36 · 28→36 · 28→36 · 28→36
+Venus             3375/5488 =   0.61498  7 stages, drift +19.83°/century
+           16→8 · 16→8 · 16→24 · 16→40 · 28→20 · 28→20 · 28→36
+Earth                     1             on the crank shaft itself
+Mars               1176/625 =   1.88160  6 stages, drift  -7.98°/century
+           8→16 · 8→16 · 40→16 · 40→24 · 20→28 · 20→28
+Jupiter            4802/405 =  11.85679  5 stages, drift  +1.44°/century
+           8→16 · 12→28 · 12→28 · 20→28 · 36→28
+Saturn                147/5 =  29.40000  4 stages, drift  +1.97°/century
+           8→24 · 8→24 · 12→28 · 20→28
+Uranus                   84 =  84.00000  5 stages, drift  +0.08°/century
+           8→16 · 8→16 · 8→24 · 8→24 · 12→28
+Neptune               490/3 = 163.33333  5 stages, drift  +1.94°/century
+           8→16 · 8→24 · 8→40 · 12→28 · 12→28</code></pre>
+</div>
+</div>
+<p>Some of the winners are pleasingly simple. Uranus is <span class="math inline">\(84\)</span> to one, made as <span class="math inline">\(2\cdot2\cdot3\cdot3\cdot\tfrac{7}{3}\)</span>, and drifts less than a tenth of a degree a century. Others are the opposite: Mercury’s best eight-stage ratio is</p>
+<p><span class="math display">\[
+\frac{708588}{2941225} = \frac{2^2\cdot 3^{11}}{5^2\cdot 7^{6}},
+\]</span></p>
+<p>a fraction no one would write down by hand, and it still drifts by tens of degrees a century. Mercury is the planet a LEGO orrery cannot keep up with.</p>
+</section>
+<section id="the-machine" class="level2">
+<h2 class="anchored" data-anchor-id="the-machine">The machine</h2>
+<p>The trains are stacked into a <strong>tiered tower</strong> round the crank shaft, the classic layout of a grand orrery:</p>
+<ul>
+<li><strong>Order of the tiers.</strong> The outer planets are at the bottom with the longest arms and the inner planets at the top with the shortest, so the post carrying each planet up to the common height never meets an arm above it.</li>
+<li><strong>Each tier is one planet’s train.</strong> It starts with a gear on the shaft at the bottom of the tier and coils round the shaft on a circle of axles, ending on the planet’s hub at the top. The hub is a tube on the shaft, carrying the planet’s arm. A train with an odd number of meshes gets an idler, so that every planet goes round the same way.</li>
+<li><strong>The Earth</strong> has no tier of its own: its arm is fixed to the crank shaft.</li>
+</ul>
+<p>As in the Earth–Moon orrery, every mesh in MuJoCo is a fixed tendon, a linear combination of joint angles held at zero, so the crank is the only thing driven and everything else follows through the gears.</p>
+<div id="cell-fig-machine" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>m, facts <span class="op">=</span> S.load(trains<span class="op">=</span>trains)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> mujoco.MjData(m)<span class="op">;</span> mujoco.mj_forward(m, d)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> mujoco.Renderer(m, <span class="dv">450</span>, <span class="dv">720</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> mujoco.MjvOption()<span class="op">;</span> opt.sitegroup[:] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>imgs <span class="op">=</span> []</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> cam <span class="kw">in</span> (<span class="st">"overview"</span>, <span class="st">"tower"</span>):</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    r.update_scene(d, camera<span class="op">=</span>cam, scene_option<span class="op">=</span>opt)<span class="op">;</span> imgs.append(r.render().copy())</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">3.6</span>))</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a_, im <span class="kw">in</span> <span class="bu">zip</span>(ax, imgs):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    a_.imshow(im)<span class="op">;</span> a_.axis(<span class="st">"off"</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>facts[<span class="st">'n_gears'</span>]<span class="sc">}</span><span class="ss"> gears, </span><span class="sc">{</span>facts[<span class="st">'n_meshes'</span>]<span class="sc">}</span><span class="ss"> meshes, tower </span><span class="sc">{</span>facts[<span class="st">'height'</span>]<span class="sc">:.0f}</span><span class="ss"> mm to the planets' plane"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-machine" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-machine-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-machine-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-machine-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The orrery in MuJoCo, on 27 October 2026. Left: the whole machine. Right: the gear tower, with Neptune’s train at the bottom and Mercury’s at the top.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>84 gears, 44 meshes, tower 388 mm to the planets' plane</code></pre>
+</div>
+</div>
+<p>One liberty: the hubs are concentric tubes on a single shaft, eight deep. Real LEGO has no nested tubes, so a physical build would carry the arms on stacked turntables or bring the drives in from outside. The arithmetic does not change.</p>
+</section>
+<section id="running-it" class="level2">
+<h2 class="anchored" data-anchor-id="running-it">Running it</h2>
+<p>The arms are set at each planet’s mean longitude for 27 October 2026. Turning the crank for a century of simulated years, and reading each planet’s angle from the simulation:</p>
+<div id="century" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>m, facts <span class="op">=</span> S.load(trains<span class="op">=</span>trains)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> mujoco.MjData(m)<span class="op">;</span> d.ctrl[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> math.pi          <span class="co"># one turn (year) per simulated second</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> S.turns(m, d, facts)[<span class="st">"Earth"</span>] <span class="op">&lt;</span> <span class="dv">100</span>:</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_step(m, d)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> S.turns(m, d, facts)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>years <span class="op">=</span> T[<span class="st">"Earth"</span>]</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>days_per_turn <span class="op">=</span> <span class="dv">36525</span> <span class="op">*</span> <span class="dv">360</span> <span class="op">/</span> G.PLANETS[<span class="st">"Earth"</span>][<span class="dv">1</span>]     <span class="co"># days in one turn of the Earth's mean longitude</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>jd_end <span class="op">=</span> S.JD_START <span class="op">+</span> years <span class="op">*</span> days_per_turn</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>lon_model <span class="op">=</span> S.longitudes(m, d, facts)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ran </span><span class="sc">{</span>years<span class="sc">:.2f}</span><span class="ss"> years in </span><span class="sc">{</span>time<span class="sc">.</span>time() <span class="op">-</span> t0<span class="sc">:.1f}</span><span class="ss"> s of computing</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'planet'</span><span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'orbits'</span><span class="sc">:&gt;9s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'gear ratio check'</span><span class="sc">:&gt;17s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'orrery'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'sky'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'drift'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> S.ORDER_OUT_IN[::<span class="op">-</span><span class="dv">1</span>]:</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    sky <span class="op">=</span> G.mean_longitude(p, jd_end)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    diff <span class="op">=</span> (lon_model[p] <span class="op">-</span> sky <span class="op">+</span> <span class="dv">180</span>) <span class="op">%</span> <span class="dv">360</span> <span class="op">-</span> <span class="dv">180</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    check <span class="op">=</span> years <span class="op">/</span> T[p] <span class="cf">if</span> T[p] <span class="cf">else</span> <span class="bu">float</span>(<span class="st">"nan"</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>p<span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span>T[p]<span class="sc">:9.3f}</span><span class="ss"> </span><span class="sc">{</span>check<span class="sc">:12.5f}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">float</span>(trains[p][<span class="dv">0</span>])<span class="sc">:&lt;9.5f}</span><span class="ss"> </span><span class="sc">{</span>lon_model[p]<span class="sc">:7.1f}</span><span class="ss">° </span><span class="sc">{</span>sky<span class="sc">:7.1f}</span><span class="ss">° </span><span class="sc">{</span>diff<span class="sc">:+7.1f}</span><span class="ss">°"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>ran 100.00 years in 1.6 s of computing
+
+planet      orbits  gear ratio check   orrery      sky    drift
+Mercury    415.087      0.24092/0.24092      50.1°    95.7°   -45.6°
+Venus      162.609      0.61498/0.61498     255.0°   235.1°   +19.8°
+Earth      100.001      1.00000/1.00000      35.4°    35.4°    -0.0°
+Mars        53.147      1.88160/1.88160     141.5°   149.5°    -8.0°
+Jupiter      8.434     11.85679/11.85679    284.5°   283.1°    +1.4°
+Saturn       3.401     29.40000/29.40000    162.3°   160.3°    +2.0°
+Uranus       1.190     84.00001/84.00000    136.7°   136.6°    +0.1°
+Neptune      0.612    163.33335/163.33333   223.9°   221.9°    +1.9°</code></pre>
+</div>
+</div>
+<p>The simulation reproduces every train’s ratio to five or six figures, and after a century the planets have drifted from the sky by just what the arithmetic predicted: a degree or two for the outer planets, 8° for Mars, 20° for Venus and 46° for Mercury.</p>
+<div id="cell-fig-sky" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, subplot_kw<span class="op">=</span>{<span class="st">"projection"</span>: <span class="st">"polar"</span>}, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>m0, f0 <span class="op">=</span> S.load(trains<span class="op">=</span>trains)<span class="op">;</span> d0 <span class="op">=</span> mujoco.MjData(m0)<span class="op">;</span> mujoco.mj_forward(m0, d0)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (lon, jd, title) <span class="kw">in</span> <span class="bu">zip</span>(axes, ((S.longitudes(m0, d0, f0), S.JD_START, <span class="st">"27 October 2026"</span>),</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>                                         (lon_model, jd_end, <span class="st">"a century later"</span>))):</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> p <span class="kw">in</span> S.ORDER_OUT_IN:</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        rr <span class="op">=</span> S.RADIUS[p]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        ax.plot(math.radians(lon[p]), rr, <span class="st">"o"</span>, color<span class="op">=</span>PCOL[p], ms<span class="op">=</span><span class="dv">9</span> <span class="cf">if</span> p <span class="kw">in</span> (<span class="st">"Jupiter"</span>, <span class="st">"Saturn"</span>) <span class="cf">else</span> <span class="dv">7</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>        ax.plot(math.radians(G.mean_longitude(p, jd)), rr, <span class="st">"o"</span>, mfc<span class="op">=</span><span class="st">"none"</span>, color<span class="op">=</span>PCOL[p], ms<span class="op">=</span><span class="dv">14</span>, mew<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        ax.text(math.radians(lon[p]), rr <span class="op">+</span> <span class="dv">22</span>, p, fontsize<span class="op">=</span><span class="dv">7</span>, ha<span class="op">=</span><span class="st">"center"</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    ax.plot(<span class="dv">0</span>, <span class="dv">0</span>, <span class="st">"o"</span>, color<span class="op">=</span><span class="st">"#f5c518"</span>, ms<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    ax.set_title(title, fontsize<span class="op">=</span><span class="dv">10</span>)<span class="op">;</span> ax.set_yticklabels([])<span class="op">;</span> ax.set_ylim(<span class="dv">0</span>, <span class="dv">380</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-sky" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-sky-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-sky-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-sky-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Where the planets are, seen from above the Sun: on the start date (left) and a century later (right). Filled circles: the orrery. Open circles: the sky (mean longitudes). Radii are the orrery’s arm lengths, not the planets’ distances.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The second video looks straight down on the orrery for one whole orbit of Neptune, 165 years. Mercury goes round nearly seven hundred times, far too fast for the camera to follow.</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video2" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="One orbit of Neptune, 165 years, from above"><source src="solar_neptune_year.mp4"></video></div>
+</section>
+<section id="what-the-gears-cannot-do" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-gears-cannot-do">What the gears cannot do</h2>
+<p>Two things separate this machine from the sky, and only one is the arithmetic.</p>
+<ul>
+<li><strong>Rational ratios.</strong> Every LEGO train is a ratio of 7-smooth numbers, and the search shows how far that limits each planet. The cure is the one from the Earth–Moon orrery: differentials, which add rotations together, reach ratios no product of LEGO gears can. A watchmaker’s alternative is simply to cut the tooth counts the sky asks for.</li>
+<li><strong>Steady motion.</strong> Gears turn at constant rates, so the orrery shows each planet’s <em>mean</em> longitude. Real planets move on ellipses, faster near the Sun and slower far from it, by Kepler’s second law. The true position swings either side of the mean by up to about twice the orbit’s eccentricity, in radians: roughly 24° for Mercury, 11° for Mars and 2° for the Earth. Mechanical orreries have answered this since antiquity with eccentric gearing; the Antikythera mechanism used a pin-and-slot pair of gears to make its Moon speed up and slow down. A LEGO version, with a pin on one gear driving a slotted liftarm on the next, would be a good next build.</li>
+</ul>
+</section>
+<section id="sources" class="level2">
+<h2 class="anchored" data-anchor-id="sources">Sources</h2>
+<ul>
+<li>JPL Solar System Dynamics, <a href="https://ssd.jpl.nasa.gov/planets/approx_pos.html">Approximate Positions of the Planets</a>, Table 1 (mean longitudes and rates, valid 1800–2050).</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script>videojs(video_shortcode_videojs_video1);</script>
+<script>videojs(video_shortcode_videojs_video2);</script>
+
+
+
+
+</body></html>

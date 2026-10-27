@@ -147,3 +147,53 @@ def best_reachable(target: float, levels) -> dict[int, tuple]:
                 champ = (r, st, e)
         out[k] = champ
     return out
+
+
+# ------------------------------------------------------------------ the planets
+# Mean longitudes at J2000 (deg) and their rates (deg per Julian century), JPL "Approximate
+# Positions of the Planets", Table 1 (1800-2050). "Earth" is the Earth-Moon barycentre.
+PLANETS = {
+    "Mercury": (252.25032350, 149472.67411175),
+    "Venus":   (181.97909950, 58517.81538729),
+    "Earth":   (100.46457166, 35999.37244981),
+    "Mars":    (-4.55343205, 19140.30268499),
+    "Jupiter": (34.39644051, 3034.74612775),
+    "Saturn":  (49.95424423, 1222.49362201),
+    "Uranus":  (313.23810451, 428.48202785),
+    "Neptune": (-55.12002969, 218.45945325),
+}
+
+
+def planet_ratio(name: str) -> float:
+    """Turns of the crank (Earth years) per turn of the planet: its period in Earth years."""
+    return PLANETS["Earth"][1] / PLANETS[name][1]
+
+
+def mean_longitude(name: str, jd: float) -> float:
+    """Mean heliocentric longitude (deg) at Julian date jd."""
+    L0, rate = PLANETS[name]
+    return (L0 + rate * (jd - 2451545.0) / 36525.0) % 360.0
+
+
+def reachable_mixed(max_stages: int):
+    """Every ratio a train of up to max_stages can make when stages may step up or down
+    (no worms: a worm cannot be driven backwards). {k: {ratio: stages}}, ratio = product of
+    driven/driver, so values below 1 are speed-ups."""
+    opts = []
+    for fam in (SPUR, BEVEL):
+        for a in fam:
+            for b in fam:
+                if a != b:
+                    opts.append((a, b))
+    levels = {0: {Fraction(1): ()}}
+    seen = {Fraction(1)}
+    for k in range(1, max_stages + 1):
+        nxt = {}
+        for r, st in levels[k - 1].items():
+            for a, b in opts:
+                q = r * Fraction(b, a)
+                if q not in seen and q not in nxt:
+                    nxt[q] = st + ((a, b),)
+        levels[k] = nxt
+        seen |= set(nxt)
+    return levels
