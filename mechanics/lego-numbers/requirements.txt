@@ -1,0 +1,7 @@
+mujoco==3.17.0
+numpy
+matplotlib
+ipykernel
+nbformat
+nbclient
+pyyaml

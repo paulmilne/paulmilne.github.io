@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-27">
+<meta name="description" content="The geometry of the LEGO system as a lattice (the 2:5 plate ratio, building sideways, Technic diagonals and which gears mesh), and the counting problem: why LEGO’s famous figure for six bricks was wrong, an enumeration that reproduces the published counts, and how fast the number of buildings grows.">
+
+<title>915,103,765 Ways: The Numbers Inside a LEGO Brick – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="915,103,765 Ways: The Numbers Inside a LEGO Brick – math-blog">
+<meta property="og:description" content="The geometry of the LEGO system as a lattice (the 2:5 plate ratio, building sideways, Technic diagonals and which gears mesh), and the counting problem: why LEGO’s famous figure for six bricks was wrong, an enumeration that reproduces the published counts, and how fast the number of buildings grows.">
+<meta property="og:image" content="https://paulmilne.github.io/mechanics/lego-numbers/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="660">
+<meta property="og:image:width" content="960">
+<meta name="twitter:title" content="915,103,765 Ways: The Numbers Inside a LEGO Brick – math-blog">
+<meta name="twitter:description" content="The geometry of the LEGO system as a lattice (the 2:5 plate ratio, building sideways, Technic diagonals and which gears mesh), and the counting problem: why LEGO’s famous figure for six bricks was wrong, an enumeration that reproduces the published counts, and how fast the number of buildings grows.">
+<meta name="twitter:image" content="https://paulmilne.github.io/mechanics/lego-numbers/thumbnail.png">
+<meta name="twitter:image-height" content="660">
+<meta name="twitter:image-width" content="960">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">915,103,765 Ways: The Numbers Inside a LEGO Brick</h1>
+            <p class="subtitle lead">A lattice of 8 mm and 3.2 mm, Pythagoras and gears again, and the problem of counting what six bricks can build</p>
+                  <div>
+        <div class="description">
+          The geometry of the LEGO system as a lattice (the 2:5 plate ratio, building sideways, Technic diagonals and which gears mesh), and the counting problem: why LEGO’s famous figure for six bricks was wrong, an enumeration that reproduces the published counts, and how fast the number of buildings grows.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">mechanics</div>
+                <div class="quarto-category">lego</div>
+                <div class="quarto-category">combinatorics</div>
+                <div class="quarto-category">number theory</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 27, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-lego-lattice" id="toc-the-lego-lattice" class="nav-link active" data-scroll-target="#the-lego-lattice">The LEGO lattice</a>
+  <ul class="collapse">
+  <li><a href="#two-grids-that-do-not-match" id="toc-two-grids-that-do-not-match" class="nav-link" data-scroll-target="#two-grids-that-do-not-match">Two grids that do not match</a></li>
+  <li><a href="#building-sideways" id="toc-building-sideways" class="nav-link" data-scroll-target="#building-sideways">Building sideways</a></li>
+  <li><a href="#pythagoras-in-technic" id="toc-pythagoras-in-technic" class="nav-link" data-scroll-target="#pythagoras-in-technic">Pythagoras in Technic</a></li>
+  <li><a href="#which-gears-mesh" id="toc-which-gears-mesh" class="nav-link" data-scroll-target="#which-gears-mesh">Which gears mesh</a></li>
+  <li><a href="#meccano-and-lego-side-by-side" id="toc-meccano-and-lego-side-by-side" class="nav-link" data-scroll-target="#meccano-and-lego-side-by-side">Meccano and LEGO side by side</a></li>
+  </ul></li>
+  <li><a href="#how-many-ways-can-you-join-six-bricks" id="toc-how-many-ways-can-you-join-six-bricks" class="nav-link" data-scroll-target="#how-many-ways-can-you-join-six-bricks">How many ways can you join six bricks?</a>
+  <ul class="collapse">
+  <li><a href="#two-bricks-24" id="toc-two-bricks-24" class="nav-link" data-scroll-target="#two-bricks-24">Two bricks: 24</a></li>
+  <li><a href="#towers-and-legos-famous-number" id="toc-towers-and-legos-famous-number" class="nav-link" data-scroll-target="#towers-and-legos-famous-number">Towers, and LEGO’s famous number</a></li>
+  <li><a href="#counting-every-building" id="toc-counting-every-building" class="nav-link" data-scroll-target="#counting-every-building">Counting every building</a></li>
+  <li><a href="#how-fast-it-grows" id="toc-how-fast-it-grows" class="nav-link" data-scroll-target="#how-fast-it-grows">How fast it grows</a></li>
+  </ul></li>
+  <li><a href="#next" id="toc-next" class="nav-link" data-scroll-target="#next">Next</a></li>
+  <li><a href="#sources" id="toc-sources" class="nav-link" data-scroll-target="#sources">Sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>The <a href="../../mechanics/meccano-shovel/index.html">Meccano steam shovel</a> turned out to be a lesson in number theory: a construction set built on a ½-inch grid is full of Pythagorean triples, and its gears were sized so that every pair lands on the grid. LEGO is a lattice too, but a stranger one. Its studs are 8 mm apart, while its plates are 3.2 mm tall, so the vertical and horizontal grids do not match, and that one ratio shapes how everything in the system fits together.</p>
+<p>The second half of the post is a famous counting problem. For decades LEGO said that six 2×4 bricks could be combined in 102,981,500 ways. The true figure, found by the mathematician Søren Eilers, is 915,103,765. The post works out where the old number came from, reproduces the published counts with a short program, and looks at how fast the count grows.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, time, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fractions <span class="im">import</span> Fraction</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>here <span class="op">=</span> Path.cwd().resolve()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> <span class="bu">next</span>(p <span class="cf">for</span> p <span class="kw">in</span> (here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"lego-bricks"</span>, here.parent <span class="op">/</span> <span class="st">"lego-bricks"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                        here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"mechanics"</span> <span class="op">/</span> <span class="st">"lego-bricks"</span>) <span class="cf">if</span> (p <span class="op">/</span> <span class="st">"bricks"</span>).exists())</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks <span class="im">import</span> geometry <span class="im">as</span> geo</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks.count <span class="im">import</span> (DIMS, enumerate_buildings, by_height, towers, canon, attachments,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>                          PUBLISHED, PUBLISHED_BY_HEIGHT)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bricks.render <span class="im">import</span> BrickRenderer, random_building</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>RED, BLUE, YELLOW, GREEN, GREY <span class="op">=</span> <span class="st">"#c91a09"</span>, <span class="st">"#0055bf"</span>, <span class="st">"#e8b923"</span>, <span class="st">"#237841"</span>, <span class="st">"#7f8c8d"</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>renderer <span class="op">=</span> BrickRenderer(n_bricks<span class="op">=</span><span class="dv">6</span>, width<span class="op">=</span><span class="dv">480</span>, height<span class="op">=</span><span class="dv">360</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="cell-fig-hero" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="fl">5.25</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>plt.imshow(renderer.image(random_building(<span class="dv">6</span>, seed<span class="op">=</span><span class="dv">7</span>), azimuth<span class="op">=</span><span class="dv">130</span>, elevation<span class="op">=-</span><span class="dv">24</span>)[<span class="dv">30</span>:<span class="op">-</span><span class="dv">30</span>, <span class="dv">50</span>:<span class="op">-</span><span class="dv">50</span>])</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>plt.axis(<span class="st">"off"</span>)<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-hero" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-hero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-hero-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-hero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: A six-brick building, one of the 915,103,765 (MuJoCo render).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About the sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The counts of LEGO buildings are from Søren Eilers and his collaborators, as published on his page and in the On-Line Encyclopedia of Integer Sequences (links at the end); the program below reproduces the ones a laptop can reach. LEGO’s dimensions are the widely published nominal ones. The list of Technic gears is from memory of the system, so check it against a parts reference before quoting it.</p>
+</div>
+</div>
+<section id="the-lego-lattice" class="level2">
+<h2 class="anchored" data-anchor-id="the-lego-lattice">The LEGO lattice</h2>
+<section id="two-grids-that-do-not-match" class="level3">
+<h3 class="anchored" data-anchor-id="two-grids-that-do-not-match">Two grids that do not match</h3>
+<p>The basic dimensions are few:</p>
+<div id="dims" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> [(<span class="st">"stud pitch (stud to stud)"</span>, geo.PITCH), (<span class="st">"plate height"</span>, geo.PLATE), (<span class="st">"brick height (3 plates)"</span>, geo.BRICK),</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"stud diameter"</span>, geo.STUD_D), (<span class="st">"stud height"</span>, geo.STUD_H)]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, v <span class="kw">in</span> rows:</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    fr <span class="op">=</span> Fraction(v <span class="op">/</span> geo.PITCH).limit_denominator(<span class="dv">5</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    exact <span class="op">=</span> <span class="bu">abs</span>(<span class="bu">float</span>(fr) <span class="op">-</span> v <span class="op">/</span> geo.PITCH) <span class="op">&lt;</span> <span class="fl">1e-12</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:28s}</span><span class="ss"> </span><span class="sc">{</span>v<span class="sc">:5.1f}</span><span class="ss"> mm   = </span><span class="sc">{</span><span class="bu">str</span>(fr) <span class="cf">if</span> exact <span class="cf">else</span> <span class="ss">f'</span><span class="sc">{</span>v <span class="op">/</span> geo<span class="sc">.</span>PITCH<span class="sc">:.4f}</span><span class="ss">'</span><span class="sc">}</span><span class="ss"> of a stud pitch"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>stud pitch (stud to stud)      8.0 mm   = 1 of a stud pitch
+plate height                   3.2 mm   = 2/5 of a stud pitch
+brick height (3 plates)        9.6 mm   = 6/5 of a stud pitch
+stud diameter                  4.8 mm   = 3/5 of a stud pitch
+stud height                    1.7 mm   = 0.2125 of a stud pitch</code></pre>
+</div>
+</div>
+<p>The ratio that matters is <span class="math inline">\(\text{plate} : \text{pitch} = 3.2 : 8 = 2 : 5\)</span>. A brick, three plates, is <span class="math inline">\(6/5\)</span> of a pitch. So a stack of <span class="math inline">\(b\)</span> bricks and <span class="math inline">\(p\)</span> plates is</p>
+<p><span class="math display">\[
+h = (3b + p)\cdot\tfrac{2}{5}\ \text{pitches},
+\]</span></p>
+<p>which is a whole number of studs only when <span class="math inline">\(3b + p\)</span> is a multiple of 5. The smallest stack that lands back on the horizontal grid is five plates: <strong>one brick and two plates make exactly two studs</strong>. Every serious builder knows that rule. It is why Technic bricks, whose holes run sideways through them on the stud pitch, are stacked with two plates between each pair. The holes then fall on a square grid, two studs apart in both directions.</p>
+</section>
+<section id="building-sideways" class="level3">
+<h3 class="anchored" data-anchor-id="building-sideways">Building sideways</h3>
+<p>Modern models often turn parts on their sides, the technique builders call SNOT (studs not on top). A sideways part brings its own lattice, rotated a quarter turn: one stud along what was the height, 0.4 of a stud along what was the width. The two lattices coincide only at points that are on both:</p>
+<p><span class="math display">\[
+\mathbb{Z} \cap \tfrac{2}{5}\mathbb{Z} = 2\mathbb{Z},
+\]</span></p>
+<p>because <span class="math inline">\(\tfrac{2}{5}k\)</span> is an integer only when 5 divides <span class="math inline">\(k\)</span>, and then it is even. So upright and sideways building can only meet every <strong>two</strong> studs in each direction. That is why sideways work is full of special parts (brackets, jumper plates with a single central stud, headlight bricks) whose job is to make up the half-stud and fifth-of-a-stud differences.</p>
+<div id="cell-fig-snot" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">6.2</span>, <span class="dv">6</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">9</span>)<span class="op">;</span> Zp <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">21</span>) <span class="op">*</span> <span class="fl">0.4</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>gx, gz <span class="op">=</span> np.meshgrid(X, Zp)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>ax.plot(gx.ravel(), gz.ravel(), <span class="st">"."</span>, color<span class="op">=</span><span class="st">"black"</span>, ms<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"upright: 1 stud × 1 plate"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>sx, sz <span class="op">=</span> np.meshgrid(np.arange(<span class="dv">0</span>, <span class="dv">21</span>) <span class="op">*</span> <span class="fl">0.4</span>, np.arange(<span class="dv">0</span>, <span class="dv">9</span>))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>ax.plot(sx.ravel(), sz.ravel(), <span class="st">"o"</span>, mfc<span class="op">=</span><span class="st">"none"</span>, color<span class="op">=</span>RED, ms<span class="op">=</span><span class="dv">4</span>, label<span class="op">=</span><span class="st">"sideways: 1 plate × 1 stud"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>cx, cz <span class="op">=</span> np.meshgrid(np.arange(<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">2</span>), np.arange(<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">2</span>))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>ax.plot(cx.ravel(), cz.ravel(), <span class="st">"s"</span>, mfc<span class="op">=</span><span class="st">"none"</span>, color<span class="op">=</span>BLUE, ms<span class="op">=</span><span class="dv">11</span>, mew<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="st">"both: every 2 studs"</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax.set_xlim(<span class="op">-</span><span class="fl">0.3</span>, <span class="fl">8.3</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="fl">0.3</span>, <span class="fl">9.6</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"across (studs)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"up (studs)"</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>ax.legend(loc<span class="op">=</span><span class="st">"upper center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>, framealpha<span class="op">=</span><span class="dv">1</span>, ncol<span class="op">=</span><span class="dv">3</span>, bbox_to_anchor<span class="op">=</span>(<span class="fl">0.5</span>, <span class="fl">1.0</span>))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-snot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-snot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-snot-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-snot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Upright building (black dots: one stud across, one plate up) and sideways building (red circles: one plate across, one stud up) in the same 8-stud square. The two lattices only coincide every two studs (blue squares): one brick and two plates.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="pythagoras-in-technic" class="level3">
+<h3 class="anchored" data-anchor-id="pythagoras-in-technic">Pythagoras in Technic</h3>
+<p>Technic beams have holes on the stud pitch, so a diagonal beam, like a Meccano strip, fits exactly only when its length is a whole number of holes. On the flat, that again means Pythagorean triples: the <span class="math inline">\((3, 4, 5)\)</span> triangle and its multiples are the only exact diagonals inside ten studs.</p>
+<p>What happens when the diagonal climbs through a stack of Technic bricks and plates? Then one side is <span class="math inline">\(x\)</span> studs across and the other is <span class="math inline">\(p\)</span> plates up, <span class="math inline">\(0.4p\)</span> studs, and</p>
+<p><span class="math display">\[
+x^2 + \left(\tfrac{2p}{5}\right)^2 = c^2 \quad\Longrightarrow\quad (2p)^2 = 25\,(c^2 - x^2) .
+\]</span></p>
+<p>The right-hand side is a multiple of 25, so <span class="math inline">\(5 \mid 2p\)</span>, so <span class="math inline">\(5 \mid p\)</span>: <strong>an exact diagonal can only rise by whole studs</strong>, in steps of one brick and two plates. Plates give no shortcuts; the vertical grid has to be squared up first. The search agrees:</p>
+<div id="diagonals" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"flat, whole studs:      "</span>, [(<span class="bu">int</span>(a), <span class="bu">int</span>(b), <span class="bu">int</span>(c)) <span class="cf">for</span> a, b, c <span class="kw">in</span> geo.diagonals(<span class="dv">10</span>)])</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"through bricks/plates:  "</span>, [(<span class="ss">f"</span><span class="sc">{</span>a<span class="sc">:g}</span><span class="ss"> across"</span>, <span class="ss">f"</span><span class="sc">{</span>p<span class="sc">}</span><span class="ss"> plates up"</span>, <span class="ss">f"</span><span class="sc">{</span>c<span class="sc">:g}</span><span class="ss"> long"</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="cf">for</span> a, p, c <span class="kw">in</span> geo.diagonals(<span class="dv">10</span>, vertical_plates<span class="op">=</span><span class="va">True</span>, half<span class="op">=</span><span class="va">True</span>)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>flat, whole studs:       [(3, 4, 5), (4, 3, 5), (6, 8, 10), (8, 6, 10)]
+through bricks/plates:   [('3 across', '10 plates up', '5 long'), ('6 across', '20 plates up', '10 long'), ('8 across', '15 plates up', '10 long')]</code></pre>
+</div>
+</div>
+</section>
+<section id="which-gears-mesh" class="level3">
+<h3 class="anchored" data-anchor-id="which-gears-mesh">Which gears mesh</h3>
+<p>Technic gears are cut to a module of 1 mm, so a gear with <span class="math inline">\(N\)</span> teeth has a pitch diameter of <span class="math inline">\(N\)</span> mm. Two meshing gears sit <span class="math inline">\((N_1 + N_2)/2\)</span> mm apart, which is</p>
+<p><span class="math display">\[
+d = \frac{N_1 + N_2}{16}\ \text{studs}.
+\]</span></p>
+<p>The gears come in two families. The spur gears have 8, 16, 24 and 40 teeth: multiples of 8. The double-bevel gears have 12, 20, 28 and 36: each 4 more than a multiple of 8. Within a family <span class="math inline">\(N_1 + N_2\)</span> is a multiple of 8, so <span class="math inline">\(d\)</span> is a whole or half number of studs and the pair can be mounted on the grid (on half studs with the right beams). Across the families <span class="math inline">\(N_1 + N_2 \equiv 4 \pmod 8\)</span>, so <span class="math inline">\(d\)</span> ends in a quarter stud, and <strong>a spur gear and a double-bevel gear never mesh in line on the grid</strong>. Meccano’s gears, by contrast, were all odd multiples of 19 teeth, which made every pair fit.</p>
+<div id="cell-fig-gears" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> <span class="bu">list</span>(geo.GEARS)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> np.zeros((<span class="bu">len</span>(G), <span class="bu">len</span>(G)))</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, a <span class="kw">in</span> <span class="bu">enumerate</span>(G):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j, b <span class="kw">in</span> <span class="bu">enumerate</span>(G):</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> (a <span class="op">+</span> b) <span class="op">/</span> <span class="dv">16</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        M[i, j] <span class="op">=</span> <span class="dv">2</span> <span class="cf">if</span> d <span class="op">==</span> <span class="bu">int</span>(d) <span class="cf">else</span> (<span class="dv">1</span> <span class="cf">if</span> <span class="dv">2</span> <span class="op">*</span> d <span class="op">==</span> <span class="bu">int</span>(<span class="dv">2</span> <span class="op">*</span> d) <span class="cf">else</span> <span class="dv">0</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> ListedColormap</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">6.2</span>, <span class="fl">5.2</span>))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>ax.imshow(M, cmap<span class="op">=</span>ListedColormap([<span class="st">"#dddddd"</span>, <span class="st">"#f2d675"</span>, <span class="st">"#7bb38b"</span>]), vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, a <span class="kw">in</span> <span class="bu">enumerate</span>(G):</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j, b <span class="kw">in</span> <span class="bu">enumerate</span>(G):</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        ax.text(j, i, <span class="ss">f"</span><span class="sc">{</span>(a <span class="op">+</span> b) <span class="op">/</span> <span class="dv">16</span><span class="sc">:g}</span><span class="ss">"</span>, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>ax.set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(G)), G)<span class="op">;</span> ax.set_yticks(<span class="bu">range</span>(<span class="bu">len</span>(G)), G)<span class="op">;</span> ax.grid(<span class="va">False</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"teeth"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"teeth"</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"pairs that also fit on a diagonal or across a brick-and-plates stack:"</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n1, n2, d, ways <span class="kw">in</span> geo.gear_pairs():</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    extra <span class="op">=</span> [w <span class="cf">for</span> w <span class="kw">in</span> ways <span class="cf">if</span> <span class="kw">not</span> w.startswith(<span class="st">"in line"</span>)]</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> extra:</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>n1<span class="sc">:2d}</span><span class="ss"> + </span><span class="sc">{</span>n2<span class="sc">:&lt;2d}</span><span class="ss">  </span><span class="sc">{</span>d<span class="sc">:g}</span><span class="ss"> studs: </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(extra)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-gears" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-gears-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-gears-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-gears-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Centre distance of every pair of Technic gears, in studs. Green: a whole number of studs (mounts in line on any beam); yellow: a half stud (needs a half-stud offset); grey: a quarter stud, which never lands on the grid. Spur gears (8–40) mesh with spur gears and bevels with bevels, never across.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>pairs that also fit on a diagonal or across a brick-and-plates stack:
+  12 + 28  2.5 studs: 1.5 across, 5 plates up
+  16 + 24  2.5 studs: 1.5 across, 5 plates up
+  20 + 20  2.5 studs: 1.5 across, 5 plates up
+  40 + 40  5 studs: diagonal 3x4, 3 across, 10 plates up</code></pre>
+</div>
+</div>
+<p>The one whole-stud diagonal among Technic gears is the pair of 40-tooth gears, 5 studs apart, which can sit at the <span class="math inline">\((3, 4)\)</span> offset of the Pythagorean triangle. Three pairs that are 2.5 studs apart fit at a half-stud offset across and one brick and two plates up, which is the <span class="math inline">\((3, 4, 5)\)</span> triangle again, at half scale.</p>
+</section>
+<section id="meccano-and-lego-side-by-side" class="level3">
+<h3 class="anchored" data-anchor-id="meccano-and-lego-side-by-side">Meccano and LEGO side by side</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Meccano</th>
+<th>LEGO</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>grid</td>
+<td>½ inch (12.7 mm), the same in every direction</td>
+<td>8 mm across, 3.2 mm up</td>
+</tr>
+<tr class="even">
+<td>vertical and horizontal grids</td>
+<td>identical</td>
+<td>meet every 2 studs (1 brick + 2 plates)</td>
+</tr>
+<tr class="odd">
+<td>exact diagonals</td>
+<td>Pythagorean triples; slotted holes take up near misses</td>
+<td>Pythagorean triples, rising only in whole studs</td>
+</tr>
+<tr class="even">
+<td>gears</td>
+<td>38 teeth per inch of diameter, sizes 19, 57, 95, 133</td>
+<td>module 1 mm, spur 8–40 and bevel 12–36</td>
+</tr>
+<tr class="odd">
+<td>which gear pairs fit</td>
+<td>every pair (all sizes are odd multiples of 19)</td>
+<td>within a family only</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="how-many-ways-can-you-join-six-bricks" class="level2">
+<h2 class="anchored" data-anchor-id="how-many-ways-can-you-join-six-bricks">How many ways can you join six bricks?</h2>
+<section id="two-bricks-24" class="level3">
+<h3 class="anchored" data-anchor-id="two-bricks-24">Two bricks: 24</h3>
+<p>Put one 2×4 brick down and press a second one onto it. If the second brick is parallel to the first, its four-by-two footprint can be shifted 7 ways along and 3 ways across and still overlap by at least one stud: 21 placements. If it is turned crosswise, it can be shifted 5 ways each way: 25 placements. That makes 46.</p>
+<p>But a building does not know which brick was put down first or which way round it stands. Turning the whole thing half a turn about the vertical gives the same building, and maps most placements to a different one of the 46. <strong>Burnside’s lemma</strong> counts the buildings that remain: the number of distinct buildings is the average number of placements left unchanged by each symmetry. The identity leaves all 46; the half turn leaves only the 2 that are centred, one parallel and one crossed. So</p>
+<p><span class="math display">\[
+\frac{46 + 2}{2} = 24 .
+\]</span></p>
+<div id="cell-fig-two" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>levels <span class="op">=</span> enumerate_buildings(<span class="dv">4</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>t_enum <span class="op">=</span> time.time() <span class="op">-</span> t0</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>two <span class="op">=</span> <span class="bu">sorted</span>(levels[<span class="dv">2</span>], key<span class="op">=</span><span class="kw">lambda</span> b: (b[<span class="dv">1</span>][<span class="dv">3</span>] <span class="op">!=</span> b[<span class="dv">0</span>][<span class="dv">3</span>], b))</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">4</span>, <span class="dv">6</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">5.6</span>))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, b <span class="kw">in</span> <span class="bu">zip</span>(axes.flat, two):</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    ax.imshow(renderer.image(b, azimuth<span class="op">=</span><span class="dv">135</span>, elevation<span class="op">=-</span><span class="dv">32</span>)[<span class="dv">10</span>:<span class="op">-</span><span class="dv">10</span>, <span class="dv">30</span>:<span class="op">-</span><span class="dv">30</span>])<span class="op">;</span> ax.axis(<span class="st">"off"</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>plt.subplots_adjust(wspace<span class="op">=</span><span class="fl">0.02</span>, hspace<span class="op">=</span><span class="fl">0.02</span>)<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-two" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-two-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-two-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-two-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: All 24 ways to join two 2×4 bricks: 11 parallel and 13 crossed. The enumeration below generates these from scratch; MuJoCo renders them.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="towers-and-legos-famous-number" class="level3">
+<h3 class="anchored" data-anchor-id="towers-and-legos-famous-number">Towers, and LEGO’s famous number</h3>
+<p>The figure LEGO quoted for many years, 102,981,500 ways to combine six bricks, goes back to a 1974 company newsletter. It counted only <strong>towers</strong>: buildings six bricks high, each brick on the one below. Each brick can sit on the one beneath it in 46 ways, so there are <span class="math inline">\(46^5\)</span> towers before symmetry. The half turn pairs them up, except for the towers it leaves unchanged, those with every brick centred on the one below, either parallel or crossed: <span class="math inline">\(2^5\)</span> of them. Burnside again:</p>
+<p><span class="math display">\[
+\#\text{towers}(n) = \frac{46^{\,n-1} + 2^{\,n-1}}{2}, \qquad \#\text{towers}(6) = \frac{205{,}962{,}976 + 32}{2} = 102{,}981{,}504 .
+\]</span></p>
+<p>That is LEGO’s number, four short; Eilers suggests the original sum was done on a calculator that could not hold nine digits. But it is the answer to a much narrower question. Six bricks do not have to make a tower: they can stand side by side, straddle gaps and branch.</p>
+</section>
+<section id="counting-every-building" class="level3">
+<h3 class="anchored" data-anchor-id="counting-every-building">Counting every building</h3>
+<p>A <strong>building</strong> here is any set of <span class="math inline">\(n\)</span> bricks joined into one piece by their studs, counted once however it is turned about the vertical. Counting them by hand is hopeless after two or three bricks, but they can be generated:</p>
+<ol type="1">
+<li>Every connected building of <span class="math inline">\(n\)</span> bricks has at least one brick whose removal leaves it connected (a leaf of a spanning tree of its connections). So every building of <span class="math inline">\(n\)</span> bricks can be made by adding one brick to some building of <span class="math inline">\(n-1\)</span>.</li>
+<li>Starting from one brick, add a brick in every possible place: above or below any existing brick, in either orientation, at every offset that overlaps it, as long as it does not collide with a brick in the same layer.</li>
+<li>Reduce each result to a <strong>canonical form</strong>: rotate it through four quarter turns, move each rotation to the origin, sort its bricks, and keep the smallest. Two buildings are the same exactly when their canonical forms are equal, so a Python set removes the duplicates.</li>
+</ol>
+<div id="enumerate" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"enumerated buildings of 1 to 4 bricks in </span><span class="sc">{</span>t_enum<span class="sc">:.1f}</span><span class="ss"> s</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'bricks'</span><span class="sc">:&gt;6s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'counted here'</span><span class="sc">:&gt;13s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'published'</span><span class="sc">:&gt;13s}</span><span class="ss">   by height: here | published"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">5</span>):</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    here_h <span class="op">=</span> by_height(levels[n]) <span class="cf">if</span> n <span class="op">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> {<span class="dv">1</span>: <span class="dv">1</span>}</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    pub_h <span class="op">=</span> PUBLISHED_BY_HEIGHT.get(n, {<span class="dv">1</span>: <span class="dv">1</span>})</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n<span class="sc">:6d}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">len</span>(levels[n])<span class="sc">:13,d}</span><span class="ss"> </span><span class="sc">{</span>PUBLISHED[n]<span class="sc">:13,d}</span><span class="ss">   </span><span class="sc">{</span>here_h<span class="sc">}</span><span class="ss"> | </span><span class="sc">{</span>pub_h<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">towers from the formula:"</span>, {n: towers(n) <span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">7</span>)})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>enumerated buildings of 1 to 4 bricks in 1.9 s
+
+bricks  counted here     published   by height: here | published
+     1             1             1   {1: 1} | {1: 1}
+     2            24            24   {2: 24} | {2: 24}
+     3         1,560         1,560   {2: 500, 3: 1060} | {2: 500, 3: 1060}
+     4       119,580       119,580   {2: 11707, 3: 59201, 4: 48672} | {2: 11707, 3: 59201, 4: 48672}
+
+towers from the formula: {2: 24, 3: 1060, 4: 48672, 5: 2238736, 6: 102981504}</code></pre>
+</div>
+</div>
+<p>The program reproduces every published count it reaches, split by height, and the formula gives the tallest column of each row, ending in LEGO’s 102,981,504. Beyond four bricks the numbers outgrow a simple Python set: there are about ten million buildings of five bricks. Eilers and Mikkel Abrahamsen counted six bricks with a careful program that never stores the buildings, only counts them, which is how the 915,103,765 was found.</p>
+<div id="cell-fig-four" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>four <span class="op">=</span> <span class="bu">sorted</span>(levels[<span class="dv">4</span>])</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>pick <span class="op">=</span> [four[i] <span class="cf">for</span> i <span class="kw">in</span> rng.choice(<span class="bu">len</span>(four), <span class="dv">12</span>, replace<span class="op">=</span><span class="va">False</span>)]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">3</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, b <span class="kw">in</span> <span class="bu">zip</span>(axes.flat, pick):</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    ax.imshow(renderer.image(b, azimuth<span class="op">=</span><span class="dv">140</span>, elevation<span class="op">=-</span><span class="dv">26</span>)[<span class="dv">10</span>:<span class="op">-</span><span class="dv">10</span>, <span class="dv">30</span>:<span class="op">-</span><span class="dv">30</span>])<span class="op">;</span> ax.axis(<span class="st">"off"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"height </span><span class="sc">{</span><span class="bu">max</span>(x[<span class="dv">2</span>] <span class="cf">for</span> x <span class="kw">in</span> b) <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>plt.subplots_adjust(wspace<span class="op">=</span><span class="fl">0.02</span>, hspace<span class="op">=</span><span class="fl">0.12</span>)<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-four" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-four-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-four-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-four-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Twelve of the 119,580 buildings of four bricks, chosen at random from the enumeration, with their heights.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="how-fast-it-grows" class="level3">
+<h3 class="anchored" data-anchor-id="how-fast-it-grows">How fast it grows</h3>
+<p>The published counts now run to eleven bricks; the eleventh term was added to the integer-sequence encyclopedia only this month. The ratio of each count to the one before tells how many new buildings each extra brick multiplies the total by.</p>
+<div id="cell-fig-growth" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> np.array(<span class="bu">sorted</span>(PUBLISHED))</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> np.array([PUBLISHED[k] <span class="cf">for</span> k <span class="kw">in</span> n], dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>tw <span class="op">=</span> np.array([towers(k) <span class="cf">for</span> k <span class="kw">in</span> n], dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.8</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].semilogy(n, T, <span class="st">"o-"</span>, color<span class="op">=</span>RED, label<span class="op">=</span><span class="st">"all buildings"</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].semilogy(n, tw, <span class="st">"s--"</span>, color<span class="op">=</span>GREY, label<span class="op">=</span><span class="st">"towers only"</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_xlabel(<span class="st">"bricks n"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_ylabel(<span class="st">"number of buildings"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].legend()</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>ratio <span class="op">=</span> T[<span class="dv">1</span>:] <span class="op">/</span> T[:<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].plot(n[<span class="dv">1</span>:], ratio, <span class="st">"o-"</span>, color<span class="op">=</span>RED, label<span class="op">=</span><span class="st">"T(n) / T(n−1)"</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].axhline(<span class="dv">46</span>, color<span class="op">=</span>GREY, ls<span class="op">=</span><span class="st">":"</span>, lw<span class="op">=</span><span class="dv">1</span>)<span class="op">;</span> ax[<span class="dv">1</span>].text(<span class="fl">2.2</span>, <span class="dv">48</span>, <span class="st">"46: towers"</span>, fontsize<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span>GREY)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>share <span class="op">=</span> [PUBLISHED_BY_HEIGHT[k][k] <span class="op">/</span> PUBLISHED[k] <span class="op">*</span> <span class="dv">100</span> <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">7</span>)]</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>tx <span class="op">=</span> ax[<span class="dv">1</span>].twinx()<span class="op">;</span> tx.plot(<span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">7</span>), share, <span class="st">"s--"</span>, color<span class="op">=</span>BLUE)<span class="op">;</span> tx.set_ylabel(<span class="st">"towers, </span><span class="sc">% o</span><span class="st">f all"</span>, color<span class="op">=</span>BLUE)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>tx.grid(<span class="va">False</span>)<span class="op">;</span> tx.spines[<span class="st">"right"</span>].set_visible(<span class="va">True</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_xlabel(<span class="st">"bricks n"</span>)<span class="op">;</span> ax[<span class="dv">1</span>].set_ylabel(<span class="st">"growth factor per brick"</span>, color<span class="op">=</span>RED)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k, r <span class="kw">in</span> <span class="bu">zip</span>(n[<span class="dv">1</span>:], ratio):</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"n = </span><span class="sc">{</span>k<span class="sc">:2d}</span><span class="ss">: </span><span class="sc">{</span>PUBLISHED[k]<span class="sc">:&gt;26,d}</span><span class="ss">   x </span><span class="sc">{</span>r<span class="sc">:6.2f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-growth" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-growth-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-growth-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-growth-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Left: the number of buildings of n bricks (log scale), all of them and towers only. Right: the ratio of successive counts, and the share of buildings that are towers.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>n =  2:                         24   x  24.00
+n =  3:                      1,560   x  65.00
+n =  4:                    119,580   x  76.65
+n =  5:                 10,166,403   x  85.02
+n =  6:                915,103,765   x  90.01
+n =  7:             85,747,377,755   x  93.70
+n =  8:          8,274,075,616,387   x  96.49
+n =  9:        816,630,819,554,486   x  98.70
+n = 10:     82,052,796,578,652,749   x 100.48
+n = 11:  8,364,925,094,730,088,313   x 101.95</code></pre>
+</div>
+</div>
+<p>Towers grow by a factor of 46 per brick, but buildings grow faster and faster: each new brick can go on any of the others, and side by side as well as on top. The factor passes 100 at ten bricks and is still rising. The towers’ share falls from all of the two-brick buildings to about a ninth of the six-brick ones, which is why LEGO’s figure was out by a factor of nine.</p>
+<p>Durhuus and Eilers proved that the number of buildings grows exponentially, <span class="math inline">\(T(n) \approx \lambda^n\)</span> in the long run, and pinned the base <span class="math inline">\(\lambda\)</span> between roughly 78 and 191. The ratios above suggest it lies somewhat above 100, but the exact value is still unknown: a simple question about a children’s toy that remains open.</p>
+</section>
+</section>
+<section id="next" class="level2">
+<h2 class="anchored" data-anchor-id="next">Next</h2>
+<p>The lattice and the count are the static half of LEGO. Two follow-ups would put the bricks into motion in MuJoCo: a Technic walking linkage whose link lengths must be whole numbers of holes, and the structural question of how far a brick cantilever can reach when its studs can pull apart.</p>
+</section>
+<section id="sources" class="level2">
+<h2 class="anchored" data-anchor-id="sources">Sources</h2>
+<ul>
+<li>Søren Eilers, <a href="https://web.math.ku.dk/~eilers/lego.html">A LEGO counting problem</a>, including the history of the 102,981,500 figure.</li>
+<li>OEIS <a href="https://oeis.org/A112389">A112389</a> (buildings of <span class="math inline">\(n\)</span> 2×4 bricks) and <a href="https://oeis.org/A112390">A112390</a> (by height).</li>
+<li>Bergfinnur Durhuus and Søren Eilers, <a href="https://arxiv.org/abs/math/0504039">On the entropy of LEGO</a> (2005).</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
