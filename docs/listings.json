@@ -7,6 +7,12 @@
     ]
   },
   {
+    "listing": "/mechanics/index.html",
+    "items": [
+      "/mechanics/meccano-shovel/index.html"
+    ]
+  },
+  {
     "listing": "/cosmology/index.html",
     "items": [
       "/cosmology/astronomy/index.html",
@@ -61,12 +67,6 @@
     "items": [
       "/sci-fi/gargantua/index.html",
       "/sci-fi/martian-tripod/index.html"
-    ]
-  },
-  {
-    "listing": "/mechanics/index.html",
-    "items": [
-      "/mechanics/meccano-shovel/index.html"
     ]
   }
 ]
