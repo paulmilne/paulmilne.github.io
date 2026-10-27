@@ -1,0 +1,15 @@
+---
+title: "Mechanics"
+description: "Machines worked through: kinematics, statics and dynamics of real and model mechanisms, simulated in MuJoCo."
+listing:
+  contents: .
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---
+
+Machines worked through: the kinematics, statics and dynamics of real and model mechanisms, rebuilt and simulated.

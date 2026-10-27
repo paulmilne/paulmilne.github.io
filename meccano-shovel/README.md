@@ -47,7 +47,8 @@ weighs.
   the geared roller race.
 - **Superstructure:** turns on the race. It carries:
   - a long deck of girders and red plates;
-  - the machinery between two red side plates: hoist drum, 57/19 gearing,
+  - the machinery between two red side plates: hoist drum, gearing (two
+    19-to-57 reductions, 9:1 from crank to drum),
     crankshaft with a red flywheel and black tyre, twin brass cylinders and the
     crowd sprocket;
   - the vertical boiler and chimney;

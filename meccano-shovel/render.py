@@ -81,7 +81,7 @@ def one_key_light(m):
     m.vis.quality.shadowsize = 2048
 
 
-def video(camera="work", seconds=None, fps=30, size=(1280, 720), gravel=260, ss=1):
+def video(camera="work", seconds=None, fps=30, size=(1280, 720), gravel=260, ss=1, start=0.0, name=None):
     m = load(gravel=gravel)
     one_key_light(m)
     d = mujoco.MjData(m)
@@ -91,11 +91,13 @@ def video(camera="work", seconds=None, fps=30, size=(1280, 720), gravel=260, ss=
     total = seconds or cyc.duration
     steps_per_frame = int(round(1 / fps / m.opt.timestep))
     OUT.mkdir(exist_ok=True)
-    path = OUT / f"shovel_dig_{camera}.mp4"
+    path = OUT / (name or f"shovel_dig_{camera}.mp4")
+    while d.time < start:                      # run up to the start without filming
+        cyc.step()
     import imageio
     with imageio.get_writer(path, fps=fps, codec="libx264", quality=None, macro_block_size=8,
                             ffmpeg_params=["-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p"]) as vid:
-        n = int(total * fps)
+        n = int((total - start) * fps)
         for k in range(n):
             for _ in range(steps_per_frame):
                 cyc.step()
@@ -112,8 +114,10 @@ if __name__ == "__main__":
     ap.add_argument("--camera", default="work")
     ap.add_argument("--seconds", type=float)
     ap.add_argument("--gravel", type=int, default=260)
+    ap.add_argument("--start", type=float, default=0.0, help="start filming at this simulated time")
+    ap.add_argument("--name", help="output file name in out/")
     a = ap.parse_args()
     if a.still or not a.video:
         stills()
     if a.video:
-        video(a.camera, a.seconds, gravel=a.gravel)
+        video(a.camera, a.seconds, gravel=a.gravel, start=a.start, name=a.name)

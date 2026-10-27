@@ -264,7 +264,7 @@ def build(gravel: int = 0, seed: int = 0) -> ET.Element:
     look(world, "photo_side", (0.42, 1.30, 0.42), (0.07, 0, 0.20), 23)
     look(world, "photo_front", (0.42, -0.86, 0.62), (0.03, 0, 0.17), 30)
     look(world, "work", (0.80, 0.82, 0.46), (0.20, 0.12, 0.13), 36)
-    look(world, "dig", (0.50, 0.42, 0.16), (0.44, 0, 0.05), 40)
+    look(world, "dig", (0.60, 0.50, 0.22), (0.43, 0.0, 0.07), 42)
 
     base(K, world)
     sup = superstructure(K, world)
@@ -362,7 +362,11 @@ def deck(K, s):
 
 
 def house(K, s):
-    """Machinery between two red side plates: hoist drum, gearing, crank and flywheel, crowd sprocket."""
+    """Machinery between two red side plates: hoist drum, gearing, crank and flywheel, crowd sprocket.
+
+    The hoist drive is two 3:1 reductions on 2-hole centres: a 19-tooth pinion on the
+    crankshaft drives a 57-tooth gear on the layshaft, whose 19-tooth pinion drives a
+    57-tooth gear on the drum, so the drum turns once for nine turns of the crank."""
     zr = lambda k: DT + P / 2 + k * P
     for side in (1, -1):
         K.plate(s, (3 * P, side * HOUSE_Y, zr(0)), (-1, 0, 0), (0, 0, 1), 11, 5, "red")
@@ -391,14 +395,13 @@ def house(K, s):
                           material="string", group="1", contype="0", conaffinity="0", density="1200")
             for yy in (-0.024, 0.024):
                 K.wheel(b, K.mesh("bushwheel", lambda: pt.disc(0.035, 0.002, holes=8)), (0, yy, 0), (0, 1, 0), "brass")
-            K.wheel(b, K.mesh("pinion19", lambda: pt.gear(19)), (0, HOUSE_Y + 0.009, 0), (0, 1, 0), "brass")
+            K.wheel(b, K.mesh("gear57", lambda: pt.gear(57, holes=8)), (0, HOUSE_Y + 0.009, 0), (0, 1, 0), "brass")
             ET.SubElement(b, "site", name="drum_rope", pos=f(0, 0.0, 0.0085), size="0.002", group="4")
         if name == "layshaft":
-            K.wheel(b, K.mesh("gear57", lambda: pt.gear(57, holes=8)), (0, HOUSE_Y + 0.009, 0), (0, 1, 0), "brass")
-            K.wheel(b, K.mesh("pinion19", lambda: pt.gear(19)), (0, -HOUSE_Y - 0.009, 0), (0, -1, 0), "brass")
-        if name == "crank":
+            K.wheel(b, K.mesh("pinion19", lambda: pt.gear(19)), (0, HOUSE_Y + 0.009, 0), (0, 1, 0), "brass")
             K.wheel(b, K.mesh("gear57", lambda: pt.gear(57, holes=8)), (0, -HOUSE_Y - 0.009, 0), (0, -1, 0), "brass")
-            K.wheel(b, K.mesh("gear57", lambda: pt.gear(57, holes=8)), (0, HOUSE_Y + 0.009, 0), (0, 1, 0), "brass")
+        if name == "crank":
+            K.wheel(b, K.mesh("pinion19", lambda: pt.gear(19)), (0, -HOUSE_Y - 0.009, 0), (0, -1, 0), "brass")
             K.wheel(b, K.mesh("flywheel", lambda: pt.pulley(0.0762, holes=8, face=0.006)), (0, -HOUSE_Y - 0.022, 0),
                     (0, -1, 0), "red")
             K.wheel(b, K.mesh("tyre", lambda: pt.tube(0.0405, 0.0372, 0.0075)), (0, -HOUSE_Y - 0.0255, 0), (0, -1, 0),

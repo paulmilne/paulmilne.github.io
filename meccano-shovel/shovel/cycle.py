@@ -115,17 +115,17 @@ class DigCycle:
         now = np.array([L, crowd, slew])
         if self.prev is not None:
             rate = np.abs(now - self.prev) / m.opt.timestep
-            work = rate[0] / 0.05 + rate[1] / 0.05 + rate[2] / 0.5
+            work = rate[1] / 0.05 + rate[2] / 0.5          # hoisting turns the crank directly
             self.engine += m.opt.timestep * (6.0 + 40.0 * min(work, 3.0))   # crank, rad
         self.prev = now
         set_ = lambda name, ang: self._set(name, ang)
         drum = -(L - self.L0) / DRUM_R
         set_("hoist_drum", drum)
-        set_("layshaft", -drum * 19 / 57)
+        set_("layshaft", -drum * 57 / 19)
         set_("sheave", (L - self.L0) / SHEAVE_R)
         set_("crowd_drive", crowd / SPROCKET_R["crowd_drive"])
         set_("shipper_wheel", crowd / SPROCKET_R["shipper_wheel"])
-        set_("crank", self.engine)
+        set_("crank", drum * (57 / 19) ** 2 + self.engine)   # 9:1 to the drum, plus idling
         set_("motor_shaft", 3 * self.engine)
 
     def _set(self, name, ang):

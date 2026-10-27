@@ -11,6 +11,7 @@ project:
     - "probability/**"
     - "cosmology/**"
     - "sci-fi/**"
+    - "mechanics/**"
     - "papers/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
@@ -36,6 +37,8 @@ website:
         text: Cosmology
       - href: sci-fi/index.qmd
         text: Sci-Fi
+      - href: mechanics/index.qmd
+        text: Mechanics
     right:
       - about.qmd
       - icon: linkedin

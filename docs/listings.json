@@ -62,5 +62,11 @@
       "/sci-fi/gargantua/index.html",
       "/sci-fi/martian-tripod/index.html"
     ]
+  },
+  {
+    "listing": "/mechanics/index.html",
+    "items": [
+      "/mechanics/meccano-shovel/index.html"
+    ]
   }
 ]

@@ -1,0 +1,11 @@
+mujoco==3.17.0
+numpy
+matplotlib
+trimesh
+shapely
+mapbox-earcut
+manifold3d
+ipykernel
+nbformat
+nbclient
+pyyaml

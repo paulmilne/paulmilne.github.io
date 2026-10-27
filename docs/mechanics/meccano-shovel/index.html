@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-27">
+<meta name="description" content="A Meccano steam shovel rebuilt part by part in MuJoCo from two photographs: the number theory of the Meccano hole grid, how the hoist rope and pulleys lift the stick and bucket, the statics of a face shovel, and a simulated dig.">
+
+<title>A Lattice That Digs: The Mechanics of a Meccano Steam Shovel – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-contrib/videojs/video.min.js"></script>
+<link href="../../site_libs/quarto-contrib/videojs/video-js.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="A Lattice That Digs: The Mechanics of a Meccano Steam Shovel – math-blog">
+<meta property="og:description" content="A Meccano steam shovel rebuilt part by part in MuJoCo from two photographs: the number theory of the Meccano hole grid, how the hoist rope and pulleys lift the stick and bucket, the statics of a face shovel, and a simulated dig.">
+<meta property="og:image" content="https://paulmilne.github.io/mechanics/meccano-shovel/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="660">
+<meta property="og:image:width" content="960">
+<meta name="twitter:title" content="A Lattice That Digs: The Mechanics of a Meccano Steam Shovel – math-blog">
+<meta name="twitter:description" content="A Meccano steam shovel rebuilt part by part in MuJoCo from two photographs: the number theory of the Meccano hole grid, how the hoist rope and pulleys lift the stick and bucket, the statics of a face shovel, and a simulated dig.">
+<meta name="twitter:image" content="https://paulmilne.github.io/mechanics/meccano-shovel/thumbnail.png">
+<meta name="twitter:image-height" content="660">
+<meta name="twitter:image-width" content="960">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">A Lattice That Digs: The Mechanics of a Meccano Steam Shovel</h1>
+            <p class="subtitle lead">Pythagoras on a half-inch grid, a rope that can only pull, and a stick that is really a pendulum</p>
+                  <div>
+        <div class="description">
+          A Meccano steam shovel rebuilt part by part in MuJoCo from two photographs: the number theory of the Meccano hole grid, how the hoist rope and pulleys lift the stick and bucket, the statics of a face shovel, and a simulated dig.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">mechanics</div>
+                <div class="quarto-category">meccano</div>
+                <div class="quarto-category">physics</div>
+                <div class="quarto-category">robotics</div>
+                <div class="quarto-category">python</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 27, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#from-two-photographs-to-a-model" id="toc-from-two-photographs-to-a-model" class="nav-link active" data-scroll-target="#from-two-photographs-to-a-model">From two photographs to a model</a></li>
+  <li><a href="#the-lattice-pythagoras-on-a-half-inch-grid" id="toc-the-lattice-pythagoras-on-a-half-inch-grid" class="nav-link" data-scroll-target="#the-lattice-pythagoras-on-a-half-inch-grid">The lattice: Pythagoras on a half-inch grid</a>
+  <ul class="collapse">
+  <li><a href="#why-meccano-gears-always-fit" id="toc-why-meccano-gears-always-fit" class="nav-link" data-scroll-target="#why-meccano-gears-always-fit">Why Meccano gears always fit</a></li>
+  </ul></li>
+  <li><a href="#how-the-rope-lifts-the-stick-and-the-bucket" id="toc-how-the-rope-lifts-the-stick-and-the-bucket" class="nav-link" data-scroll-target="#how-the-rope-lifts-the-stick-and-the-bucket">How the rope lifts the stick and the bucket</a>
+  <ul class="collapse">
+  <li><a href="#the-pulley-block-two-falls-twice-the-force-half-the-speed" id="toc-the-pulley-block-two-falls-twice-the-force-half-the-speed" class="nav-link" data-scroll-target="#the-pulley-block-two-falls-twice-the-force-half-the-speed">The pulley block: two falls, twice the force, half the speed</a></li>
+  <li><a href="#the-bucket-is-lifted-by-a-moment-not-a-force" id="toc-the-bucket-is-lifted-by-a-moment-not-a-force" class="nav-link" data-scroll-target="#the-bucket-is-lifted-by-a-moment-not-a-force">The bucket is lifted by a moment, not a force</a></li>
+  <li><a href="#how-hard-the-rope-must-pull-all-the-way-up" id="toc-how-hard-the-rope-must-pull-all-the-way-up" class="nav-link" data-scroll-target="#how-hard-the-rope-must-pull-all-the-way-up">How hard the rope must pull, all the way up</a></li>
+  <li><a href="#the-drum-and-the-gearing" id="toc-the-drum-and-the-gearing" class="nav-link" data-scroll-target="#the-drum-and-the-gearing">The drum and the gearing</a></li>
+  <li><a href="#what-the-boom-and-its-rods-carry" id="toc-what-the-boom-and-its-rods-carry" class="nav-link" data-scroll-target="#what-the-boom-and-its-rods-carry">What the boom and its rods carry</a></li>
+  </ul></li>
+  <li><a href="#the-stick-is-a-pendulum" id="toc-the-stick-is-a-pendulum" class="nav-link" data-scroll-target="#the-stick-is-a-pendulum">The stick is a pendulum</a>
+  <ul class="collapse">
+  <li><a href="#where-the-bucket-can-reach" id="toc-where-the-bucket-can-reach" class="nav-link" data-scroll-target="#where-the-bucket-can-reach">Where the bucket can reach</a></li>
+  <li><a href="#the-dig" id="toc-the-dig" class="nav-link" data-scroll-target="#the-dig">The dig</a></li>
+  </ul></li>
+  <li><a href="#coda-why-gravel-is-hard" id="toc-coda-why-gravel-is-hard" class="nav-link" data-scroll-target="#coda-why-gravel-is-hard">Coda: why gravel is hard</a></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>The two photographs below show a Meccano steam shovel: a face shovel of the kind that dug railway cuttings and canals. It is built in green girders and red plates, with a brass engine, a perforated boiler and a bucket on a long dipper stick. This post rebuilds it in <strong>MuJoCo</strong>, one strip, girder and nut at a time, and then asks how it works:</p>
+<ul>
+<li>why a construction set built on a ½-inch grid is full of Pythagorean triples, and why its gears always fit;</li>
+<li>how one rope, led over a pulley at the boom head and through a pulley block, both lifts the bucket and swings the stick;</li>
+<li>why the stick is really a pendulum, and what that means for where the bucket can reach and how it has to dig.</li>
+</ul>
+<div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="The Meccano steam shovel digs, swings and dumps a load of gravel: MuJoCo simulation"><source src="shovel_dig.mp4"></video></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About the model and the sources
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The code lives in the <code>meccano-shovel</code> project alongside this blog, and every number printed below comes from running it. The model’s dimensions were measured from the two photographs, using the hole spacing as a ruler, so they are a reconstruction rather than a published plan. The notes on Meccano’s parts (tooth counts, slotted holes) are from memory of the system; check them against a Meccano parts list before quoting them.</p>
+</div>
+</div>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, math, warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>here <span class="op">=</span> Path.cwd().resolve()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>ROOT <span class="op">=</span> <span class="bu">next</span>(p <span class="cf">for</span> p <span class="kw">in</span> (here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"meccano-shovel"</span>, here.parent <span class="op">/</span> <span class="st">"meccano-shovel"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                        here.parents[<span class="dv">1</span>] <span class="op">/</span> <span class="st">"mechanics"</span> <span class="op">/</span> <span class="st">"meccano-shovel"</span>) <span class="cf">if</span> (p <span class="op">/</span> <span class="st">"shovel"</span>).exists())</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="bu">str</span>(ROOT))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mujoco</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> shovel <span class="im">import</span> parts <span class="im">as</span> pt</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> shovel.build <span class="im">import</span> load, BOOM_FOOT, BOOM_TIP, BOOM_HOLES, SHIPPER, APEX, TURN_Z</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> shovel.cycle <span class="im">import</span> DigCycle, DIG, ids, DRUM_R</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.25</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>GREEN, RED, BRASS, STEEL, BLUE, GREY <span class="op">=</span> <span class="st">"#3d6e40"</span>, <span class="st">"#b8291c"</span>, <span class="st">"#b8860b"</span>, <span class="st">"#4a5a6a"</span>, <span class="st">"#2c7fb8"</span>, <span class="st">"#7f8c8d"</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> pt.P                                  <span class="co"># the hole pitch: 1/2 inch</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> <span class="fl">9.81</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> load()                                <span class="co"># the shovel without gravel</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>A, J <span class="op">=</span> ids(m)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>TEN <span class="op">=</span> m.tendon(<span class="st">"hoist"</span>).<span class="bu">id</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>SR, BK <span class="op">=</span> m.body(<span class="st">"stick_rot"</span>).<span class="bu">id</span>, m.body(<span class="st">"bucket"</span>).<span class="bu">id</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>site <span class="op">=</span> <span class="kw">lambda</span> d, name: d.site_xpos[m.site(name).<span class="bu">id</span>].copy()</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>up <span class="op">=</span> <span class="kw">lambda</span> v: np.array(v) <span class="op">+</span> [<span class="dv">0</span>, <span class="dv">0</span>, TURN_Z]          <span class="co"># superstructure frame -&gt; world (slew = 0)</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"MuJoCo </span><span class="sc">{</span>mujoco<span class="sc">.</span>__version__<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>m<span class="sc">.</span>nbody<span class="sc">}</span><span class="ss"> bodies, </span><span class="sc">{</span>m<span class="sc">.</span>njnt<span class="sc">}</span><span class="ss"> joints, </span><span class="sc">{</span>m<span class="sc">.</span>nu<span class="sc">}</span><span class="ss"> actuators, "</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"</span><span class="sc">{</span>m<span class="sc">.</span>ngeom<span class="sc">}</span><span class="ss"> geoms, timestep </span><span class="sc">{</span>m<span class="sc">.</span>opt<span class="sc">.</span>timestep<span class="op">*</span><span class="fl">1e3</span><span class="sc">:.0f}</span><span class="ss"> ms"</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"total mass </span><span class="sc">{</span>m<span class="sc">.</span>body_subtreemass[<span class="dv">0</span>]<span class="sc">:.2f}</span><span class="ss"> kg"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>MuJoCo 3.17.0: 15 bodies, 12 joints, 4 actuators, 384 geoms, timestep 1 ms
+total mass 4.19 kg</code></pre>
+</div>
+</div>
+<section id="from-two-photographs-to-a-model" class="level2">
+<h2 class="anchored" data-anchor-id="from-two-photographs-to-a-model">From two photographs to a model</h2>
+<p>Meccano gives the modeller a gift: a ruler built into every part. The holes are on ½-inch centres, so counting holes along a girder in a photograph gives its length, and the scale of the whole picture follows. The model was measured that way, then every length was rounded to a whole number of holes, as the original builder had to. The cameras in the simulation were placed to match the photographs, and the renders are set beside them below.</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="photo_side.png" class="img-fluid figure-img"></p>
+<figcaption>The photograph, side view</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="render_side.png" class="img-fluid figure-img"></p>
+<figcaption>The MuJoCo model from a matching camera</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="photo_front.png" class="img-fluid figure-img"></p>
+<figcaption>The photograph, from the front</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="render_front.png" class="img-fluid figure-img"></p>
+<figcaption>The MuJoCo model from a matching camera</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p>Each part is generated as a mesh from a 2-D outline with real holes, then extruded: strips with rounded ends, angle girders with round holes in one flange and slots in the other, plates, gears on Meccano’s tooth form, sprockets, pulleys, the perforated boiler, and the nuts and bolts. The parts carry the density of steel or brass, so the model’s weight comes from its parts, not from a guess.</p>
+<div id="parts" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>kinds <span class="op">=</span> {<span class="st">"strip"</span>: <span class="st">"strips"</span>, <span class="st">"girder"</span>: <span class="st">"angle girders"</span>, <span class="st">"fgirder"</span>: <span class="st">"flat girders"</span>, <span class="st">"plate"</span>: <span class="st">"flat plates"</span>,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>         <span class="st">"fplate"</span>: <span class="st">"flanged plates"</span>, <span class="st">"nut"</span>: <span class="st">"nuts"</span>, <span class="st">"bolt"</span>: <span class="st">"bolt heads"</span>, <span class="st">"chainlink"</span>: <span class="st">"chain links"</span>}</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>wheels <span class="op">=</span> {<span class="st">"gear57"</span>, <span class="st">"pinion19"</span>, <span class="st">"race"</span>, <span class="st">"sprocket12"</span>, <span class="st">"sprocket15"</span>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>pulleys <span class="op">=</span> {<span class="st">"pulley1"</span>, <span class="st">"sheave"</span>, <span class="st">"flywheel"</span>, <span class="st">"block_pulley"</span>, <span class="st">"bushwheel"</span>, <span class="st">"tyre"</span>}</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>count <span class="op">=</span> Counter()</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(m.ngeom):</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m.geom_type[i] <span class="op">!=</span> mujoco.mjtGeom.mjGEOM_MESH:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> m.mesh(m.geom_dataid[i]).name</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    stem <span class="op">=</span> name.split(<span class="st">"_"</span>)[<span class="dv">0</span>]</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    count[kinds.get(stem, <span class="st">"gears and sprockets"</span> <span class="cf">if</span> name <span class="kw">in</span> wheels <span class="cf">else</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"pulleys and wheels"</span> <span class="cf">if</span> name <span class="kw">in</span> pulleys <span class="cf">else</span> <span class="st">"other (boiler, chimney)"</span>)] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k, v <span class="kw">in</span> count.most_common():</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>k<span class="sc">:24s}</span><span class="ss"> </span><span class="sc">{</span>v<span class="sc">:4d}</span><span class="ss">"</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:24s}</span><span class="ss"> ----</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'meshed parts'</span><span class="sc">:24s}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">sum</span>(count.values())<span class="sc">:4d}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>bolt heads                156
+chain links                44
+angle girders              40
+strips                     37
+flat plates                12
+pulleys and wheels          9
+nuts                        8
+gears and sprockets         7
+flat girders                6
+other (boiler, chimney)     3
+flanged plates              2
+                         ----
+meshed parts              324</code></pre>
+</div>
+</div>
+</section>
+<section id="the-lattice-pythagoras-on-a-half-inch-grid" class="level2">
+<h2 class="anchored" data-anchor-id="the-lattice-pythagoras-on-a-half-inch-grid">The lattice: Pythagoras on a half-inch grid</h2>
+<p>Every Meccano part is pierced on the same ½-inch grid. Write positions in holes, so that a point on a flat assembly is a pair of integers <span class="math inline">\((a, b)\)</span>. A strip with <span class="math inline">\(n\)</span> holes spans <span class="math inline">\(n-1\)</span> pitches between its end holes. To brace two points <span class="math inline">\((0,0)\)</span> and <span class="math inline">\((a,b)\)</span> with a straight strip, the distance between them must be a whole number of pitches:</p>
+<p><span class="math display">\[
+\sqrt{a^2 + b^2} = c, \qquad a,\ b,\ c \in \mathbb{Z}.
+\]</span></p>
+<p>So <strong>every exact diagonal in a Meccano model is a Pythagorean triple</strong>. Horizontal and vertical members are trivial; the first true diagonal is the <span class="math inline">\((3, 4, 5)\)</span> brace, a 6-hole strip across a 3-by-4 rectangle of holes, and the next primitive ones are <span class="math inline">\((5, 12, 13)\)</span>, <span class="math inline">\((8, 15, 17)\)</span> and <span class="math inline">\((7, 24, 25)\)</span>. The triples are sparse, and that matters to a builder: a diagonal at an arbitrary angle simply will not bolt up.</p>
+<p>Meccano’s answer is the <strong>slotted hole</strong>. Angle girders carry slots in one flange, which give a millimetre or two of play. That turns the exact condition into an approximate one:</p>
+<p><span class="math display">\[
+\left|\sqrt{a^2 + b^2} - c\right| \le \varepsilon, \qquad \varepsilon \approx \frac{1.75\ \text{mm}}{12.7\ \text{mm}} \approx 0.14\ \text{pitch},
+\]</span></p>
+<p>and a near miss becomes buildable. The figure counts how many brace angles each rule allows.</p>
+<div id="cell-fig-lattice" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>eps <span class="op">=</span> (<span class="fl">0.0035</span> <span class="op">/</span> <span class="dv">2</span>) <span class="op">/</span> P</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">24</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>exact, slotted <span class="op">=</span> [], []</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> b <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        c <span class="op">=</span> math.hypot(a, b)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> c <span class="op">&gt;</span> N:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        err <span class="op">=</span> <span class="bu">abs</span>(c <span class="op">-</span> <span class="bu">round</span>(c))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">&lt;</span> <span class="fl">1e-9</span>:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            exact.append((a, b))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> err <span class="op">&lt;=</span> eps:</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            slotted.append((a, b))</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.4</span>))</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>gx, gy <span class="op">=</span> np.meshgrid(<span class="bu">range</span>(N <span class="op">+</span> <span class="dv">1</span>), <span class="bu">range</span>(N <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].plot(gx, gy, <span class="st">"."</span>, color<span class="op">=</span><span class="st">"#dddddd"</span>, ms<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (a, b) <span class="kw">in</span> exact:</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    ax[<span class="dv">0</span>].plot([<span class="dv">0</span>, a], [<span class="dv">0</span>, b], color<span class="op">=</span>GREEN, lw<span class="op">=</span><span class="fl">0.4</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].plot(<span class="op">*</span><span class="bu">zip</span>(<span class="op">*</span>exact), <span class="st">"o"</span>, color<span class="op">=</span><span class="st">"black"</span>, ms<span class="op">=</span><span class="dv">4</span>, label<span class="op">=</span><span class="st">"exact triple"</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].plot(<span class="op">*</span><span class="bu">zip</span>(<span class="op">*</span>slotted), <span class="st">"o"</span>, mfc<span class="op">=</span><span class="st">"none"</span>, color<span class="op">=</span>RED, ms<span class="op">=</span><span class="dv">4</span>, label<span class="op">=</span><span class="st">"within a slot's play"</span>)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_xlim(<span class="op">-</span><span class="fl">0.5</span>, N <span class="op">+</span> <span class="fl">0.5</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_ylim(<span class="op">-</span><span class="fl">0.5</span>, N <span class="op">+</span> <span class="fl">0.5</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_xlabel(<span class="st">"a (holes)"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_ylabel(<span class="st">"b (holes)"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].legend(loc<span class="op">=</span><span class="st">"upper right"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> angles(maxc, tol):</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> a <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, maxc <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> b <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, maxc <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>            c <span class="op">=</span> math.hypot(a, b)</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> c <span class="op">&lt;=</span> maxc <span class="kw">and</span> <span class="bu">abs</span>(c <span class="op">-</span> <span class="bu">round</span>(c)) <span class="op">&lt;=</span> tol:</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>                s.add(<span class="bu">round</span>(math.degrees(math.atan2(b, a)), <span class="dv">3</span>))</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>(s)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">31</span>)</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].plot(L, [angles(n, <span class="fl">1e-9</span>) <span class="cf">for</span> n <span class="kw">in</span> L], color<span class="op">=</span><span class="st">"black"</span>, label<span class="op">=</span><span class="st">"exact"</span>)</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].plot(L, [angles(n, eps) <span class="cf">for</span> n <span class="kw">in</span> L], color<span class="op">=</span>RED, label<span class="op">=</span><span class="st">"with slotted holes"</span>)</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_xlabel(<span class="st">"longest brace (pitches)"</span>)<span class="op">;</span> ax[<span class="dv">1</span>].set_ylabel(<span class="st">"distinct brace angles in 0–90°"</span>)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].legend()<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"exact diagonals out to </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss"> pitches: </span><span class="sc">{</span><span class="bu">len</span>(exact)<span class="sc">}</span><span class="ss">; extra ones a slot can take: </span><span class="sc">{</span><span class="bu">len</span>(slotted)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"primitive triples:"</span>, <span class="bu">sorted</span>({(<span class="bu">min</span>(a, b), <span class="bu">max</span>(a, b), <span class="bu">round</span>(math.hypot(a, b)))</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                                    <span class="cf">for</span> a, b <span class="kw">in</span> exact <span class="cf">if</span> math.gcd(a, b) <span class="op">==</span> <span class="dv">1</span>}, key<span class="op">=</span><span class="kw">lambda</span> t: t[<span class="dv">2</span>]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-lattice" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lattice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-lattice-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lattice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Left: hole positions (a, b) that can be reached by a straight strip from the origin. Black dots are exact Pythagorean triples; open circles are near misses that a slotted hole can take up. Right: the number of distinct brace angles available as the longest strip allowed grows, exactly and with slots.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>exact diagonals out to 24 pitches: 12; extra ones a slot can take: 121
+primitive triples: [(3, 4, 5), (5, 12, 13), (8, 15, 17)]</code></pre>
+</div>
+</div>
+<p>The shovel itself uses the lattice in a less obvious way. The A-frame, the back-stays and the boom all run at angles that are <em>not</em> lattice angles, because each is a long girder pinned only at its ends, where a single bolt lets it take any angle. Only the short ties between them have to land on holes, and on the model those ties span the members at points chosen so that the strip lengths come out whole.</p>
+<section id="why-meccano-gears-always-fit" class="level3">
+<h3 class="anchored" data-anchor-id="why-meccano-gears-always-fit">Why Meccano gears always fit</h3>
+<p>Gears have their own version of the problem. Two meshing gears must sit with their centres one <em>pitch radius</em> plus the other apart, and those centres are holes on the grid. Meccano gears are cut to a diametral pitch of 38 teeth per inch of diameter, and the classic sizes are multiples of 19 teeth: a ½-inch pinion with 19 teeth, a 1½-inch gear with 57, then 95 and 133. Writing a gear’s tooth count as <span class="math inline">\(N = 19k\)</span>, its pitch diameter is <span class="math inline">\(k\)</span> half-inches, and the centre distance of a pair is</p>
+<p><span class="math display">\[
+d = \frac{N_1 + N_2}{2 \times 38}\ \text{in} = \frac{k_1 + k_2}{4}\ \text{in} = \frac{k_1 + k_2}{2}\ \text{holes}.
+\]</span></p>
+<p>All the classic <span class="math inline">\(k\)</span> are odd (1, 3, 5, 7), so <span class="math inline">\(k_1 + k_2\)</span> is always even and <strong>every pair lands exactly on the grid</strong>. The 19 and 57 meshing in the shovel’s hoist drive sit <span class="math inline">\((1+3)/2 = 2\)</span> holes apart. A 57 and a 133 sit 5 holes apart, so they can even be mounted on a diagonal, at the <span class="math inline">\((3, 4)\)</span> offset of the Pythagorean triple above.</p>
+<div id="gears" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sizes <span class="op">=</span> [<span class="dv">19</span>, <span class="dv">57</span>, <span class="dv">95</span>, <span class="dv">133</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'pair'</span><span class="sc">:&gt;11s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'centres (holes)'</span><span class="sc">:&gt;16s}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'lattice offsets that fit'</span><span class="sc">:s}</span><span class="ss">"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, n1 <span class="kw">in</span> <span class="bu">enumerate</span>(sizes):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> n2 <span class="kw">in</span> sizes[i:]:</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        dist <span class="op">=</span> (n1 <span class="op">+</span> n2) <span class="op">/</span> <span class="dv">38</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        offs <span class="op">=</span> [(a, b) <span class="cf">for</span> a <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">int</span>(dist) <span class="op">+</span> <span class="dv">1</span>) <span class="cf">for</span> b <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">int</span>(dist) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> a <span class="op">&lt;=</span> b <span class="kw">and</span> <span class="bu">abs</span>(math.hypot(a, b) <span class="op">-</span> dist) <span class="op">&lt;</span> <span class="fl">1e-9</span>]</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n1<span class="sc">:&gt;4d}</span><span class="ss"> + </span><span class="sc">{</span>n2<span class="sc">:&lt;4d}</span><span class="ss"> </span><span class="sc">{</span>dist<span class="sc">:16.1f}</span><span class="ss">  </span><span class="sc">{</span>offs<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>       pair  centres (holes)  lattice offsets that fit
+  19 + 19                1.0  [(0, 1)]
+  19 + 57                2.0  [(0, 2)]
+  19 + 95                3.0  [(0, 3)]
+  19 + 133               4.0  [(0, 4)]
+  57 + 57                3.0  [(0, 3)]
+  57 + 95                4.0  [(0, 4)]
+  57 + 133               5.0  [(0, 5), (3, 4)]
+  95 + 95                5.0  [(0, 5), (3, 4)]
+  95 + 133               6.0  [(0, 6)]
+ 133 + 133               7.0  [(0, 7)]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="how-the-rope-lifts-the-stick-and-the-bucket" class="level2">
+<h2 class="anchored" data-anchor-id="how-the-rope-lifts-the-stick-and-the-bucket">How the rope lifts the stick and the bucket</h2>
+<p>The shovel has one hoist rope, and it does most of the work. Follow it from the engine:</p>
+<ol type="1">
+<li>It is wound on the <strong>hoist drum</strong> in the machinery house, which the engine turns through two pairs of gears.</li>
+<li>It runs up beside the boom to the <strong>head sheave</strong>, the cream pulley at the top of the boom, and over it.</li>
+<li>It drops to the <strong>pulley block</strong>, the red pulley hanging on the bucket’s bail, passes round it,</li>
+<li>and rises again to be tied off at the boom head.</li>
+</ol>
+<p>So the block hangs in two parts of rope, the two <em>falls</em>. In the model the rope is a MuJoCo spatial tendon through four points, drum, sheave, block and boom head, and the hoist is a servo on the tendon’s length that can only pull.</p>
+<div id="cell-fig-reeving" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> hold(L, crowd, seconds<span class="op">=</span><span class="fl">3.0</span>):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> mujoco.MjData(m)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    d.ctrl[A[<span class="st">"hoist"</span>]], d.ctrl[A[<span class="st">"crowd"</span>]] <span class="op">=</span> L, crowd</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">int</span>(seconds <span class="op">/</span> m.opt.timestep)):</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        mujoco.mj_step(m, d)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> hold(<span class="fl">0.80</span>, <span class="fl">0.0</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>T_sim <span class="op">=</span> <span class="op">-</span>d.actuator_force[A[<span class="st">"hoist"</span>]]                 <span class="co"># tension in the rope (the servo can only pull)</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> d.xpos[SR].copy()                                 <span class="co"># shipper shaft</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> d.subtree_com[SR].copy()                          <span class="co"># centre of mass of stick + bucket + block</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> m.body_subtreemass[SR]</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>drum, tip_in, block, tip_out <span class="op">=</span> (site(d, s) <span class="cf">for</span> s <span class="kw">in</span> (<span class="st">"drum_rope"</span>, <span class="st">"tip_in"</span>, <span class="st">"block_rope"</span>, <span class="st">"tip_out"</span>))</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>u1, u2 <span class="op">=</span> (tip_in <span class="op">-</span> block) <span class="op">/</span> np.linalg.norm(tip_in <span class="op">-</span> block), (tip_out <span class="op">-</span> block) <span class="op">/</span> np.linalg.norm(tip_out <span class="op">-</span> block)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="fl">5.4</span>))</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>foot, tip <span class="op">=</span> up(BOOM_FOOT), up(BOOM_TIP)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>ax.plot([foot[<span class="dv">0</span>], tip[<span class="dv">0</span>]], [foot[<span class="dv">2</span>], tip[<span class="dv">2</span>]], color<span class="op">=</span>GREEN, lw<span class="op">=</span><span class="dv">6</span>, solid_capstyle<span class="op">=</span><span class="st">"round"</span>, label<span class="op">=</span><span class="st">"boom"</span>)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> leg <span class="kw">in</span> (up(APEX), ):</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    ax.plot([tip[<span class="dv">0</span>], leg[<span class="dv">0</span>]], [tip[<span class="dv">2</span>], leg[<span class="dv">2</span>]], color<span class="op">=</span>STEEL, lw<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"suspension rods"</span>)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>teeth <span class="op">=</span> site(d, <span class="st">"teeth"</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> d.xmat[m.body(<span class="st">"stick"</span>).<span class="bu">id</span>].reshape(<span class="dv">3</span>, <span class="dv">3</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>stick_ends <span class="op">=</span> [d.xpos[m.body(<span class="st">"stick"</span>).<span class="bu">id</span>] <span class="op">+</span> R <span class="op">@</span> [x, <span class="dv">0</span>, <span class="dv">0</span>] <span class="cf">for</span> x <span class="kw">in</span> (<span class="op">-</span><span class="fl">0.14</span>, <span class="fl">0.15</span>)]</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="op">*</span>np.array(stick_ends)[:, [<span class="dv">0</span>, <span class="dv">2</span>]].T, color<span class="op">=</span>GREEN, lw<span class="op">=</span><span class="dv">4</span>, alpha<span class="op">=</span><span class="fl">0.75</span>, label<span class="op">=</span><span class="st">"dipper stick"</span>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>Rb <span class="op">=</span> d.xmat[BK].reshape(<span class="dv">3</span>, <span class="dv">3</span>)<span class="op">;</span> ob <span class="op">=</span> d.xpos[BK]</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>box <span class="op">=</span> np.array([ob <span class="op">+</span> Rb <span class="op">@</span> c <span class="cf">for</span> c <span class="kw">in</span> ([<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>], [<span class="fl">0.076</span>, <span class="dv">0</span>, <span class="dv">0</span>], [<span class="fl">0.076</span>, <span class="dv">0</span>, <span class="op">-</span><span class="fl">0.076</span>], [<span class="dv">0</span>, <span class="dv">0</span>, <span class="op">-</span><span class="fl">0.076</span>], [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>])])</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>ax.fill(box[:, <span class="dv">0</span>], box[:, <span class="dv">2</span>], color<span class="op">=</span>RED, alpha<span class="op">=</span><span class="fl">0.75</span>, label<span class="op">=</span><span class="st">"bucket"</span>)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>rope <span class="op">=</span> np.array([drum, tip_in, block, tip_out])</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>ax.plot(rope[:, <span class="dv">0</span>], rope[:, <span class="dv">2</span>], color<span class="op">=</span><span class="st">"#333333"</span>, lw<span class="op">=</span><span class="fl">1.4</span>, label<span class="op">=</span><span class="st">"hoist rope"</span>)</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>ax.add_patch(plt.Circle((tip[<span class="dv">0</span>], tip[<span class="dv">2</span>] <span class="op">-</span> <span class="fl">0.006</span>), <span class="fl">0.019</span>, fill<span class="op">=</span><span class="va">False</span>, color<span class="op">=</span>BRASS, lw<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>ax.add_patch(plt.Circle((block[<span class="dv">0</span>], block[<span class="dv">2</span>] <span class="op">-</span> <span class="fl">0.015</span>), <span class="fl">0.015</span>, fill<span class="op">=</span><span class="va">True</span>, color<span class="op">=</span>RED, alpha<span class="op">=</span><span class="fl">0.8</span>))</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>ax.add_patch(plt.Circle((drum[<span class="dv">0</span>], drum[<span class="dv">2</span>] <span class="op">-</span> <span class="fl">0.0085</span>), <span class="fl">0.0085</span>, fill<span class="op">=</span><span class="va">True</span>, color<span class="op">=</span>BRASS))</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> <span class="fl">0.02</span>                                             <span class="co"># metres of arrow per newton</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> vec, at, col, lab <span class="kw">in</span> ((T_sim <span class="op">*</span> (u1 <span class="op">+</span> u2), block <span class="op">+</span> [<span class="fl">0.035</span>, <span class="dv">0</span>, <span class="op">-</span><span class="fl">0.03</span>], <span class="st">"#333333"</span>, <span class="st">"2T on the block"</span>),</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>                          ([<span class="dv">0</span>, <span class="dv">0</span>, <span class="op">-</span>M <span class="op">*</span> g], G, BLUE, <span class="st">"weight Mg at G"</span>)):</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="st">""</span>, xy<span class="op">=</span>(at[<span class="dv">0</span>] <span class="op">+</span> sc <span class="op">*</span> vec[<span class="dv">0</span>], at[<span class="dv">2</span>] <span class="op">+</span> sc <span class="op">*</span> vec[<span class="dv">2</span>]), xytext<span class="op">=</span>(at[<span class="dv">0</span>], at[<span class="dv">2</span>]),</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>                arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">"-|&gt;"</span>, color<span class="op">=</span>col, lw<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    ax.text(at[<span class="dv">0</span>] <span class="op">+</span> sc <span class="op">*</span> vec[<span class="dv">0</span>] <span class="op">+</span> <span class="fl">0.01</span>, at[<span class="dv">2</span>] <span class="op">+</span> sc <span class="op">*</span> vec[<span class="dv">2</span>], lab, color<span class="op">=</span>col, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pnt, lab <span class="kw">in</span> ((S, <span class="st">"S"</span>), (G, <span class="st">"G"</span>), (drum, <span class="st">"drum"</span>), (tip, <span class="st">"head sheave"</span>), (block, <span class="st">"block"</span>)):</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>    ax.plot(pnt[<span class="dv">0</span>], pnt[<span class="dv">2</span>], <span class="st">"k."</span>, ms<span class="op">=</span><span class="dv">6</span>)<span class="op">;</span> ax.text(pnt[<span class="dv">0</span>] <span class="op">+</span> <span class="fl">0.008</span>, pnt[<span class="dv">2</span>] <span class="op">+</span> <span class="fl">0.008</span>, lab, fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"black"</span>, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)<span class="op">;</span> ax.set_xlim(<span class="op">-</span><span class="fl">0.03</span>, <span class="fl">0.55</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="fl">0.02</span>, <span class="fl">0.45</span>)</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x (m, forward)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"z (m)"</span>)<span class="op">;</span> ax.legend(loc<span class="op">=</span><span class="st">"upper right"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-reeving" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-reeving-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-reeving-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-reeving-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The hoist in side view, with the bucket hanging clear of the ground. The rope (dark) runs from the drum over the head sheave, down round the pulley block and back up to the boom head. The stick and bucket pivot together on the shipper shaft S. The arrows are the two falls pulling on the block (2T in total, nearly vertical) and the weight of everything that hangs from the shipper shaft, acting at its centre of mass G.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="the-pulley-block-two-falls-twice-the-force-half-the-speed" class="level3">
+<h3 class="anchored" data-anchor-id="the-pulley-block-two-falls-twice-the-force-half-the-speed">The pulley block: two falls, twice the force, half the speed</h3>
+<p>Treat the sheaves as frictionless, so the tension <span class="math inline">\(T\)</span> is the same all along the rope. The block hangs in two falls, each pulling up on it with <span class="math inline">\(T\)</span>, so when the falls are vertical the block is lifted by</p>
+<p><span class="math display">\[
+F_{\text{block}} = 2T .
+\]</span></p>
+<p>The same factor appears in the motion. If the block rises by <span class="math inline">\(h\)</span>, both falls shorten by <span class="math inline">\(h\)</span>, so the drum must wind in <span class="math inline">\(2h\)</span> of rope. The rope’s length <span class="math inline">\(L\)</span> and the block’s height are tied by <span class="math inline">\(\mathrm{d}L = -2\,\mathrm{d}h\)</span>. Force goes up by two and speed goes down by two, and the work done is unchanged, as it must be: <span class="math inline">\(T \cdot 2h = 2T \cdot h\)</span>. This is the <em>mechanical advantage</em> of the block: 2, for two falls.</p>
+</section>
+<section id="the-bucket-is-lifted-by-a-moment-not-a-force" class="level3">
+<h3 class="anchored" data-anchor-id="the-bucket-is-lifted-by-a-moment-not-a-force">The bucket is lifted by a moment, not a force</h3>
+<p>The block does not simply lift the bucket straight up. The stick, bucket and block hang together from the shipper shaft <span class="math inline">\(S\)</span> halfway up the boom, and they can only turn about it. What the rope supplies is a <strong>moment</strong> about <span class="math inline">\(S\)</span>, and the hanging weight <span class="math inline">\(Mg\)</span>, acting at the centre of mass <span class="math inline">\(G\)</span>, supplies the opposing moment. In equilibrium</p>
+<p><span class="math display">\[
+\left[(\mathbf r_B - \mathbf r_S) \times T(\hat{\mathbf u}_1 + \hat{\mathbf u}_2)\right]_y + \left[(\mathbf r_G - \mathbf r_S) \times (-Mg\,\hat{\mathbf z})\right]_y = 0,
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf r_B\)</span> is the block and <span class="math inline">\(\hat{\mathbf u}_{1,2}\)</span> point up the two falls. Solving for <span class="math inline">\(T\)</span> gives the rope tension from the geometry alone.</p>
+<p>There is a neater way to the same answer: <strong>virtual work</strong>. Let the stick turn by a tiny angle with the crowd held still. The rope shortens by <span class="math inline">\(\mathrm{d}L\)</span> and the centre of mass rises by <span class="math inline">\(\mathrm{d}z_G\)</span>. The work the rope puts in is the work done against gravity:</p>
+<p><span class="math display">\[
+-T\,\mathrm{d}L = Mg\,\mathrm{d}z_G \quad\Longrightarrow\quad T = -Mg\,\frac{\mathrm{d}z_G}{\mathrm{d}L}.
+\]</span></p>
+<p>The tension is the hanging weight times a pure ratio of speeds: how fast the centre of mass rises for each unit of rope wound in. The block, the falls and the moment arms are all hidden inside that one derivative, which MuJoCo can compute directly by moving the joint and measuring the tendon length. The three answers can be set side by side:</p>
+<div id="tension-check" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> <span class="kw">lambda</span> p: p <span class="op">-</span> S</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>T_moment <span class="op">=</span> (np.cross(r(G), [<span class="dv">0</span>, <span class="dv">0</span>, <span class="op">-</span>M <span class="op">*</span> g])[<span class="dv">1</span>]) <span class="op">/</span> <span class="op">-</span>np.cross(r(block), u1 <span class="op">+</span> u2)[<span class="dv">1</span>]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> kinematic(shipper, crowd):</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Place the stick at a shipper angle and crowd, with the pulley block lined up along</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">    its two falls (where the rope pulls it); positions only, no dynamics."""</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    dk <span class="op">=</span> mujoco.MjData(m)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    dk.qpos[:] <span class="op">=</span> m.qpos0</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    dk.qpos[J[<span class="st">"shipper"</span>]], dk.qpos[J[<span class="st">"crowd"</span>]] <span class="op">=</span> shipper, crowd</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">4</span>):</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        mujoco.mj_fwdPosition(m, dk)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        b <span class="op">=</span> site(dk, <span class="st">"block_rope"</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        pull <span class="op">=</span> <span class="bu">sum</span>((site(dk, s) <span class="op">-</span> b) <span class="op">/</span> np.linalg.norm(site(dk, s) <span class="op">-</span> b) <span class="cf">for</span> s <span class="kw">in</span> (<span class="st">"tip_in"</span>, <span class="st">"tip_out"</span>))</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        Rb <span class="op">=</span> dk.xmat[BK].reshape(<span class="dv">3</span>, <span class="dv">3</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        dk.qpos[J[<span class="st">"block"</span>]] <span class="op">=</span> math.atan2(pull[<span class="dv">0</span>], pull[<span class="dv">2</span>]) <span class="op">-</span> math.atan2(Rb[<span class="dv">0</span>, <span class="dv">2</span>], Rb[<span class="dv">0</span>, <span class="dv">0</span>])</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    mujoco.mj_fwdPosition(m, dk)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> dk</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>th, cr, h <span class="op">=</span> d.qpos[J[<span class="st">"shipper"</span>]], d.qpos[J[<span class="st">"crowd"</span>]], <span class="fl">1e-4</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>d1, d2 <span class="op">=</span> kinematic(th <span class="op">+</span> h, cr), kinematic(th <span class="op">-</span> h, cr)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>T_vw <span class="op">=</span> <span class="op">-</span>M <span class="op">*</span> g <span class="op">*</span> (d1.subtree_com[SR][<span class="dv">2</span>] <span class="op">-</span> d2.subtree_com[SR][<span class="dv">2</span>]) <span class="op">/</span> (d1.ten_length[TEN] <span class="op">-</span> d2.ten_length[TEN])</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"hanging mass (stick, bucket, block)   M  = </span><span class="sc">{</span>M<span class="op">*</span><span class="dv">1000</span><span class="sc">:6.0f}</span><span class="ss"> g   weight Mg = </span><span class="sc">{</span>M<span class="op">*</span>g<span class="sc">:5.2f}</span><span class="ss"> N"</span>)</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rope tension in the simulation        T  = </span><span class="sc">{</span>T_sim<span class="sc">:6.3f}</span><span class="ss"> N"</span>)</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"from the moment balance about S       T  = </span><span class="sc">{</span>T_moment<span class="sc">:6.3f}</span><span class="ss"> N"</span>)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"from virtual work, -Mg dz_G/dL        T  = </span><span class="sc">{</span>T_vw<span class="sc">:6.3f}</span><span class="ss"> N"</span>)</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"lift on the block, |2T|                  = </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(T_sim<span class="op">*</span>(u1<span class="op">+</span>u2))<span class="sc">:6.3f}</span><span class="ss"> N "</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(T_sim<span class="op">*</span>(u1<span class="op">+</span>u2))<span class="op">/</span>(M<span class="op">*</span>g)<span class="sc">:.0%}</span><span class="ss"> of the hanging weight)"</span>)</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"so the shipper shaft carries the rest:   </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm([<span class="dv">0</span>,<span class="dv">0</span>,<span class="op">-</span>M<span class="op">*</span>g] <span class="op">+</span> T_sim<span class="op">*</span>(u1<span class="op">+</span>u2))<span class="sc">:6.3f}</span><span class="ss"> N"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>hanging mass (stick, bucket, block)   M  =    642 g   weight Mg =  6.30 N
+rope tension in the simulation        T  =  2.077 N
+from the moment balance about S       T  =  2.082 N
+from virtual work, -Mg dz_G/dL        T  =  2.083 N
+lift on the block, |2T|                  =  4.142 N (66% of the hanging weight)
+so the shipper shaft carries the rest:    2.443 N</code></pre>
+</div>
+</div>
+<p>All three agree to a fraction of a percent; the small difference is the hoist servo still settling. The printout also shows how the load is shared. Each part of the rope pulls with only about a third of the hanging weight. The block, with its two falls, lifts about two thirds of it, and the shipper shaft carries the rest, because <span class="math inline">\(G\)</span> lies closer to <span class="math inline">\(S\)</span> than the falls do. The block has the longer lever, so the rope needs only a small pull.</p>
+</section>
+<section id="how-hard-the-rope-must-pull-all-the-way-up" class="level3">
+<h3 class="anchored" data-anchor-id="how-hard-the-rope-must-pull-all-the-way-up">How hard the rope must pull, all the way up</h3>
+<p>As the rope is wound in, the stick swings up about <span class="math inline">\(S\)</span> and the geometry changes. The falls lean, the lever arm of the block about <span class="math inline">\(S\)</span> shortens, and the centre of mass moves out. The virtual-work formula gives the tension at every point of the swing without simulating anything: sweep the shipper angle, and differentiate <span class="math inline">\(z_G\)</span> with respect to <span class="math inline">\(L\)</span>. The crowd setting slides the stick in or out through the shipper, which changes both arms.</p>
+<div id="cell-fig-tension" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>crowds <span class="op">=</span> (<span class="op">-</span><span class="fl">0.05</span>, <span class="fl">0.0</span>, <span class="fl">0.05</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cols <span class="op">=</span> (BLUE, <span class="st">"black"</span>, RED)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">3.8</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>sweep <span class="op">=</span> {}</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> c, col <span class="kw">in</span> <span class="bu">zip</span>(crowds, cols):</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    ths <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">1.1</span>, <span class="fl">0.95</span>, <span class="dv">300</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    Ls, zG, tz <span class="op">=</span> [], [], []</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t_ <span class="kw">in</span> ths:</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        dk <span class="op">=</span> kinematic(t_, c)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        Ls.append(dk.ten_length[TEN])<span class="op">;</span> zG.append(dk.subtree_com[SR][<span class="dv">2</span>])<span class="op">;</span> tz.append(site(dk, <span class="st">"teeth"</span>)[<span class="dv">2</span>])</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    Ls, zG, tz <span class="op">=</span> <span class="bu">map</span>(np.array, (Ls, zG, tz))</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    T <span class="op">=</span> <span class="op">-</span>M <span class="op">*</span> g <span class="op">*</span> np.gradient(zG, ths) <span class="op">/</span> np.gradient(Ls, ths)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    ok <span class="op">=</span> (tz <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">&amp;</span> (T <span class="op">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    sweep[c] <span class="op">=</span> (ths, Ls, tz, T)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    ax[<span class="dv">0</span>].plot(tz[ok] <span class="op">*</span> <span class="dv">100</span>, T[ok], color<span class="op">=</span>col, label<span class="op">=</span><span class="ss">f"crowd </span><span class="sc">{</span>c<span class="op">*</span><span class="dv">100</span><span class="sc">:+.0f}</span><span class="ss"> cm"</span>)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    ax[<span class="dv">1</span>].plot(tz[ok] <span class="op">*</span> <span class="dv">100</span>, T[ok] <span class="op">/</span> (M <span class="op">*</span> g), color<span class="op">=</span>col)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> c, col <span class="kw">in</span> <span class="bu">zip</span>(crowds, cols):                      <span class="co"># check three points by full simulation</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> Lset <span class="kw">in</span> (<span class="fl">0.70</span>, <span class="fl">0.78</span>, <span class="fl">0.86</span>):</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>        ds <span class="op">=</span> hold(Lset, c, <span class="fl">2.5</span>)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        tzz <span class="op">=</span> site(ds, <span class="st">"teeth"</span>)[<span class="dv">2</span>]</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tzz <span class="op">&gt;</span> <span class="fl">0.005</span>:</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>            ax[<span class="dv">0</span>].plot(tzz <span class="op">*</span> <span class="dv">100</span>, <span class="op">-</span>ds.actuator_force[A[<span class="st">"hoist"</span>]], <span class="st">"o"</span>, color<span class="op">=</span>col, ms<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_xlabel(<span class="st">"height of the teeth (cm)"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_ylabel(<span class="st">"rope tension T (N)"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_xlabel(<span class="st">"height of the teeth (cm)"</span>)<span class="op">;</span> ax[<span class="dv">1</span>].set_ylabel(<span class="st">"T / Mg"</span>)</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-tension" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tension-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-tension-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tension-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Left: rope tension needed to hold the bucket, against the height of the teeth, for the stick drawn in, central and run out (virtual work on the kinematic model; the dots are full dynamic simulations). Right: the same as a fraction of the hanging weight Mg.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The crowd setting matters more than the height. Running the stick out (red) carries <span class="math inline">\(G\)</span> further from the shipper shaft, so the rope must pull harder, but the pull hardly changes as the bucket rises: the moment of the weight and the lever of the falls grow and shrink together. With the stick drawn in (blue), the pull starts small, because <span class="math inline">\(G\)</span> hangs almost under the shaft and the shaft takes nearly all the weight, and then climbs steeply as the bucket swings out and up. The dots are full dynamic simulations at three rope settings, and they sit on the lines.</p>
+</section>
+<section id="the-drum-and-the-gearing" class="level3">
+<h3 class="anchored" data-anchor-id="the-drum-and-the-gearing">The drum and the gearing</h3>
+<p>At the house end, the rope is wound on a drum of radius <span class="math inline">\(r_d\)</span>, so holding a tension <span class="math inline">\(T\)</span> takes a torque <span class="math inline">\(T r_d\)</span> on the drum shaft. The drum is driven from the engine’s crankshaft through two identical stages, each a 19-tooth pinion driving a 57-tooth gear:</p>
+<p><span class="math display">\[
+\frac{\omega_\text{crank}}{\omega_\text{drum}} = \frac{57}{19}\times\frac{57}{19} = 9,\qquad
+\tau_\text{crank} = \frac{T\,r_d}{9}\ \text{(ignoring friction)}.
+\]</span></p>
+<p>Both stages sit on 2-hole centres, as the lattice rule above promised. Putting numbers on the hoist stroke of the dig below:</p>
+<div id="drum" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>keys <span class="op">=</span> {k[<span class="dv">5</span>]: k <span class="cf">for</span> k <span class="kw">in</span> DIG}</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>dig_keys <span class="op">=</span> [k <span class="cf">for</span> k <span class="kw">in</span> DIG <span class="cf">if</span> k[<span class="dv">5</span>] <span class="op">==</span> <span class="st">"dig"</span>]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>(t0, _, _, L0, _, _), (t1, _, _, L1, _, _) <span class="op">=</span> dig_keys[<span class="op">-</span><span class="dv">2</span>], dig_keys[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>v_rope <span class="op">=</span> (L0 <span class="op">-</span> L1) <span class="op">/</span> (t1 <span class="op">-</span> t0)                        <span class="co"># mean rope speed while hoisting up the face</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>w_drum <span class="op">=</span> v_rope <span class="op">/</span> DRUM_R</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>T_dig <span class="op">=</span> <span class="fl">3.5</span>                                           <span class="co"># newtons: the hoist tension during the lift, from the dig below</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"drum radius to the rope            </span><span class="sc">{</span>DRUM_R<span class="op">*</span><span class="dv">1000</span><span class="sc">:5.1f}</span><span class="ss"> mm"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"mean rope speed hoisting the face  </span><span class="sc">{</span>v_rope<span class="op">*</span><span class="dv">1000</span><span class="sc">:5.0f}</span><span class="ss"> mm/s  -&gt; block rises at about </span><span class="sc">{</span>v_rope<span class="op">/</span><span class="dv">2</span><span class="op">*</span><span class="dv">1000</span><span class="sc">:.0f}</span><span class="ss"> mm/s"</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"drum speed                         </span><span class="sc">{</span>w_drum<span class="op">*</span><span class="dv">60</span><span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>math.pi)<span class="sc">:5.0f}</span><span class="ss"> rpm;   crankshaft </span><span class="sc">{</span><span class="dv">9</span><span class="op">*</span>w_drum<span class="op">*</span><span class="dv">60</span><span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>math.pi)<span class="sc">:5.0f}</span><span class="ss"> rpm"</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"torque at </span><span class="sc">{</span>T_dig<span class="sc">:.0f}</span><span class="ss"> N tension: drum </span><span class="sc">{</span>T_dig<span class="op">*</span>DRUM_R<span class="op">*</span><span class="dv">1000</span><span class="sc">:5.1f}</span><span class="ss"> mN·m,  crankshaft </span><span class="sc">{</span>T_dig<span class="op">*</span>DRUM_R<span class="op">/</span><span class="dv">9</span><span class="op">*</span><span class="dv">1000</span><span class="sc">:5.2f}</span><span class="ss"> mN·m"</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"power at the rope                  </span><span class="sc">{</span>T_dig<span class="op">*</span>v_rope<span class="op">*</span><span class="dv">1000</span><span class="sc">:5.0f}</span><span class="ss"> mW"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>drum radius to the rope              8.5 mm
+mean rope speed hoisting the face     55 mm/s  -&gt; block rises at about 27 mm/s
+drum speed                            62 rpm;   crankshaft   556 rpm
+torque at 4 N tension: drum  29.8 mN·m,  crankshaft  3.31 mN·m
+power at the rope                    192 mW</code></pre>
+</div>
+</div>
+<p>These are small numbers, and a toy electric motor delivers them easily, which is why the real model could work under its own power. On a full-size shovel the same equations hold with the forces scaled up by the cube of the size ratio.</p>
+</section>
+<section id="what-the-boom-and-its-rods-carry" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-boom-and-its-rods-carry">What the boom and its rods carry</h3>
+<p>The boom is a strut, pinned at its foot and held up at its head by the suspension rods running back to the top of the A-frame. Three loads arrive on it:</p>
+<ul>
+<li>at the head, the rope: one part leading back down to the drum and two falls pulling down toward the block, <span class="math inline">\(T(\hat{\mathbf e}_\text{drum} - \hat{\mathbf u}_1 - \hat{\mathbf u}_2)\)</span>;</li>
+<li>at the shipper shaft, everything the rope does not carry: the weight of the stick and bucket less the lift of the block, <span class="math inline">\(T(\hat{\mathbf u}_1 + \hat{\mathbf u}_2) - Mg\,\hat{\mathbf z}\)</span>;</li>
+<li>its own weight, at its middle.</li>
+</ul>
+<p>Taking moments about the boom foot gives the tension in the rods; the force balance then gives the thrust into the foot pin.</p>
+<div id="boom" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>rho <span class="op">=</span> <span class="dv">7800</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>boom_mass <span class="op">=</span> rho <span class="op">*</span> (<span class="dv">2</span> <span class="op">*</span> pt.angle_girder(BOOM_HOLES).volume <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> pt.angle_girder(BOOM_HOLES <span class="op">-</span> <span class="dv">5</span>).volume</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                   <span class="op">+</span> <span class="dv">14</span> <span class="op">*</span> pt.strip(<span class="dv">3</span>).volume <span class="op">+</span> <span class="dv">5</span> <span class="op">*</span> pt.strip(<span class="dv">4</span>).volume)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>foot, head <span class="op">=</span> up(BOOM_FOOT), up(BOOM_TIP)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>e_drum <span class="op">=</span> (drum <span class="op">-</span> tip_in) <span class="op">/</span> np.linalg.norm(drum <span class="op">-</span> tip_in)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>F_head <span class="op">=</span> T_sim <span class="op">*</span> (e_drum <span class="op">-</span> u1 <span class="op">-</span> u2)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>F_ship <span class="op">=</span> T_sim <span class="op">*</span> (u1 <span class="op">+</span> u2) <span class="op">+</span> np.array([<span class="dv">0</span>, <span class="dv">0</span>, <span class="op">-</span>M <span class="op">*</span> g])</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>W_boom <span class="op">=</span> np.array([<span class="dv">0</span>, <span class="dv">0</span>, <span class="op">-</span>boom_mass <span class="op">*</span> g])</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>e_rod <span class="op">=</span> (up(APEX) <span class="op">-</span> head) <span class="op">/</span> np.linalg.norm(up(APEX) <span class="op">-</span> head)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>My <span class="op">=</span> <span class="kw">lambda</span> p, F: np.cross(p <span class="op">-</span> foot, F)[<span class="dv">1</span>]</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>R_rod <span class="op">=</span> <span class="op">-</span>(My(head, F_head) <span class="op">+</span> My(S, F_ship) <span class="op">+</span> My((foot <span class="op">+</span> head) <span class="op">/</span> <span class="dv">2</span>, W_boom)) <span class="op">/</span> My(head, e_rod)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>F_foot <span class="op">=</span> <span class="op">-</span>(F_head <span class="op">+</span> F_ship <span class="op">+</span> W_boom <span class="op">+</span> R_rod <span class="op">*</span> e_rod)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>axis <span class="op">=</span> (head <span class="op">-</span> foot) <span class="op">/</span> np.linalg.norm(head <span class="op">-</span> foot)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"boom (girders and lattice)       </span><span class="sc">{</span>boom_mass<span class="op">*</span><span class="dv">1000</span><span class="sc">:5.0f}</span><span class="ss"> g"</span>)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"rope load at the boom head       </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(F_head)<span class="sc">:5.2f}</span><span class="ss"> N"</span>)</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"load from the shipper shaft      </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(F_ship)<span class="sc">:5.2f}</span><span class="ss"> N"</span>)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"tension in the suspension rods   </span><span class="sc">{</span>R_rod<span class="sc">:5.2f}</span><span class="ss"> N   (shared between four rods)"</span>)</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"thrust into the boom foot        </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(F_foot)<span class="sc">:5.2f}</span><span class="ss"> N, "</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"</span><span class="sc">{</span><span class="bu">abs</span>(F_foot <span class="op">@</span> axis)<span class="op">/</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(F_foot)<span class="sc">:.0%}</span><span class="ss"> of it along the boom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>boom (girders and lattice)         288 g
+rope load at the boom head        5.53 N
+load from the shipper shaft       2.44 N
+tension in the suspension rods    6.95 N   (shared between four rods)
+thrust into the boom foot        15.20 N, 100% of it along the boom</code></pre>
+</div>
+</div>
+<p>The rope loads the boom head from both sides of the sheave, the lead down to the drum and the falls down to the block, so it pulls on the boom harder than the shipper shaft does. The rods hold the head back, and what is left is a thrust straight down the boom into its foot pin, more than twice the weight of everything hanging below. The boom is a strut in almost pure compression. A long, slender strut in compression fails by buckling sideways rather than by crushing, and the cure is bracing, which is why the photographs show the boom as a lattice of paired girders braced across, not a single strip.</p>
+</section>
+</section>
+<section id="the-stick-is-a-pendulum" class="level2">
+<h2 class="anchored" data-anchor-id="the-stick-is-a-pendulum">The stick is a pendulum</h2>
+<p>Nothing in the machine drives the angle of the dipper stick. The <strong>crowd</strong> motion slides the stick in and out through its saddle on the shipper shaft; on the model a chain from a sprocket in the house drives the black wheel on the shipper shaft. The <strong>hoist</strong> shortens the rope. The stick’s angle is whatever balances the rope against gravity: the stick is a pendulum, and the rope is its string.</p>
+<p>A rope can pull but not push. In MuJoCo this is a servo on the tendon whose force is allowed to be negative (pulling) but not positive. Physically it is a <em>complementarity</em> condition between the tension <span class="math inline">\(T\)</span> and the slack <span class="math inline">\(s\)</span>, the difference between the rope paid out and the distance it has to span:</p>
+<p><span class="math display">\[
+T \ge 0, \qquad s \ge 0, \qquad T\,s = 0 .
+\]</span></p>
+<p>Either the rope is taut and carries load, or it is slack and carries none. When the rope is paid out far enough, the bucket comes to rest on the ground and the stick’s angle is set by the ground instead.</p>
+<section id="where-the-bucket-can-reach" class="level3">
+<h3 class="anchored" data-anchor-id="where-the-bucket-can-reach">Where the bucket can reach</h3>
+<p>With the rope taut, each pair of lever settings, crowd <span class="math inline">\(c\)</span> and rope length <span class="math inline">\(L\)</span>, puts the teeth at one point: the stick hangs at the angle where the rope’s length matches <span class="math inline">\(L\)</span>. The map below draws that grid in the side view, together with the floor. Beyond the floor line the rope goes slack and the bucket sits on the ground; along the floor, only the crowd moves the teeth.</p>
+<div id="cell-fig-reach" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="fl">4.6</span>))</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>cgrid <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">0.07</span>, <span class="fl">0.06</span>, <span class="dv">14</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>Lgrid <span class="op">=</span> np.arange(<span class="fl">0.62</span>, <span class="fl">0.97</span>, <span class="fl">0.04</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>pts <span class="op">=</span> {}</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> c <span class="kw">in</span> cgrid:</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    ths <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">1.15</span>, <span class="fl">1.0</span>, <span class="dv">260</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    xs, zs, Ls <span class="op">=</span> [], [], []</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t_ <span class="kw">in</span> ths:</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        dk <span class="op">=</span> kinematic(t_, c)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        tp <span class="op">=</span> site(dk, <span class="st">"teeth"</span>)<span class="op">;</span> xs.append(tp[<span class="dv">0</span>])<span class="op">;</span> zs.append(tp[<span class="dv">2</span>])<span class="op">;</span> Ls.append(dk.ten_length[TEN])</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    xs, zs, Ls <span class="op">=</span> <span class="bu">map</span>(np.array, (xs, zs, Ls))</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    ok <span class="op">=</span> zs <span class="op">&gt;=</span> <span class="dv">0</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    ax.plot(xs[ok], zs[ok], color<span class="op">=</span>GREEN, lw<span class="op">=</span><span class="fl">0.8</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    order <span class="op">=</span> np.argsort(Ls)</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    pts[c] <span class="op">=</span> [(np.interp(Lg, Ls[order], xs[order]), np.interp(Lg, Ls[order], zs[order])) <span class="cf">for</span> Lg <span class="kw">in</span> Lgrid]</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k, Lg <span class="kw">in</span> <span class="bu">enumerate</span>(Lgrid):</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    line <span class="op">=</span> np.array([pts[c][k] <span class="cf">for</span> c <span class="kw">in</span> cgrid])</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    ok <span class="op">=</span> line[:, <span class="dv">1</span>] <span class="op">&gt;=</span> <span class="dv">0</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    ax.plot(line[ok, <span class="dv">0</span>], line[ok, <span class="dv">1</span>], <span class="st">"--"</span>, color<span class="op">=</span>GREY, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ok.<span class="bu">any</span>():</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>        ax.text(line[ok, <span class="dv">0</span>][<span class="op">-</span><span class="dv">1</span>] <span class="op">+</span> <span class="fl">0.004</span>, line[ok, <span class="dv">1</span>][<span class="op">-</span><span class="dv">1</span>], <span class="ss">f"L=</span><span class="sc">{</span>Lg<span class="sc">:.2f}</span><span class="ss">"</span>, fontsize<span class="op">=</span><span class="dv">7</span>, color<span class="op">=</span>GREY)</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> teeth_for(c, Lr):</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Teeth position for lever settings, with the rope going slack onto the floor."""</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    ths <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">1.15</span>, <span class="fl">1.0</span>, <span class="dv">400</span>)</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t_ <span class="kw">in</span> ths:</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>        dk <span class="op">=</span> kinematic(t_, c)</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>        tp <span class="op">=</span> site(dk, <span class="st">"teeth"</span>)</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tp[<span class="dv">2</span>] <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>        err <span class="op">=</span> <span class="bu">abs</span>(dk.ten_length[TEN] <span class="op">-</span> Lr)</span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> best <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> err <span class="op">&lt;</span> best[<span class="dv">0</span>] <span class="kw">or</span> (dk.ten_length[TEN] <span class="op">&lt;</span> Lr <span class="kw">and</span> tp[<span class="dv">2</span>] <span class="op">&lt;</span> best[<span class="dv">1</span>][<span class="dv">2</span>]):</span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>            best <span class="op">=</span> (err, tp)</span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> best[<span class="dv">1</span>]</span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>tt <span class="op">=</span> np.linspace(<span class="fl">1.5</span>, <span class="fl">9.0</span>, <span class="dv">40</span>)</span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>planned <span class="op">=</span> []</span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>cyc_keys <span class="op">=</span> np.array([k[:<span class="dv">5</span>] <span class="cf">for</span> k <span class="kw">in</span> DIG])</span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t_ <span class="kw">in</span> tt:</span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> np.searchsorted(cyc_keys[:, <span class="dv">0</span>], t_) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>    k0, k1 <span class="op">=</span> cyc_keys[i], cyc_keys[i <span class="op">+</span> <span class="dv">1</span>]</span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> (t_ <span class="op">-</span> k0[<span class="dv">0</span>]) <span class="op">/</span> (k1[<span class="dv">0</span>] <span class="op">-</span> k0[<span class="dv">0</span>])<span class="op">;</span> u <span class="op">=</span> u <span class="op">*</span> u <span class="op">*</span> (<span class="dv">3</span> <span class="op">-</span> <span class="dv">2</span> <span class="op">*</span> u)</span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>    c, Lr <span class="op">=</span> (<span class="dv">1</span> <span class="op">-</span> u) <span class="op">*</span> k0[<span class="dv">2</span>] <span class="op">+</span> u <span class="op">*</span> k1[<span class="dv">2</span>], (<span class="dv">1</span> <span class="op">-</span> u) <span class="op">*</span> k0[<span class="dv">3</span>] <span class="op">+</span> u <span class="op">*</span> k1[<span class="dv">3</span>]</span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a>    planned.append(teeth_for(c, Lr))</span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>planned <span class="op">=</span> np.array(planned)</span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>ax.plot(planned[:, <span class="dv">0</span>], planned[:, <span class="dv">2</span>], color<span class="op">=</span>RED, lw<span class="op">=</span><span class="dv">3</span>, alpha<span class="op">=</span><span class="fl">0.6</span>, label<span class="op">=</span><span class="st">"planned dig path"</span>)</span>
+<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a>dsim <span class="op">=</span> mujoco.MjData(m)<span class="op">;</span> cyc <span class="op">=</span> DigCycle(m, dsim)<span class="op">;</span> trace <span class="op">=</span> []</span>
+<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> dsim.time <span class="op">&lt;</span> <span class="fl">9.0</span>:</span>
+<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>    cyc.step()</span>
+<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> dsim.time <span class="op">&gt;=</span> <span class="fl">1.5</span> <span class="kw">and</span> <span class="bu">int</span>(dsim.time <span class="op">*</span> <span class="dv">1000</span>) <span class="op">%</span> <span class="dv">100</span> <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a>        trace.append(site(dsim, <span class="st">"teeth"</span>))</span>
+<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>trace <span class="op">=</span> np.array(trace)</span>
+<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a>ax.plot(trace[:, <span class="dv">0</span>], trace[:, <span class="dv">2</span>], <span class="st">"."</span>, color<span class="op">=</span><span class="st">"black"</span>, ms<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"simulation (no gravel)"</span>)</span>
+<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"black"</span>, lw<span class="op">=</span><span class="dv">1</span>)<span class="op">;</span> ax.fill_between([<span class="fl">0.15</span>, <span class="fl">0.62</span>], <span class="op">-</span><span class="fl">0.03</span>, <span class="dv">0</span>, color<span class="op">=</span><span class="st">"#e8e2d6"</span>)</span>
+<span id="cb17-56"><a href="#cb17-56" aria-hidden="true" tabindex="-1"></a>ax.axvspan(<span class="fl">0.40</span>, <span class="fl">0.49</span>, ymin<span class="op">=</span><span class="fl">0.135</span>, ymax<span class="op">=</span><span class="fl">0.25</span>, color<span class="op">=</span>BRASS, alpha<span class="op">=</span><span class="fl">0.15</span>, label<span class="op">=</span><span class="st">"gravel bin"</span>)</span>
+<span id="cb17-57"><a href="#cb17-57" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="fl">0.15</span>, <span class="fl">0.62</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="fl">0.03</span>, <span class="fl">0.22</span>)<span class="op">;</span> ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb17-58"><a href="#cb17-58" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x (m, forward from the slewing axis)"</span>)<span class="op">;</span> ax.set_ylabel(<span class="st">"z (m)"</span>)<span class="op">;</span> ax.legend(fontsize<span class="op">=</span><span class="dv">8</span>, loc<span class="op">=</span><span class="st">"upper left"</span>)</span>
+<span id="cb17-59"><a href="#cb17-59" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-reach" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-reach-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-reach-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-reach-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Where the teeth can go. Thin lines are constant crowd (stick drawn in on the left, run out on the right) as the rope is wound in; dashed lines are constant rope length. Below the dashed lines the rope would be slack: the bucket rests on the floor. The thick line is the planned path of the dig (from the lever timetable); the dots are the teeth in the simulation.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The map explains the shape of the dig, which was found by trial before it was understood. On the floor, the teeth can only be moved by the crowd. Lifting them off the floor is only possible along the lines of constant crowd, which curve up and <em>out</em>, because the stick is swinging about the shipper. So a cut into a bank has two strokes: crowd out along the floor into the foot of the bank with the rope slack, then hoist, so the teeth sweep up the face on an arc and the bucket fills. That is how a full-size face shovel digs too.</p>
+</section>
+<section id="the-dig" class="level3">
+<h3 class="anchored" data-anchor-id="the-dig">The dig</h3>
+<p>The dig was run with 260 stones in a three-sided bin of Meccano plates. The figure follows the two levers’ forces and the number of stones in the bucket through the cut and the lift.</p>
+<div id="cell-fig-dig" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>mg <span class="op">=</span> load(gravel<span class="op">=</span><span class="dv">260</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>dg <span class="op">=</span> mujoco.MjData(mg)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>cg <span class="op">=</span> DigCycle(mg, dg)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>Ag, _ <span class="op">=</span> ids(mg)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>BKg <span class="op">=</span> mg.body(<span class="st">"bucket"</span>).<span class="bu">id</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> []</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> dg.time <span class="op">&lt;</span> <span class="fl">10.0</span>:</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    cg.step()</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">int</span>(<span class="bu">round</span>(dg.time <span class="op">*</span> <span class="dv">1000</span>)) <span class="op">%</span> <span class="dv">20</span> <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        pos <span class="op">=</span> dg.xpos[cg.gravel]</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        Rb <span class="op">=</span> dg.xmat[BKg].reshape(<span class="dv">3</span>, <span class="dv">3</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        loc <span class="op">=</span> (pos <span class="op">-</span> dg.xpos[BKg]) <span class="op">@</span> Rb</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        inside <span class="op">=</span> ((loc[:, <span class="dv">0</span>] <span class="op">&gt;</span> <span class="op">-</span><span class="fl">0.005</span>) <span class="op">&amp;</span> (loc[:, <span class="dv">0</span>] <span class="op">&lt;</span> <span class="fl">0.086</span>) <span class="op">&amp;</span> (loc[:, <span class="dv">2</span>] <span class="op">&lt;</span> <span class="fl">0.005</span>) <span class="op">&amp;</span> (loc[:, <span class="dv">2</span>] <span class="op">&gt;</span> <span class="op">-</span><span class="fl">0.076</span>)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>                  <span class="op">&amp;</span> (np.<span class="bu">abs</span>(loc[:, <span class="dv">1</span>]) <span class="op">&lt;</span> <span class="fl">0.04</span>)).<span class="bu">sum</span>()</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        rec.append((dg.time, dg.actuator_force[Ag[<span class="st">"crowd"</span>]], <span class="op">-</span>dg.actuator_force[Ag[<span class="st">"hoist"</span>]], inside))</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> np.array(rec)</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">5</span>), sharex<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>smooth <span class="op">=</span> <span class="kw">lambda</span> y, n<span class="op">=</span><span class="dv">5</span>: np.convolve(y, np.ones(n) <span class="op">/</span> n, mode<span class="op">=</span><span class="st">"same"</span>)      <span class="co"># 0.1 s running mean</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].plot(rec[:, <span class="dv">0</span>], rec[:, <span class="dv">1</span>], color<span class="op">=</span>GREEN, label<span class="op">=</span><span class="st">"crowd force"</span>)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].axhline(<span class="dv">80</span>, color<span class="op">=</span>GREEN, ls<span class="op">=</span><span class="st">":"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>tw <span class="op">=</span> ax[<span class="dv">0</span>].twinx()</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>tw.plot(rec[:, <span class="dv">0</span>], smooth(rec[:, <span class="dv">2</span>]), color<span class="op">=</span><span class="st">"#333333"</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"hoist tension (0.1 s mean)"</span>)</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>tw.set_ylabel(<span class="st">"hoist tension (N)"</span>)<span class="op">;</span> tw.grid(<span class="va">False</span>)<span class="op">;</span> tw.spines[<span class="st">"right"</span>].set_visible(<span class="va">True</span>)</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].plot([], [], color<span class="op">=</span><span class="st">"#333333"</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"hoist tension (right axis)"</span>)</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].plot(rec[:, <span class="dv">0</span>], rec[:, <span class="dv">3</span>], color<span class="op">=</span>RED)</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> ax:</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>    a.axvspan(<span class="fl">3.0</span>, <span class="fl">5.5</span>, color<span class="op">=</span>BLUE, alpha<span class="op">=</span><span class="fl">0.07</span>)<span class="op">;</span> a.axvspan(<span class="fl">5.5</span>, <span class="fl">7.5</span>, color<span class="op">=</span>RED, alpha<span class="op">=</span><span class="fl">0.07</span>)</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].text(<span class="fl">3.1</span>, <span class="dv">70</span>, <span class="st">"crowd into the bank"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)<span class="op">;</span> ax[<span class="dv">0</span>].text(<span class="fl">5.6</span>, <span class="dv">70</span>, <span class="st">"hoist up the face"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>, loc<span class="op">=</span><span class="st">"upper left"</span>)<span class="op">;</span> ax[<span class="dv">0</span>].set_ylabel(<span class="st">"crowd force (N)"</span>)</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_ylabel(<span class="st">"stones in the bucket"</span>)<span class="op">;</span> ax[<span class="dv">1</span>].set_xlabel(<span class="st">"time (s)"</span>)</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>peak <span class="op">=</span> rec[(rec[:, <span class="dv">0</span>] <span class="op">&gt;</span> <span class="dv">3</span>) <span class="op">&amp;</span> (rec[:, <span class="dv">0</span>] <span class="op">&lt;</span> <span class="fl">5.5</span>), <span class="dv">1</span>].<span class="bu">max</span>()</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"peak crowd force while cutting in: </span><span class="sc">{</span>peak<span class="sc">:.0f}</span><span class="ss"> N;  stones lifted: </span><span class="sc">{</span><span class="bu">int</span>(rec[<span class="op">-</span><span class="dv">1</span>, <span class="dv">3</span>])<span class="sc">}</span><span class="ss"> of 260 "</span></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span><span class="bu">int</span>(rec[<span class="op">-</span><span class="dv">1</span>, <span class="dv">3</span>]) <span class="op">*</span> <span class="dv">4</span><span class="op">/</span><span class="dv">3</span><span class="op">*</span>math<span class="sc">.</span>pi<span class="op">*</span><span class="fl">0.0054</span><span class="op">**</span><span class="dv">3</span><span class="op">*</span><span class="dv">2200</span><span class="op">*</span><span class="dv">1000</span><span class="sc">:.0f}</span><span class="ss"> g, roughly)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="fig-dig" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dig-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-dig-output-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dig-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: The dig with gravel. Top: the crowd force (its servo’s limit, 80 N, dotted) and the hoist rope tension. While the rope is slack the tension is zero, apart from brief snatches as the bucket jolts on the floor. Bottom: stones inside the bucket. Shaded: the two strokes of the cut, crowding along the floor and hoisting up the face.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>peak crowd force while cutting in: 80 N;  stones lifted: 59 of 260 (86 g, roughly)</code></pre>
+</div>
+</div>
+<p>Two things stand out. Cutting into the bank is the hard part: the crowd pushes at its 80 N limit for about two seconds as the teeth go in, more than twenty times what the hoist rope pulls. And the bucket fills across the change of stroke. Stones start to come in as the crowd drives the mouth into the foot of the bank, and they come fastest as the hoist starts and the teeth turn up the face on their arc, as the reach map predicts. A few fall back out over the lip as the bucket tips up clear of the bank. The close-up below shows both strokes.</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video2" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title="Close-up of the cut: crowding into the bank along the floor, then hoisting up the face"><source src="shovel_dig_close.mp4"></video></div>
+<p>After the lift, the superstructure slews a quarter turn and the trip cord pulls the catch on the bucket’s door. The door is hinged along its top edge, so the load swings it open and falls out, as in the video at the top of the post.</p>
+</section>
+</section>
+<section id="coda-why-gravel-is-hard" class="level2">
+<h2 class="anchored" data-anchor-id="coda-why-gravel-is-hard">Coda: why gravel is hard</h2>
+<p>Granular material is a notoriously difficult thing to simulate, and the shovel’s gravel took more iterations than the shovel.</p>
+<ul>
+<li><strong>Spheres roll.</strong> The first heaps of spheres collapsed into a single layer and rolled away across the floor. Real gravel stands at an angle of repose because its stones interlock; spheres cannot. Giving each contact <strong>rolling resistance</strong> (MuJoCo’s six-dimensional contacts, with torsional and rolling friction) made the spheres behave like gravel and stand in a bank.</li>
+<li><strong>Angular stones are expensive.</strong> Small boxes stood well, but box-to-box contacts are much costlier than sphere contacts, and the simulation slowed by about twenty times.</li>
+<li><strong>Every contact is several constraints.</strong> A six-dimensional contact in MuJoCo’s pyramidal friction model is ten constraint rows, so a few hundred touching stones make thousands of rows. Switching the solver from Newton’s method to conjugate gradient, which suits this many loosely coupled contacts, cut the cost of a step by about three quarters.</li>
+<li><strong>A bank needs walls.</strong> Even rough spheres slump without a wall to lean on, so the gravel sits in a three-sided bin open toward the shovel, which is also a fair picture of the working face of a quarry.</li>
+</ul>
+</section>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
+<ul>
+<li>Model the crowd drive properly, with the chain turning a pinion on the shipper shaft against a rack on the stick, so the crowd force comes from the engine as the hoist does.</li>
+<li>Let the boom be raised and lowered on its suspension, which turns the boom into a third control.</li>
+<li>A Meccano lorry to dump into, and a full dig-swing-dump-return loop.</li>
+<li>Export the model to a path tracer for photographic lighting to match the original prints.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script>videojs(video_shortcode_videojs_video1);</script>
+<script>videojs(video_shortcode_videojs_video2);</script>
+
+
+
+
+</body></html>
