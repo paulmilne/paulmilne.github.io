@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+assets/
+models/
+out/*.mp4
+out/sheet.png
+out/vidframe.png
