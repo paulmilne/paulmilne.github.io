@@ -1,0 +1,86 @@
+{
+ "audio": [
+  {
+   "title": "Apollo 11 Mission Audio - Day 5 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_5/Apollo_11_Mission_Audio_-_Day_5.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_5",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's speech-recognition captions to the NASA air-to-ground transcript. Accuracy is a few seconds.",
+   "segments": [
+    {
+     "clip_start": 3,
+     "clip_end": 15,
+     "get_start": 361080,
+     "get_end": 361092,
+     "note": "Roger. Eagle is undocked."
+    },
+    {
+     "clip_start": 31,
+     "clip_end": 49,
+     "get_start": 368136,
+     "get_end": 368154,
+     "note": "Columbia, Houston. Over."
+    },
+    {
+     "clip_start": 51,
+     "clip_end": 82,
+     "get_start": 368236,
+     "get_end": 368267,
+     "note": "Houston, Eagle. How do you read?"
+    },
+    {
+     "clip_start": 86,
+     "clip_end": 96,
+     "get_start": 368929,
+     "get_end": 368939,
+     "note": "Eagle, Houston. We read you now. You're GO for PDI. Over."
+    },
+    {
+     "clip_start": 134,
+     "clip_end": 213,
+     "get_start": 369549,
+     "get_end": 369628,
+     "note": "Same alarm, and it appears to come up when we have a 1668 up."
+    },
+    {
+     "clip_start": 215,
+     "clip_end": 452,
+     "get_start": 369743,
+     "get_end": 369980,
+     "note": "Roger. 1201 alarm. We're GO. Same type. We're GO."
+    },
+    {
+     "clip_start": 466,
+     "clip_end": 483,
+     "get_start": 370020,
+     "get_end": 370037,
+     "note": "Okay. It looks like we're venting the oxidizer now."
+    },
+    {
+     "clip_start": 489,
+     "clip_end": 560,
+     "get_start": 371030,
+     "get_end": 371101,
+     "note": "The area out the left hand window is a relatively level plain cratered\u2026"
+    }
+   ]
+  }
+ ],
+ "video": [
+  {
+   "title": "Apollo 11 16 mm onboard film: lunar landing (NASA JSC)",
+   "src": "https://archive.org/download/Apollo-11-16mm-Onboards_Lunar-Landing_30-FPS_719466.mxf/Apollo-11-16mm-Onboards_Lunar-Landing_30-FPS_719466.mp4",
+   "page": "https://archive.org/details/Apollo-11-16mm-Onboards_Lunar-Landing_30-FPS_719466.mxf",
+   "method": "Shot through Aldrin's window by the 16 mm data acquisition camera at 6 frames per second and transferred at 30, so it runs five times faster than life. Pinned to mission time at touchdown, when the LM's shadow stops moving (102:45:40); the yaw to windows-up, which takes the surface out of view, falls within the documented manoeuvre.",
+   "segments": [
+    {
+     "clip_start": 19.5,
+     "clip_end": 192.9,
+     "get_start": 369084.4,
+     "get_end": 369951.4,
+     "rate": 5.0,
+     "note": "descent and landing, five times speed"
+    }
+   ]
+  }
+ ]
+}

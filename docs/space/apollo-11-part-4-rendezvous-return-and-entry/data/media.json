@@ -1,0 +1,497 @@
+{
+ "audio": [
+  {
+   "title": "Apollo 11 Mission Audio - Day 6 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_6/Apollo_11_Mission_Audio_-_Day_6.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_6",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's captions to the NASA air-to-ground transcript (Spacelog). Day 6 has hand-made captions with coarse timing, so its segments are good to several seconds; Days 7 and 8 have speech-recognition captions and are good to a few seconds.",
+   "segments": [
+    {
+     "clip_start": 102.9,
+     "clip_end": 144.6,
+     "get_start": 447467.0,
+     "get_end": 447508.7,
+     "note": "Okay. We're standing by for 2 minutes to - for the guidance steering i\u2026"
+    },
+    {
+     "clip_start": 150.0,
+     "clip_end": 188.0,
+     "get_start": 447703.5,
+     "get_end": 447741.5,
+     "note": "Got that ascent ... ?"
+    },
+    {
+     "clip_start": 188.0,
+     "clip_end": 221.6,
+     "get_start": 456898.6,
+     "get_end": 456932.2,
+     "note": "Columbia, Houston. We need the SEQ ARM circuit breakers closed."
+    },
+    {
+     "clip_start": 279.0,
+     "clip_end": 318.0,
+     "get_start": 457093.0,
+     "get_end": 457132.0,
+     "note": "And, Mike, if you want our target DELTA V, I'll give it to you."
+    },
+    {
+     "clip_start": 319.0,
+     "clip_end": 352.0,
+     "get_start": 457253.6,
+     "get_end": 457286.6,
+     "note": "I'm showing a good bit of out of plane velocity on my cross pointers, \u2026"
+    },
+    {
+     "clip_start": 356.0,
+     "clip_end": 377.0,
+     "get_start": 457350.6,
+     "get_end": 457371.6,
+     "note": "Coming up on 1 minute to TIG, Neil. How's it looking?"
+    },
+    {
+     "clip_start": 378.0,
+     "clip_end": 400.0,
+     "get_start": 457471.4,
+     "get_end": 457493.4,
+     "note": "Eagle, Houston. Aft OMNI, low bit rate, an we'll see you at 127 plus 5\u2026"
+    },
+    {
+     "clip_start": 495.0,
+     "clip_end": 660.0,
+     "get_start": 461020.0,
+     "get_end": 461185.0,
+     "note": "I'm pumping up cabin pressure."
+    },
+    {
+     "clip_start": 1062.0,
+     "clip_end": 1084.2,
+     "get_start": 489284.0,
+     "get_end": 489306.2,
+     "note": "Hello, Apollo 11. Houston. I wondered if during the TEI burn you utili\u2026"
+    },
+    {
+     "clip_start": 1128.5,
+     "clip_end": 1152.4,
+     "get_start": 489572.1,
+     "get_end": 489596.0,
+     "note": "Apollo 11, Houston. You can go to PTC attitude and torque at your - an\u2026"
+    },
+    {
+     "clip_start": 1152.4,
+     "clip_end": 1183.0,
+     "get_start": 490844.6,
+     "get_end": 490875.2,
+     "note": "Apollo 11, Houston. FIDO's are looking at the data. It's too early to \u2026"
+    },
+    {
+     "clip_start": 1235.7,
+     "clip_end": 1308.4,
+     "get_start": 491285.3,
+     "get_end": 491358.0,
+     "note": "Hello, Apollo 11. Houston. Mike, did you notice any transients at igni\u2026"
+    },
+    {
+     "clip_start": 1482.8,
+     "clip_end": 1535.3,
+     "get_start": 492744.0,
+     "get_end": 492796.5,
+     "note": "Hello, Apollo 11. Houston. You can crank up on the PTC at any time. Ov\u2026"
+    },
+    {
+     "clip_start": 1562.0,
+     "clip_end": 1579.5,
+     "get_start": 492895.0,
+     "get_end": 492912.5,
+     "note": "Hello, Apollo 11. Houston. For your information, the LGC in Eagle just\u2026"
+    },
+    {
+     "clip_start": 1677.1,
+     "clip_end": 1691.6,
+     "get_start": 493101.5,
+     "get_end": 493116.0,
+     "note": "And, Charlie, you want the fans cycled ... Right?"
+    },
+    {
+     "clip_start": 1800.1,
+     "clip_end": 1827.5,
+     "get_start": 494279.6,
+     "get_end": 494307.0,
+     "note": "Not very much. There was quite a bit of Kapton and parts of the LM tha\u2026"
+    },
+    {
+     "clip_start": 2166.2,
+     "clip_end": 2190.1,
+     "get_start": 495436.1,
+     "get_end": 495460.0,
+     "note": "Hello, Apollo 11. Houston. Check in A1, Mike, and see what you can fin\u2026"
+    },
+    {
+     "clip_start": 2452.2,
+     "clip_end": 2475.9,
+     "get_start": 495723.3,
+     "get_end": 495747.0,
+     "note": "Roger. You're five by now, too, Mike. Thank you much. Did you copy tha\u2026"
+    },
+    {
+     "clip_start": 2536.8,
+     "clip_end": 2559.5,
+     "get_start": 496030.3,
+     "get_end": 496053.0,
+     "note": "11, Houston. Shift change time, here. White Team bids you good night; \u2026"
+    },
+    {
+     "clip_start": 2559.5,
+     "clip_end": 2565.7,
+     "get_start": 496060.7,
+     "get_end": 496066.9,
+     "note": "Thanks for a great job down there."
+    }
+   ]
+  },
+  {
+   "title": "Apollo 11 Mission Audio - Day 7 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_7/Apollo_11_Mission_Audio_-_Day_7.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_7",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's captions to the NASA air-to-ground transcript (Spacelog). Day 6 has hand-made captions with coarse timing, so its segments are good to several seconds; Days 7 and 8 have speech-recognition captions and are good to a few seconds.",
+   "segments": [
+    {
+     "clip_start": 317.8,
+     "clip_end": 395.0,
+     "get_start": 536655.0,
+     "get_end": 536732.2,
+     "note": "I think it was after insertion sometime, Bruce. I don't remember exact\u2026"
+    },
+    {
+     "clip_start": 395.0,
+     "clip_end": 405.1,
+     "get_start": 536739.9,
+     "get_end": 536750.0,
+     "note": "I should mention, Bruce, that when I went to water secondary - water s\u2026"
+    },
+    {
+     "clip_start": 430.7,
+     "clip_end": 464.8,
+     "get_start": 536769.0,
+     "get_end": 536803.1,
+     "note": "Roger. Did you make any changes in the suit loop configuration after y\u2026"
+    },
+    {
+     "clip_start": 486.7,
+     "clip_end": 514.4,
+     "get_start": 536832.3,
+     "get_end": 536860.0,
+     "note": "Roger. Could you confirm that? I thought there was some question after\u2026"
+    },
+    {
+     "clip_start": 603.4,
+     "clip_end": 645.3,
+     "get_start": 539081.1,
+     "get_end": 539123.0,
+     "note": "Roger. I wonder if you've noticed any change in the BIOMED returns you\u2026"
+    },
+    {
+     "clip_start": 780.0,
+     "clip_end": 1000.0,
+     "get_start": 541702.0,
+     "get_end": 541922.0,
+     "note": "11, Houston. We're standing by for your burn. Everything's looking goo\u2026"
+    },
+    {
+     "clip_start": 1413.1,
+     "clip_end": 1473.4,
+     "get_start": 545093.0,
+     "get_end": 545153.3,
+     "note": "Roger. You might as well start setting up for it, and we will be worki\u2026"
+    },
+    {
+     "clip_start": 1568.0,
+     "clip_end": 1622.2,
+     "get_start": 545669.0,
+     "get_end": 545723.2,
+     "note": "Roger. You may not have to unpack it. The position which I just gave y\u2026"
+    },
+    {
+     "clip_start": 1672.4,
+     "clip_end": 1707.8,
+     "get_start": 545815.6,
+     "get_end": 545851.0,
+     "note": "Roger. And the next question from our panel is for Buzz. We recall tha\u2026"
+    },
+    {
+     "clip_start": 1788.8,
+     "clip_end": 1818.2,
+     "get_start": 545931.6,
+     "get_end": 545961.0,
+     "note": "Roger, Buzz. We copy."
+    },
+    {
+     "clip_start": 1843.1,
+     "clip_end": 2092.0,
+     "get_start": 545987.1,
+     "get_end": 546236.0,
+     "note": "Yes. You remember I initially started on the cut side of the LM that t\u2026"
+    },
+    {
+     "clip_start": 2108.6,
+     "clip_end": 2155.3,
+     "get_start": 546387.0,
+     "get_end": 546433.7,
+     "note": "11, we concur that having VERB 16, NOUN 20 up on the DSKY may well hav\u2026"
+    },
+    {
+     "clip_start": 2180.2,
+     "clip_end": 2240.4,
+     "get_start": 546741.4,
+     "get_end": 546801.6,
+     "note": "Mike, over here on page 9 7 of your checklist where we're setting up P\u2026"
+    },
+    {
+     "clip_start": 2516.6,
+     "clip_end": 2530.8,
+     "get_start": 550067.8,
+     "get_end": 550082.0,
+     "note": "Oh, we were wondering what was new with you up there."
+    },
+    {
+     "clip_start": 2536.3,
+     "clip_end": 2548.7,
+     "get_start": 550107.0,
+     "get_end": 550119.4,
+     "note": "Nice to sit here and watch the Earth getting larger and larger and the\u2026"
+    },
+    {
+     "clip_start": 2718.2,
+     "clip_end": 2741.1,
+     "get_start": 551988.1,
+     "get_end": 552011.0,
+     "note": "11, Houston. The radios are still in good shape, and we are still wait\u2026"
+    },
+    {
+     "clip_start": 2792.0,
+     "clip_end": 2815.7,
+     "get_start": 552813.0,
+     "get_end": 552836.7,
+     "note": "Okay, 11. We are about ready to start PTC. I would like to give you so\u2026"
+    },
+    {
+     "clip_start": 2819.9,
+     "clip_end": 2837.1,
+     "get_start": 552842.8,
+     "get_end": 552860.0,
+     "note": "Understand. REACQ, pitch plus 30, yaw 270. Thank you."
+    },
+    {
+     "clip_start": 2945.2,
+     "clip_end": 2971.7,
+     "get_start": 554009.0,
+     "get_end": 554035.5,
+     "note": "Apollo 11, Houston. You sure you don't have anybody else in there with\u2026"
+    },
+    {
+     "clip_start": 3151.4,
+     "clip_end": 3181.5,
+     "get_start": 556873.9,
+     "get_end": 556904.0,
+     "note": "Negative. It's not. The last time we broke lock, we went to AUTO, and \u2026"
+    },
+    {
+     "clip_start": 3263.3,
+     "clip_end": 3283.5,
+     "get_start": 557507.0,
+     "get_end": 557527.2,
+     "note": "That's a good one because it puts the Earth out window 1 and the Moon \u2026"
+    },
+    {
+     "clip_start": 3528.4,
+     "clip_end": 3596.6,
+     "get_start": 560199.8,
+     "get_end": 560268.0,
+     "note": "Are you picking up our TV signals?"
+    },
+    {
+     "clip_start": 3745.8,
+     "clip_end": 3768.8,
+     "get_start": 560525.0,
+     "get_end": 560548.0,
+     "note": "Roger, Neil. Thank you much for that description. We've got a pretty d\u2026"
+    },
+    {
+     "clip_start": 3820.2,
+     "clip_end": 3906.3,
+     "get_start": 560597.0,
+     "get_end": 560683.1,
+     "note": "Okay. How do you read me, Charlie?"
+    },
+    {
+     "clip_start": 3908.6,
+     "clip_end": 3927.7,
+     "get_start": 560683.9,
+     "get_end": 560703.0,
+     "note": "Roger. How am I coming through now, Charlie?"
+    },
+    {
+     "clip_start": 4012.6,
+     "clip_end": 4038.5,
+     "get_start": 560802.0,
+     "get_end": 560827.9,
+     "note": "Apollo 11, Houston. We notice your roll rate increasing. Will you plea\u2026"
+    },
+    {
+     "clip_start": 4171.7,
+     "clip_end": 4449.9,
+     "get_start": 560950.0,
+     "get_end": 561228.2,
+     "note": "Okay. Well, as I said, I was going to show you but I'm afraid I filled\u2026"
+    }
+   ]
+  },
+  {
+   "title": "Apollo 11 Mission Audio - Day 8 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_8/Apollo_11_Mission_Audio_-_Day_8.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_8",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's captions to the NASA air-to-ground transcript (Spacelog). Day 6 has hand-made captions with coarse timing, so its segments are good to several seconds; Days 7 and 8 have speech-recognition captions and are good to a few seconds.",
+   "segments": [
+    {
+     "clip_start": 4.0,
+     "clip_end": 50.0,
+     "get_start": 639140.1,
+     "get_end": 639186.1,
+     "note": "Good evening. This is the Commander of Apollo 11. A hundred years ago,\u2026"
+    },
+    {
+     "clip_start": 52.0,
+     "clip_end": 200.0,
+     "get_start": 639281.1,
+     "get_end": 639429.1,
+     "note": "Roger. This trip of ours to the Moon may have looked, to you, simple o\u2026"
+    },
+    {
+     "clip_start": 205.0,
+     "clip_end": 400.0,
+     "get_start": 639471.0,
+     "get_end": 639666.0,
+     "note": "11, this is Houston. We're getting a good picture of Buzz now, but no \u2026"
+    },
+    {
+     "clip_start": 402.0,
+     "clip_end": 480.0,
+     "get_start": 639699.4,
+     "get_end": 639777.4,
+     "note": "The responsibility for this flight lies first with history and with th\u2026"
+    },
+    {
+     "clip_start": 594.2,
+     "clip_end": 632.6,
+     "get_start": 644215.0,
+     "get_end": 644253.4,
+     "note": "11, we'd like you to shift to an OMNI antenna configuration at the pre\u2026"
+    },
+    {
+     "clip_start": 686.8,
+     "clip_end": 701.8,
+     "get_start": 644391.0,
+     "get_end": 644406.0,
+     "note": "All those wires and things look normal up here."
+    },
+    {
+     "clip_start": 701.8,
+     "clip_end": 716.2,
+     "get_start": 644418.4,
+     "get_end": 644432.8,
+     "note": "Well, I promise to let you know if I stop breathing."
+    },
+    {
+     "clip_start": 1081.9,
+     "clip_end": 1118.1,
+     "get_start": 649286.8,
+     "get_end": 649323.0,
+     "note": "We'd like to know what your plans are as far as turning in this evenin\u2026"
+    },
+    {
+     "clip_start": 1162.2,
+     "clip_end": 1192.5,
+     "get_start": 649395.7,
+     "get_end": 649426.0,
+     "note": "Roger. For the number 5 window. That'll be - every time you pass 230 d\u2026"
+    },
+    {
+     "clip_start": 1270.5,
+     "clip_end": 1282.2,
+     "get_start": 650552.3,
+     "get_end": 650564.0,
+     "note": "Okay, Bruce. Good night. Thank you."
+    },
+    {
+     "clip_start": 1467.0,
+     "clip_end": 1499.3,
+     "get_start": 653237.0,
+     "get_end": 653269.3,
+     "note": "Apollo 11, Houston. Could you stand by just a few minutes? Charlie and\u2026"
+    },
+    {
+     "clip_start": 1588.8,
+     "clip_end": 1661.2,
+     "get_start": 653817.6,
+     "get_end": 653890.0,
+     "note": "Okay. Let's see now. Your PGA is in the L shaped bag with the other tw\u2026"
+    },
+    {
+     "clip_start": 1775.0,
+     "clip_end": 1831.9,
+     "get_start": 654073.9,
+     "get_end": 654130.8,
+     "note": "11, Houston. Our recommendation on the gear you got in the helmet bag \u2026"
+    },
+    {
+     "clip_start": 2038.4,
+     "clip_end": 2061.4,
+     "get_start": 655241.0,
+     "get_end": 655264.0,
+     "note": "Okay, Charlie. Crew status report follows: CDR 11023, CMP 10025, LMP 0\u2026"
+    }
+   ]
+  }
+ ],
+ "video": [
+  {
+   "title": "Apollo 11 16 mm onboard film: rendezvous, seen from Columbia (NASA)",
+   "src": "https://archive.org/download/Apollo-11_LM-landing_US-Flag-lunar-surface_LM-ascent-lunar-orbit-approach.mxf/Apollo-11_LM-landing_US-Flag-lunar-surface_LM-ascent-lunar-orbit-approach.mp4",
+   "page": "https://archive.org/details/Apollo-11_LM-landing_US-Flag-lunar-surface_LM-ascent-lunar-orbit-approach.mxf",
+   "method": "Eagle's ascent stage closing on Columbia over the Moon, through Collins's window. Assumed to be shot at 6 frames a second and transferred at 30, like the descent film; placed by eye in the minutes after TPF, so the timing is approximate.",
+   "segments": [
+    {
+     "clip_start": 1376.5,
+     "clip_end": 1478.0,
+     "get_start": 459990.0,
+     "get_end": 460497.5,
+     "rate": 5.0,
+     "note": "Eagle approaching Columbia, five times speed (approximate timing)"
+    }
+   ]
+  },
+  {
+   "title": "Apollo 11 16 mm onboard film: docking and entry (NASA)",
+   "src": "https://archive.org/download/Apollo-11-Reentry_LM-Docking-and-Undocking_802290.mxf/Apollo-11-Reentry_LM-Docking-and-Undocking_802290.mp4",
+   "page": "https://archive.org/details/Apollo-11-Reentry_LM-Docking-and-Undocking_802290.mxf",
+   "method": "Docking: Eagle's ascent stage filling Columbia's docking sight, placed so the closing ends at the reconstruction's moment of capture; approximate. Entry: the fireball through a Columbia window. Placed so the glow first shows at 0.05 g (30 s after entry interface) and brightest near the first load-factor peak, which makes the film run at about 1.5 times real time; approximate.",
+   "segments": [
+    {
+     "clip_start": 316.0,
+     "clip_end": 430.0,
+     "get_start": 460789.0,
+     "get_end": 460903.0,
+     "rate": 1.0,
+     "note": "final approach and docking (approximate timing)"
+    },
+    {
+     "clip_start": 36.0,
+     "clip_end": 128.0,
+     "get_start": 702204.8,
+     "get_end": 702342.8,
+     "rate": 1.5,
+     "note": "entry fireball (approximate timing)"
+    }
+   ]
+  }
+ ]
+}
