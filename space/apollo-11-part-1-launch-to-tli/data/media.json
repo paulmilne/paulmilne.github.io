@@ -1,0 +1,241 @@
+{
+ "audio": [
+  {
+   "title": "Apollo 11 Mission Audio - Day 1 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_1/Apollo_11_Mission_Audio_-_Day_1.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_1",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's speech-recognition captions to the NASA air-to-ground transcript; the countdown is pinned to the PAO zero call. Accuracy is a few seconds.",
+   "segments": [
+    {
+     "clip_start": 92,
+     "clip_end": 148,
+     "get_start": -34.3,
+     "get_end": 21.7,
+     "note": "countdown and liftoff, pinned to PAO zero call"
+    },
+    {
+     "clip_start": 159,
+     "clip_end": 173,
+     "get_start": 59.1,
+     "get_end": 73.1,
+     "note": "one-minute call"
+    },
+    {
+     "clip_start": 185,
+     "clip_end": 200,
+     "get_start": 723.2,
+     "get_end": 738.2,
+     "note": "GO for orbit"
+    },
+    {
+     "clip_start": 200,
+     "clip_end": 219,
+     "get_start": 8795.1,
+     "get_end": 8814.1,
+     "note": "GO for TLI"
+    },
+    {
+     "clip_start": 227,
+     "clip_end": 240,
+     "get_start": 9864.0,
+     "get_end": 9877.0,
+     "note": "TLI ignition confirmed"
+    },
+    {
+     "clip_start": 240,
+     "clip_end": 259,
+     "get_start": 9909.0,
+     "get_end": 9928.0,
+     "note": "TLI one-minute status"
+    },
+    {
+     "clip_start": 259,
+     "clip_end": 287,
+     "get_start": 10200.0,
+     "get_end": 10228.0,
+     "note": "TLI cutoff call and PAO, approximate"
+    },
+    {
+     "clip_start": 291.1,
+     "clip_end": 331.3,
+     "get_start": 10389.3,
+     "get_end": 10429.5,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 331.3,
+     "clip_end": 410.4,
+     "get_start": 10446.8,
+     "get_end": 10525.9,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 463.5,
+     "clip_end": 480.8,
+     "get_start": 11369.0,
+     "get_end": 11386.3,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 619.8,
+     "clip_end": 674.6,
+     "get_start": 12564.6,
+     "get_end": 12619.4,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 761.6,
+     "clip_end": 820.1,
+     "get_start": 12762.2,
+     "get_end": 12820.7,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 894.8,
+     "clip_end": 910.9,
+     "get_start": 13077.9,
+     "get_end": 13094.0,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 985.1,
+     "clip_end": 1090.5,
+     "get_start": 13428.0,
+     "get_end": 13533.4,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 1133,
+     "clip_end": 1300.5,
+     "get_start": 13667.6,
+     "get_end": 13835.1,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 1433,
+     "clip_end": 1574.5,
+     "get_start": 14230.2,
+     "get_end": 14371.7,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 1750.6,
+     "clip_end": 1780.4,
+     "get_start": 14549.0,
+     "get_end": 14578.8,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 2006,
+     "clip_end": 2034.8,
+     "get_start": 15217.2,
+     "get_end": 15246.0,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 2223.9,
+     "clip_end": 2279.7,
+     "get_start": 15435.6,
+     "get_end": 15491.4,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 2541,
+     "clip_end": 2573.6,
+     "get_start": 16102.9,
+     "get_end": 16135.5,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3062.5,
+     "clip_end": 3273,
+     "get_start": 16844.0,
+     "get_end": 17054.5,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3436.5,
+     "clip_end": 3456.1,
+     "get_start": 17132.4,
+     "get_end": 17152.0,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3524.1,
+     "clip_end": 3551.3,
+     "get_start": 17376.8,
+     "get_end": 17404.0,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3645.9,
+     "clip_end": 3672.4,
+     "get_start": 17607.7,
+     "get_end": 17634.2,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3677,
+     "clip_end": 3701.2,
+     "get_start": 17853,
+     "get_end": 17877.2,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3727.1,
+     "clip_end": 3759.4,
+     "get_start": 18051.0,
+     "get_end": 18083.3,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3759.5,
+     "clip_end": 3781.3,
+     "get_start": 18100.0,
+     "get_end": 18121.8,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3879.8,
+     "clip_end": 3958.8,
+     "get_start": 18895.2,
+     "get_end": 18974.2,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 3984.6,
+     "clip_end": 4001,
+     "get_start": 19202.6,
+     "get_end": 19219,
+     "note": "matched to transcript"
+    },
+    {
+     "clip_start": 4006.5,
+     "clip_end": 4021,
+     "get_start": 19234.0,
+     "get_end": 19248.5,
+     "note": "matched to transcript"
+    }
+   ],
+   "id": "day1"
+  }
+ ],
+ "video": [
+  {
+   "id": "launch1",
+   "title": "Apollo 11 launch (NASA film)",
+   "src": "https://archive.org/download/HSF-mov-apollo11_launchclip01/apollo11_launchclip01.mp4",
+   "page": "https://archive.org/details/HSF-mov-apollo11_launchclip01",
+   "method": "Pinned by the first visible engine flame (clip 6.75 s) to the S-IC ignition sequence, about 8.6 s before range zero. Accuracy about 1 s.",
+   "segments": [
+    {
+     "clip_start": 0,
+     "clip_end": 35.8,
+     "get_start": -15.35,
+     "get_end": 20.45,
+     "note": "ignition, hold-down and liftoff"
+    }
+   ]
+  }
+ ]
+}

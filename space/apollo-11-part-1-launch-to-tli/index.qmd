@@ -1,0 +1,707 @@
+---
+title: "Apollo 11, Part 1: Launch to Translunar Injection"
+subtitle: "Rebuilding the first three hours of the flight from the 1969 trajectory tables, and the orbital mechanics that make it work"
+description: "A reconstruction of Apollo 11 from liftoff to translunar injection, anchored on NASA's documented state vectors and propagated with a modern force model. Covers launching from a rotating Earth, the parking orbit, the TLI burn, and why the free-return path still needed correcting."
+author: "Paul Milne"
+date: "2026-10-28"
+categories: [space, orbital-mechanics, apollo, reconstruction]
+resources:
+  - apollo3d.js
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.a11-player { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.25rem 0 .5rem; }
+.a11-player input[type=range] { flex:1 1 220px; min-width:0; }
+.a11-player button, .a11-chip { font: inherit; font-size:.85rem; padding:.25rem .65rem; border-radius:999px;
+  border:1px solid var(--bs-border-color, #ccc); background:var(--bs-body-bg, #fff); color:inherit; cursor:pointer; }
+.a11-player button.primary { background:#1d3557; color:#fff; border-color:#1d3557; min-width:5.5rem; }
+.a11-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.75rem; }
+.a11-chip.active { border-color:#e76f51; color:#b5452b; background: rgba(231,111,81,.12); }
+.a11-panels { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:.75rem; }
+.a11-panel { border:1px solid var(--bs-border-color, #ddd); border-radius:8px; padding:.5rem; background:var(--bs-body-bg, #fff); }
+.a11-panel h4 { font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; margin:.1rem .25rem .4rem; opacity:.7; }
+.a11-hud { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:.4rem .9rem; font-variant-numeric: tabular-nums; }
+.a11-hud .k { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; opacity:.65; }
+.a11-hud .v { font-size:1.05rem; font-weight:600; }
+.a11-hud .s { font-size:.78rem; opacity:.7; }
+.a11-head { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; }
+.a11-get { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:1.35rem; font-weight:700; }
+.a11-phase { font-weight:600; }
+.a11-pill { display:inline-block; font-size:.72rem; padding:.1rem .5rem; border-radius:999px; color:#fff; vertical-align:middle; }
+.a11-legend { font-size:.82rem; display:flex; gap:.9rem; flex-wrap:wrap; margin:.4rem 0 0; }
+.a11-legend span::before { content:""; display:inline-block; width:.7rem; height:.7rem; border-radius:50%; margin-right:.3rem; vertical-align:-1px; background:var(--c); }
+.a11-tx { height: 260px; overflow-y: auto; border-top:1px solid var(--bs-border-color, #ddd); font-size:.82rem; }
+.a11-line { display:grid; grid-template-columns: 4.6rem 1fr; gap:0 .5rem; padding:.25rem .3rem; cursor:pointer; border-radius:4px; }
+.a11-line .t { font-family: ui-monospace, Menlo, monospace; opacity:.6; grid-row: span 2; font-size:.75rem; padding-top:.1rem; }
+.a11-line .who { font-weight:600; font-size:.75rem; }
+.a11-line.onb .x { font-style: italic; }
+.a11-line:hover { background: rgba(127,127,127,.08); }
+.a11-line.cur { background: rgba(231,111,81,.14); }
+.a11-now { min-height: 3.6rem; padding:.4rem .5rem; border-left:3px solid #e76f51; margin-bottom:.4rem; background: rgba(127,127,127,.06); border-radius: 4px; }
+.a11-now .who { font-weight:700; font-size:.8rem; } .a11-now .t { font-family: ui-monospace, Menlo, monospace; opacity:.6; font-weight:400; margin-left:.4rem; }
+.a11-now .x { font-size:.95rem; }
+.a11-chip input { vertical-align: -1px; margin-right: .2rem; }
+table.a11-checks { font-size:.88rem; width:100%; }
+table.a11-checks td.num { text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+</style>
+```
+
+On 16 July 1969 at 13:32 UTC a Saturn V lifted off from Launch Complex 39A. Eight days later the command module *Columbia* splashed down in the Pacific with three men who had been to the Moon. This series rebuilds that flight, numerically, from the records NASA published in 1969 and 1970, and uses it as a tour of orbital mechanics.
+
+There are four parts:
+
+1. **Launch to translunar injection** (this post): the ascent, the parking orbit, and the burn that leaves Earth.
+2. **Translunar coast and lunar orbit insertion**: free return, midcourse corrections, and braking into lunar orbit.
+3. **Descent and landing**: *Eagle* separates from *Columbia* and flies the powered descent to Tranquility Base.
+4. [**Rendezvous, return and entry**](../apollo-11-part-4-rendezvous-return-and-entry/): ascent, rendezvous with *Columbia*, the burn home, and splashdown.
+
+## How the reconstruction works
+
+No continuous telemetry for the whole mission survives in usable form. What does survive are tables: the spacecraft's position and velocity at key moments ("state vectors"), the times of every burn, and the orbits that resulted. These were produced after the flight by NASA, Boeing and TRW from radar tracking and onboard data.
+
+So the reconstruction works from **anchors**. Each documented state is taken as true. Between anchors, the trajectory is filled in by one of three methods:
+
+- **Interpolation**, where the tables are dense enough (the ascent).
+- **Propagation**, integrating the equations of motion forward with a modern force model: Earth's gravity including its equatorial bulge, plus the Moon and the Sun, using JPL's DE421 ephemeris for where they were in July 1969.
+- **Fitting**, where a burn is known only by its start, end and result. A simple rocket model is solved for the steering that best joins the two anchors.
+
+Wherever the model arrives at a documented anchor, the difference between the two is reported. Those residuals are some of the most informative numbers in the post.
+
+The display marks every value by where it came from:
+
+```{ojs}
+srcInfo = [
+  {code: 0, name: "Documented", color: "#2a9d8f"},
+  {code: 1, name: "Interpolated", color: "#457b9d"},
+  {code: 2, name: "Propagated", color: "#e9c46a"},
+  {code: 3, name: "Fitted", color: "#e76f51"}
+]
+htl.html`<div class="a11-legend">${srcInfo.map(s => htl.html`<span style="--c:${s.color}">${s.name}</span>`)}</div>`
+```
+
+## The first six hours
+
+Press play, or jump to an event. Playback speeds up automatically through the long, quiet stretches and slows down for the burns. There are four panels. The ground track follows *Apollo 11* over the rotating Earth. The inertial view looks down on the orbit from above its plane, in a frame that does not rotate, which is where the orbital mechanics is easiest to see. The 3D view is a computer-generated model of the Saturn V, built to scale and flown along the reconstructed trajectory, with staging, tower jettison and the transposition and docking. The last panel scrolls the crew's and Mission Control's words with the clock. Turn the sound on and choose **Real time** to hear NASA's recordings wherever they exist for that moment; the launch film plays in the same panel around liftoff.
+
+```{ojs}
+data = FileAttachment("data/part1.json").json()
+track = data.track
+times = track.map(d => d[0])
+events = data.events
+T_MIN = -60
+T_MAX = 6 * 3600
+```
+
+```{ojs}
+phases = [
+  [-60, "On the pad"],
+  [0.63, "First stage (S-IC)"],
+  [162.3, "Second stage (S-II)"],
+  [549.0, "Third stage (S-IVB), first burn"],
+  [709.33, "Earth parking orbit"],
+  [9856.2, "Translunar injection burn"],
+  [10203.03, "Coasting away from Earth"],
+  [11723.0, "Transposition and docking"],
+  [12243.7, "Translunar coast, docked"]
+]
+jumps = [
+  ["Liftoff", 0], ["Max Q", 83], ["Staging", 162.3], ["Orbit", 709.33],
+  ["TLI burn", 9850], ["TLI", 10213.03], ["Docking", 12243.7]
+]
+```
+
+```{ojs}
+viewof T = {
+  const warp = t => t < 0 ? 4 : t < 715 ? 8 : t < 9800 ? 240 : t < 10220 ? 12 : t < 12300 ? 90 : 300;
+  const range = htl.html`<input type="range" min=${T_MIN} max=${T_MAX} step="0.5" value="-20">`;
+  const play = htl.html`<button type="button" class="primary">▶ Play</button>`;
+  const speed = htl.html`<select class="a11-chip">
+      <option value="rt">Real time</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="3">3×</option></select>`;
+  const chips = htl.html`<div class="a11-chips">${jumps.map(([label, t]) =>
+      htl.html`<button type="button" class="a11-chip" data-t=${t}>${label}</button>`)}</div>`;
+  const root = htl.html`<div><div class="a11-player">${play}${range}${speed}</div>${chips}</div>`;
+  let running = false, last = null, raf = null;
+  const set = v => {
+    root.value = Math.max(T_MIN, Math.min(T_MAX, v));
+    range.value = root.value;
+    root.dispatchEvent(new Event("input", {bubbles: true}));
+  };
+  const tick = now => {
+    if (!running) return;
+    if (last != null) {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      root.rate = speed.value === "rt" ? 1 : warp(root.value) * (+speed.value);
+      set(root.value + dt * root.rate);
+      if (root.value >= T_MAX) toggle(false);
+    }
+    last = now;
+    raf = requestAnimationFrame(tick);
+  };
+  const toggle = on => {
+    running = on; last = null; root.rate = 0; root.running = on;
+    play.textContent = on ? "❚❚ Pause" : "▶ Play";
+    if (on) { if (root.value >= T_MAX) set(T_MIN); raf = requestAnimationFrame(tick); }
+    else cancelAnimationFrame(raf);
+  };
+  play.onclick = () => toggle(!running);
+  range.oninput = e => { e.stopPropagation(); set(+range.value); };
+  chips.onclick = e => { const b = e.target.closest("button"); if (b) set(+b.dataset.t); };
+  root.value = -20;
+  root.rate = 0;
+  root.running = false;
+  root.setT = set;
+  root.setSpeed = v => { speed.value = v; };
+  root.play = () => { if (!running) toggle(true); };
+  invalidation.then(() => cancelAnimationFrame(raf));
+  return root;
+}
+```
+
+```{ojs}
+state = {
+  let i = Math.max(0, Math.min(track.length - 2, d3.bisectRight(times, T) - 1));
+  const a = track[i], b = track[i + 1];
+  const f = Math.max(0, Math.min(1, (T - a[0]) / (b[0] - a[0])));
+  const s = {};
+  data.meta.columns.forEach((c, j) => {
+    if (c === "src") return;
+    let va = a[j], vb = b[j];
+    if (c === "lon" && Math.abs(vb - va) > 180) vb += vb < va ? 360 : -360;
+    s[c] = va + f * (vb - va);
+  });
+  if (s.lon > 180) s.lon -= 360;
+  if (s.lon < -180) s.lon += 360;
+  s.get = T;
+  s.src = (f < 0.02) ? a[13] : (f > 0.98 ? b[13] : Math.max(a[13], b[13]) === 0 ? 1 : Math.max(a[13], b[13]));
+  s.phase = phases.filter(p => p[0] <= T).at(-1)[1];
+  s.i = i;
+  return s;
+}
+```
+
+```{ojs}
+fmtGET = t => {
+  const sign = t < 0 ? "T−" : "";
+  t = Math.abs(t);
+  const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  return `${sign}${String(h).padStart(3, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(1).padStart(4, "0")}`;
+}
+fmt = (x, d = 1) => x.toLocaleString("en-GB", {minimumFractionDigits: d, maximumFractionDigits: d})
+```
+
+```{ojs}
+hud = {
+  const s = state, src = srcInfo[s.src];
+  const FT = 3.28084;
+  const cell = (k, v, sub) => htl.html`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub ?? ""}</div></div>`;
+  return htl.html`<div class="a11-panel">
+    <div class="a11-head">
+      <div><span class="a11-get">${fmtGET(s.get)}</span> <span class="s" style="opacity:.6">GET</span></div>
+      <div><span class="a11-phase">${s.phase}</span>
+        <span class="a11-pill" style="background:${src.color}">${src.name}</span></div>
+    </div>
+    <div class="a11-hud">
+      ${cell("Altitude", `${fmt(s.alt_km)} km`, `${fmt(s.alt_km / 1.852)} n mi`)}
+      ${cell("Inertial speed", `${fmt(s.v_kms, 3)} km/s`, `${fmt(s.v_kms * 1000 * FT, 0)} ft/s`)}
+      ${cell("Speed over ground", `${fmt(s.vrel_kms, 3)} km/s`, "relative to rotating Earth")}
+      ${cell("Flight-path angle", `${fmt(s.fpa, 2)}°`, "above local horizontal")}
+      ${cell("Heading", `${fmt(s.head, 1)}°`, "east of north, inertial")}
+      ${cell("Position", `${fmt(Math.abs(s.lat), 2)}°${s.lat >= 0 ? "N" : "S"} ${fmt(Math.abs(s.lon), 2)}°${s.lon >= 0 ? "E" : "W"}`, "geocentric")}
+      ${cell("From Earth's centre", `${fmt(s.r_km, 0)} km`, `${fmt(s.r_km / 6378.166, 2)} Earth radii`)}
+      ${cell("To the Moon", `${fmt(s.rmoon_km, 0)} km`, "centre to centre")}
+    </div></div>`;
+}
+```
+
+```{ojs}
+topojson = require("topojson-client@3")
+land = fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")
+  .then(r => r.json()).then(w => topojson.feature(w, w.objects.land))
+```
+
+```{ojs}
+panelW = Math.max(260, width > 700 ? Math.floor((width - 12) / 2) - 18 : width - 18)
+```
+
+```{ojs}
+drawGlobe = (state) => {
+  const w = panelW, h = w;
+  const proj = d3.geoOrthographic().fitExtent([[6, 6], [w - 6, h - 6]], {type: "Sphere"})
+    .rotate([-state.lon, -Math.max(-50, Math.min(50, state.lat)) * 0.7]).clipAngle(90);
+  const path = d3.geoPath(proj);
+  const past = track.slice(0, state.i + 1).map(d => [d[5], d[4]]).concat([[state.lon, state.lat]]);
+  const future = track.slice(state.i + 1).map(d => [d[5], d[4]]);
+  const p = proj([state.lon, state.lat]);
+  const cape = proj([-80.6041, 28.608]);
+  return htl.html`<div class="a11-panel"><h4>Ground track, Earth-fixed</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block">
+      <path d="${path({type: "Sphere"})}" fill="#0b1d33"/>
+      <path d="${path(d3.geoGraticule10())}" fill="none" stroke="#ffffff18"/>
+      <path d="${path(land)}" fill="#2f4f4f" stroke="#5f8a8a" stroke-width="0.5"/>
+      <path d="${path({type: "LineString", coordinates: future})}" fill="none" stroke="#ffffff40" stroke-dasharray="3 3"/>
+      <path d="${path({type: "LineString", coordinates: past})}" fill="none" stroke="#f4a261" stroke-width="2"/>
+      ${cape ? htl.svg`<circle cx=${cape[0]} cy=${cape[1]} r="2.5" fill="#fff"/>` : ""}
+      ${p ? htl.svg`<circle cx=${p[0]} cy=${p[1]} r="5" fill="#e76f51" stroke="#fff" stroke-width="1.5"/>` : ""}
+    </svg></div>`;
+}
+```
+
+```{ojs}
+plane = {
+  // Basis in the plane of the translunar orbit: e1 towards the TLI position, e2 along-track.
+  const tli = track.find(d => Math.abs(d[0] - 10213.03) < 1e-6);
+  const r = [tli[1], tli[2], tli[3]];
+  const k = track.find(d => d[0] > 10300);
+  const r2 = [k[1], k[2], k[3]];
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const norm = a => { const n = Math.hypot(...a); return a.map(x => x / n); };
+  const hN = norm(cross(r, r2)), e1 = norm(r), e2 = cross(hN, e1);
+  return {e1, e2, hN, proj: p => [p[0]*e1[0]+p[1]*e1[1]+p[2]*e1[2], p[0]*e2[0]+p[1]*e2[1]+p[2]*e2[2]]};
+}
+viewof zoomMode = Inputs.radio(["Follow", "Near Earth", "Earth–Moon"], {value: "Follow"})
+```
+
+```{ojs}
+drawInertial = (state, T) => {
+  const w = panelW, h = w;
+  const span = zoomMode === "Near Earth" ? 11000 : zoomMode === "Earth–Moon" ? 430000
+             : Math.max(9500, Math.min(430000, 1.35 * state.r_km));
+  const sc = (Math.min(w, h) / 2 - 8) / span;
+  const X = q => w / 2 + q[0] * sc, Y = q => h / 2 - q[1] * sc;
+  const pts = track.map(d => plane.proj([d[1], d[2], d[3]]));
+  const line = arr => arr.map((q, i) => `${i ? "L" : "M"}${X(q).toFixed(1)},${Y(q).toFixed(1)}`).join("");
+  const past = pts.slice(0, state.i + 1).concat([plane.proj([state.x, state.y, state.z])]);
+  const futurePts = pts.slice(state.i + 1);
+  const longPts = data.long_track.map(d => plane.proj([d[1], d[2], d[3]]));
+  const moonPts = data.moon.map(d => plane.proj([d[1], d[2], d[3]]));
+  const mi = Math.max(0, d3.bisectRight(data.moon.map(d => d[0]), T) - 1);
+  const m0 = data.moon[mi], m1 = data.moon[Math.min(mi + 1, data.moon.length - 1)];
+  const f = m1[0] > m0[0] ? (T - m0[0]) / (m1[0] - m0[0]) : 0;
+  const mNow = plane.proj([0, 1, 2].map(j => m0[j + 1] + f * (m1[j + 1] - m0[j + 1])));
+  const sNow = plane.proj([state.x, state.y, state.z]);
+  const tArr = data.checks.find(c => c[0].startsWith("Arrival at the Moon, GET"))[2] * 3600;
+  const ai = Math.max(0, d3.bisectRight(data.moon.map(d => d[0]), tArr) - 1);
+  const a0 = data.moon[ai], a1 = data.moon[ai + 1], fa = (tArr - a0[0]) / (a1[0] - a0[0]);
+  const mArr = plane.proj([0, 1, 2].map(j => a0[j + 1] + fa * (a1[j + 1] - a0[j + 1])));
+  const earthR = 6378 * sc, moonR = Math.max(3, 1737 * sc);
+  const tick = span > 50000 ? 100000 : span > 15000 ? 10000 : 2000;
+  const rings = d3.range(tick, span * 1.5, tick).slice(0, 6);
+  return htl.html`<div class="a11-panel"><h4>Inertial view, looking down on the orbit plane</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px">
+      ${rings.map(rr => htl.svg`<circle cx=${w/2} cy=${h/2} r=${rr * sc} fill="none" stroke="#ffffff12"/>`)}
+      ${htl.svg`<text x="8" y=${h - 8} fill="#ffffff70" font-size="11">rings every ${fmt(tick, 0)} km</text>`}
+      ${span > 60000 ? htl.svg`<path d="${line(moonPts)}" fill="none" stroke="#ffffff22" stroke-dasharray="2 4"/>` : ""}
+      ${span > 60000 ? htl.svg`<path d="${line(longPts)}" fill="none" stroke="#e9c46a55" stroke-dasharray="5 4"/>` : ""}
+      <circle cx=${w/2} cy=${h/2} r=${Math.max(2, earthR)} fill="#1d4e89" stroke="#6fa8dc" stroke-width="0.8"/>
+      <path d="${line(futurePts)}" fill="none" stroke="#ffffff35" stroke-dasharray="3 3"/>
+      <path d="${line(past)}" fill="none" stroke="#f4a261" stroke-width="1.8"/>
+      ${span > 60000 ? htl.svg`<circle cx=${X(mArr)} cy=${Y(mArr)} r=${moonR + 3} fill="none" stroke="#bbb" stroke-dasharray="2 2"/>
+        <text x=${X(mArr) + moonR + 6} y=${Y(mArr) + 14} fill="#999" font-size="10">Moon at arrival, ~75 h</text>` : ""}
+      <circle cx=${X(mNow)} cy=${Y(mNow)} r=${moonR} fill="#bbb"/>
+      ${htl.svg`<text x=${X(mNow) + moonR + 4} y=${Y(mNow) + 4} fill="#ccc" font-size="11">Moon</text>`}
+      <circle cx=${X(sNow)} cy=${Y(sNow)} r="4.5" fill="#e76f51" stroke="#fff" stroke-width="1.2"/>
+    </svg>
+    <div class="a11-legend" style="margin:.4rem .25rem 0">
+      <span style="--c:#f4a261">Flown so far</span><span style="--c:#9aa3ad">Still to come</span>
+      ${span > 60000 ? htl.html`<span style="--c:#e9c46a">No midcourse correction, to Earth</span>` : ""}
+    </div></div>`;
+}
+```
+
+```{ojs}
+THREE = require("three@0.128.0/build/three.min.js")
+```
+
+```{ojs}
+apollo3d = import(new URL("apollo3d.js", document.baseURI).href)
+```
+
+```{ojs}
+transcript = FileAttachment("data/transcript.json").json()
+media = FileAttachment("data/media.json").json()
+```
+
+```{ojs}
+view3d = {
+  const api = apollo3d.createScene(THREE, {data, land, d3, width: panelW, height: Math.round(panelW * 0.75)});
+  const buttons = htl.html`<div class="a11-chips" style="margin:.4rem .25rem 0">${api.presets.map(name =>
+    htl.html`<button type="button" class="a11-chip${name === "Chase" ? " active" : ""}" data-p=${name}>${name}</button>`)}
+    <span class="s" style="font-size:.75rem;opacity:.6;align-self:center">drag to orbit, scroll to zoom</span></div>`;
+  buttons.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    buttons.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+    api.setPreset(b.dataset.p);
+  };
+  const el = htl.html`<div class="a11-panel"><h4>3D view (CGI, built from the trajectory)</h4>${api.canvas}${buttons}</div>`;
+  invalidation.then(api.dispose);
+  return {el, api};
+}
+```
+
+```{ojs}
+mediaPanel = {
+  const player = viewof T;
+  const lines = transcript.lines;
+  const colors = {CC: "#457b9d", CDR: "#e76f51", CMP: "#2a9d8f", LMP: "#9b5de5"};
+  const show = {"air-to-ground": true, onboard: true};
+  const fmtT = t => fmtGET(t).replace(/\.\d$/, "");
+  const list = htl.html`<div class="a11-tx"></div>`;
+  const rows = lines.map(([t, code, who, text, ch], i) => {
+    const r = htl.html`<div class="a11-line ${ch === "onboard" ? "onb" : ""}" data-i=${i}>
+      <span class="t">${fmtT(t)}</span>
+      <span class="who" style="color:${colors[code.split(" ")[0]] ?? "#888"}">${who}${ch === "onboard" ? " · onboard" : ""}</span>
+      <span class="x">${text}</span></div>`;
+    list.append(r); return r;
+  });
+  list.onclick = e => { const r = e.target.closest(".a11-line"); if (r) player.setT(lines[+r.dataset.i][0] - 0.5); };
+  let userScroll = 0;
+  list.addEventListener("wheel", () => { userScroll = performance.now(); }, {passive: true});
+  list.addEventListener("touchmove", () => { userScroll = performance.now(); }, {passive: true});
+
+  const filters = htl.html`<div class="a11-chips" style="margin:.2rem 0 .4rem">
+    <label class="a11-chip"><input type="checkbox" checked data-c="air-to-ground"> Air-to-ground</label>
+    <label class="a11-chip"><input type="checkbox" checked data-c="onboard"> Onboard recorder</label></div>`;
+  filters.onchange = e => {
+    show[e.target.dataset.c] = e.target.checked;
+    rows.forEach((r, i) => { r.style.display = show[lines[i][4]] ? "" : "none"; });
+  };
+
+  const audio = htl.html`<audio preload="none" src=${media.audio[0].src}></audio>`;
+  const vseg = media.video[0];
+  const video = htl.html`<video muted playsinline preload="metadata" src=${vseg.src} style="width:100%;border-radius:6px;background:#000;display:block"></video>`;
+  const videoBox = htl.html`<div style="display:none;margin-bottom:.5rem">${video}
+    <div class="s" style="font-size:.72rem;opacity:.65;margin-top:.2rem">NASA launch film, synced to mission time</div></div>`;
+  let soundOn = false;
+  const soundBtn = htl.html`<button type="button" class="a11-chip">🔈 Sound off</button>`;
+  const status = htl.html`<span class="s" style="font-size:.78rem;opacity:.75"></span>`;
+  soundBtn.onclick = () => {
+    soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? "🔊 Sound on" : "🔈 Sound off";
+    soundBtn.classList.toggle("active", soundOn);
+    if (soundOn) {
+      audio.play().then(() => audio.pause()).catch(() => {});   // unlock audio on this click
+      player.setSpeed("rt");
+    } else audio.pause();
+  };
+  const now = htl.html`<div class="a11-now"></div>`;
+  const el = htl.html`<div class="a11-panel"><h4>Voice and film</h4>
+    ${videoBox}
+    <div class="a11-chips" style="align-items:center;margin:0 0 .4rem">${soundBtn}${status}</div>
+    ${now}${filters}${list}${audio}
+    <div class="s" style="font-size:.72rem;opacity:.6;margin-top:.35rem">Transcript: NASA air-to-ground and onboard voice transcriptions, via Spacelog. Audio: NASA's Day 1 highlights reel, pinned to mission time segment by segment.</div>
+  </div>`;
+
+  let lastIdx = -2;
+  const segAt = (segs, t) => segs.find(s => t >= s.get_start && t < s.get_end);
+  const nextSeg = (segs, t) => segs.find(s => s.get_start > t);
+  function update(t) {
+    // Transcript: last visible line at or before t.
+    let i = d3.bisectRight(lines.map(l => l[0]), t) - 1;
+    while (i >= 0 && !show[lines[i][4]]) i--;
+    if (i !== lastIdx) {
+      if (lastIdx >= 0) rows[lastIdx].classList.remove("cur");
+      if (i >= 0) {
+        rows[i].classList.add("cur");
+        if (performance.now() - userScroll > 4000) list.scrollTop = rows[i].offsetTop - list.offsetTop - list.clientHeight / 3;
+        const [lt, code, who, text, ch] = lines[i];
+        now.replaceChildren(htl.html`<div class="who" style="color:${colors[code.split(" ")[0]] ?? "#888"}">${who}${ch === "onboard" ? " · onboard" : ""}
+          <span class="t">${fmtT(lt)}</span></div><div class="x">${text}</div>`);
+      } else now.replaceChildren(htl.html`<div class="x" style="opacity:.6">Countdown. The transcript starts at liftoff.</div>`);
+      lastIdx = i;
+    }
+    const realTime = player.running && player.rate === 1;
+    // Audio
+    const a = segAt(media.audio[0].segments, t);
+    if (a) {
+      const want = a.clip_start + (t - a.get_start);
+      status.textContent = soundOn ? (realTime ? "Playing NASA audio" : "Audio plays at Real time speed") : "NASA audio available here";
+      if (soundOn && realTime) {
+        if (Math.abs(audio.currentTime - want) > 0.8) audio.currentTime = want;
+        if (audio.paused) audio.play().catch(() => {});
+      } else if (!audio.paused) audio.pause();
+    } else {
+      if (!audio.paused) audio.pause();
+      const n = nextSeg(media.audio[0].segments, t);
+      status.textContent = n ? `No audio in the reel here; next at ${fmtT(n.get_start)}` : "No more audio in this part";
+    }
+    // Video
+    const v = segAt(vseg.segments, t);
+    videoBox.style.display = v ? "" : "none";
+    if (v) {
+      const want = v.clip_start + (t - v.get_start);
+      if (realTime) { if (Math.abs(video.currentTime - want) > 0.5) video.currentTime = want; if (video.paused) video.play().catch(() => {}); }
+      else { if (!video.paused) video.pause(); if (Math.abs(video.currentTime - want) > 0.2) video.currentTime = want; }
+    } else if (!video.paused) video.pause();
+  }
+  invalidation.then(() => { audio.pause(); video.pause(); });
+  return {el, update};
+}
+```
+
+```{ojs}
+panels = htl.html`<div class="a11-panels"><div class="slot-globe"></div><div class="slot-inertial"></div>${view3d.el}${mediaPanel.el}</div>`
+```
+
+```{ojs}
+{
+  panels.querySelector(".slot-globe").replaceChildren(drawGlobe(state));
+  panels.querySelector(".slot-inertial").replaceChildren(drawInertial(state, T));
+  view3d.api.update(T);
+  mediaPanel.update(T);
+  return htl.html`<span></span>`;
+}
+```
+
+The rest of the post walks through what is happening in each phase, and why.
+
+## Launching from a spinning Earth
+
+Before the engines light, the vehicle is already moving. Kennedy Space Center sits at 28.5° N, and Earth's rotation carries it east at
+
+$$
+v_\text{rot} = \omega_\oplus\, R \cos\varphi \approx 7.292\times10^{-5}\ \text{s}^{-1} \times 6373\ \text{km} \times \cos 28.45^\circ \approx 0.409\ \text{km/s}.
+$$
+
+The 1969 ascent table lists exactly this at liftoff: an Earth-fixed velocity of 1.5 ft/s (the vehicle has barely moved) but a space-fixed velocity of 1,340.7 ft/s, or 408.6 m/s. That is about 5% of the speed needed for orbit, free, provided the rocket flies east.
+
+The launch site also limits the orbit. An orbit's plane passes through Earth's centre, so the orbit must reach at least the latitude of the place it started from. For a launch from latitude $\varphi$ on heading $A$ (measured east of north), spherical trigonometry gives the inclination:
+
+$$
+\cos i = \cos\varphi\,\sin A.
+$$
+
+Apollo 11's parking orbit had $i = 32.521^\circ$. Solving for the inertial heading at liftoff gives $\sin A = \cos 32.521^\circ / \cos 28.447^\circ$, so $A \approx 73.6^\circ$. The Saturn V rolled onto a heading north of due east, trading a little of Earth's free speed for the orbital plane needed to reach the Moon on that day.
+
+### The gravity turn
+
+The ascent is a compromise between two losses. Climbing vertically wastes thrust holding the rocket up against gravity, so the vehicle should turn horizontal quickly. Turning while still in the thick lower atmosphere puts large side loads on a vehicle 110 m tall, so the vehicle should stay pointed along its velocity until the air thins. The Saturn V pitched over gently and then let gravity bend the trajectory, which is why it is called a gravity turn.
+
+The flight-path angle tells the story. It climbs to about 29° at maximum dynamic pressure, 83 seconds after liftoff, and is then flattened by the upper stages until it is 0.012° at orbit insertion, eleven minutes and 49 seconds after launch.
+
+```{ojs}
+ascent = track.filter(d => d[0] >= 0 && d[0] <= 712).map(d => ({t: d[0], alt: d[6], v: d[7], vrel: d[8], fpa: d[9], src: d[13]}))
+ascentDoc = ascent.filter(d => d.src === 0)
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 260, marginLeft: 50,
+  x: {label: "Time from launch (s)"},
+  y: {label: "Altitude (km)", grid: true},
+  marks: [
+    Plot.line(ascent, {x: "t", y: "alt", stroke: "#457b9d"}),
+    Plot.dot(ascentDoc, {x: "t", y: "alt", fill: "#2a9d8f", r: 4}),
+    Plot.text([[83, "Max Q"], [161.63, "S-IC cutoff"], [548.22, "S-II cutoff"], [709.33, "Orbit"]]
+      .map(([t, label]) => ({t, label, alt: ascent.find(d => Math.abs(d.t - t) < 0.01).alt})),
+      {x: "t", y: "alt", text: "label", dy: -12, dx: -4, textAnchor: "end", fontSize: 11}),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 240, marginLeft: 50,
+  x: {label: "Time from launch (s)"},
+  y: {label: "Speed (km/s)", grid: true},
+  color: {legend: true, domain: ["Inertial", "Relative to the ground"], range: ["#e76f51", "#457b9d"]},
+  marks: [
+    Plot.line(ascent, {x: "t", y: "v", stroke: () => "Inertial"}),
+    Plot.line(ascent, {x: "t", y: "vrel", stroke: () => "Relative to the ground"}),
+    Plot.dot(ascentDoc, {x: "t", y: "v", fill: "#2a9d8f", r: 3})
+  ]
+})
+```
+
+The green dots are the eleven documented rows of the ascent table; the lines between them are interpolated. The gap between the two speed curves at liftoff is Earth's rotation. It stays at roughly 0.4 km/s all the way to orbit.
+
+## The parking orbit
+
+At 11 minutes 49 seconds the third stage shut down with *Apollo 11* moving at 25,567.9 ft/s (7.793 km/s), level with the horizon, 103 nautical miles up. Everything about the orbit follows from that single state vector. The **vis-viva equation** links speed $v$ to distance $r$ from Earth's centre and the orbit's semi-major axis $a$:
+
+$$
+v^2 = \mu\left(\frac{2}{r} - \frac{1}{a}\right), \qquad \mu = GM_\oplus = 398\,600\ \text{km}^3\,\text{s}^{-2}.
+$$
+
+From $a$, the period is $P = 2\pi\sqrt{a^3/\mu}$. The eccentricity vector, $\mathbf e = \mathbf v\times\mathbf h/\mu - \hat{\mathbf r}$ with $\mathbf h = \mathbf r\times\mathbf v$, gives the shape, and $\mathbf h$ gives the plane.
+
+Running the documented insertion state through these formulas reproduces NASA's published orbit almost exactly:
+
+```{ojs}
+checkTable = (rows) => {
+  const dec = x => Math.min(4, (String(x).split(".")[1] ?? "").length);
+  const auto = x => Math.abs(x) >= 1000 ? 0 : Math.abs(x) >= 100 ? 1 : Math.abs(x) >= 1 ? 2 : 4;
+  return htl.html`<table class="a11-checks table table-sm">
+  <thead><tr><th>Quantity</th><th style="text-align:right">1969 value</th><th style="text-align:right">This reconstruction</th></tr></thead>
+  <tbody>${rows.map(([k, doc, model]) => {
+    const [label, note] = k.split("; ");
+    const d = doc == null ? auto(model) : Math.max(dec(doc), Math.min(4, dec(doc) + 1));
+    return htl.html`<tr><td>${label}${note ? htl.html`<br><span style="font-size:.78rem;opacity:.65">${note}</span>` : ""}</td>
+    <td class="num">${doc == null ? "—" : fmt(doc, dec(doc))}</td>
+    <td class="num">${fmt(model, d)}</td></tr>`;})}</tbody></table>`;
+}
+checkTable(data.checks.slice(0, 4))
+```
+
+There is a puzzle hidden in that table. The orbit was inserted at an altitude of 103.2 n mi, yet its published apogee, the *highest* point, is only 100.4 n mi. The explanation is that the two numbers use different references. The insertion altitude is measured above the ellipsoid, the slightly squashed shape of the real Earth, which at 32.5° N is about 6 km below the equatorial radius. The apogee and perigee are measured above a sphere of equatorial radius. With that understood, the numbers agree to within 0.1 n mi.
+
+### Venting and the orbital paradox
+
+The parking orbit lasted two and a half hours, a little over one and a half revolutions, while the crew and Mission Control checked the spacecraft. Propagating the insertion state forward through that time, with Earth's oblateness, the Moon and the Sun, gives this speed at the moment the third stage reignited:
+
+```{ojs}
+checkTable(data.checks.slice(4, 5))
+```
+
+The model is 36 ft/s (11 m/s) fast. That is too large to be rounding. It is the sort of gap a small, steady push would make, and the S-IVB third stage was pushing. In orbit its liquid hydrogen boiled off continuously and had to be vented. The vent was arranged to push the stage gently forward, which kept the tanks safe and the propellant settled at the bottom of the tanks, ready for the restart.
+
+Here orbital mechanics turns against intuition. Pushing forward adds energy, which raises the far side of the orbit. Half a revolution later, the spacecraft is higher and therefore moving *more slowly*. Over one and a half revolutions, a steady forward push leaves the vehicle slower and later than it would otherwise be. Solving for the constant along-track acceleration that reproduces the documented speed gives:
+
+```{ojs}
+checkTable(data.checks.slice(5, 6))
+```
+
+On a stack of around 140 tonnes, 1 mm/s² is a thrust of about 140 newtons, or roughly 30 pounds-force. That is a plausible size for hydrogen venting, though the 1969 tables used here do not record the vent thrust directly, so treat the attribution as a hypothesis that fits, not a finding. It has a testable consequence: by the time of ignition it raises the orbit by about 15 km at that point, which a documented ignition altitude would confirm or rule out. The rest of the reconstruction includes this acceleration in the parking orbit.
+
+## Translunar injection
+
+At 2 hours 44 minutes 16 seconds, over the central Pacific on the way towards Hawaii, the S-IVB's J-2 engine restarted and burned for 346.83 seconds. When it stopped, *Apollo 11* had left the parking orbit and was on its way to the Moon.
+
+### Why burn low and fast
+
+The specific orbital energy, kinetic plus potential per kilogram, is
+
+$$
+\varepsilon = \frac{v^2}{2} - \frac{\mu}{r} = -\frac{\mu}{2a}.
+$$
+
+In the parking orbit $\varepsilon \approx -30.4\ \text{km}^2/\text{s}^2$. To reach the Moon's distance it must rise to about $-0.7$. A burn that changes speed by $\Delta v$ changes the energy by
+
+$$
+\Delta\varepsilon = v\,\Delta v + \tfrac12 \Delta v^2,
+$$
+
+so the same $\Delta v$ buys more energy the faster the vehicle is already moving. This is the **Oberth effect**, and it is why the burn was made in low orbit, at 7.8 km/s, rather than after climbing away from Earth.
+
+The documented state 10 seconds after cutoff (the formal "translunar injection" point) gives the new orbit:
+
+```{ojs}
+checkTable(data.checks.slice(13, 17))
+```
+
+That is an ellipse with eccentricity 0.977 and a semi-major axis of 286,500 km. Its far point, $a(1+e) \approx 566{,}000$ km, lies well beyond the Moon's orbit. The Moon's gravity then takes over the shaping of the path: Apollo was aimed at a point in space where the Moon would be three days later.
+
+### Reconstructing the burn
+
+The tables give the burn's start and end, the propagated state at ignition, and the documented state just after it. They do not say how the engine was steered. To fill that in, the burn is modelled as a constant-thrust rocket, so its acceleration rises as propellant is used,
+
+$$
+a(\tau) = \frac{a_0}{1 - a_0\tau / v_e}, \qquad v_e \approx 4.16\ \text{km/s for the J-2},
+$$
+
+with the thrust direction pitched and yawed off the velocity vector by angles that change linearly with time. That gives five unknowns: $a_0$ and an offset and a rate for each of pitch and yaw. They are solved by least squares so that the trajectory lands on the documented TLI state.
+
+```{ojs}
+checkTable(data.checks.slice(6, 13))
+```
+
+Three things stand out:
+
+- **The acceleration rises from 0.65 g to 1.4 g** as the S-IVB empties. The crew felt the burn build steadily for almost six minutes.
+- **Gravity losses are about 140 m/s.** The engine's ideal velocity change is around 3,183 m/s, but the speed gained is 3,044 m/s. As the burn went on the vehicle climbed, and its flight-path angle rose from 0° to about 7°. Once the path tilts upwards, part of gravity pulls back along the direction of travel, and the engine has to make that up.
+- **The fit misses the documented state by 36 km and 5 m/s.** Most of the miss is along the track, equivalent to arriving about 3 seconds late. That is the accumulated error of propagating two and a half hours from insertion with a simplified venting model. The reconstruction spreads the correction across the burn, then restarts exactly from the documented TLI state.
+
+```{ojs}
+burn = {
+  const bp = data.burn_params, ve = bp.ve_kms, a0 = bp.a0_kms2;
+  return d3.range(0, 346.83 + 0.01, 2).map(tau => ({tau, g: a0 / (1 - a0 * tau / ve) / 9.80665e-3}));
+}
+burnSpeed = track.filter(d => d[0] >= 9800 && d[0] <= 10300).map(d => ({t: d[0] - 9856.2, v: d[7]}))
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 230, marginLeft: 50, grid: true,
+  x: {label: "Seconds after TLI ignition"},
+  y: {label: "Thrust acceleration (g)", domain: [0, 1.6]},
+  marks: [Plot.areaY(burn, {x: "tau", y: "g", fill: "#e76f5133"}), Plot.line(burn, {x: "tau", y: "g", stroke: "#e76f51"})]
+})
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 230, marginLeft: 50, grid: true,
+  x: {label: "Seconds after TLI ignition"},
+  y: {label: "Inertial speed (km/s)"},
+  marks: [Plot.line(burnSpeed, {x: "t", y: "v", stroke: "#457b9d"}),
+          Plot.ruleX([0, 346.83], {stroke: "#999", strokeDasharray: "3 3"})]
+})
+```
+
+## Free return, and why it still needed correcting
+
+Apollo 11 left Earth on a **free-return trajectory**: a path that, with no further burns, swings around the far side of the Moon and falls back to Earth. If the main engine had failed, the crew would still have come home.
+
+The reconstruction can test that directly. Take the documented TLI state, include the small "evasive" burn the crew made at 4 hours 40 minutes to move away from the spent S-IVB (19.7 ft/s, its direction taken from the maneuver PAD read up to the crew), and propagate with no further burns. One more anchor keeps the path honest: at 26 hours 45 minutes, when the real midcourse correction was made, the trajectory is snapped onto the state NASA documented for that moment. Then it is left alone. Select **Earth–Moon** above to see the path; it is the dashed yellow curve.
+
+```{ojs}
+checkTable(data.checks.slice(17))
+```
+
+The uncorrected path does loop around the Moon and come back, but it passes about 220 n mi above the lunar surface, against the 86.7 n mi at which *Columbia* actually fired its engine to enter lunar orbit. Returning to Earth, it would have struck the atmosphere at about 55°, far too steeply, where the safe entry corridor is a band of only a degree or two around 6.5°.
+
+This shows how sensitive a lunar trajectory is. Re-running the propagation with the injection speed raised by just 1 m/s, one part in 11,000, moves the closest approach by about 675 km and the arrival by 17 minutes. The miss is real: no rocket stage is perfectly accurate, which is why Apollo carried a schedule of midcourse corrections. The reconstruction is good enough to see this. Propagated from the documented TLI state with the evasive burn, it stays within 3 n mi and 3 ft/s of every state NASA tabulated up to 4 hours 40 minutes; by 26 hours it has drifted 84 n mi, which is why it is re-anchored there. Only one correction proved necessary on the way out, a 3-second burn of the service propulsion engine at 26 hours 45 minutes. [Part 2](../apollo-11-part-2-translunar-coast/) reconstructs that burn and the arrival at the Moon.
+
+```{ojs}
+distances = {
+  const mt = data.moon.map(d => d[0]);
+  return data.long_track.map(d => {
+    const i = Math.max(0, Math.min(data.moon.length - 2, d3.bisectRight(mt, d[0]) - 1));
+    const a = data.moon[i], b = data.moon[i + 1], f = (d[0] - a[0]) / (b[0] - a[0]);
+    const m = [1, 2, 3].map(j => a[j] + f * (b[j] - a[j]));
+    return {h: d[0] / 3600, earth: Math.hypot(d[1], d[2], d[3]), moon: Math.hypot(d[1] - m[0], d[2] - m[1], d[3] - m[2])};
+  });
+}
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 260, marginLeft: 60, grid: true,
+  x: {label: "Ground elapsed time (hours)"},
+  y: {label: "Distance (km)", type: "log", domain: [1000, 600000]},
+  color: {legend: true, domain: ["From Earth", "From the Moon"], range: ["#457b9d", "#888"]},
+  marks: [
+    Plot.line(distances, {x: "h", y: "earth", stroke: () => "From Earth"}),
+    Plot.line(distances, {x: "h", y: "moon", stroke: () => "From the Moon"}),
+    Plot.ruleY([6378, 1737], {stroke: "#e76f51", strokeDasharray: "3 3"}),
+    Plot.ruleX([75.83], {stroke: "#2a9d8f"}),
+    Plot.text([{h: 75.83, y: 1400}], {x: "h", y: "y", text: () => "Actual lunar orbit insertion", dx: 6, textAnchor: "start", fontSize: 10})
+  ]
+})
+```
+
+The dashed red lines mark the radii of Earth and the Moon. The uncorrected trajectory dips towards the Moon at about 75 hours and plunges back into Earth at about 147 hours.
+
+## Method and sources
+
+For how the coordinate frames, views, synchronisation and data sources fit together across the series, see the explainer [Frames of Reference in the Apollo 11 Reconstruction](/explainers/apollo-11-frames-of-reference/).
+
+The reconstruction is written in Python with numpy and is driven from a single file of documented anchors, each tagged with its source. The force model is Earth's central gravity plus the J2 oblateness term, with the Moon and Sun as third bodies. Their positions come from JPL's DE421 ephemeris, rotated into the mean equator and equinox of 16 July 1969, which is the frame Apollo's tables use. The integrator is an adaptive Dormand–Prince 5(4) method with a relative tolerance of 10⁻¹¹.
+
+Documented values come from:
+
+- R. W. Orloff and S. Garber, *Apollo by the Numbers: A Statistical Reference*, NASA SP-2000-4029, Apollo 11 ascent, Earth-orbit and translunar tables, via the [Apollo Flight Journal edition](https://nasa.gov/wp-content/uploads/static/history/afj/pdf/abtn-202402.pdf).
+- Boeing, *Apollo/Saturn V Postflight Trajectory, AS-506* (D5-15560-6, October 1969), for the TLI state vector. The geocentric distance, latitude and longitude here are as transcribed by Grant Hutchison in [*Converting Apollo State Vectors To Orbits*](https://oikofuge.com/converting-apollo-state-vectors-to-orbits/), whose [companion post](https://oikofuge.com/finding-apollo-trajectory-data/) is a good guide to these documents.
+- TRW, [*Apollo Mission 11 Trajectory Reconstruction and Postflight Analysis*](https://www.nasa.gov/wp-content/uploads/static/history/afj/ap11fj/pdf/19700014995_as11-trajectory-reconstruction-vol1.pdf) (1970), the source for Parts 2 to 4.
+- The [Apollo 11 Flight Journal](https://www.nasa.gov/history/afj/ap11fj/02earth-orbit-tli.html) for the narrative of the parking orbit and TLI.
+
+One correction was made to the source data. In the scanned ascent table, the longitude at S-IC centre-engine cutoff reads −81.1517°, which would put the rocket 50 km *west* of the pad after 25 n mi of travel *east*. It has been taken as −80.1517°.
+
+**Next: [Part 2, translunar coast and lunar orbit insertion](../apollo-11-part-2-translunar-coast/).**

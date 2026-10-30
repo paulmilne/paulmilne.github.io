@@ -1,0 +1,924 @@
+---
+title: "Apollo 11, Part 4: Rendezvous, Return and Entry"
+subtitle: "Eagle leaves the Moon and catches Columbia, the burn behind the Moon that heads for home, two and a half days of coasting, and a fifteen-minute fall into the Pacific"
+description: "A reconstruction of the last three days of Apollo 11, from lunar liftoff to splashdown. The ascent, the coelliptic rendezvous, transearth injection and the coast home are rebuilt from NASA's tables and the crew's readouts, and the entry is flown through a standard atmosphere with the bank angle fitted to the load-factor history."
+author: "Paul Milne"
+date: "2026-10-30"
+categories: [space, orbital-mechanics, apollo, reconstruction]
+resources:
+  - apollo3d_p4.js
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.a11-player { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.25rem 0 .5rem; }
+.a11-player input[type=range] { flex:1 1 220px; min-width:0; }
+.a11-player button, .a11-chip { font: inherit; font-size:.85rem; padding:.25rem .65rem; border-radius:999px;
+  border:1px solid var(--bs-border-color, #ccc); background:var(--bs-body-bg, #fff); color:inherit; cursor:pointer; }
+.a11-player button.primary { background:#1d3557; color:#fff; border-color:#1d3557; min-width:5.5rem; }
+.a11-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.75rem; }
+.a11-chip.active { border-color:#e76f51; color:#b5452b; background: rgba(231,111,81,.12); }
+.a11-panels { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:.75rem; }
+.a11-panel { border:1px solid var(--bs-border-color, #ddd); border-radius:8px; padding:.5rem; background:var(--bs-body-bg, #fff); min-width:0; }
+.a11-panel h4 { font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; margin:.1rem .25rem .4rem; opacity:.7; }
+.a11-hud { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:.4rem .9rem; font-variant-numeric: tabular-nums; }
+.a11-hud .k { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; opacity:.65; }
+.a11-hud .v { font-size:1.05rem; font-weight:600; }
+.a11-hud .s { font-size:.78rem; opacity:.7; }
+.a11-head { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; }
+.a11-get { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:1.35rem; font-weight:700; }
+.a11-phase { font-weight:600; }
+.a11-pill { display:inline-block; font-size:.72rem; padding:.1rem .5rem; border-radius:999px; color:#fff; vertical-align:middle; }
+.a11-legend { font-size:.82rem; display:flex; gap:.9rem; flex-wrap:wrap; margin:.4rem 0 0; }
+.a11-legend span::before { content:""; display:inline-block; width:.7rem; height:.7rem; border-radius:50%; margin-right:.3rem; vertical-align:-1px; background:var(--c); }
+.a11-tx { height: 260px; overflow-y: auto; border-top:1px solid var(--bs-border-color, #ddd); font-size:.82rem; }
+.a11-line { display:grid; grid-template-columns: 4.6rem 1fr; gap:0 .5rem; padding:.25rem .3rem; cursor:pointer; border-radius:4px; }
+.a11-line .t { font-family: ui-monospace, Menlo, monospace; opacity:.6; grid-row: span 2; font-size:.75rem; padding-top:.1rem; }
+.a11-line .who { font-weight:600; font-size:.75rem; }
+.a11-line.onb .x { font-style: italic; }
+.a11-line:hover { background: rgba(127,127,127,.08); }
+.a11-line.cur { background: rgba(231,111,81,.14); }
+.a11-now { min-height: 3.6rem; padding:.4rem .5rem; border-left:3px solid #e76f51; margin-bottom:.4rem; background: rgba(127,127,127,.06); border-radius: 4px; }
+.a11-now .who { font-weight:700; font-size:.8rem; } .a11-now .t { font-family: ui-monospace, Menlo, monospace; opacity:.6; font-weight:400; margin-left:.4rem; }
+.a11-now .x { font-size:.95rem; }
+.a11-chip input { vertical-align: -1px; margin-right: .2rem; }
+.a11-tv { font-size:.8rem; padding:.3rem .5rem; border-radius:4px; background:rgba(69,123,157,.12); margin-bottom:.4rem; }
+.a11-attitude { font-size:.78rem; opacity:.75; margin:.3rem .25rem 0; min-height:1.2em; }
+table.a11-checks { font-size:.88rem; width:100%; }
+table.a11-checks td.num { text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+.a11-dsky { background:#2b2d2f; border-radius:8px; padding:.5rem .6rem; color:#cfd3d6; font-family: ui-monospace, Menlo, monospace; margin-bottom:.4rem; }
+.a11-dsky .lights { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.4rem; }
+.a11-dsky .lights span { font-size:.62rem; padding:.12rem .35rem; border-radius:3px; background:#3c3f42; color:#777; letter-spacing:.04em; }
+.a11-dsky .lights span.on { background:#e9c46a; color:#222; }
+.a11-dsky .lights span[data-l="comp"].on { background:#4caf50; color:#111; }
+.a11-dsky .row { display:flex; gap:1rem; margin-bottom:.25rem; }
+.a11-dsky .lab { font-size:.6rem; background:#4caf50; color:#111; padding:0 .3rem; border-radius:2px; display:inline-block; }
+.a11-dsky .dig, .a11-dsky .reg { color:#7CFC7C; font-size:1.25rem; letter-spacing:.08em; text-shadow:0 0 6px #4caf5088; }
+.a11-dsky .reg { border-top:1px solid #4caf5055; padding-top:.1rem; }
+.a11-dsky .cap { font-family: system-ui, sans-serif; font-size:.72rem; color:#aab; margin-top:.35rem; min-height:2.1em; }
+</style>
+```
+
+This is the last of four posts that rebuild the flight of Apollo 11 from the numbers NASA published in 1969 and 1970.
+
+1. [**Launch to translunar injection**](../apollo-11-part-1-launch-to-tli/): the ascent, the parking orbit, and the burn that leaves Earth.
+2. [**Translunar coast and lunar orbit**](../apollo-11-part-2-translunar-coast/): three days of coasting, one midcourse correction, and the burns that put *Columbia* and *Eagle* into lunar orbit.
+3. [**Descent and landing**](../apollo-11-part-3-descent-and-landing/): *Eagle* undocks, drops to 50,000 feet, and flies twelve and a half minutes of powered descent to Tranquility Base.
+4. **Rendezvous, return and entry** (this post): ascent, rendezvous with *Columbia*, the burn home, and splashdown.
+
+Part 3 ended with *Eagle* on the surface. Twenty-one and a half hours later, at 124:22:01, its ascent engine fired and the top half of the lander left the bottom half behind. This part covers the 71 hours from there to the Pacific: seven minutes of powered ascent, three and a half hours of rendezvous, *Columbia*'s burn out of lunar orbit, the coast home, and the entry.
+
+## How this part is built
+
+The method is the same as before: documented **anchors**, physics between them, and a small number of quantities solved for so that the physics passes through the anchors. Everything else NASA published is a check. What is new here is that three of the four phases are steered, by guidance or by the crew, so the reconstruction has to fly them, not just coast between them.
+
+- **The ascent** is flown with a constant-thrust engine and a linear-tangent steering law, the textbook optimal law for climbing to orbit over a flat, airless planet. Its two constants, *Eagle*'s mass and the engine's exhaust velocity are fitted to the insertion state Aldrin read off his display.
+- **The rendezvous** is flown burn by burn: each of the first two burns is solved so that the orbit after it matches the one NASA's tables give, and the third, the one that sets up the intercept, is solved so that *Eagle* reaches *Columbia*.
+- ***Columbia*'s orbit** is fitted to the times Mission Control gave for losing and regaining its signal behind the Moon, and to the heights and speeds in the tables.
+- **Transearth injection** is fitted to arrive at the documented entry point, and **the entry** is flown through the US Standard Atmosphere, with the bank angle solved so that the deceleration matches what the command module's accelerometers recorded.
+
+```{ojs}
+srcInfo = [
+  {code: 0, name: "Documented", color: "#2a9d8f"},
+  {code: 1, name: "Interpolated", color: "#457b9d"},
+  {code: 2, name: "Propagated", color: "#e9c46a"},
+  {code: 3, name: "Fitted", color: "#e76f51"}
+]
+htl.html`<div class="a11-legend">${srcInfo.map(s => htl.html`<span style="--c:${s.color}">${s.name}</span>`)}</div>`
+```
+
+## Liftoff to splashdown
+
+Press play, or jump to an event. Playback speeds up through the long coasts and slows down for the burns, the docking and the entry. The first panel follows the phase: the ascent seen from the side; the rendezvous as *Columbia*'s crew saw it, with *Eagle*'s position plotted relative to *Columbia*; the coast home in a frame that turns with the Moon; and the entry as height against time. The second panel is a map: the Moon's near side while the spacecraft are in lunar orbit, Earth as seen from *Columbia* on the way home, and the Pacific for the entry. The third is a computer-generated view; try **Columbia's window** during the rendezvous, and **Wide** to pull back. The last panel has the computer's display as the reconstruction has it, the voice transcript, and NASA's audio and film where they exist; turn the sound on and pick **Real time** to hear them.
+
+```{ojs}
+data = FileAttachment("data/part4.json").json()
+M = data.meta
+lmT = data.lm.map(d => d[0])
+T_MIN = M.t_start
+T_MAX = M.t_end
+FT = 0.3048
+NMI = 1852
+fmtGET = t => {
+  const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  return `${String(h).padStart(3, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(1).padStart(4, "0")}`;
+}
+fmt = (x, d = 1) => x.toLocaleString("en-GB", {minimumFractionDigits: d, maximumFractionDigits: d})
+```
+
+```{ojs}
+phases = [
+  [0, "Eagle on the surface, Columbia in orbit"],
+  [M.liftoff, "Lunar ascent: ascent engine firing"],
+  [M.insertion, "Eagle in orbit, 9 by 48 n mi"],
+  [M.csi[0], "Concentric sequence initiation (CSI)"],
+  [M.csi[1], "Coasting, closing on Columbia from below"],
+  [M.cdh[0], "Constant delta height (CDH)"],
+  [M.cdh[1], "Coelliptic: 15 n mi below Columbia"],
+  [M.tpi[0], "Terminal phase initiation (TPI)"],
+  [M.tpi[1], "Intercept trajectory"],
+  [M.braking, "Braking"],
+  [M.tpf[0], "Terminal phase finalisation"],
+  [M.stationkeep, "Stationkeeping"],
+  [M.dock_contact, "Docked"],
+  [M.jettison, "Eagle jettisoned; Columbia alone"],
+  [M.tei[0], "Transearth injection: SPS firing"],
+  [M.tei[1], "Leaving the Moon"],
+  [M.mcc5, "Midcourse correction 5"],
+  [M.mcc5 + 20, "Coasting home"],
+  [M.cm_sm_sep, "Command module separated"],
+  [M.ei, "Entry"],
+  [M.drogue, "Drogue parachutes"],
+  [M.main, "Main parachutes"],
+  [M.splash, "Splashdown"]
+]
+jumps = [
+  ["Liftoff", M.liftoff - 20], ["Insertion", M.insertion - 30], ["CSI", M.csi[0] - 30], ["CDH", M.cdh[0] - 30],
+  ["TPI", M.tpi[0] - 40], ["Braking", M.braking - 20], ["Docking", M.dock_contact - 240], ["Jettison", M.jettison - 20],
+  ["TEI", M.tei[0] - 40], ["MCC-5", M.mcc5 - 30], ["TV", 639100], ["CM/SM sep", M.cm_sm_sep - 30],
+  ["Entry", M.ei - 30], ["Drogues", M.drogue - 20], ["Splashdown", M.splash - 90]
+]
+```
+
+```{ojs}
+viewof T = {
+  const warp = t => {
+    if (t >= M.liftoff - 10 && t <= M.insertion + 20) return 3;
+    if (t >= M.ei - 60 && t <= M.splash + 60) return 4;
+    if (t >= M.braking && t <= M.dock_contact + 300) return 20;
+    if ([M.csi, M.cdh, M.tpi, M.tei, M.final_sep].some(([a, b]) => t > a - 20 && t < b + 20)) return 10;
+    if (Math.abs(t - M.mcc5) < 30 || Math.abs(t - M.cm_sm_sep) < 60 || Math.abs(t - M.jettison) < 40) return 10;
+    if (t > M.tei[1] + 3 * 3600 && t < M.ei - 1800) return 6000;
+    if (t > M.dock_contact && t < M.tei[0]) return 600;
+    if (t > M.tei[1] && t < M.ei) return 1200;
+    return 240;
+  };
+  const range = htl.html`<input type="range" min=${T_MIN} max=${T_MAX} step="0.5" value=${M.liftoff - 20}>`;
+  const play = htl.html`<button type="button" class="primary">▶ Play</button>`;
+  const speed = htl.html`<select class="a11-chip">
+      <option value="rt">Real time</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="3">3×</option><option value="10">10×</option></select>`;
+  const chips = htl.html`<div class="a11-chips">${jumps.map(([label, t]) =>
+      htl.html`<button type="button" class="a11-chip" data-t=${t}>${label}</button>`)}</div>`;
+  const root = htl.html`<div><div class="a11-player">${play}${range}${speed}</div>${chips}</div>`;
+  let running = false, last = null, raf = null;
+  const set = v => {
+    root.value = Math.max(T_MIN, Math.min(T_MAX, v));
+    range.value = root.value;
+    root.dispatchEvent(new Event("input", {bubbles: true}));
+  };
+  const tick = now => {
+    if (!running) return;
+    if (last != null) {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      root.rate = speed.value === "rt" ? 1 : warp(root.value) * (+speed.value);
+      set(root.value + dt * root.rate);
+      if (root.value >= T_MAX) toggle(false);
+    }
+    last = now;
+    raf = requestAnimationFrame(tick);
+  };
+  const toggle = on => {
+    running = on; last = null; root.rate = 0; root.running = on;
+    play.textContent = on ? "❚❚ Pause" : "▶ Play";
+    if (on) { if (root.value >= T_MAX) set(T_MIN); raf = requestAnimationFrame(tick); }
+    else cancelAnimationFrame(raf);
+  };
+  play.onclick = () => toggle(!running);
+  range.oninput = e => { e.stopPropagation(); set(+range.value); };
+  chips.onclick = e => { const b = e.target.closest("button"); if (b) set(+b.dataset.t); };
+  root.value = M.liftoff - 20;
+  root.rate = 0;
+  root.running = false;
+  root.setT = set;
+  root.setSpeed = v => { speed.value = v; };
+  invalidation.then(() => cancelAnimationFrame(raf));
+  return root;
+}
+```
+
+```{ojs}
+tabAt = (rows, t, n) => {
+  const ts = rows._t ?? (rows._t = rows.map(d => d[0]));
+  const i = Math.max(0, Math.min(rows.length - 2, d3.bisectRight(ts, t) - 1));
+  const a = rows[i], b = rows[i + 1], f = Math.max(0, Math.min(1, (t - a[0]) / ((b[0] - a[0]) || 1)));
+  return d3.range(1, n + 1).map(j => a[j] + f * (b[j] - a[j]));
+}
+rowAt = (rows, t) => {
+  const ts = rows._t ?? (rows._t = rows.map(d => d[0]));
+  return rows[Math.max(0, Math.min(rows.length - 1, d3.bisectRight(ts, t) - 1))];
+}
+stage = t => t < M.tei[1] + 2 * 3600 ? "moon" : t < M.ei - 1200 ? "coast" : "entry"
+state = {
+  const s = {get: T, phase: phases.filter(p => p[0] <= T).at(-1)[1], stage: stage(T)};
+  if (T <= data.lm.at(-1)[0]) {
+    const l = tabAt(data.lm, T, 11);
+    s.lm = {x: l[0], y: l[1], z: l[2], alt_ft: l[3], hdot: l[4], hvel: l[5], lat: l[6], lon: l[7], mass: l[8]};
+    s.src = rowAt(data.lm, T)[10];
+  }
+  if (T <= data.csm.at(-1)[0]) {
+    const c = tabAt(data.csm, T, 7);
+    s.csm = {x: c[0], y: c[1], z: c[2], alt: c[3], v: c[4], lat: c[5], lon: c[6]};
+    if (s.lm) s.range_km = Math.hypot(c[0] - s.lm.x, c[1] - s.lm.y, c[2] - s.lm.z);
+  }
+  if (T >= data.earth[0][0] && T < data.entry[0][0]) {
+    const e = tabAt(data.earth, T, 6);
+    s.earth = {alt: e[3], v: e[4], moon: e[5]};
+    s.src = 3;
+  }
+  if (T >= data.entry[0][0]) {
+    const e = tabAt(data.entry, T, 12);
+    s.entry = {alt_ft: e[3], v: e[4], vrel: e[5], g: e[6], bank: e[7], lat: e[8], lon: e[9], fpa: e[10]};
+    s.src = 3;
+  }
+  if (T > M.dock_contact) s.src = s.stage === "moon" ? 3 : s.src;
+  if (T >= M.splash) s.src = 0;
+  return s;
+}
+```
+
+```{ojs}
+hud = {
+  const s = state, src = srcInfo[s.src ?? 3];
+  const cell = (k, v, sub) => htl.html`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub ?? ""}</div></div>`;
+  let cells;
+  if (s.stage === "moon" && T < M.dock_contact) {
+    cells = [
+      cell("Eagle's height", s.lm.alt_ft < 60000 ? `${fmt(s.lm.alt_ft, 0)} ft` : `${fmt(s.lm.alt_ft * FT / NMI, 1)} n mi`, "above the landing site"),
+      cell("Vertical rate", `${fmt(s.lm.hdot, 1)} ft/s`, ""),
+      cell("Horizontal speed", `${fmt(s.lm.hvel, 0)} ft/s`, "relative to the Moon's centre"),
+      cell("Columbia", `${fmt(s.csm.alt, 1)} n mi up`, `${fmt(s.csm.v, 0)} ft/s`),
+      cell("Range to Columbia", s.range_km < 3 ? `${fmt(s.range_km * 1000 / FT, 0)} ft` : `${fmt(s.range_km * 1000 / NMI, 1)} n mi`, ""),
+      cell("Eagle's mass", `${fmt(s.lm.mass / 0.45359237, 0)} lb`, "ascent stage")
+    ];
+  } else if (s.stage === "moon") {
+    cells = [
+      cell("Columbia's height", `${fmt(s.csm.alt, 1)} n mi`, "above the landing site's radius"),
+      cell("Speed", `${fmt(s.csm.v, 0)} ft/s`, "relative to the Moon"),
+      cell("Position", `${fmt(Math.abs(s.csm.lat), 2)}° ${s.csm.lat >= 0 ? "N" : "S"}, ${fmt(Math.abs(s.csm.lon), 1)}° ${s.csm.lon >= 0 ? "E" : "W"}`, "selenographic"),
+      cell("Crew", T < M.jettison ? "Three, two in the LM" : "Three, in Columbia", "")
+    ];
+  } else if (s.stage === "coast") {
+    cells = [
+      cell("Distance from Earth", `${fmt(s.earth.alt, 0)} n mi`, "height above the surface"),
+      cell("Speed", `${fmt(s.earth.v, 0)} ft/s`, `${fmt(s.earth.v * FT * 3.6, 0)} km/h, relative to Earth's centre`),
+      cell("Distance from the Moon", `${fmt(s.earth.moon / 1.852, 0)} n mi`, "from its centre"),
+      cell("Time to entry interface", `${fmt((M.ei - T) / 3600, 1)} h`, "")
+    ];
+  } else {
+    const e = s.entry;
+    cells = [
+      cell("Height", e.alt_ft > 1e6 ? `${fmt(e.alt_ft * FT / NMI, 0)} n mi` : `${fmt(e.alt_ft, 0)} ft`, "above the ellipsoid"),
+      cell("Speed", `${fmt(e.v, 0)} ft/s`, `inertial; ${fmt(e.vrel, 0)} relative to the air`),
+      cell("Load factor", `${fmt(e.g, 2)} g`, T > M.ei ? "sensed deceleration" : ""),
+      cell("Bank angle", T > M.ei && T < M.drogue ? `${fmt(e.bank, 0)}°` : "—", T > M.ei && T < M.drogue ? (Math.abs(e.bank) < 90 ? "lift up" : "lift down") : ""),
+      cell("Flight-path angle", `${fmt(e.fpa, 2)}°`, ""),
+      cell("Position", `${fmt(Math.abs(e.lat), 2)}° ${e.lat >= 0 ? "N" : "S"}, ${fmt(Math.abs(e.lon), 2)}° ${e.lon >= 0 ? "E" : "W"}`, "")
+    ];
+  }
+  return htl.html`<div class="a11-panel">
+    <div class="a11-head">
+      <div><span class="a11-get">${fmtGET(s.get)}</span> <span class="s" style="opacity:.6">GET</span></div>
+      <div><span class="a11-phase">${s.phase}</span>
+        <span class="a11-pill" style="background:${src.color}">${src.name}</span></div>
+    </div>
+    <div class="a11-hud">${cells}</div></div>`;
+}
+```
+
+```{ojs}
+panelW = Math.max(260, width > 700 ? Math.floor((width - 12) / 2) - 18 : width - 18)
+topojson = require("topojson-client@3")
+land = fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")
+  .then(r => r.json()).then(w => topojson.feature(w, w.objects.land)).catch(() => null)
+```
+
+```{ojs}
+viewof profileMode = Inputs.radio(["Follow the flight", "Ascent", "Rendezvous", "Coast home", "Entry"], {value: "Follow the flight"})
+```
+
+```{ojs}
+profileKind = profileMode !== "Follow the flight" ? profileMode
+  : T < M.insertion + 30 ? "Ascent" : T < M.dock_contact + 600 ? "Rendezvous" : T < M.ei - 600 ? "Coast home" : "Entry"
+ascentData = {
+  const s = M.landing_site.map(x => x * Math.PI / 180);
+  const rows = data.lm.filter(d => d[0] >= M.liftoff - 2 && d[0] <= M.insertion + 1);
+  return rows.map(d => {
+    const la = d[7] * Math.PI / 180, lo = d[8] * Math.PI / 180;
+    const c = Math.sin(s[0]) * Math.sin(la) + Math.cos(s[0]) * Math.cos(la) * Math.cos(lo - s[1]);
+    return {t: d[0], x: Math.acos(Math.min(1, c)) * M.r_site * 1000 / NMI, h: d[4] / 1000, hv: d[6], hd: d[5]};
+  });
+}
+relData = data.rel.map(d => ({t: d[0], x: d[1] * 1000 / NMI, y: d[3] * 1000 / NMI}))
+coastData = {
+  // Earth-centred, rotating with the Moon: the Moon stays on the +x axis, distances in thousands of n mi.
+  return data.earth.filter((d, i) => i % 2 === 0 || d[0] > M.ei - 7200).map(d => {
+    const m = tabAt(data.moon, d[0], 3), mn = Math.hypot(...m);
+    const ex = m.map(v => v / mn);
+    const h = [0, 0, 1], ey0 = [h[1] * ex[2] - h[2] * ex[1], h[2] * ex[0] - h[0] * ex[2], h[0] * ex[1] - h[1] * ex[0]];
+    const en = Math.hypot(...ey0), ey = ey0.map(v => v / en);
+    const p = [d[1], d[2], d[3]];
+    return {t: d[0], x: (p[0] * ex[0] + p[1] * ex[1] + p[2] * ex[2]) / 1852, y: (p[0] * ey[0] + p[1] * ey[1] + p[2] * ey[2]) / 1852, mx: mn / 1852};
+  });
+}
+entryData = data.entry.filter(d => d[0] >= M.ei - 60).map(d => ({t: d[0] - M.ei, h: d[4] / 1000, g: d[7], bank: d[8], v: d[5]}))
+```
+
+```{ojs}
+drawProfile = (T) => {
+  const w = panelW, h = Math.round(w * 0.72), kind = profileKind;
+  const frame = (title, X, Y, xl, yl, body, legend) => htl.html`<div class="a11-panel"><h4>${title}</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px;font-size:10px">
+      ${Y.ticks(5).map(v => htl.svg`<line x1="44" x2=${w - 10} y1=${Y(v)} y2=${Y(v)} stroke="#ffffff14"/><text x="40" y=${Y(v) + 3} fill="#ffffff80" text-anchor="end">${fmt(v, 0)}</text>`)}
+      ${X.ticks(6).map(v => htl.svg`<line x1=${X(v)} x2=${X(v)} y1="10" y2=${h - 26} stroke="#ffffff0c"/><text x=${X(v)} y=${h - 10} fill="#ffffff80" text-anchor="middle">${fmt(v, 0)}</text>`)}
+      <text x=${w - 12} y=${h - 1} fill="#ffffff60" text-anchor="end">${xl}; ${yl}</text>
+      ${body}
+    </svg><div class="a11-legend" style="margin:.4rem .25rem 0">${legend}</div></div>`;
+  if (kind === "Ascent") {
+    const X = d3.scaleLinear().domain([0, 180]).range([44, w - 10]), Y = d3.scaleLinear().domain([0, 65]).range([h - 26, 10]);
+    const past = ascentData.filter(d => d.t <= T), line = d3.line().x(d => X(d.x)).y(d => Y(d.h));
+    const calls = data.ascent_calls.filter(c => c[3] != null).map(c => { const d = ascentData.find(q => q.t >= c[0]); return {x: d.x, h: c[3] / 1000}; });
+    const cur = past.at(-1);
+    return frame("Lunar ascent, height against distance from Tranquility Base", X, Y, "downrange, n mi", "height, thousands of ft",
+      htl.svg`<path d="${line(ascentData) ?? ""}" fill="none" stroke="#ffffff40" stroke-dasharray="3 3"/>
+        <path d="${line(past) ?? ""}" fill="none" stroke="#f4a261" stroke-width="2"/>
+        ${calls.map(c => htl.svg`<circle cx=${X(c.x)} cy=${Y(c.h)} r="3.5" fill="#2a9d8f" stroke="#fff" stroke-width=".6"/>`)}
+        ${cur ? htl.svg`<circle cx=${X(cur.x)} cy=${Y(cur.h)} r="5" fill="#e76f51" stroke="#fff" stroke-width="1.5"/>` : ""}
+        <text x=${X(165)} y=${Y(62)} fill="#ccc" text-anchor="end">insertion: 60,666 ft, 5,537 ft/s</text>`,
+      htl.html`<span style="--c:#f4a261">Eagle</span><span style="--c:#2a9d8f">Aldrin's altitude calls</span>`);
+  }
+  if (kind === "Rendezvous") {
+    const X = d3.scaleLinear().domain([-250, 15]).range([44, w - 10]), Y = d3.scaleLinear().domain([-55, 8]).range([h - 26, 10]);
+    const zoomIn = T > M.tpi[0] - 600;
+    const Xz = zoomIn ? d3.scaleLinear().domain([-45, 5]).range([44, w - 10]) : X, Yz = zoomIn ? d3.scaleLinear().domain([-20, 5]).range([h - 26, 10]) : Y;
+    const line = d3.line().x(d => Xz(d.x)).y(d => Yz(d.y)).defined(d => d.x > Xz.domain()[0] - 5);
+    const past = relData.filter(d => d.t <= T), fut = relData.filter(d => d.t > T);
+    const cur = past.at(-1);
+    const burns = data.burns.map(([n, t]) => ({n, ...(relData.find(d => d.t >= t) ?? {x: 0, y: 0})}));
+    return frame("Eagle relative to Columbia (Columbia at the origin, moving right)", Xz, Yz,
+      "behind (−) or ahead of Columbia, n mi", "below (−) or above, n mi",
+      htl.svg`<path d="${line(fut) ?? ""}" fill="none" stroke="#ffffff30" stroke-dasharray="3 3"/>
+        <path d="${line(past) ?? ""}" fill="none" stroke="#f4a261" stroke-width="2"/>
+        ${burns.filter(b => b.x > Xz.domain()[0]).map(b => htl.svg`<g transform="translate(${Xz(b.x)},${Yz(b.y)})"><circle r="3.5" fill="#9b5de5" stroke="#fff" stroke-width=".6"/><text x="6" y="-6" fill="#e0ccff">${b.n}</text></g>`)}
+        <g transform="translate(${Xz(0)},${Yz(0)})"><circle r="5" fill="#6fa8dc" stroke="#fff"/><text x="7" y="-6" fill="#cfe2f3">Columbia</text></g>
+        ${cur ? htl.svg`<circle cx=${Xz(cur.x)} cy=${Yz(cur.y)} r="5" fill="#f4a261" stroke="#fff" stroke-width="1.5"/>` : ""}`,
+      htl.html`<span style="--c:#f4a261">Eagle</span><span style="--c:#9b5de5">Burns</span><span style="--c:#6fa8dc">Columbia</span>`);
+  }
+  if (kind === "Coast home") {
+    const X = d3.scaleLinear().domain([-30, 230]).range([44, w - 10]), Y = d3.scaleLinear().domain([-80, 80]).range([h - 26, 10]);
+    const line = d3.line().x(d => X(d.x)).y(d => Y(d.y));
+    const past = coastData.filter(d => d.t <= T), cur = past.at(-1);
+    const mx = tabAt(data.moon, T, 3), mn = Math.hypot(...mx) / 1852;
+    return frame("The way home, in a frame turning with the Moon", X, Y, "thousands of n mi along the Earth–Moon line", "across",
+      htl.svg`<path d="${line(coastData) ?? ""}" fill="none" stroke="#ffffff30" stroke-dasharray="3 3"/>
+        <path d="${line(past) ?? ""}" fill="none" stroke="#9ad1ff" stroke-width="2"/>
+        <circle cx=${X(0)} cy=${Y(0)} r=${Math.max(3, (X(3.44) - X(0)))} fill="#2f6db5" stroke="#9ad1ff"/><text x=${X(0) + 8} y=${Y(0) + 16} fill="#cfe2f3">Earth</text>
+        <circle cx=${X(mn)} cy=${Y(0)} r="4" fill="#bbb"/><text x=${X(mn)} y=${Y(0) - 8} fill="#ddd" text-anchor="middle">Moon</text>
+        ${cur ? htl.svg`<circle cx=${X(cur.x)} cy=${Y(cur.y)} r="5" fill="#e76f51" stroke="#fff" stroke-width="1.5"/>` : ""}`,
+      htl.html`<span style="--c:#9ad1ff">Columbia</span><span style="--c:#bbb">Moon (moves with the frame)</span>`);
+  }
+  const X = d3.scaleLinear().domain([-60, (M.splash - M.ei) + 30]).range([44, w - 10]), Y = d3.scaleLinear().domain([0, 410]).range([h - 26, 10]);
+  const Yg = d3.scaleLinear().domain([0, 8]).range([h - 26, 10]);
+  const past = entryData.filter(d => d.t <= T - M.ei);
+  const lh = d3.line().x(d => X(d.t)).y(d => Y(d.h)), lg = d3.line().x(d => X(d.t)).y(d => Yg(d.g)).defined(d => d.t < M.drogue - M.ei);
+  const e = data.checks.filter(c => c[0] === "entry");
+  const docG = [[82, 6.73], [374, 6.00]];
+  const cur = past.at(-1);
+  return frame("Entry: height and load factor against time from entry interface", X, Y, "seconds after entry interface", "height, thousands of ft (g on the right scale ×50)",
+    htl.svg`<path d="${lh(entryData) ?? ""}" fill="none" stroke="#ffffff30" stroke-dasharray="3 3"/>
+      <path d="${lh(past) ?? ""}" fill="none" stroke="#f4a261" stroke-width="2"/>
+      <path d="${lg(past) ?? ""}" fill="none" stroke="#e63946" stroke-width="1.6"/>
+      ${docG.map(([t, g]) => htl.svg`<circle cx=${X(t)} cy=${Yg(g)} r="4" fill="#2a9d8f" stroke="#fff" stroke-width=".6"/>`)}
+      ${[0, 2, 4, 6, 8].map(g => htl.svg`<text x=${w - 12} y=${Yg(g) + 3} fill="#e6394699" text-anchor="end">${g} g</text>`)}
+      ${[[M.drogue, "drogues"], [M.main, "mains"], [M.splash, "splash"]].map(([t, l], i) => htl.svg`<line x1=${X(t - M.ei)} x2=${X(t - M.ei)} y1="10" y2=${h - 26} stroke="#ffffff30"/><text x=${X(t - M.ei) + (i === 2 ? -3 : 3)} y=${22 + 13 * i} fill="#ccc" text-anchor=${i === 2 ? "end" : "start"}>${l}</text>`)}
+      ${cur ? htl.svg`<circle cx=${X(cur.t)} cy=${Y(cur.h)} r="5" fill="#f4a261" stroke="#fff" stroke-width="1.5"/>` : ""}`,
+    htl.html`<span style="--c:#f4a261">Height</span><span style="--c:#e63946">Load factor</span><span style="--c:#2a9d8f">Peaks recorded in 1969</span>`);
+}
+```
+
+```{ojs}
+drawMap = (T) => {
+  const w = panelW, h = Math.round(w * 0.72);
+  const st = stage(T);
+  if (st === "moon") {
+    const site = M.landing_site;
+    const proj = d3.geoOrthographic().rotate([-site[1] + 10, -site[0]]).scale(h * 0.47).translate([w / 2, h / 2]).clipAngle(90);
+    const gp = d3.geoPath(proj), path = g => gp(g) ?? "";
+    const sun = tabAt(data.sun, T, 5);
+    const antiSun = [sun[4] + 180, -sun[3]];
+    const lmPts = data.lm.filter(d => d[0] >= Math.max(M.liftoff, T - 7000) && d[0] <= Math.min(T, M.dock_contact)).map(d => [d[8], d[7]]);
+    const csPts = data.csm.filter(d => d[0] >= T - 7000 && d[0] <= T).map(d => [d[7], d[6]]);
+    const c = tabAt(data.csm, Math.min(T, data.csm.at(-1)[0]), 7);
+    const l = T <= M.dock_contact ? tabAt(data.lm, T, 8) : null;
+    const P = q => proj(q), vis = q => d3.geoDistance(q, [-proj.rotate()[0], -proj.rotate()[1]]) < Math.PI / 2;
+    return htl.html`<div class="a11-panel"><h4>The Moon's near side, with the ground tracks</h4>
+      <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px;font-size:10px">
+        <path d="${path({type: "Sphere"})}" fill="#9b9a95"/>
+        ${apollo3d.MARIA.map(([, lat, lon, r]) => htl.svg`<path d="${path(d3.geoCircle().center([lon, lat]).radius(r)())}" fill="#6c6d71"/>`)}
+        <path d="${path(d3.geoCircle().center(antiSun).radius(90)())}" fill="#000" fill-opacity=".55"/>
+        <path d="${path(d3.geoGraticule().step([15, 15])())}" fill="none" stroke="#ffffff22"/>
+        ${csPts.length > 1 ? htl.svg`<path d="${path({type: "LineString", coordinates: csPts})}" fill="none" stroke="#6fa8dc" stroke-width="1.5"/>` : ""}
+        ${lmPts.length > 1 ? htl.svg`<path d="${path({type: "LineString", coordinates: lmPts})}" fill="none" stroke="#f4a261" stroke-width="1.5" stroke-dasharray="4 2"/>` : ""}
+        ${vis([site[1], site[0]]) ? htl.svg`<g transform="translate(${P([site[1], site[0]])})"><circle r="3.5" fill="#e76f51" stroke="#fff"/><text x="6" y="12" fill="#fff">Tranquility Base</text></g>` : ""}
+        ${vis([c[6], c[5]]) ? htl.svg`<g transform="translate(${P([c[6], c[5]])})"><circle r="4.5" fill="#6fa8dc" stroke="#fff"/><text x="7" y="-6" fill="#cfe2f3">Columbia</text></g>` : htl.svg`<text x="10" y="18" fill="#cfe2f3">Columbia is behind the Moon</text>`}
+        ${l && T > M.liftoff && vis([l[7], l[6]]) ? htl.svg`<circle cx=${P([l[7], l[6]])[0]} cy=${P([l[7], l[6]])[1]} r="4" fill="#f4a261" stroke="#fff"/>` : ""}
+      </svg>
+      <div class="a11-legend" style="margin:.4rem .25rem 0"><span style="--c:#6fa8dc">Columbia, last two hours</span><span style="--c:#f4a261">Eagle</span><span style="--c:#000">Lunar night</span></div></div>`;
+  }
+  if (st === "coast") {
+    const e = tabAt(data.earth, T, 3), r = Math.hypot(...e);
+    const g = M.gmst0 + M.omega_earth * T;
+    const lat = Math.asin(e[2] / r) * 180 / Math.PI;
+    const lon = ((Math.atan2(e[1], e[0]) - g) * 180 / Math.PI % 360 + 540) % 360 - 180;
+    const sd = tabAt(data.sun, T, 8).slice(5, 8);
+    const slat = Math.asin(sd[2]) * 180 / Math.PI, slon = ((Math.atan2(sd[1], sd[0]) - g) * 180 / Math.PI % 360 + 540) % 360 - 180;
+    const ang = Math.asin(6378 / r) * 180 / Math.PI;
+    const proj = d3.geoOrthographic().rotate([-lon, -lat]).scale(h * 0.42).translate([w / 2, h / 2]).clipAngle(90 - ang);
+    const gp = d3.geoPath(proj), path = q => gp(q) ?? "";
+    return htl.html`<div class="a11-panel"><h4>Earth from Columbia</h4>
+      <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px;font-size:10px">
+        <path d="${path({type: "Sphere"})}" fill="#1d4e89"/>
+        ${land ? htl.svg`<path d="${path(land)}" fill="#5b7a4a"/>` : ""}
+        <path d="${path(d3.geoCircle().center([slon + 180, -slat]).radius(90)())}" fill="#000" fill-opacity=".6"/>
+        <path d="${path(d3.geoGraticule().step([30, 30])())}" fill="none" stroke="#ffffff1a"/>
+        <text x="10" y="18" fill="#cfe2f3">${fmt(r / 1.852, 0)} n mi from Earth's centre; Earth spans ${fmt(2 * ang, 1)}°</text>
+      </svg><div class="a11-legend" style="margin:.4rem .25rem 0"><span style="--c:#000">Night side</span></div></div>`;
+  }
+  const proj = d3.geoEquirectangular().rotate([175, 0]).center([0, 6]).scale(w * 1.6).translate([w / 2, h / 2]);
+  const gp = d3.geoPath(proj), path = q => gp(q) ?? "";
+  const pts = data.entry.filter(d => d[0] <= T).map(d => [d[10], d[9]]);
+  const all = data.entry.map(d => [d[10], d[9]]);
+  const cur = tabAt(data.entry, T, 10);
+  const P = q => proj(q);
+  const ei = data.entry.find(d => d[0] >= M.ei);
+  return htl.html`<div class="a11-panel"><h4>Entry ground track over the Pacific</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#123c66;border-radius:6px;font-size:10px">
+      ${land ? htl.svg`<path d="${path(land)}" fill="#5b7a4a"/>` : ""}
+      <path d="${path(d3.geoGraticule().step([5, 5])())}" fill="none" stroke="#ffffff22"/>
+      <path d="${path({type: "LineString", coordinates: all})}" fill="none" stroke="#ffffff40" stroke-dasharray="3 3"/>
+      ${pts.length > 1 ? htl.svg`<path d="${path({type: "LineString", coordinates: pts})}" fill="none" stroke="#f4a261" stroke-width="2"/>` : ""}
+      <g transform="translate(${P([ei[10], ei[9]])})"><circle r="3.5" fill="#fff"/><text x="6" y="14" fill="#fff">entry interface</text></g>
+      <g transform="translate(${P([M.target_ll[1], M.target_ll[0]])})"><path d="M-5,-5L5,5M-5,5L5,-5" stroke="#fff" stroke-width="1.5"/></g>
+      <g transform="translate(${P([M.splash_ll[1], M.splash_ll[0]])})"><circle r="3.5" fill="#e76f51" stroke="#fff"/><text x="7" y="-6" fill="#fff">splashdown</text></g>
+      <g transform="translate(${P([-157.86, 21.31])})"><circle r="2.5" fill="#fff"/><text x="5" y="-4" fill="#fff">Honolulu</text></g>
+      <g transform="translate(${P([-169.52, 16.73])})"><circle r="2" fill="#fff"/><text x="5" y="-4" fill="#fff">Johnston Island</text></g>
+      ${T > ei[0] ? htl.svg`<circle cx=${P([cur[9], cur[8]])[0]} cy=${P([cur[9], cur[8]])[1]} r="5" fill="#f4a261" stroke="#fff" stroke-width="1.5"/>` : ""}
+    </svg><div class="a11-legend" style="margin:.4rem .25rem 0"><span style="--c:#f4a261">Columbia's command module</span><span style="--c:#fff">target (×)</span></div></div>`;
+}
+```
+
+```{ojs}
+THREE = require("three@0.128.0/build/three.min.js")
+apollo3d = import(new URL("apollo3d_p4.js", document.baseURI).href)
+transcript = FileAttachment("data/transcript.json").json()
+media = FileAttachment("data/media.json").json()
+```
+
+```{ojs}
+view3d = {
+  const api = apollo3d.createScene(THREE, {data, land, d3, width: panelW, height: Math.round(panelW * 0.75)});
+  const buttons = htl.html`<div class="a11-chips" style="margin:.4rem .25rem 0">${api.presets.map(name =>
+    htl.html`<button type="button" class="a11-chip${name === "Chase" ? " active" : ""}" data-p=${name}>${name}</button>`)}
+    <span class="s" style="font-size:.75rem;opacity:.6;align-self:center">drag to look around, scroll to zoom</span></div>`;
+  buttons.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    buttons.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+    api.setPreset(b.dataset.p);
+  };
+  const label = htl.html`<div class="a11-attitude"></div>`;
+  const el = htl.html`<div class="a11-panel"><h4>3D view (CGI)</h4>${api.canvas}${label}${buttons}</div>`;
+  invalidation.then(api.dispose);
+  window.__a11 = api;
+  return {el, api, update: t => { api.update(t); label.textContent = api.info().label; }};
+}
+```
+
+```{ojs}
+dsky = {
+  const el = htl.html`<div class="a11-dsky">
+    <div class="lights"><span data-l="comp">COMP ACTY</span><span data-l="who">LGC</span></div>
+    <div class="row"><div><div class="lab">PROG</div><div class="dig" data-d="prog">00</div></div>
+      <div><div class="lab">VERB</div><div class="dig" data-d="verb">16</div></div><div><div class="lab">NOUN</div><div class="dig" data-d="noun">--</div></div></div>
+    <div class="reg" data-d="r1">+00000</div><div class="reg" data-d="r2">+00000</div><div class="reg" data-d="r3">+00000</div>
+    <div class="cap"></div></div>`;
+  const q = s => el.querySelector(s);
+  const reg = v => (v < 0 ? "−" : "+") + String(Math.min(99999, Math.round(Math.abs(v)))).padStart(5, "0");
+  const progs = [
+    [M.liftoff - 600, M.liftoff, "12", "LGC", "P12, powered ascent, counting down to liftoff."],
+    [M.liftoff, M.insertion + 2, "12", "LGC", "P12: horizontal velocity, altitude rate (0.1 ft/s), altitude, the three numbers Aldrin called."],
+    [M.insertion + 2, M.csi[0] - 600, "20", "LGC", "P20, rendezvous navigation: range (0.01 n mi), range rate (0.1 ft/s), from the reconstruction."],
+    [M.csi[0] - 600, M.csi[1], "32", "LGC", "P32, CSI targeting, then P41 for the RCS burn."],
+    [M.csi[1], M.cdh[0] - 300, "20", "LGC", "P20: range, range rate."],
+    [M.cdh[0] - 300, M.cdh[1], "33", "LGC", "P33, CDH targeting and burn."],
+    [M.cdh[1], M.tpi[0] - 600, "20", "LGC", "P20: range, range rate."],
+    [M.tpi[0] - 600, M.tpi[1], "34", "LGC", "P34, TPI targeting and burn."],
+    [M.tpi[1], M.braking, "35", "LGC", "P35, transfer midcourse: range, range rate."],
+    [M.braking, M.dock_contact, "47", "LGC", "P47, thrust monitor, while Armstrong braked by hand: range, range rate."],
+    [M.dock_contact, M.tei[0] - 1200, "00", "CMC", "Columbia's computer, idling between programs."],
+    [M.tei[0] - 1200, M.tei[1] + 60, "40", "CMC", "P40, SPS burn: velocity to go (0.1 ft/s), speed (ft/s), height (0.1 n mi)."],
+    [M.tei[1] + 60, M.mcc5 - 900, "00", "CMC", "Passive thermal control: the spacecraft turns slowly to spread the Sun's heat."],
+    [M.mcc5 - 900, M.mcc5 + 300, "41", "CMC", "P41, RCS burn for midcourse correction 5."],
+    [M.mcc5 + 300, M.cm_sm_sep - 1140, "00", "CMC", "Passive thermal control."],
+    [M.cm_sm_sep - 1140, M.cm_sm_sep - 960, "61", "CMC", "P61, entry preparation."],
+    [M.cm_sm_sep - 960, M.ei - 421, "62", "CMC", "P62, CM/SM separation and pre-entry manoeuvre."],
+    [M.ei - 421, M.ei + 30, "63", "CMC", "P63, entry initialisation."],
+    [M.ei + 30, M.ei + 117, "64", "CMC", "P64, post-0.05 g: load factor (0.01 g), inertial velocity (ft/s), altitude (0.1 n mi)."],
+    [M.ei + 117, M.ei + 200, "65", "CMC", "P65, up-control: Columbia lofted to stretch the range."],
+    [M.ei + 200, M.drogue - 40, "67", "CMC", "P67, final phase."],
+    [M.drogue - 40, M.splash + 1e5, "00", "CMC", "Parachutes: the computer's job is done."]
+  ];
+  function update(s, t) {
+    const p = progs.find(([a, b]) => t >= a && t < b) ?? [0, 0, "00", "LGC", ""];
+    let r1 = 0, r2 = 0, r3 = 0;
+    if (p[2] === "12" && s.lm) { r1 = s.lm.hvel; r2 = s.lm.hdot * 10; r3 = s.lm.alt_ft; }
+    else if (["20", "32", "33", "34", "35", "47"].includes(p[2]) && s.range_km != null) {
+      const dt = 2, a = tabAt(data.lm, t - dt, 3), b = tabAt(data.lm, t + dt, 3), c0 = tabAt(data.csm, t - dt, 3), c1 = tabAt(data.csm, t + dt, 3);
+      const r0 = Math.hypot(c0[0] - a[0], c0[1] - a[1], c0[2] - a[2]), rr = Math.hypot(c1[0] - b[0], c1[1] - b[1], c1[2] - b[2]);
+      r1 = s.range_km * 1000 / NMI * 100; r2 = (rr - r0) / (2 * dt) * 1000 / FT * 10; r3 = 0;
+    }
+    else if (p[2] === "40" && s.csm) { const left = Math.max(0, M.tei[1] - t) / (M.tei[1] - M.tei[0]); r1 = t >= M.tei[0] ? 32790 * left * 0.95 : 32790; r2 = s.csm.v; r3 = s.csm.alt * 10; }
+    else if (["63", "64", "65", "67"].includes(p[2]) && s.entry) { r1 = s.entry.g * 100; r2 = s.entry.v; r3 = s.entry.alt_ft * FT / NMI * 10; }
+    else if (s.earth) { r1 = s.earth.v; r2 = 0; r3 = s.earth.alt; }
+    q('[data-d="prog"]').textContent = p[2];
+    q('[data-d="noun"]').textContent = "--";
+    q('[data-d="r1"]').textContent = reg(r1); q('[data-d="r2"]').textContent = reg(r2); q('[data-d="r3"]').textContent = reg(r3);
+    q('[data-l="who"]').textContent = p[3] === "LGC" ? "EAGLE · LGC" : "COLUMBIA · CMC";
+    q('[data-l="comp"]').classList.toggle("on", Math.floor(t * 3) % 4 === 0);
+    q(".cap").textContent = p[4] + " Program numbers from the flight plan; nouns not reconstructed.";
+  }
+  return {el, update};
+}
+```
+
+```{ojs}
+mediaPanel = {
+  const player = viewof T;
+  const lines = transcript.lines, lineT = lines.map(l => l[0]);
+  const colors = {CC: "#457b9d", CDR: "#e76f51", CMP: "#2a9d8f", LMP: "#9b5de5"};
+  const show = {"air-to-ground": true, onboard: true};
+  const fmtT = t => fmtGET(t).replace(/\.\d$/, "");
+  const list = htl.html`<div class="a11-tx"></div>`;
+  const rows = new Array(lines.length);
+  const frag = document.createDocumentFragment();
+  lines.forEach(([t, code, who, text, ch], i) => {
+    const r = document.createElement("div");
+    r.className = "a11-line" + (ch === "onboard" ? " onb" : "");
+    r.dataset.i = i;
+    r.innerHTML = `<span class="t">${fmtT(t)}</span><span class="who" style="color:${colors[code.split(" ")[0]] ?? "#888"}"></span><span class="x"></span>`;
+    r.children[1].textContent = who + (ch === "onboard" ? " · onboard" : "");
+    r.children[2].textContent = text;
+    rows[i] = r; frag.append(r);
+  });
+  list.append(frag);
+  list.onclick = e => { const r = e.target.closest(".a11-line"); if (r) player.setT(lines[+r.dataset.i][0] - 0.5); };
+  let userScroll = 0;
+  list.addEventListener("wheel", () => { userScroll = performance.now(); }, {passive: true});
+  list.addEventListener("touchmove", () => { userScroll = performance.now(); }, {passive: true});
+  let lastIdx = -2;
+  const filters = htl.html`<div class="a11-chips" style="margin:.2rem 0 .4rem">
+    <label class="a11-chip"><input type="checkbox" checked data-c="air-to-ground"> Air-to-ground</label>
+    <label class="a11-chip"><input type="checkbox" checked data-c="onboard"> Onboard recorder</label></div>`;
+  filters.onchange = e => {
+    show[e.target.dataset.c] = e.target.checked;
+    rows.forEach((r, i) => { r.style.display = show[lines[i][4]] ? "" : "none"; });
+    lastIdx = -2;
+  };
+  const audio = htl.html`<audio preload="none"></audio>`;
+  const video = htl.html`<video muted playsinline preload="none" style="width:100%;border-radius:6px;background:#000;display:block"></video>`;
+  const vcap = htl.html`<div class="s" style="font-size:.72rem;opacity:.65;margin-top:.2rem"></div>`;
+  const videoBox = htl.html`<div style="display:none;margin-bottom:.5rem">${video}${vcap}</div>`;
+  let soundOn = false;
+  const soundBtn = htl.html`<button type="button" class="a11-chip">🔈 Sound off</button>`;
+  const status = htl.html`<span class="s" style="font-size:.78rem;opacity:.75"></span>`;
+  soundBtn.onclick = () => {
+    soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? "🔊 Sound on" : "🔈 Sound off";
+    soundBtn.classList.toggle("active", soundOn);
+    if (soundOn) player.setSpeed("rt"); else audio.pause();
+  };
+  const now = htl.html`<div class="a11-now"></div>`;
+  const el = htl.html`<div class="a11-panel"><h4>Computer, voice and film</h4>
+    ${dsky.el}
+    ${videoBox}
+    <div class="a11-chips" style="align-items:center;margin:.4rem 0 .4rem">${soundBtn}${status}</div>
+    ${now}${filters}${list}${audio}
+    <div class="s" style="font-size:.72rem;opacity:.6;margin-top:.35rem">Display: values from this reconstruction. Transcript: NASA air-to-ground and onboard voice transcriptions, via Spacelog. Audio: NASA's Day 6, 7 and 8 highlights reels. Film: NASA transfers of the 16 mm onboard film.</div>
+  </div>`;
+  const aSegs = media.audio.flatMap(a => a.segments.map(s => ({...s, src: a.src, title: a.title})));
+  const vSegs = media.video.flatMap(v => v.segments.map(s => ({...s, src: v.src, title: v.title})));
+  function update(t) {
+    let i = d3.bisectRight(lineT, t) - 1;
+    while (i >= 0 && !show[lines[i][4]]) i--;
+    if (i !== lastIdx) {
+      if (lastIdx >= 0 && rows[lastIdx]) rows[lastIdx].classList.remove("cur");
+      if (i >= 0) {
+        rows[i].classList.add("cur");
+        if (performance.now() - userScroll > 4000) list.scrollTop = rows[i].offsetTop - list.offsetTop - list.clientHeight / 3;
+        const [lt, code, who, text, ch] = lines[i];
+        now.replaceChildren(htl.html`<div class="who" style="color:${colors[code.split(" ")[0]] ?? "#888"}">${who}${ch === "onboard" ? " · onboard" : ""}
+          <span class="t">${fmtT(lt)}</span></div><div class="x">${text}</div>`);
+      }
+      lastIdx = i;
+    }
+    const realTime = player.running && player.rate === 1;
+    const a = aSegs.find(s => t >= s.get_start && t < s.get_end);
+    if (a) {
+      if (audio.getAttribute("src") !== a.src) { audio.setAttribute("src", a.src); }
+      const want = a.clip_start + (t - a.get_start);
+      status.textContent = soundOn ? (realTime ? `Playing: ${a.title}` : "Audio plays at Real time speed") : "NASA audio available here";
+      if (soundOn && realTime) {
+        if (Math.abs(audio.currentTime - want) > 0.8) audio.currentTime = want;
+        if (audio.paused) audio.play().catch(() => {});
+      } else if (!audio.paused) audio.pause();
+    } else {
+      if (!audio.paused) audio.pause();
+      const n = aSegs.filter(s => s.get_start > t).sort((x, y) => x.get_start - y.get_start)[0];
+      status.textContent = n ? `No audio in the reels here; next at ${fmtT(n.get_start)}` : "No more audio; the Day 9 reel has no captions to place it by";
+    }
+    const v = vSegs.find(s => t >= s.get_start && t < s.get_end);
+    videoBox.style.display = v ? "" : "none";
+    if (v) {
+      if (video.getAttribute("src") !== v.src) { video.setAttribute("src", v.src); video.preload = "metadata"; }
+      vcap.textContent = `${v.title}: ${v.note}`;
+      const rate = v.rate ?? 1, want = v.clip_start + (t - v.get_start) / rate;
+      if (realTime) {
+        video.playbackRate = 1 / rate;
+        if (Math.abs(video.currentTime - want) > 0.4) video.currentTime = want;
+        if (video.paused) video.play().catch(() => {});
+      } else { if (!video.paused) video.pause(); if (Math.abs(video.currentTime - want) > 0.15) video.currentTime = want; }
+    } else if (!video.paused) video.pause();
+  }
+  invalidation.then(() => { audio.pause(); video.pause(); });
+  return {el, update};
+}
+```
+
+```{ojs}
+panels = htl.html`<div class="a11-panels"><div class="slot-profile"></div><div class="slot-map"></div>${view3d.el}${mediaPanel.el}</div>`
+```
+
+```{ojs}
+{
+  panels.querySelector(".slot-profile").replaceChildren(drawProfile(T));
+  panels.querySelector(".slot-map").replaceChildren(drawMap(T));
+  view3d.update(T);
+  dsky.update(state, T);
+  mediaPanel.update(T);
+  return htl.html`<span></span>`;
+}
+```
+
+The radio buttons above the panels pin the first panel to one phase; **Follow the flight** lets it change with the timeline.
+
+```{ojs}
+checkTable = rows => {
+  const dec = x => Math.min(4, (String(x).split(".")[1] ?? "").length);
+  const auto = x => Math.abs(x) >= 1000 ? 0 : Math.abs(x) >= 100 ? 1 : Math.abs(x) >= 1 ? 2 : 4;
+  return htl.html`<table class="a11-checks table table-sm">
+  <thead><tr><th>Quantity</th><th style="text-align:right">1969 value</th><th style="text-align:right">This reconstruction</th><th>Unit</th></tr></thead>
+  <tbody>${rows.map(([sec, label, doc, model, unit, note]) => {
+    const d = doc == null ? auto(model) : Math.max(dec(doc), Math.min(4, dec(doc) + 1));
+    return htl.html`<tr><td>${label}${note ? htl.html`<br><span style="font-size:.78rem;opacity:.65">${note}</span>` : ""}</td>
+    <td class="num">${doc == null ? "—" : fmt(doc, dec(doc))}</td>
+    <td class="num">${fmt(model, d)}</td><td style="font-size:.8rem;opacity:.75">${unit}</td></tr>`;})}</tbody></table>`;
+}
+checks = (sec, filter = () => true) => checkTable(data.checks.filter(c => c[0] === sec && filter(c)))
+```
+
+## Liftoff
+
+*Eagle*'s ascent stage carried one engine, with no throttle and no gimbal: 3,500 lbf, on or off. Everything about the ascent came from pointing it. For ten seconds after liftoff the computer held *Eagle* vertical, to clear the descent stage and the ground, then pitched it over sharply, and for the next seven minutes tipped it steadily further towards the horizontal until it was in orbit.
+
+The pitch programme the reconstruction uses is the linear-tangent law,
+
+$$
+\tan\theta(t) = a - b\,t,
+$$
+
+where $\theta$ is the thrust's elevation above the local horizontal. Over a flat surface with constant gravity and no air, this is the law that reaches a given height and speed with the least propellant, which is why it, or something very close, sits inside almost every ascent guidance scheme from Apollo onwards. The Moon's surface is curved and its gravity points to its centre, so it is not exactly optimal here, but over 160 n mi of travel the difference is small.
+
+Two steering constants, the liftoff mass and the engine's exhaust velocity are solved for. The four conditions they have to meet are the height, climb rate and speed at engine cutoff, which Aldrin read off the display at 124:29:21 ("5537.3, 32.8 feet per second, 60,666"), and the ascent's total delta-v from NASA's tables. The fitted liftoff mass is 10,800 lb, and the fitted exhaust velocity corresponds to a specific impulse of 307 s, close to the ascent engine's rating; the propellant this burns is within 1% of Bennett's 4,934 lb. None of that was imposed.
+
+```{ojs}
+checks("ascent")
+```
+
+The orbit *Eagle* reached, about 48 by 9 n mi, matches the tables and the onboard estimates. So does one number nobody planned for. Twenty-nine minutes after insertion Collins told *Eagle* its out-of-plane rate was minus 1 ft/s. The reconstruction's *Eagle* lifts off from Tranquility Base, which by then had been carried almost two miles out of *Columbia*'s orbital plane by the Moon's rotation, and it flies straight down the plane's direction without steering sideways. It arrives with an out-of-plane rate of −0.95 ft/s, and the crew decided not to correct it.
+
+During the burn Aldrin called out speeds, climb rates and heights, and towards the end the velocity still to gain:
+
+```{ojs}
+checks("calls")
+```
+
+The climb rates and the end-of-burn calls follow the reconstruction closely. The first two altitude calls are 300 to 800 ft below it, and the horizontal speed called at 124:24:32, 1,500 ft/s, is 180 ft/s ahead of it. The transcript's times are good to a second or two, and a 1,500 ft/s horizontal speed is what the reconstruction reaches 16 s later, so this is either a timing slip or a sign that the real ascent pitched over faster in its first minutes than a single linear-tangent law allows; the end state is the same either way.
+
+### Which radius?
+
+Fitting the ascent turned up something about NASA's tables. Lunar heights in *Apollo by the Numbers* are given in nautical miles above "the Moon", and Parts 2 and 3 measured them from the 1,738.09 km reference sphere that the TRW reconstruction uses. For the rendezvous rows that does not work. Each row gives a height and a speed, and the orbit afterwards; Kepler's laws fix the speed from the height and the orbit's size, so the rows can test their own reference radius:
+
+```{ojs}
+checks("ref")
+```
+
+Measured from the 1,738.09 km sphere, the speeds come out 4 to 6 ft/s too low, every time. Measured from the landing site's radius, 1,735.48 km, they agree to a fraction of a foot per second, and the radius that fits best is within 0.3 km of the landing site's. The rendezvous was planned and flown from the LM's computer, which measured height from the landing site, and the tables keep that convention. This part uses it throughout. Parts 2 and 3 are not changed: their tables (LOI and DOI, from the CSM's side) fit the reference sphere as well or better.
+
+## The rendezvous
+
+*Columbia* was 60 n mi up and about 250 n mi ahead of *Eagle* along the orbit. *Eagle* did not chase it. A spacecraft that speeds up climbs into a higher, slower orbit and falls behind; to catch something ahead of you in orbit, you go lower, not faster. *Eagle*'s 9 by 48 n mi orbit had a shorter period than *Columbia*'s, and it gained on *Columbia* by about 9° per hour just by being lower.
+
+Apollo 11 used the **coelliptic** rendezvous, designed for Gemini and flown on every lunar landing until Apollo 14. It has three burns, each with a single purpose:
+
+1. **CSI**, concentric sequence initiation, half an orbit after insertion at the high point of *Eagle*'s orbit, raises the low point so that *Eagle*'s orbit is nearly circular.
+2. **CDH**, constant delta height, half an orbit later, makes *Eagle*'s orbit coelliptic with *Columbia*'s: the same shape, a constant 15 n mi below. Seen from *Columbia*, *Eagle* now slides forward along a straight line underneath it.
+3. **TPI**, terminal phase initiation, starts the intercept when the line of sight to *Columbia* reaches a set elevation above the horizon. From there *Eagle* travels 130° round the Moon to meet *Columbia*, with two small midcourse corrections and then braking by hand.
+
+The reason for the indirection is that each burn is small and each error is easy to see and fix, and the final approach always looks the same to the crew: *Columbia* rising against the stars at a fixed angle, the same every time, which they had flown hundreds of times in the simulator.
+
+### Relative motion
+
+The left panel's rendezvous view is the classic picture: *Columbia* fixed at the origin, *Eagle* plotted as height and distance relative to it. In that frame the motion follows the Clohessy–Wiltshire equations. For a target in a circular orbit with mean motion $n$, small offsets $x$ (ahead) and $z$ (above) obey
+
+$$
+\ddot x = -2n\dot z, \qquad \ddot z = 3n^2 z + 2n\dot x.
+$$
+
+A spacecraft a constant height $\Delta h$ below drifts forward at $\dot x = \tfrac{3}{2} n\,\Delta h$; with $\Delta h = 15$ n mi and *Columbia*'s two-hour orbit that is about 1.2 n mi a minute, so the 60 n mi between them after CDH closed to the 27 n mi of TPI in 46 minutes. The loops before CSI are *Eagle*'s eccentric orbit seen from a nearly circular one.
+
+```{ojs}
+relPlot = {
+  const d = data.rel.filter(r => r[0] <= M.dock_contact).map(r => ({t: r[0], x: r[1] * 1000 / NMI, z: r[3] * 1000 / NMI}));
+  const burns = data.burns.map(([n, t]) => ({n, ...d.find(q => q.t >= t)}));
+  return Plot.plot({
+    width, height: 300, marginLeft: 50, grid: true,
+    x: {label: "Distance ahead of Columbia (n mi)"}, y: {label: "Height relative to Columbia (n mi)"},
+    marks: [
+      Plot.line(d, {x: "x", y: "z", stroke: "#f4a261", strokeWidth: 1.8}),
+      Plot.dot(burns, {x: "x", y: "z", fill: "#9b5de5", r: 4, stroke: "#fff"}),
+      Plot.text(burns, {x: "x", y: "z", text: "n", dy: -10, fill: "currentColor"}),
+      Plot.dot([{x: 0, z: 0}], {x: "x", y: "z", fill: "#6fa8dc", r: 6, stroke: "#fff"}),
+      Plot.text([{x: 0, z: 0}], {x: "x", y: "z", text: () => "Columbia", dx: 8, dy: -8, textAnchor: "start"})
+    ]
+  });
+}
+```
+
+### The burns
+
+CSI and CDH are each solved so that the orbit after the burn is the one NASA's tables give. The crew read their burn solutions to the ground, and those are checks:
+
+```{ojs}
+checks("rdv", c => !c[1].startsWith("Range at"))
+```
+
+The CDH solution agrees with the one the crew read out to within 2 ft/s in each component, and the height difference it leaves, 15.8 n mi, is close to the 15.5 n mi *Eagle*'s backup guidance computer gave. TPI is solved differently, as the burn that puts *Eagle* on *Columbia* at the end of the braking, 42 minutes later, and it comes out at 20.3 ft/s against the 25.3 flown. Its components depend on exactly where *Columbia* was along its orbit, which no table gives; this is the place where the reconstruction is least constrained, and the next section explains how *Columbia*'s orbit is pinned down.
+
+### Braking and docking
+
+TPI puts *Eagle* on a collision course; the closing speed has to come off by hand. From 127:37 Armstrong braked in steps, keeping the line-of-sight rate to *Columbia* small and the closing rate in proportion to the range, a gate of so many feet per second at each mile. The reconstruction's path here follows the range and rate calls in the transcript, along the line of sight of the intercept:
+
+```{ojs}
+checks("rdv", c => c[1].startsWith("Range at"))
+```
+
+Without braking, the intercept would have arrived with a closing speed of about 30 ft/s. At 127:52 *Eagle* was stationkeeping about 100 ft from *Columbia*, and Collins flew the last few feet. The docking was the one rough moment of the rendezvous: as the latches closed, the two spacecraft yawed against each other by 15° or so, "a funny one", Collins said afterwards, before the latches caught. Armstrong and Aldrin came back through the tunnel with the rock boxes. At 130:09 *Eagle* was let go, and half an hour later *Columbia* moved 2.2 ft/s away from it.
+
+## Columbia's orbit
+
+No table gives where *Columbia* was along its orbit during these hours, only its height and speed at a few events. But Mission Control's calls to the crew are full of times: "about a minute to LOS", "see you over the hill at 131:48", each one an occultation by the Moon that the ground predicted from tracking. *Columbia*'s orbit is fitted to eight of these, to the tables' heights and speeds, to the orbit after the final separation, to the TPI burn the crew read out, and to the range and rate the Public Affairs Officer gave a few minutes before TPI.
+
+```{ojs}
+checks("csm")
+```
+
+```{ojs}
+checks("signal")
+```
+
+The signal times fit to within about 45 seconds, which is the resolution of "about a minute to LOS". The heights are within about a mile, except at TEI ignition, where the reconstruction is 3.3 n mi high: as in Part 3, the reconstruction's lunar gravity has only its two largest terms, and the low point of the real orbit wandered with the mascons.
+
+## Transearth injection
+
+At 135:23:42, behind the Moon on its 31st orbit, *Columbia*'s service propulsion engine fired for two and a half minutes and added 3,279 ft/s. It turned a 54 by 63 n mi orbit into a hyperbola relative to the Moon, and a long, falling ellipse relative to Earth that met the atmosphere 59½ hours later.
+
+The energy of the escape is set by the burn's size: $v_\infty^2 = v^2 - 2\mu_\text{Moon}/r$, a speed at infinity of about 4,000 ft/s relative to the Moon. Its direction is set by where around the orbit the burn happens, and its timing and aim at Earth by both. The reconstruction keeps the documented ignition time and takes the burn's direction from the pre-burn PAD (3,201.1 ft/s forward, 681.8 sideways, 265.0 up), then solves for small corrections to its pitch and yaw and for its size so that, with the one midcourse correction actually flown, the trajectory crosses 400,000 ft at the documented time, latitude, longitude and angle. The sideways component in the PAD is real: the trajectory home had to leave the Moon's equatorial orbit at an angle to reach the right latitude on Earth.
+
+```{ojs}
+checks("tei")
+```
+
+```{ojs}
+checks("ei")
+```
+
+The fitted burn is 3,284.6 ft/s, 5.6 ft/s more than the tables and 1 more than the PAD; the flight dynamics officer's preliminary figure, read out by the PAO, was 3,283.5. The fit trades a slightly hotter burn against the start state: the reconstruction's *Columbia* begins TEI 3.3 n mi high, and leaves at 61.6 n mi against 58.1. From there to entry everything lines up. The state 15 hours later at MCC-5 is within 8 n mi out of 169,000 and a quarter of a foot per second, and the state at CM/SM separation 44 hours after that within 5 n mi and 13 ft/s, all as checks. The entry speed and heading, which the fit did not use, agree to 0.2 ft/s and 0.02°.
+
+MCC-5, 4.8 ft/s at 150:30, was the only correction on the way home; MCC-6 and MCC-7 were cancelled. On the way the crew gave two television broadcasts. In the evening one, at 177:32, each of them spoke about what the flight meant; it is in the Day 8 audio.
+
+```{ojs}
+distPlot = Plot.plot({
+  width, height: 240, marginLeft: 60, grid: true,
+  x: {label: "Ground elapsed time (hours)"},
+  y: {label: "Distance from Earth's centre (thousands of n mi)"},
+  marks: [Plot.line(data.earth, {x: d => d[0] / 3600, y: d => Math.hypot(d[1], d[2], d[3]) / 1852, stroke: "#9ad1ff"}),
+    Plot.line(data.earth, {x: d => d[0] / 3600, y: d => d[5] / 1000, stroke: "#e76f51", strokeDasharray: "3 2"}),
+    Plot.text([{x: 140, y: 210, l: "distance"}, {x: 140, y: 35, l: "speed (thousands of ft/s)"}], {x: "x", y: "y", text: "l", textAnchor: "start"})]
+})
+```
+
+## Entry
+
+At 195:03:06 the command module, separated from its service module a quarter of an hour earlier, reached 400,000 ft, 3° south of the equator, 1,500 n mi from its target, moving at 36,194 ft/s and descending at 6.5°. The angle is the whole problem of lunar entry. Steeper than about 7.5° and the deceleration exceeds what the crew and structure were built for; shallower than about 5.5° and the command module does not lose enough speed on its first pass to stay in, and skips back out on a long ellipse. The corridor is two degrees wide at the end of a trajectory 240,000 miles long, and MCC-5's 4.8 ft/s was what kept it centred.
+
+The command module was not a ballistic capsule. Its centre of mass was offset from its axis, so it flew at an angle of attack of about 20° and produced lift, about 0.28 of its drag. By rolling, the computer pointed that lift up, down, or sideways, and so controlled how deep the command module flew and how far. The reconstruction flies it as a point mass with drag $D = \tfrac12\rho v^2 C_D A$ and lift $L = 0.282\,D$, in the US Standard Atmosphere 1976 turning with Earth, with the 12,148 lb weight the onboard computer used:
+
+$$
+\dot{\mathbf v} = \mathbf g(\mathbf r) - \frac{D}{m}\,\hat{\mathbf v}_\text{rel} + \frac{L}{m}\left(\cos\sigma\,\hat{\mathbf u}_\perp + \sin\sigma\,\hat{\mathbf v}_\text{rel}\times\hat{\mathbf u}_\perp\right),
+$$
+
+where $\sigma$ is the bank angle and $\hat{\mathbf u}_\perp$ is the local vertical with its component along the velocity removed. The bank angle is held at zero (lift up) for the first 70 seconds and rolled to the −15° the display showed, as the 1970 entry analysis describes. After that it is described by its cosine, the share of lift pointing up, at eleven times, plus the time of the first reversal of its sideways component; the later reversals are at the times the analysis gives. These are solved so that the speed at the start of the final phase, the load factor at the bottom of the loft, the second load-factor peak, the time of drogue deployment and the splash point match the record.
+
+```{ojs}
+checks("entry")
+```
+
+The first peak, 6.55 g at 82 s, comes from the entry angle and the lift-up start alone, before any fitted parameter has acted; the entry analysis gives 6.73 g from the accelerometers, the mission report "about 6.5". The lowest point of that first dip, 183,100 ft, compares with 182,109. After it the computer lofted the command module, rolling to keep a little lift upward, to stretch the range: Apollo 11's landing point had been moved 215 n mi further downrange the day before, away from a line of thunderstorms, and the extra distance had to come from somewhere. The reconstruction climbs back to about 220,000 ft before the final phase brings it down for the second peak.
+
+```{ojs}
+entryPlot = {
+  const d = data.entry.filter(r => r[0] >= M.ei - 30 && r[0] <= M.drogue + 20).map(r => ({t: r[0] - M.ei, g: r[7], h: r[4] / 1000, b: r[8]}));
+  return Plot.plot({
+    width, height: 260, marginLeft: 50, grid: true,
+    x: {label: "Seconds after entry interface"}, y: {label: "Load factor (g)", domain: [0, 7.5]},
+    marks: [Plot.line(d, {x: "t", y: "g", stroke: "#e63946", strokeWidth: 1.8}),
+      Plot.dot([{t: 82, g: 6.73}, {t: 374, g: 6.0}], {x: "t", y: "g", fill: "#2a9d8f", r: 5, stroke: "#fff"}),
+      Plot.line(d, {x: "t", y: r => r.h / 60, stroke: "#f4a261", strokeDasharray: "3 2"}),
+      Plot.text([{t: 300, g: 7.1, l: "height ÷ 60,000 ft (dashed)"}], {x: "t", y: "g", text: "l"})]
+  });
+}
+```
+
+```{ojs}
+bankPlot = {
+  const d = data.entry.filter(r => r[0] >= M.ei && r[0] <= M.drogue).map(r => ({t: r[0] - M.ei, b: r[8]}));
+  return Plot.plot({
+    width, height: 200, marginLeft: 50, grid: true,
+    x: {label: "Seconds after entry interface"}, y: {label: "Bank angle (°)", domain: [-180, 180], ticks: [-180, -90, 0, 90, 180]},
+    marks: [Plot.ruleY([0]), Plot.line(d, {x: "t", y: "b", stroke: "#9b5de5"}),
+      Plot.ruleX([376, 436, 468], {stroke: "#999", strokeDasharray: "2 3"})]
+  });
+}
+```
+
+The fitted bank history is a reconstruction of what the guidance would have had to command, not a record of it; several different histories could meet the same handful of numbers. Its broad shape is what the entry analysis describes: lift up into the first pulse, a roll towards lift down as the deceleration built, mostly lift up through the loft, and in the final phase bank angles near 90° with the sideways lift reversed at the three documented times (dotted lines) to keep the crossrange within the computer's deadband.
+
+## Splashdown
+
+The drogue parachutes opened at about 24,000 ft, 9 minutes after entry interface, and the three mains at about 10,000 ft. The reconstruction treats both as drag only, with no wind (there was a surface wind of about 18 knots), and solves for the two ballistic coefficients that put the mains out at 10,000 ft and the command module in the water at the mission report's 195:18:35.
+
+```{ojs}
+checks("splash")
+```
+
+The main-parachute descent comes out at 32 ft/s at the water, which is what three 83-foot canopies were designed to give. Once the transcript's clock is aligned to the mission report's splashdown time, Armstrong's last three altitude calls on the way down agree with the reconstruction to within about 250 ft; the first, 3,750 ft, is 840 ft below it, which suggests the drogue phase was a little slower than this simple drag model. *Columbia* came down upside down, in the "stable 2" position, and righted itself when the flotation bags inflated. The *Hornet*'s swimmers were there within ten minutes; the crew, in biological isolation garments, were on the carrier an hour after splashdown, 8 days, 3 hours and 18 minutes after leaving Florida.
+
+## What the reconstruction shows
+
+Across the four parts, the reconstruction has flown Apollo 11 from the launch pad to the Pacific through 195 hours, re-anchoring at each phase but otherwise letting physics carry it. A few points hold across the whole flight:
+
+- **NASA's 1969–70 numbers are self-consistent** to a degree that is easy to take for granted. Burn sizes, times, states and orbits from different documents, produced by different groups, agree with each other through Newtonian physics to a few feet per second, often less.
+- **The weakest link is the Moon's gravity.** The model's lunar field has its two largest terms. Over a few hours that is good to a mile or two; over a day it is not, and every lunar part needed a fresh anchor for where along the orbit the spacecraft were.
+- **The record that pins things best is often the least formal one.** Signal-loss times read out by Mission Control, Aldrin's altitude and speed calls, the Public Affairs Officer's range figure before TPI, and the crew's readbacks of their burn solutions are the checks that constrain this part most tightly.
+- **Where the reconstruction does not fit, it says so.** The descent used 2.6% more delta-v than *Eagle* did; the TPI burn differs in its components; the entry's bank history is one of several that would do. Those are the places the 1969 record does not fully determine.
+
+## Method and sources
+
+For how the coordinate frames, views, synchronisation and data sources fit together across the series, see the explainer [Frames of Reference in the Apollo 11 Reconstruction](/explainers/apollo-11-frames-of-reference/).
+
+The force model is the one used throughout: Earth with $J_2$, the Moon with $J_2$ and $C_{22}$, the Sun, integrated with a Dormand–Prince 5(4) method in the geocentric mean-of-1969 frame, with the Moon and Sun from JPL's DE421. The entry uses Earth with $J_2$ and the atmosphere only, integrated with fourth-order Runge–Kutta at half-second steps.
+
+The pipeline:
+
+1. *Columbia*'s state at 131:00 (position along the orbit, height, speed, flight-path angle) is fitted to eight signal-loss and acquisition times, the tables' heights and speeds at docking, jettison, final separation and TEI, the orbit after final separation, the crew's TPI readback, and the PAO's range and range rate before TPI. The plane comes from Part 3's orbit carried forward.
+2. The ascent: two steering constants, the liftoff mass and the exhaust velocity, fitted to the DSKY insertion state, the tables' speed and the ascent delta-v. Thrust 3,500 lbf (Bennett), 10 s vertical rise.
+3. CSI and CDH: forward and radial components fitted to the documented orbits after each (CDH's sideways component from the crew's readback); finite burns on the LM's RCS. TPI: three components solved for an intercept at the end of TPF. Braking follows the range calls.
+4. TEI: pitch, yaw and size, from the PAD direction, fitted to the entry-interface time, place and angle, and to the TEI cutoff state; MCC-5 as flown (PAD vector, ABTN time).
+5. Entry: bank profile fitted as described above; drogues and mains as drag, two ballistic coefficients fitted.
+
+Sources:
+
+- R. W. Orloff and S. Garber, *Apollo by the Numbers*, NASA SP-2000-4029, lunar-orbit and transearth tables, via the [Apollo Flight Journal edition](https://nasa.gov/wp-content/uploads/static/history/afj/pdf/abtn-202402.pdf).
+- NASA, [*Apollo 11 Mission Report*](https://www.nasa.gov/wp-content/uploads/static/history/alsj/a11/a11mr_NoMissingPages_19700008096.pdf), MSC-00171 (1969): event times, insertion orbits, entry, landing point.
+- NASA MSC, [*Apollo 11 Entry Postflight Analysis*](https://www.nasa.gov/wp-content/uploads/static/history/afj/ap11fj/pdf/19740072963_as11-entry-analysis-19700220.pdf) (1970): entry interface state, load factors, phase times, bank reversals, L/D and weight, target and splash points.
+- F. V. Bennett, [*Apollo Lunar Descent and Ascent Trajectories*](https://ntrs.nasa.gov/citations/19700024568), NASA TM X-58040 (1970): ascent engine, vertical rise, propellant.
+- NASA's Apollo 11 air-to-ground and onboard voice transcriptions, via [Spacelog](https://apollo11.spacelog.org/), for the callouts, readbacks, PADs and signal times; the [Apollo 11 Flight Journal](https://www.nasa.gov/history/afj/ap11fj/) for the PAD values.
+- NASA's mission audio for [Day 6](https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_6), [Day 7](https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_7) and [Day 8](https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_8), pinned to mission time by matching their captions to the transcript; the Day 9 reel, which covers the entry, has no captions and is not used. The 16 mm onboard film of the [rendezvous](https://archive.org/details/Apollo-11_LM-landing_US-Flag-lunar-surface_LM-ascent-lunar-orbit-approach.mxf) and of the [docking and entry](https://archive.org/details/Apollo-11-Reentry_LM-Docking-and-Undocking_802290.mxf), at the Internet Archive; their placement in time is approximate and is described in the media panel.
+- The US Standard Atmosphere, 1976 (NOAA/NASA/USAF).
+
+This is the end of the series. Thank you for reading it.
+

@@ -13,6 +13,8 @@ project:
     - "sci-fi/**"
     - "mechanics/**"
     - "papers/**"
+    - "ai/**"
+    - "space/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
     - "!CLASS_option_evaluation.qmd"  # needs local Excel data, not a site page
@@ -39,6 +41,10 @@ website:
         text: Sci-Fi
       - href: mechanics/index.qmd
         text: Mechanics
+      - href: ai/index.qmd
+        text: AI
+      - href: space/index.qmd
+        text: Space
     right:
       - about.qmd
       - icon: linkedin

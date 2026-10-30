@@ -1,0 +1,878 @@
+---
+title: "Apollo 11, Part 2: Translunar Coast and Lunar Orbit"
+subtitle: "Three days of falling towards the Moon, one correction, and the six-minute burn behind the far side that captured Columbia and Eagle"
+description: "A reconstruction of Apollo 11 from the translunar coast to the first day in lunar orbit, anchored on NASA's documented states and burns. Covers tracking, the midcourse correction, the Moon's sphere of influence, loss of signal behind the Moon, lunar orbit insertion, and the mascons that pulled the orbit out of shape."
+author: "Paul Milne"
+date: "2026-10-29"
+categories: [space, orbital-mechanics, apollo, reconstruction]
+resources:
+  - apollo3d_p2.js
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.a11-player { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.25rem 0 .5rem; }
+.a11-player input[type=range] { flex:1 1 220px; min-width:0; }
+.a11-player button, .a11-chip { font: inherit; font-size:.85rem; padding:.25rem .65rem; border-radius:999px;
+  border:1px solid var(--bs-border-color, #ccc); background:var(--bs-body-bg, #fff); color:inherit; cursor:pointer; }
+.a11-player button.primary { background:#1d3557; color:#fff; border-color:#1d3557; min-width:5.5rem; }
+.a11-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.75rem; }
+.a11-chip.active { border-color:#e76f51; color:#b5452b; background: rgba(231,111,81,.12); }
+.a11-panels { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:.75rem; }
+.a11-panel { border:1px solid var(--bs-border-color, #ddd); border-radius:8px; padding:.5rem; background:var(--bs-body-bg, #fff); min-width:0; }
+.a11-panel h4 { font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; margin:.1rem .25rem .4rem; opacity:.7; }
+.a11-hud { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:.4rem .9rem; font-variant-numeric: tabular-nums; }
+.a11-hud .k { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; opacity:.65; }
+.a11-hud .v { font-size:1.05rem; font-weight:600; }
+.a11-hud .s { font-size:.78rem; opacity:.7; }
+.a11-head { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; }
+.a11-get { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:1.35rem; font-weight:700; }
+.a11-phase { font-weight:600; }
+.a11-pill { display:inline-block; font-size:.72rem; padding:.1rem .5rem; border-radius:999px; color:#fff; vertical-align:middle; }
+.a11-legend { font-size:.82rem; display:flex; gap:.9rem; flex-wrap:wrap; margin:.4rem 0 0; }
+.a11-legend span::before { content:""; display:inline-block; width:.7rem; height:.7rem; border-radius:50%; margin-right:.3rem; vertical-align:-1px; background:var(--c); }
+.a11-tx { height: 260px; overflow-y: auto; border-top:1px solid var(--bs-border-color, #ddd); font-size:.82rem; }
+.a11-line { display:grid; grid-template-columns: 4.6rem 1fr; gap:0 .5rem; padding:.25rem .3rem; cursor:pointer; border-radius:4px; }
+.a11-line .t { font-family: ui-monospace, Menlo, monospace; opacity:.6; grid-row: span 2; font-size:.75rem; padding-top:.1rem; }
+.a11-line .who { font-weight:600; font-size:.75rem; }
+.a11-line.onb .x { font-style: italic; }
+.a11-line:hover { background: rgba(127,127,127,.08); }
+.a11-line.cur { background: rgba(231,111,81,.14); }
+.a11-now { min-height: 3.6rem; padding:.4rem .5rem; border-left:3px solid #e76f51; margin-bottom:.4rem; background: rgba(127,127,127,.06); border-radius: 4px; }
+.a11-now .who { font-weight:700; font-size:.8rem; } .a11-now .t { font-family: ui-monospace, Menlo, monospace; opacity:.6; font-weight:400; margin-left:.4rem; }
+.a11-now .x { font-size:.95rem; }
+.a11-chip input { vertical-align: -1px; margin-right: .2rem; }
+.a11-tv { font-size:.8rem; padding:.3rem .5rem; border-radius:4px; background:rgba(69,123,157,.12); margin-bottom:.4rem; }
+.a11-attitude { font-size:.78rem; opacity:.75; margin:.3rem .25rem 0; min-height:1.2em; }
+table.a11-checks { font-size:.88rem; width:100%; }
+table.a11-checks td.num { text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+</style>
+```
+
+This is the second of four posts that rebuild the flight of Apollo 11 from the numbers NASA published in 1969 and 1970.
+
+1. [**Launch to translunar injection**](../apollo-11-part-1-launch-to-tli/): the ascent, the parking orbit, and the burn that leaves Earth.
+2. **Translunar coast and lunar orbit** (this post): three days of coasting, one midcourse correction, and the two burns that put *Columbia* and *Eagle* into orbit around the Moon.
+3. [**Descent and landing**](../apollo-11-part-3-descent-and-landing/): *Eagle* separates from *Columbia* and flies the powered descent to Tranquility Base.
+4. [**Rendezvous, return and entry**](../apollo-11-part-4-rendezvous-return-and-entry/): ascent, rendezvous with *Columbia*, the burn home, and splashdown.
+
+Part 1 left the spacecraft at 2 hours 50 minutes, moving away from Earth at 10.8 km/s. This part follows it for the next four days, to 100 hours, when Neil Armstrong and Buzz Aldrin are about to undock *Eagle*. Along the way it covers how the spacecraft was tracked, why one small burn on day two mattered so much, where the Moon's gravity takes over from Earth's, why every burn at the Moon was made out of radio contact, and why the orbit around the Moon would not stay the shape it was put in.
+
+## A correction to Part 1
+
+Building this part turned up something missing from Part 1. About two hours after TLI, once *Eagle* had been pulled clear of the spent S-IVB stage, the crew fired the service propulsion system (SPS) engine for 2.9 seconds. This "evasive" burn of 19.7 ft/s moved *Columbia* and *Eagle* safely away from the stage, which was about to vent its leftover propellant to send itself past the Moon. Part 1's free-return test did not include that burn, so its uncorrected path was off. Part 1 has been updated: with the evasive burn included, the reconstruction stays within 3 n mi and 4 ft/s of every documented state up to 4 hours 40 minutes.
+
+## How this part is built
+
+As in Part 1, the reconstruction works from **anchors**, states documented in the 1969 tables, and fills the gaps between them with a force model. Two things are new.
+
+- **The Moon's own shape.** Near the Moon, the model adds the two largest terms of the Moon's gravity field beyond a simple sphere: its flattening ($J_2$) and its elongation towards Earth ($C_{22}$). Positions on the Moon use the IAU's model of the Moon's orientation, so the ground track can be drawn in lunar latitude and longitude.
+- **Burns that last minutes.** Lunar orbit insertion took almost six minutes. The engine is modelled as a constant-thrust rocket with an exhaust velocity of 3.10 km/s, steered in the local-horizontal frame that the crew's maneuver PADs use. The steering is solved for, by least squares, so that the trajectory meets the documented states at ignition and cutoff.
+
+The display marks every value by where it came from:
+
+```{ojs}
+srcInfo = [
+  {code: 0, name: "Documented", color: "#2a9d8f"},
+  {code: 1, name: "Interpolated", color: "#457b9d"},
+  {code: 2, name: "Propagated", color: "#e9c46a"},
+  {code: 3, name: "Fitted", color: "#e76f51"}
+]
+htl.html`<div class="a11-legend">${srcInfo.map(s => htl.html`<span style="--c:${s.color}">${s.name}</span>`)}</div>`
+```
+
+## Four days, from Earth to lunar orbit
+
+Press play, or jump to an event. Playback runs quickly through the long coast and slows down for the burns and around the Moon. The first panel shows the whole trip, either in a frame that turns with the Moon (the clearest way to see the path) or in a fixed one, and can close in on the Moon. The second is the Moon itself, with the ground track, the landing site, the side in darkness, and the side hidden from Earth, where there is no radio. The third is a computer-generated view of *Columbia* and *Eagle*, docked, flown along the reconstructed trajectory, rolling slowly in "barbecue" mode during the coast and turning to fire the engine at each burn. The last panel scrolls the voice transcripts with the clock. Turn the sound on and choose **Real time** to hear NASA's recordings wherever they exist for that moment.
+
+```{ojs}
+data = FileAttachment("data/part2.json").json()
+track = data.track.filter((d, i, a) => i === 0 || d[0] > a[i - 1][0])
+times = track.map(d => d[0])
+T_MIN = 15420
+T_MAX = 360000
+RM = data.meta.r_moon_ref
+NMI = 1.852
+FTS = 3280.84
+```
+
+```{ojs}
+burnsAt = ({
+  ev: data.burns.evasive.tig, mcc: data.burns.mcc.get - 1.56,
+  l1: data.burns.loi1.tig, l1c: data.burns.loi1.tig + data.burns.loi1.dur,
+  l2: data.burns.loi2.tig, l2c: data.burns.loi2.tig + data.burns.loi2.dur
+})
+phases = [
+  [0, "Translunar coast"],
+  [burnsAt.ev, "Evasive burn, SPS firing"],
+  [burnsAt.ev + 3, "Translunar coast"],
+  [burnsAt.mcc, "Midcourse correction 2, SPS firing"],
+  [burnsAt.mcc + 3.2, "Translunar coast"],
+  [221995, "Inside the Moon's sphere of influence"],
+  [272483, "Behind the Moon, out of contact"],
+  [burnsAt.l1, "LOI-1: SPS firing, out of contact"],
+  [burnsAt.l1c, "Lunar orbit, about 170 × 60 n mi"],
+  [burnsAt.l2, "LOI-2: SPS firing"],
+  [burnsAt.l2c, "Lunar orbit, about 66 × 54 n mi"]
+]
+jumps = [
+  ["Evasive burn", burnsAt.ev - 60], ["TV, 30 h", 30.5 * 3600], ["MCC-2", burnsAt.mcc - 90],
+  ["TV inside Eagle", 55.2 * 3600], ["Sphere of influence", 221995 - 600], ["LOS", 272483 - 300],
+  ["LOI-1", burnsAt.l1 - 120], ["AOS", 274529 - 60], ["TV from orbit", 282251],
+  ["LOI-2", burnsAt.l2 - 120], ["Rev 10", 339400]
+]
+```
+
+```{ojs}
+viewof T = {
+  const warp = t => {
+    if (Math.abs(t - burnsAt.ev) < 90 || Math.abs(t - burnsAt.mcc) < 120) return 4;
+    if (t > burnsAt.l1 - 300 && t < burnsAt.l1c + 120) return 15;
+    if (t > burnsAt.l2 - 120 && t < burnsAt.l2c + 120) return 4;
+    if (t > 272483 - 900 && t < 274529 + 600) return 60;
+    if (t > burnsAt.l1c) return 150;
+    if (t > 255000) return 400;
+    return 1500;
+  };
+  const range = htl.html`<input type="range" min=${T_MIN} max=${T_MAX} step="1" value=${burnsAt.ev - 60}>`;
+  const play = htl.html`<button type="button" class="primary">▶ Play</button>`;
+  const speed = htl.html`<select class="a11-chip">
+      <option value="rt">Real time</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="3">3×</option><option value="10">10×</option></select>`;
+  const chips = htl.html`<div class="a11-chips">${jumps.map(([label, t]) =>
+      htl.html`<button type="button" class="a11-chip" data-t=${t}>${label}</button>`)}</div>`;
+  const root = htl.html`<div><div class="a11-player">${play}${range}${speed}</div>${chips}</div>`;
+  let running = false, last = null, raf = null;
+  const set = v => {
+    root.value = Math.max(T_MIN, Math.min(T_MAX, v));
+    range.value = root.value;
+    root.dispatchEvent(new Event("input", {bubbles: true}));
+  };
+  const tick = now => {
+    if (!running) return;
+    if (last != null) {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      root.rate = speed.value === "rt" ? 1 : warp(root.value) * (+speed.value);
+      set(root.value + dt * root.rate);
+      if (root.value >= T_MAX) toggle(false);
+    }
+    last = now;
+    raf = requestAnimationFrame(tick);
+  };
+  const toggle = on => {
+    running = on; last = null; root.rate = 0; root.running = on;
+    play.textContent = on ? "❚❚ Pause" : "▶ Play";
+    if (on) { if (root.value >= T_MAX) set(T_MIN); raf = requestAnimationFrame(tick); }
+    else cancelAnimationFrame(raf);
+  };
+  play.onclick = () => toggle(!running);
+  range.oninput = e => { e.stopPropagation(); set(+range.value); };
+  chips.onclick = e => { const b = e.target.closest("button"); if (b) set(+b.dataset.t); };
+  root.value = burnsAt.ev - 60;
+  root.rate = 0;
+  root.running = false;
+  root.setT = set;
+  root.setSpeed = v => { speed.value = v; };
+  invalidation.then(() => cancelAnimationFrame(raf));
+  return root;
+}
+```
+
+```{ojs}
+// Ephemeris helpers: linear interpolation in the Moon and Sun tables.
+tabAt = (rows, t, n = 3) => {
+  const ts = rows._t ?? (rows._t = rows.map(d => d[0]));
+  const i = Math.max(0, Math.min(rows.length - 2, d3.bisectRight(ts, t) - 1));
+  const a = rows[i], b = rows[i + 1], f = (t - a[0]) / (b[0] - a[0]);
+  return d3.range(1, n + 1).map(j => a[j] + f * (b[j] - a[j]));
+}
+vec = ({
+  sub: (a, b) => a.map((x, i) => x - b[i]),
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
+  norm: a => Math.hypot(a[0], a[1], a[2]),
+  unit: a => { const n = Math.hypot(a[0], a[1], a[2]); return a.map(x => x / n); },
+  scale: (a, k) => a.map(x => x * k)
+})
+rowAt = t => {
+  const i = Math.max(0, Math.min(track.length - 2, d3.bisectRight(times, t) - 1));
+  const a = track[i], b = track[i + 1], f = Math.max(0, Math.min(1, (t - a[0]) / (b[0] - a[0])));
+  const r = a.map((x, j) => x + f * (b[j] - x));
+  if (Math.abs(b[12] - a[12]) > 180) {           // selenographic longitude wraps
+    const lb = b[12] + (b[12] < a[12] ? 360 : -360);
+    r[12] = a[12] + f * (lb - a[12]);
+    if (r[12] > 180) r[12] -= 360; if (r[12] < -180) r[12] += 360;
+  }
+  r.i = i; r.src = f < 0.02 ? a[13] : f > 0.98 ? b[13] : Math.max(a[13], b[13]) || 1;
+  return r;
+}
+// Earth visible from the spacecraft? Signed clearance (km) of the line to Earth's centre past the lunar limb.
+earthClear = r => {
+  const s = [r[1], r[2], r[3]], w = [-r[4], -r[5], -r[6]];
+  const u = vec.unit(vec.scale(s, -1)), along = vec.dot(w, u);
+  if (along < 0) return 1e4;
+  return vec.norm(vec.sub(w, vec.scale(u, along))) - RM;
+}
+losTimes = {
+  const out = [];
+  let prev = null;
+  for (const d of track) {
+    if (d[0] < 270000) continue;
+    const c = earthClear(d);
+    if (prev && (prev[1] > 0) !== (c > 0)) {
+      const tc = prev[0] + (d[0] - prev[0]) * prev[1] / (prev[1] - c);
+      out.push([tc, prev[1] > 0 ? "LOS" : "AOS"]);
+    }
+    prev = [d[0], c];
+  }
+  return out;
+}
+```
+
+```{ojs}
+state = {
+  const r = rowAt(T), s = {};
+  data.meta.columns.forEach((c, j) => { s[c] = r[j]; });
+  s.get = T; s.i = r.i; s.src = r.src;
+  s.rE = Math.hypot(r[1], r[2], r[3]);
+  s.rM = Math.hypot(r[4], r[5], r[6]);
+  s.clear = earthClear(r);
+  s.phase = phases.filter(p => p[0] <= T).at(-1)[1];
+  // Moon-relative osculating orbit from a centred difference.
+  const a = rowAt(T - 5), b = rowAt(T + 5);
+  const rv = [r[4], r[5], r[6]], vv = [0, 1, 2].map(j => (b[4 + j] - a[4 + j]) / 10);
+  const mu = 4902.80, rn = vec.norm(rv), vn = vec.norm(vv);
+  const sma = 1 / (2 / rn - vn * vn / mu), h = vec.cross(rv, vv);
+  const ev = vec.sub(vec.scale(vec.cross(vv, h), 1 / mu), vec.scale(rv, 1 / rn)), e = vec.norm(ev);
+  s.orb = {apo: sma > 0 ? sma * (1 + e) - RM : Infinity, peri: sma * (1 - e) - RM, e, period: sma > 0 ? 2 * Math.PI * Math.sqrt(sma ** 3 / mu) : NaN};
+  s.rev = T < burnsAt.l1 ? 0 : 1 + losTimes.filter(([t, k]) => k === "LOS" && t > burnsAt.l1c && t <= T).length;
+  return s;
+}
+```
+
+```{ojs}
+fmtGET = t => {
+  const sign = t < 0 ? "T−" : "";
+  t = Math.abs(t);
+  const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  return `${sign}${String(h).padStart(3, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(1).padStart(4, "0")}`;
+}
+fmt = (x, d = 1) => x.toLocaleString("en-GB", {minimumFractionDigits: d, maximumFractionDigits: d})
+```
+
+```{ojs}
+hud = {
+  const s = state, src = srcInfo[s.src];
+  const cell = (k, v, sub) => htl.html`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub ?? ""}</div></div>`;
+  const near = s.alt_m_km < 20000;
+  const inOrbit = T > burnsAt.l1c;
+  const comm = s.clear > 0
+    ? cell("Radio", "Earth in view", `one-way light time ${fmt(s.rE / 299792.458, 2)} s`)
+    : cell("Radio", htl.html`<span style="color:#e76f51">No signal</span>`, "the Moon is between spacecraft and Earth");
+  return htl.html`<div class="a11-panel">
+    <div class="a11-head">
+      <div><span class="a11-get">${fmtGET(s.get)}</span> <span class="s" style="opacity:.6">GET</span></div>
+      <div><span class="a11-phase">${s.phase}</span>
+        <span class="a11-pill" style="background:${src.color}">${src.name}</span></div>
+    </div>
+    <div class="a11-hud">
+      ${cell("From Earth", `${fmt(s.alt_e_km / NMI, 0)} n mi`, `height; ${fmt(s.rE, 0)} km from the centre`)}
+      ${cell("Speed relative to Earth", `${fmt(s.v_e_kms * FTS, 0)} ft/s`, `${fmt(s.v_e_kms, 3)} km/s`)}
+      ${cell("From the Moon", `${fmt(s.alt_m_km / NMI, near ? 1 : 0)} n mi`, `height; ${fmt(s.rM, 0)} km from the centre`)}
+      ${cell("Speed relative to the Moon", `${fmt(s.v_m_kms * FTS, 0)} ft/s`, `${fmt(s.v_m_kms, 3)} km/s`)}
+      ${comm}
+      ${inOrbit
+        ? cell(`Lunar orbit, rev ${s.rev}`, `${fmt(s.orb.apo / NMI, 1)} × ${fmt(s.orb.peri / NMI, 1)} n mi`, `osculating; period ${fmt(s.orb.period / 60, 1)} min`)
+        : near ? cell("Closest approach, if no burn", `${fmt(s.orb.peri / NMI, 1)} n mi`, s.orb.e > 1 ? `hyperbola, e = ${fmt(s.orb.e, 3)}` : "")
+        : cell("Lunar orbit", "not yet", "")}
+      ${near ? cell("Over the Moon", `${fmt(Math.abs(s.slat), 2)}°${s.slat >= 0 ? "N" : "S"} ${fmt(Math.abs(s.slon), 2)}°${s.slon >= 0 ? "E" : "W"}`, "selenographic") : ""}
+    </div></div>`;
+}
+```
+
+```{ojs}
+panelW = Math.max(260, width > 700 ? Math.floor((width - 12) / 2) - 18 : width - 18)
+topojson = require("topojson-client@3")
+land = fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")
+  .then(r => r.json()).then(w => topojson.feature(w, w.objects.land)).catch(() => null)
+```
+
+```{ojs}
+// Frames for the Earth–Moon panel.
+frames = {
+  const moonAt = t => tabAt(data.moon, t);
+  const moonVel = t => vec.scale(vec.sub(moonAt(t + 300), moonAt(t - 300)), 1 / 600);
+  // Rotating frame: x towards the Moon, z along the Moon's orbital angular momentum.
+  const rot = (p, t) => {
+    const m = moonAt(t), ex = vec.unit(m), ez = vec.unit(vec.cross(m, moonVel(t))), ey = vec.cross(ez, ex);
+    return [vec.dot(p, ex), vec.dot(p, ey)];
+  };
+  // Inertial frame: the Moon's orbit plane at LOI, x towards the Moon at LOI.
+  const tL = burnsAt.l1, m0 = moonAt(tL), ix = vec.unit(m0), iz = vec.unit(vec.cross(m0, moonVel(tL))), iy = vec.cross(iz, ix);
+  const ine = p => [vec.dot(p, ix), vec.dot(p, iy)];
+  // Moon-centred frame: the plane of the final lunar orbit, x towards Earth at LOI-1.
+  const r2 = track.find(d => d[0] > burnsAt.l2c + 600), r3 = track.find(d => d[0] > burnsAt.l2c + 1200);
+  const hz = vec.unit(vec.cross([r2[4], r2[5], r2[6]], [r3[4] - r2[4], r3[5] - r2[5], r3[6] - r2[6]]));
+  const e0 = vec.scale(m0, -1);
+  const lx = vec.unit(vec.sub(e0, vec.scale(hz, vec.dot(e0, hz)))), ly = vec.cross(hz, lx);
+  const loc = p => [vec.dot(p, lx), vec.dot(p, ly)];
+  const sample = (rows, dt) => rows.filter((d, i) => i === 0 || i === rows.length - 1 || Math.floor(d[0] / dt) !== Math.floor(rows[i - 1][0] / dt));
+  const coarse = sample(track, 900);
+  const F = {
+    moonAt, rot, ine, loc,
+    trackRot: coarse.map(d => [d[0], ...rot([d[1], d[2], d[3]], d[0])]),
+    trackIne: coarse.map(d => [d[0], ...ine([d[1], d[2], d[3]])]),
+    trackLoc: track.filter(d => Math.hypot(d[4], d[5], d[6]) < 90000).map(d => [d[0], ...loc([d[4], d[5], d[6]])]),
+    noMccRot: data.free_return.no_mcc.map(d => rot([d[1], d[2], d[3]], d[0])),
+    noLoiRot: data.free_return.no_loi.map(d => rot([d[1], d[2], d[3]], d[0])),
+    noMccIne: data.free_return.no_mcc.map(d => ine([d[1], d[2], d[3]])),
+    noLoiIne: data.free_return.no_loi.map(d => ine([d[1], d[2], d[3]])),
+    moonIne: data.moon.map(d => ine([d[1], d[2], d[3]]))
+  };
+  const ext = (...sets) => {
+    const all = sets.flat();
+    const xs = d3.extent(all, q => q[0]), ys = d3.extent(all, q => q[1]);
+    const px = 0.04 * (xs[1] - xs[0]), py = 0.04 * (ys[1] - ys[0]);
+    return [xs[0] - px, xs[1] + px, ys[0] - py, ys[1] + py];
+  };
+  const pts = a => a.map(d => [d[1], d[2]]);
+  return Object.assign(F, {
+    extRot: ext(pts(F.trackRot), F.noMccRot, F.noLoiRot, [[0, 0]]),
+    extIne: ext(pts(F.trackIne), F.noMccIne, F.noLoiIne, F.moonIne.filter((q, i) => data.moon[i][0] <= T_MAX), [[0, 0]])
+  });
+}
+```
+
+```{ojs}
+drawSpace = (state, T) => {
+  const w = panelW, h = Math.round(w * 0.8);
+  const svgLine = (pts, X, Y) => pts.map((q, i) => `${i ? "L" : "M"}${X(q).toFixed(1)},${Y(q).toFixed(1)}`).join("");
+  const r = rowAt(T);
+  const p = [r[1], r[2], r[3]], mrel = [r[4], r[5], r[6]];
+  const legendBase = [["#f4a261", "Flown so far"], ["#9aa3ad", "Still to come"]];
+  if (frameMode !== "Near the Moon") {
+    const rotating = frameMode.startsWith("Rotating");
+    const tr = rotating ? frames.trackRot : frames.trackIne;
+    const k = d3.bisectRight(tr.map(d => d[0]), T);
+    const now = rotating ? frames.rot(p, T) : frames.ine(p);
+    const moonNow = rotating ? frames.rot(frames.moonAt(T), T) : frames.ine(frames.moonAt(T));
+    const [x0, x1, y0, y1] = rotating ? frames.extRot : frames.extIne;
+    const sc = Math.min((w - 16) / (x1 - x0), (h - 16) / (y1 - y0));
+    const X = q => 8 + (q[0] - x0) * sc, Y = q => h - 8 - (q[1] - y0) * sc;
+    const pts = d => [d[1], d[2]];
+    const past = tr.slice(0, k).map(pts).concat([now]), future = [now].concat(tr.slice(k).map(pts));
+    return htl.html`<div class="a11-panel"><h4>${rotating ? "Earth–Moon, turning with the Moon" : "Earth–Moon, fixed frame"}</h4>
+      <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px">
+        ${rotating ? "" : htl.svg`<path d="${svgLine(frames.moonIne, X, Y)}" fill="none" stroke="#ffffff22" stroke-dasharray="2 4"/>`}
+        <path d="${svgLine(rotating ? frames.noMccRot : frames.noMccIne, X, Y)}" fill="none" stroke="#e9c46a66" stroke-dasharray="5 4"/>
+        <path d="${svgLine(rotating ? frames.noLoiRot : frames.noLoiIne, X, Y)}" fill="none" stroke="#9b5de588" stroke-dasharray="5 4"/>
+        <circle cx=${X([0, 0])} cy=${Y([0, 0])} r=${Math.max(3, 6378 * sc)} fill="#1d4e89" stroke="#6fa8dc"/>
+        <text x=${X([0, 0])} y=${Y([0, 0]) + 16} fill="#9cc" font-size="11" text-anchor="middle">Earth</text>
+        <path d="${svgLine(future, X, Y)}" fill="none" stroke="#ffffff40" stroke-dasharray="3 3"/>
+        <path d="${svgLine(past, X, Y)}" fill="none" stroke="#f4a261" stroke-width="1.8"/>
+        <circle cx=${X(moonNow)} cy=${Y(moonNow)} r=${Math.max(2.5, 1737 * sc)} fill="#bbb"/>
+        <text x=${X(moonNow)} y=${Y(moonNow) - 9} fill="#ccc" font-size="11" text-anchor="middle">Moon</text>
+        <circle cx=${X(now)} cy=${Y(now)} r="4.5" fill="#e76f51" stroke="#fff" stroke-width="1.2"/>
+        <text x="8" y="16" fill="#ffffff70" font-size="11">${rotating ? "x axis always points at the Moon" : "Moon's orbit plane, seen from the north"}</text>
+      </svg>
+      <div class="a11-legend" style="margin:.4rem .25rem 0">
+        ${legendBase.map(([c, l]) => htl.html`<span style="--c:${c}">${l}</span>`)}
+        <span style="--c:#e9c46a">If no midcourse correction</span><span style="--c:#9b5de5">If no LOI-1</span>
+      </div></div>`;
+  }
+  // Moon-centred view, in the plane of the lunar orbit.
+  const tr = frames.trackLoc;
+  const k = d3.bisectRight(tr.map(d => d[0]), T);
+  const now = frames.loc(mrel);
+  const span = Math.max(2600, Math.min(80000, 1.3 * Math.hypot(...mrel)));
+  const sc = (Math.min(w, h) / 2 - 8) / span;
+  const X = q => w / 2 + q[0] * sc, Y = q => h / 2 - q[1] * sc;
+  const pts = d => [d[1], d[2]];
+  const past = tr.slice(Math.max(0, k - (T > burnsAt.l1c ? 190 : 100000)), k).map(pts).concat([now]);
+  const future = [now].concat(tr.slice(k, k + (T > burnsAt.l1 - 600 ? 190 : 100000)).map(pts));
+  const toEarth = vec.unit(frames.loc(vec.scale(frames.moonAt(T), -1)).concat([0]));
+  const sunDir = tabAt(data.sun, T), m = frames.moonAt(T);
+  const toSun = vec.unit(frames.loc(vec.sub(vec.scale(sunDir, 1.496e8), m)).concat([0]));
+  const R = RM * sc, ang = Math.atan2(-toSun[1], toSun[0]) * 180 / Math.PI;
+  // Radio shadow: the strip behind the Moon, away from Earth.
+  const ex = toEarth[0], ey = toEarth[1], L = span * 3;
+  const sh = [[-ey * RM, ex * RM], [-ey * RM - ex * L, ex * RM - ey * L], [ey * RM - ex * L, -ex * RM - ey * L], [ey * RM, -ex * RM]];
+  const ring = span > 20000 ? 10000 : span > 6000 ? 2000 : 500;
+  return htl.html`<div class="a11-panel"><h4>Near the Moon, looking down on the lunar orbit</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px">
+      <path d="M${sh.map(q => `${X(q).toFixed(1)},${Y(q).toFixed(1)}`).join("L")}Z" fill="#e76f5122"/>
+      ${d3.range(1, 6).map(j => htl.svg`<circle cx=${w/2} cy=${h/2} r=${(RM + j * ring) * sc} fill="none" stroke="#ffffff10"/>`)}
+      <g transform="translate(${w/2},${h/2}) rotate(${ang})">
+        <circle r=${R} fill="#c8c6bf"/>
+        <path d="M0,${-R}A${R},${R} 0 0 0 0,${R}Z" fill="#2a2c30"/>
+      </g>
+      <path d="${svgLine(future, X, Y)}" fill="none" stroke="#ffffff45" stroke-dasharray="3 3"/>
+      <path d="${svgLine(past, X, Y)}" fill="none" stroke="#f4a261" stroke-width="1.8"/>
+      <circle cx=${X(now)} cy=${Y(now)} r="4.5" fill=${state.clear > 0 ? "#e76f51" : "#777"} stroke="#fff" stroke-width="1.2"/>
+      <line x1=${w/2 + ex * (R + 6)} y1=${h/2 - ey * (R + 6)} x2=${w/2 + ex * (R + 40)} y2=${h/2 - ey * (R + 40)} stroke="#6fa8dc" stroke-width="2" marker-end="url(#arr)"/>
+      <text x=${w/2 + ex * (R + 52)} y=${h/2 - ey * (R + 52) + 4} fill="#9cc" font-size="11" text-anchor="middle">Earth</text>
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#6fa8dc"/></marker></defs>
+      <text x="8" y=${h - 8} fill="#ffffff70" font-size="11">rings every ${fmt(ring, 0)} km above the surface</text>
+    </svg>
+    <div class="a11-legend" style="margin:.4rem .25rem 0">
+      <span style="--c:#f4a261">Flown</span><span style="--c:#9aa3ad">Next</span>
+      <span style="--c:#e76f5166">No radio: Earth hidden</span><span style="--c:#2a2c30">Lunar night</span>
+    </div></div>`;
+}
+```
+
+```{ojs}
+drawMoon = (state, T) => {
+  const w = panelW, h = w;
+  const near = state.alt_m_km < 30000;
+  const proj = d3.geoOrthographic().fitExtent([[6, 6], [w - 6, h - 6]], {type: "Sphere"})
+    .rotate([-state.slon, -state.slat]).clipAngle(90);
+  const gp = d3.geoPath(proj), path = g => gp(g) ?? "";
+  const sun = data.sun, sv = tabAt(sun, T, 7);
+  const sub = (lat, lon) => [lon > 180 ? lon - 360 : lon, lat];
+  const antiSun = [sv[4] + 180, -sv[3]], antiEarth = [sv[6] + 180, -sv[5]];
+  const lo = d3.bisectRight(times, Math.max(T_MIN, T - 2.2 * 3600)), hi = d3.bisectRight(times, T);
+  const pastPts = track.slice(Math.max(lo, d3.bisectRight(times, 262000)), hi).filter(d => d[8] < 30000).map(d => [d[12], d[11]]);
+  const futPts = track.slice(hi, d3.bisectRight(times, T + 2.2 * 3600)).filter(d => d[8] < 30000 && d[0] > 262000).map(d => [d[12], d[11]]);
+  const centre = [state.slon, state.slat];
+  const onFace = q => d3.geoDistance(q, centre) < Math.PI / 2 - 0.01 ? proj(q) : null;
+  const site = data.meta.landing_site, sp = onFace([site[1], site[0]]);
+  const cur = proj(centre);
+  const maria = apollo3d.MARIA;
+  return htl.html`<div class="a11-panel"><h4>The Moon: ground track, night, and radio shadow</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px">
+      <path d="${path({type: "Sphere"})}" fill="#9b9a95"/>
+      ${maria.map(([, lat, lon, r]) => htl.svg`<path d="${path(d3.geoCircle().center([lon, lat]).radius(r)())}" fill="#55575c"/>`)}
+      <path d="${path(d3.geoGraticule().step([15, 15])())}" fill="none" stroke="#ffffff22"/>
+      <path d="${path(d3.geoCircle().center(antiSun).radius(90)())}" fill="#0b0d12" fill-opacity="0.62"/>
+      <path d="${path(d3.geoCircle().center(antiEarth).radius(90)())}" fill="none" stroke="#e76f51" stroke-width="1.5" stroke-dasharray="5 3"/>
+      ${futPts.length > 1 ? htl.svg`<path d="${path({type: "LineString", coordinates: futPts})}" fill="none" stroke="#ffffffaa" stroke-dasharray="3 3"/>` : ""}
+      ${pastPts.length > 1 ? htl.svg`<path d="${path({type: "LineString", coordinates: pastPts.concat([[state.slon, state.slat]])})}" fill="none" stroke="#f4a261" stroke-width="2"/>` : ""}
+      ${sp ? htl.svg`<g transform="translate(${sp[0]},${sp[1]})"><circle r="5" fill="none" stroke="#fff" stroke-width="1.5"/><circle r="1.8" fill="#fff"/>
+         <text x="8" y="4" fill="#fff" font-size="11">Tranquility Base</text></g>` : ""}
+      ${cur && near ? htl.svg`<circle cx=${cur[0]} cy=${cur[1]} r="5" fill="#e76f51" stroke="#fff" stroke-width="1.5"/>` : ""}
+    </svg>
+    <div class="a11-legend" style="margin:.4rem .25rem 0">
+      <span style="--c:#f4a261">Track, last 2 h</span><span style="--c:#55575c">Maria (approximate)</span>
+      <span style="--c:#0b0d12">Night side</span><span style="--c:#e76f51">Edge of the radio shadow</span>
+    </div></div>`;
+}
+```
+
+```{ojs}
+THREE = require("three@0.128.0/build/three.min.js")
+apollo3d = import(new URL("apollo3d_p2.js", document.baseURI).href)
+transcript = FileAttachment("data/transcript.json").json()
+media = FileAttachment("data/media.json").json()
+```
+
+```{ojs}
+view3d = {
+  const api = apollo3d.createScene(THREE, {data, land, d3, width: panelW, height: Math.round(panelW * 0.75)});
+  const buttons = htl.html`<div class="a11-chips" style="margin:.4rem .25rem 0">${api.presets.map(name =>
+    htl.html`<button type="button" class="a11-chip${name === "Chase" ? " active" : ""}" data-p=${name}>${name}</button>`)}
+    <span class="s" style="font-size:.75rem;opacity:.6;align-self:center">drag to orbit, scroll to zoom</span></div>`;
+  buttons.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    buttons.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+    api.setPreset(b.dataset.p);
+  };
+  const label = htl.html`<div class="a11-attitude"></div>`;
+  const el = htl.html`<div class="a11-panel"><h4>3D view: Columbia and Eagle (CGI)</h4>${api.canvas}${label}${buttons}</div>`;
+  invalidation.then(api.dispose);
+  window.__a11 = api;
+  return {el, api, update: t => { api.update(t); label.textContent = api.info().label; }};
+}
+```
+
+```{ojs}
+mediaPanel = {
+  const player = viewof T;
+  const lines = transcript.lines, lineT = lines.map(l => l[0]);
+  const colors = {CC: "#457b9d", CDR: "#e76f51", CMP: "#2a9d8f", LMP: "#9b5de5"};
+  const show = {"air-to-ground": true, onboard: true};
+  const fmtT = t => fmtGET(t).replace(/\.\d$/, "");
+  const list = htl.html`<div class="a11-tx"></div>`;
+  // Render rows lazily in blocks: the transcript for these four days is over 6,000 lines.
+  const rows = new Array(lines.length);
+  const frag = document.createDocumentFragment();
+  lines.forEach(([t, code, who, text, ch], i) => {
+    const r = document.createElement("div");
+    r.className = "a11-line" + (ch === "onboard" ? " onb" : "");
+    r.dataset.i = i;
+    r.innerHTML = `<span class="t">${fmtT(t)}</span><span class="who" style="color:${colors[code.split(" ")[0]] ?? "#888"}"></span><span class="x"></span>`;
+    r.children[1].textContent = who + (ch === "onboard" ? " · onboard" : "");
+    r.children[2].textContent = text;
+    rows[i] = r; frag.append(r);
+  });
+  list.append(frag);
+  list.onclick = e => { const r = e.target.closest(".a11-line"); if (r) player.setT(lines[+r.dataset.i][0] - 0.5); };
+  let userScroll = 0;
+  list.addEventListener("wheel", () => { userScroll = performance.now(); }, {passive: true});
+  list.addEventListener("touchmove", () => { userScroll = performance.now(); }, {passive: true});
+  const filters = htl.html`<div class="a11-chips" style="margin:.2rem 0 .4rem">
+    <label class="a11-chip"><input type="checkbox" checked data-c="air-to-ground"> Air-to-ground</label>
+    <label class="a11-chip"><input type="checkbox" checked data-c="onboard"> Onboard recorder</label></div>`;
+  filters.onchange = e => {
+    show[e.target.dataset.c] = e.target.checked;
+    rows.forEach((r, i) => { r.style.display = show[lines[i][4]] ? "" : "none"; });
+    lastIdx = -2;
+  };
+
+  const audios = media.audio.map(a => htl.html`<audio preload="none" src=${a.src}></audio>`);
+  const segs = media.audio.flatMap((a, k) => a.segments.map(s => ({...s, k}))).sort((a, b) => a.get_start - b.get_start);
+  let soundOn = false;
+  const soundBtn = htl.html`<button type="button" class="a11-chip">🔈 Sound off</button>`;
+  const status = htl.html`<span class="s" style="font-size:.78rem;opacity:.75"></span>`;
+  soundBtn.onclick = () => {
+    soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? "🔊 Sound on" : "🔈 Sound off";
+    soundBtn.classList.toggle("active", soundOn);
+    if (soundOn) {
+      audios.forEach(a => a.play().then(() => a.pause()).catch(() => {}));
+      player.setSpeed("rt");
+    } else audios.forEach(a => a.pause());
+  };
+  const tvBox = htl.html`<div class="a11-tv" style="display:none"></div>`;
+  const now = htl.html`<div class="a11-now"></div>`;
+  const el = htl.html`<div class="a11-panel"><h4>Voice</h4>
+    <div class="a11-chips" style="align-items:center;margin:0 0 .4rem">${soundBtn}${status}</div>
+    ${tvBox}${now}${filters}${list}${audios}
+    <div class="s" style="font-size:.72rem;opacity:.6;margin-top:.35rem">Transcript: NASA air-to-ground and onboard voice transcriptions, via Spacelog. Audio: NASA's Day 2, 3 and 4 highlights reels, pinned to mission time segment by segment.</div>
+  </div>`;
+
+  let lastIdx = -2;
+  function update(t) {
+    let i = d3.bisectRight(lineT, t) - 1;
+    while (i >= 0 && !show[lines[i][4]]) i--;
+    if (i !== lastIdx) {
+      if (lastIdx >= 0 && rows[lastIdx]) rows[lastIdx].classList.remove("cur");
+      if (i >= 0) {
+        rows[i].classList.add("cur");
+        if (performance.now() - userScroll > 4000) list.scrollTop = rows[i].offsetTop - list.offsetTop - list.clientHeight / 3;
+        const [lt, code, who, text, ch] = lines[i];
+        now.replaceChildren(htl.html`<div class="who" style="color:${colors[code.split(" ")[0]] ?? "#888"}">${who}${ch === "onboard" ? " · onboard" : ""}
+          <span class="t">${fmtT(lt)}</span></div><div class="x">${text}</div>`);
+      }
+      lastIdx = i;
+    }
+    const tv = data.tv.find(([t0, dur]) => t >= t0 && t < t0 + dur);
+    tvBox.style.display = tv ? "" : "none";
+    if (tv) tvBox.textContent = `📺 ${tv[2]} in progress (${Math.round(tv[1] / 60)} min from ${fmtT(tv[0])})`;
+    const realTime = player.running && player.rate === 1;
+    const a = segs.find(s => t >= s.get_start && t < s.get_end);
+    audios.forEach((au, k) => { if ((!a || a.k !== k || !soundOn || !realTime) && !au.paused) au.pause(); });
+    if (a) {
+      const au = audios[a.k], want = a.clip_start + (t - a.get_start);
+      status.textContent = soundOn ? (realTime ? "Playing NASA audio" : "Audio plays at Real time speed") : "NASA audio available here";
+      if (soundOn && realTime) {
+        if (Math.abs(au.currentTime - want) > 0.8) au.currentTime = want;
+        if (au.paused) au.play().catch(() => {});
+      }
+    } else {
+      const n = segs.find(s => s.get_start > t);
+      status.textContent = n ? `No audio in the reels here; next at ${fmtT(n.get_start)}` : "No more audio in this part";
+    }
+  }
+  invalidation.then(() => audios.forEach(a => a.pause()));
+  return {el, update};
+}
+```
+
+```{ojs}
+viewof frameMode = Inputs.radio(["Rotating with the Moon", "Fixed (inertial)", "Near the Moon"], {value: "Rotating with the Moon"})
+```
+
+```{ojs}
+panels = htl.html`<div class="a11-panels"><div class="slot-space"></div><div class="slot-moon"></div>${view3d.el}${mediaPanel.el}</div>`
+```
+
+```{ojs}
+{
+  panels.querySelector(".slot-space").replaceChildren(drawSpace(state, T));
+  panels.querySelector(".slot-moon").replaceChildren(drawMoon(state, T));
+  view3d.update(T);
+  mediaPanel.update(T);
+  return htl.html`<span></span>`;
+}
+```
+
+The rest of the post explains what is going on, roughly in the order it happened.
+
+## Tracking a spacecraft from Earth
+
+For the three days between TLI and the Moon, nobody aboard was steering. *Columbia* and *Eagle* were falling, along a path set by the TLI burn and by the gravity of Earth, the Moon and the Sun. Mission Control knew where they were by tracking them: the 85-foot dishes of the Manned Space Flight Network in Goldstone, Madrid and Honeysuckle Creek measured the range to the spacecraft from the round-trip time of a radio signal, and the range rate from its Doppler shift. Fitting a trajectory to hours of those measurements gave a state vector good to a fraction of a mile.
+
+The flight controllers shared the results. Every so often the Public Affairs Officer (PAO) read out the spacecraft's distance and speed to the press. Those calls are in the transcript, and they make a good test of the reconstruction, because none of them was used to build it. The distances turn out to be heights above the surface, not distances from the centre, and once the Moon is close they switch to being measured from the Moon.
+
+```{ojs}
+paoRows = data.pao.map(([min, ref, dd, dm, vd, vm]) => ({h: min / 60, ref: ref === "earth" ? "From Earth" : "From the Moon", dd, dm, vd, vm, diff: dm - dd, dv: vm == null ? null : vm - vd}))
+speedLine = track.filter((d, i) => i % 3 === 0 && d[0] < burnsAt.l1).map(d => ({h: d[0] / 3600, e: d[9] * FTS, m: d[10] * FTS}))
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 280, marginLeft: 60, grid: true,
+  x: {label: "Ground elapsed time (hours)"},
+  y: {label: "Speed (ft/s)", type: "log", domain: [2500, 40000], ticks: [3000, 5000, 10000, 20000, 30000], tickFormat: "~s"},
+  color: {legend: true, domain: ["Relative to Earth", "Relative to the Moon"], range: ["#457b9d", "#888"]},
+  marks: [
+    Plot.line(speedLine, {x: "h", y: "e", stroke: () => "Relative to Earth"}),
+    Plot.line(speedLine, {x: "h", y: "m", stroke: () => "Relative to the Moon"}),
+    Plot.dot(paoRows.filter(d => d.vd != null), {x: "h", y: "vd", fill: d => d.ref === "From Earth" ? "#457b9d" : "#888", stroke: "#fff", r: 3.5,
+      title: d => `PAO at ${fmt(d.h, 2)} h: ${fmt(d.vd, 0)} ft/s; model ${fmt(d.vm, 0)}`}),
+    Plot.ruleX([221995 / 3600], {stroke: "#2a9d8f", strokeDasharray: "3 3"}),
+    Plot.text([{h: 221995 / 3600, y: 33000}], {x: "h", y: "y", text: () => "Sphere of influence", dx: -4, textAnchor: "end", fontSize: 10})
+  ]
+})
+```
+
+The dots are the speeds the PAO announced; the lines are the reconstruction. Earth's gravity slows the spacecraft from 35,500 ft/s at TLI to under 3,000 ft/s two and a half days later. Then the Moon's pull wins and the speed relative to the Moon climbs again. The differences between the PAO's distances and the model's are below. On the final approach to the Moon the speeds agree within a few ft/s and the heights within about 20 to 45 n mi, roughly a minute of travel. Further out they mostly differ by tens of miles, which is what a short delay between when a number was computed and when it was read out would do: the spacecraft covered a mile every second or two. Three calls are off by 450 to 650 n mi. For those, the distance and speed disagree with the model in opposite senses, so a late reading cannot explain them; they are more likely slips in the reading or the transcription.
+
+```{ojs}
+Plot.plot({
+  width, height: 220, marginLeft: 60, grid: true,
+  x: {label: "Ground elapsed time (hours)"},
+  y: {label: "Model − PAO distance (n mi)"},
+  color: {legend: true, domain: ["From Earth", "From the Moon"], range: ["#457b9d", "#888"]},
+  marks: [Plot.ruleY([0]), Plot.dot(paoRows, {x: "h", y: "diff", fill: "ref", r: 3.5,
+    title: d => `${d.ref} at ${fmt(d.h, 2)} h: PAO ${fmt(d.dd, 0)} n mi, model ${fmt(d.dm, 0)}`})]
+})
+```
+
+```{ojs}
+checkTable = rows => {
+  const dec = x => Math.min(4, (String(x).split(".")[1] ?? "").length);
+  const auto = x => Math.abs(x) >= 1000 ? 0 : Math.abs(x) >= 100 ? 1 : Math.abs(x) >= 1 ? 2 : 4;
+  return htl.html`<table class="a11-checks table table-sm">
+  <thead><tr><th>Quantity</th><th style="text-align:right">1969 value</th><th style="text-align:right">This reconstruction</th><th>Unit</th></tr></thead>
+  <tbody>${rows.map(([sec, label, doc, model, unit, note]) => {
+    const d = doc == null ? auto(model) : Math.max(dec(doc), Math.min(4, dec(doc) + 1));
+    return htl.html`<tr><td>${label}${note ? htl.html`<br><span style="font-size:.78rem;opacity:.65">${note}</span>` : ""}</td>
+    <td class="num">${doc == null ? "—" : fmt(doc, dec(doc))}</td>
+    <td class="num">${fmt(model, d)}</td><td style="font-size:.8rem;opacity:.75">${unit}</td></tr>`;})}</tbody></table>`;
+}
+checks = (sec, filter = () => true) => checkTable(data.checks.filter(c => c[0] === sec && filter(c)))
+```
+
+The reconstruction itself is checked against the states NASA tabulated for the start of the coast. Propagated from the documented TLI state, with the evasive burn included, it lands on each of them within about 3 n mi and 4 ft/s:
+
+```{ojs}
+checks("coast", c => !c[1].startsWith("MCC") && !c[1].startsWith("Re-anchoring"))
+```
+
+## The one midcourse correction
+
+The flight plan allowed for four midcourse corrections on the way out. Only one was needed. At 26 hours 44 minutes 58 seconds the SPS fired for 3.13 seconds and changed the velocity by 20.9 ft/s, about 6 m/s, at a moment when the spacecraft was moving at 5,025 ft/s relative to Earth.
+
+Small as it was, it mattered. By 26 hours the reconstruction, propagated from TLI, has drifted 84 n mi from where NASA's tables put the spacecraft. That is not an error in the physics; a trajectory to the Moon is so sensitive that tiny differences at the start grow into large ones. So at MCC-2 the reconstruction is re-anchored on the documented state and starts again.
+
+```{ojs}
+checks("coast", c => c[1].startsWith("MCC") || c[1].startsWith("Re-anchoring"))
+```
+
+The burn itself is known from the maneuver PAD that Bruce McCandless, the CapCom, read up to the crew an hour before: the velocity change in the local-vertical frame, mostly downwards, towards Earth, and partly forwards. Applying the PAD's direction scaled to the achieved 20.9 ft/s does not bring the spacecraft to the right place:
+
+```{ojs}
+checks("mcc")
+```
+
+Applied as recorded, the burn would bring the spacecraft past the Moon at 177 n mi rather than the documented 86.7 n mi; with no burn at all, it would pass at 326 n mi. The fitted burn that does arrive at the right height, at the right speed and with loss of signal at the right moment is 19.0 ft/s, about 2 ft/s smaller than the documented one and in a slightly different direction.
+
+That 2 ft/s is a measure of how sensitive the trajectory is, more than of anything wrong with the burn. At this point each foot per second moves the arrival by tens of nautical miles. The documented state used as the anchor is given to the nearest tenth of a nautical mile in height and the nearest hundredth of a degree in direction, and a hundredth of a degree in the direction of travel, 200,000 km from Earth, is already a few tens of kilometres. The fit absorbs that rounding. What the comparison does show is why Apollo did not rely on a single correction: the navigation teams tracked the result of each burn and planned the next, and on Apollo 11 the other scheduled corrections were not needed.
+
+## Where the Moon takes over
+
+Halfway to the Moon by distance is not halfway by gravity. The Moon is 81 times less massive than Earth, so the point where their pulls balance lies about 90% of the way there. For working out trajectories, though, the balance point is not the most useful boundary. What matters is where it becomes more accurate to treat the Moon as the main attractor and Earth as a disturbance than the other way round. Laplace worked out the radius of that **sphere of influence**:
+
+$$
+r_\text{SOI} \approx a\left(\frac{m}{M}\right)^{2/5},
+$$
+
+where $a$ is the Earth–Moon distance and $m/M$ the mass ratio. For the Moon that is about 66,000 km. Inside it, the motion is well described by a two-body orbit around the Moon; outside, by one around Earth. Joining the two at the boundary is the method of **patched conics**, which Apollo's planners used for first estimates before refining with numerical integration, as this reconstruction does throughout.
+
+NASA logged the crossing at 61 hours 39 minutes 55 seconds:
+
+```{ojs}
+checks("soi")
+```
+
+The documented crossing, 34,765 n mi from the Moon's centre, sits a little inside the Laplace radius for that moment, 36,886 n mi. The formula is an approximation, and NASA's software used its own definition of the boundary. The speeds at the crossing are the clearer story. Relative to Earth, the spacecraft had slowed to 2,990 ft/s. Relative to the Moon it was moving faster, 3,775 ft/s, because the Moon itself travels at about 3,350 ft/s in its orbit, across the spacecraft's path. From here, the Moon accelerated it all the way in.
+
+## Behind the Moon
+
+Every burn at the Moon was made out of radio contact. That was not chosen; it is geometry. To slow down into lunar orbit, the spacecraft has to burn at its closest point to the Moon, and a free-return trajectory passes closest behind the Moon, as seen from Earth. So the critical burn happened with the Moon between the crew and Mission Control, and the controllers learned whether it had worked only when the signal came back.
+
+The loss and acquisition of signal (LOS and AOS) times are well documented, from PADs read to the crew and from PAO announcements. In the model they come from pure geometry: the moment the line from the spacecraft to Earth's centre grazes the edge of the Moon.
+
+```{ojs}
+{
+  const rows = data.losaos;
+  return htl.html`<table class="a11-checks table table-sm">
+    <thead><tr><th>Event</th><th style="text-align:right">1969 time (GET)</th><th style="text-align:right">This reconstruction</th><th style="text-align:right">Difference</th></tr></thead>
+    <tbody>${rows.map(([label, , doc, model]) => htl.html`<tr><td>${label}</td>
+      <td class="num">${fmtGET(doc).replace(/\.\d$/, "")}</td><td class="num">${fmtGET(model)}</td>
+      <td class="num">${model - doc >= 0 ? "+" : "−"}${fmt(Math.abs(model - doc), 0)} s</td></tr>`)}</tbody></table>`;
+}
+```
+
+The last row is the most striking. The PAD gave the crew two AOS times: one if the burn went as planned, and one if the engine did not fire at all. Without a burn the spacecraft would come out from behind the Moon sooner, at 76:05:30, still on the free-return path towards Earth. The reconstruction, which simply follows the approach trajectory around the Moon with no burn, gives 76:05:30.4. Mission Control could tell at the first moment of contact which trajectory *Apollo 11* was on, from the clock alone. The signal returned at 76:15:29; the burn had happened.
+
+The later times drift slowly through the first day in orbit, reaching about two minutes late by 98 hours. The model's orbit period is a few seconds off each revolution, for the reasons covered under mascons below.
+
+## Lunar orbit insertion
+
+At 75 hours 49 minutes 50 seconds, 86.7 n mi above the far side, *Columbia*'s engine fired for 357.5 seconds, nearly six minutes, to slow the stack by 2,917 ft/s.
+
+### Arriving fast
+
+The spacecraft arrived at 8,250 ft/s relative to the Moon. Escape speed at that height is
+
+$$
+v_\text{esc} = \sqrt{\frac{2\mu_\text{Moon}}{r}} = \sqrt{\frac{2 \times 4902.8}{1898.7}}\ \text{km/s} \approx 2.27\ \text{km/s} = 7{,}456\ \text{ft/s},
+$$
+
+so the spacecraft was on a hyperbola: left alone, it would have whipped round the Moon and left with about 1.1 km/s to spare, which is what the free-return design intended. To be captured, it had to shed at least 800 ft/s. To reach the planned orbit, it shed 2,917.
+
+As with TLI, the **Oberth effect** favours burning where the spacecraft is moving fastest, at the closest point to the Moon. Changing speed by $\Delta v$ there changes the orbital energy by $v\,\Delta v$, so the same braking does the most good.
+
+### A six-minute burn
+
+Six minutes is long. During the burn the spacecraft travelled about 750 km, more than 20° of the way round the Moon. A burn that long cannot be treated as an instant change of velocity, so it is modelled as a finite, constant-thrust burn. The fit solves for the steering that joins the documented state at ignition to the documented cutoff conditions:
+
+```{ojs}
+checks("arrival")
+```
+
+```{ojs}
+checks("loi1")
+```
+
+Two features of the fitted steering stand out. First, the thrust at ignition points 15.7° away from the PAD direction. The PAD's velocity change is an impulsive equivalent: the single kick at one instant that would have the same result. A real burn that sweeps through 20° of arc has to start pointing off that direction and end pointing off it the other way. Second, the fit settles on a steady pitch of 0.075° per second relative to the local horizontal. That is almost exactly the rate at which the local horizontal itself turns as the spacecraft moves round the Moon, about $v/r = 2.5/1900$ radians per second, or 0.076° per second. In other words the thrust stayed close to fixed in space, as the guidance would hold it, while the Moon's surface turned beneath.
+
+The burn also changed the plane of the orbit. The PAD had a sideways component of 394 ft/s, which in the reconstruction turns the plane by about 5°. The approach path had been chosen for a safe free return; the orbit had to pass over the landing site two days later.
+
+```{ojs}
+loiBurn = track.filter(d => d[0] >= burnsAt.l1 - 60 && d[0] <= burnsAt.l1c + 60)
+  .map(d => ({s: d[0] - burnsAt.l1, v: d[10] * FTS, alt: d[8] / NMI}))
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 230, marginLeft: 60, grid: true,
+  x: {label: "Seconds after LOI-1 ignition"},
+  y: {label: "Speed relative to the Moon (ft/s)"},
+  marks: [Plot.line(loiBurn, {x: "s", y: "v", stroke: "#e76f51"}), Plot.ruleX([0, data.burns.loi1.dur], {stroke: "#999", strokeDasharray: "3 3"})]
+})
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 200, marginLeft: 60, grid: true,
+  x: {label: "Seconds after LOI-1 ignition"},
+  y: {label: "Height above the Moon (n mi)"},
+  marks: [Plot.line(loiBurn, {x: "s", y: "alt", stroke: "#457b9d"}), Plot.ruleX([0, data.burns.loi1.dur], {stroke: "#999", strokeDasharray: "3 3"})]
+})
+```
+
+The height keeps falling through the burn: the spacecraft reaches its closest point to the Moon during the braking, not before it. The result was an orbit of about 170 by 60 n mi, with a period of 2 hours 8.6 minutes.
+
+### LOI-2
+
+Two revolutions later, at 80 hours 11 minutes 36 seconds, a second burn of 16.9 seconds lowered the far point of the orbit. This one was made at the low point, behind the Moon again, and was nearly impulsive, so it is easier to fit.
+
+```{ojs}
+checks("loi2")
+```
+
+The orbit after LOI-2 was 66.1 by 54.5 n mi, not circular. That was deliberate, and the last row of the table shows the reconstruction agreeing with its purpose: two and a half days later, at 102 hours 45 minutes, the plane of the orbit passes within 0.03 n mi of Tranquility Base. The orbit's shape was chosen so that the Moon's gravity would pull it round to nearly circular, about 60 n mi, by the time *Eagle* landed and *Columbia* had to pass overhead. That prediction depended on the Moon's uneven gravity.
+
+## Mascons
+
+In 1968, Paul Muller and William Sjogren at JPL analysed the tracking of the Lunar Orbiter spacecraft and found that the Moon's gravity was lumpy. Under the large circular maria, the dark plains on the near side, there are concentrations of mass, **mascons**, that pull orbiting spacecraft down as they pass over and speed them up. Their effect on a low orbit is large: over a day they can change its height by miles.
+
+The force model in this reconstruction has only the two largest, smoothest terms of the lunar gravity field. Those cannot reproduce the mascons, and the comparison shows it:
+
+```{ojs}
+evo = {
+  const rows = [];
+  for (const [t, a, p] of data.evolution.model) rows.push({h: t / 3600, v: a, k: "Apolune, J2 + C22 model"}, {h: t / 3600, v: p, k: "Perilune, J2 + C22 model"});
+  for (const [t, a, p] of data.evolution.spherical) rows.push({h: t / 3600, v: a, k: "Spherical Moon"}, {h: t / 3600, v: p, k: "Spherical Moon "});
+  return rows;
+}
+evoDoc = data.evolution.documented.filter(d => d[0] >= burnsAt.l2c - 1)
+  .flatMap(([t, a, p, src]) => [{h: t / 3600, v: a, src, k: "apo"}, {h: t / 3600, v: p, src, k: "peri"}])
+```
+
+```{ojs}
+Plot.plot({
+  width, height: 300, marginLeft: 50, grid: true,
+  x: {label: "Ground elapsed time (hours)"},
+  y: {label: "Height above the Moon (n mi)", domain: [52, 68]},
+  color: {legend: true, domain: ["Apolune, J2 + C22 model", "Perilune, J2 + C22 model", "Spherical Moon"], range: ["#e76f51", "#457b9d", "#999"]},
+  marks: [
+    Plot.line(evo.filter(d => d.k.startsWith("Spherical")), {x: "h", y: "v", z: "k", stroke: () => "Spherical Moon", strokeDasharray: "3 3"}),
+    Plot.line(evo.filter(d => !d.k.startsWith("Spherical")), {x: "h", y: "v", stroke: "k"}),
+    Plot.dot(evoDoc, {x: "h", y: "v", fill: "#2a9d8f", stroke: "#fff", r: 5, title: d => `${d.src}: ${d.v} n mi`}),
+    Plot.line(evoDoc.filter(d => d.k === "apo"), {x: "h", y: "v", stroke: "#2a9d8f", strokeOpacity: 0.5}),
+    Plot.line(evoDoc.filter(d => d.k === "peri"), {x: "h", y: "v", stroke: "#2a9d8f", strokeOpacity: 0.5})
+  ]
+})
+```
+
+The green dots are the documented orbits, from NASA's tables and PAO announcements. The real orbit's high point fell from 66.1 to 63.7 n mi and its low point rose from 54.5 to 56.0 n mi in the 20 hours before undocking, closing towards the circle the planners wanted. The model's orbit (red and blue) wobbles by a few tenths of a mile each revolution and otherwise stays where LOI-2 left it, as does the orbit around a perfectly round Moon (grey). The gap between the green dots and the coloured lines is the mascons.
+
+```{ojs}
+checks("evolution")
+```
+
+By undocking the model is 5 n mi low and 18 ft/s fast. For that reason Part 3 does not continue this propagation; it starts from NASA's documented state at the start of the powered descent and works backwards and forwards from there. The missing physics is known; modelling it would take a gravity field with many more terms, of the kind built later from Lunar Prospector and GRAIL tracking.
+
+## The view from lunar orbit
+
+*Apollo 11*'s orbit was retrograde: it went round the Moon from east to west, at an inclination of about 1° to the lunar equator. Seen from Earth the spacecraft crossed the near side from right to left, passed over the eastern maria, Smythii, Fecunditatis and Tranquillitatis, and disappeared behind the western limb into the radio shadow. Watch the Moon panel through a revolution to see the track cross the landing site.
+
+On the second revolution the crew pointed a television camera out of the window and flew the approach to the landing site for viewers on Earth, calling out the landmarks *Eagle* would use: the crater Secchi, Mount Marilyn near the point where the descent engine would light, Boot Hill, Duke Island, and the winding rilles Sidewinder and Diamondback. That broadcast began at 78 hours 24 minutes; jump to **TV from orbit** to follow it on the track.
+
+## If the engine had not fired
+
+The free-return trajectory was the safety net for LOI. If the SPS had failed to fire, *Apollo 11* would have swung round the Moon and come back. The reconstruction can follow that path too: take the arrival state at LOI-1 ignition and propagate with no burn. Select **Rotating with the Moon** above to see it as the purple dashed curve.
+
+```{ojs}
+checks("freereturn")
+```
+
+The spacecraft would have reached Earth's atmosphere at about 145 hours, six days after launch. The yellow dashed curve is the path with no midcourse correction, passing the Moon higher and coming back on a different line. In the frame that turns with the Moon, both form the figure-of-eight that free-return trajectories are known for.
+
+## Method and sources
+
+For how the coordinate frames, views, synchronisation and data sources fit together across the series, see the explainer [Frames of Reference in the Apollo 11 Reconstruction](/explainers/apollo-11-frames-of-reference/).
+
+The reconstruction is written in Python with numpy and is driven from a single file of documented anchors, each tagged with its source. The force model is Earth's central gravity plus J2, the Moon and the Sun as third bodies from JPL's DE421 ephemeris, and, within 20,000 km of the Moon, the Moon's J2 and C22 terms ($J_2 = 2.033\times10^{-4}$, $C_{22} = 2.238\times10^{-5}$), oriented by the IAU 2009 lunar rotation model. Everything is expressed in the mean equator and equinox of 16 July 1969, the frame of the Apollo tables. The integrator is Dormand–Prince 5(4) with a relative tolerance of 10⁻¹¹. Heights above the Moon are measured from a sphere of radius 1,738.09 km, the reference radius of the 1969 tables. Burns are fitted with a damped least-squares (Levenberg–Marquardt) solver, with the PAD values as weak priors.
+
+The pipeline is:
+
+1. From the documented TLI state, coast with the documented evasive burn to midcourse correction 2.
+2. Re-anchor on the documented state at MCC-2 ignition and fit the 3-second burn so the trajectory arrives with the documented height and speed at LOI-1 ignition, the documented loss of signal, and the documented closest approach.
+3. Fit LOI-1 and LOI-2 as finite burns to the documented ignition and cutoff conditions, with the landing site's distance from the orbit plane at landing as one more target.
+4. Propagate to 100 hours with no further changes.
+
+Every other number in the post, including the PAO distances and speeds, the sphere-of-influence crossing, the loss and acquisition of signal times after LOI-1, and the orbits from 80 to 100 hours, was not used in the fit and serves as a check.
+
+Documented values come from:
+
+- R. W. Orloff and S. Garber, *Apollo by the Numbers*, NASA SP-2000-4029, Apollo 11 translunar and lunar orbit tables, via the [Apollo Flight Journal edition](https://nasa.gov/wp-content/uploads/static/history/afj/pdf/abtn-202402.pdf).
+- TRW, [*Apollo Mission 11 Trajectory Reconstruction and Postflight Analysis*](https://www.nasa.gov/wp-content/uploads/static/history/afj/ap11fj/pdf/19700014995_as11-trajectory-reconstruction-vol1.pdf) (1970).
+- The [Apollo 11 Flight Journal](https://www.nasa.gov/history/afj/ap11fj/), for the maneuver PADs, the LOS and AOS times, and the narrative of the coast and lunar orbit.
+- NASA's Apollo 11 Technical Air-to-Ground Voice Transcription and Onboard Voice Transcription, via [Spacelog](https://apollo11.spacelog.org/), for the transcript and the PAO calls.
+- NASA's mission audio highlights reels for [Day 2](https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_2), [Day 3](https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_3) and [Day 4](https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_4) at the Internet Archive. Each reel is an edited selection; segments are pinned to mission time by matching the reel's captions to the transcript, and are accurate to a few seconds.
+- P. M. Muller and W. L. Sjogren, "Mascons: lunar mass concentrations", *Science* 161 (1968), 680–684.
+
+The maria in the Moon panel and the 3D view are drawn as circles at their approximate positions and sizes, to give a sense of place, not as a map.
+
+**Next: [Part 3, descent and landing](../apollo-11-part-3-descent-and-landing/).**

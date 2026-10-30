@@ -1,0 +1,225 @@
+{
+ "audio": [
+  {
+   "title": "Apollo 11 Mission Audio - Day 2 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_2/Apollo_11_Mission_Audio_-_Day_2.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_2",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's speech-recognition captions to the NASA air-to-ground transcript (at least two matched lines per segment). Accuracy is a few seconds.",
+   "segments": [
+    {
+     "clip_start": 2921.2,
+     "clip_end": 3094.4,
+     "get_start": 109792.0,
+     "get_end": 109965.2,
+     "note": "Roger. We're just testing the equipment up here."
+    },
+    {
+     "clip_start": 3273.1,
+     "clip_end": 3320.4,
+     "get_start": 111144.6,
+     "get_end": 111191.9,
+     "note": "I'd like to see that sight. Why don't you give us a TV picture of that\u2026"
+    },
+    {
+     "clip_start": 3606.7,
+     "clip_end": 3622.2,
+     "get_start": 111742.0,
+     "get_end": 111757.5,
+     "note": "Roger. Understand. They do seem to distort vertical lines though."
+    },
+    {
+     "clip_start": 3658,
+     "clip_end": 3888.3,
+     "get_start": 111832.6,
+     "get_end": 112062.9,
+     "note": "Hello, Apollo 11. Houston. We've lost our command interface with Golds\u2026"
+    },
+    {
+     "clip_start": 302.3,
+     "clip_end": 760.2,
+     "get_start": 124040.4,
+     "get_end": 124498.3,
+     "note": "Apollo 11, Houston. Could you give the folks a view of your patch on y\u2026"
+    },
+    {
+     "clip_start": 903.9,
+     "clip_end": 935.1,
+     "get_start": 124907.0,
+     "get_end": 124938.2,
+     "note": "Go ahead, Houston. Apollo 11."
+    },
+    {
+     "clip_start": 1146.7,
+     "clip_end": 1182.8,
+     "get_start": 126085.9,
+     "get_end": 126122.0,
+     "note": "Okay. Do you have any roll angle that you'd like to stop it in, Charli\u2026"
+    },
+    {
+     "clip_start": 1188.8,
+     "clip_end": 1245.6,
+     "get_start": 126476.4,
+     "get_end": 126533.2,
+     "note": "Okay. That sounds good, Charlie. When you get to the VERB 49, I'd like\u2026"
+    },
+    {
+     "clip_start": 1653.9,
+     "clip_end": 1691.5,
+     "get_start": 127547.0,
+     "get_end": 127584.6,
+     "note": "Roger. We got a little laser visual experiment we'd like to - for you \u2026"
+    }
+   ]
+  },
+  {
+   "title": "Apollo 11 Mission Audio - Day 3 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_3/Apollo_11_Mission_Audio_-_Day_3.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_3",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's speech-recognition captions to the NASA air-to-ground transcript (at least two matched lines per segment). Accuracy is a few seconds.",
+   "segments": [
+    {
+     "clip_start": 71.4,
+     "clip_end": 88.5,
+     "get_start": 208788.9,
+     "get_end": 208806.0,
+     "note": "Roger. No sweat, 11. We're standing by. Over."
+    },
+    {
+     "clip_start": 350.4,
+     "clip_end": 375.3,
+     "get_start": 209962.0,
+     "get_end": 209986.9,
+     "note": "Hello, Apollo 11. Houston. We've got some switch positions for you for\u2026"
+    },
+    {
+     "clip_start": 473.2,
+     "clip_end": 739,
+     "get_start": 211354.0,
+     "get_end": 211619.8,
+     "note": "Okay. Is any of those in the flight plan? The secondary radiator, for \u2026"
+    },
+    {
+     "clip_start": 952.3,
+     "clip_end": 1043.3,
+     "get_start": 213070.0,
+     "get_end": 213161.0,
+     "note": "We just had a little music there."
+    },
+    {
+     "clip_start": 1236.5,
+     "clip_end": 1349.5,
+     "get_start": 213588.0,
+     "get_end": 213701.0,
+     "note": "Okay, Buzz. The first item is that we have indications that your landi\u2026"
+    },
+    {
+     "clip_start": 1383.7,
+     "clip_end": 3085.2,
+     "get_start": 213785.0,
+     "get_end": 215486.5,
+     "note": "Roger, Buzz. Under the DPS column on the pressure side, you go down to\u2026"
+    },
+    {
+     "clip_start": 4465.2,
+     "clip_end": 4732.4,
+     "get_start": 217256.6,
+     "get_end": 217523.8,
+     "note": "Houston, Apollo 11. Checklist page F9 7; I've completed step 8, and I'\u2026"
+    },
+    {
+     "clip_start": 5147.4,
+     "clip_end": 5173.6,
+     "get_start": 219036.0,
+     "get_end": 219062.2,
+     "note": "Hey, do you have any idea what happened to the previous one?"
+    }
+   ]
+  },
+  {
+   "title": "Apollo 11 Mission Audio - Day 4 (NASA)",
+   "src": "https://archive.org/download/nasa_tv-Apollo_11_Mission_Audio_-_Day_4/Apollo_11_Mission_Audio_-_Day_4.mp3",
+   "page": "https://archive.org/details/nasa_tv-Apollo_11_Mission_Audio_-_Day_4",
+   "method": "Edited NASA highlights reel. Each segment is pinned to mission time by matching the reel's speech-recognition captions to the NASA air-to-ground transcript (at least two matched lines per segment). Accuracy is a few seconds.",
+   "segments": [
+    {
+     "clip_start": 269.4,
+     "clip_end": 322.3,
+     "get_start": 274904.6,
+     "get_end": 274957.5,
+     "note": "Roger. Reading you the same, now. Could you repeat your burn status re\u2026"
+    },
+    {
+     "clip_start": 535.2,
+     "clip_end": 561.9,
+     "get_start": 283366.0,
+     "get_end": 283392.7,
+     "note": "Roger. We're observing the dimple crater now. The central peak we can \u2026"
+    },
+    {
+     "clip_start": 649.5,
+     "clip_end": 709.4,
+     "get_start": 300111.1,
+     "get_end": 300171.0,
+     "note": "Houston, Eagle. Read you loud and clear. Over."
+    },
+    {
+     "clip_start": 703.1,
+     "clip_end": 741.9,
+     "get_start": 300177.0,
+     "get_end": 300215.8,
+     "note": "Eagle, Houston. Could you give me a short count - this mode? Over."
+    },
+    {
+     "clip_start": 822.3,
+     "clip_end": 837.2,
+     "get_start": 300406.1,
+     "get_end": 300421.0,
+     "note": "Stand by one, Houston. Are you through with the DSKY?"
+    },
+    {
+     "clip_start": 878.3,
+     "clip_end": 891.7,
+     "get_start": 300563.0,
+     "get_end": 300576.4,
+     "note": "Houston, Columbia. Ready to copy TEI 11. Over."
+    },
+    {
+     "clip_start": 898.5,
+     "clip_end": 907.9,
+     "get_start": 300727.6,
+     "get_end": 300737.0,
+     "note": "Roger. And, Mike, we'll have LOS in about 11 minutes at 83 44. AOS is \u2026"
+    },
+    {
+     "clip_start": 1283.5,
+     "clip_end": 1949.7,
+     "get_start": 304279.0,
+     "get_end": 304945.2,
+     "note": "11, Houston. Roger. Reading you fine, and it looks like the automatic \u2026"
+    },
+    {
+     "clip_start": 2109.3,
+     "clip_end": 2140.5,
+     "get_start": 305588.0,
+     "get_end": 305619.2,
+     "note": "Houston, Apollo 11. How do you read now?"
+    },
+    {
+     "clip_start": 2529,
+     "clip_end": 3267.3,
+     "get_start": 306572.1,
+     "get_end": 307310.4,
+     "note": "11, Houston. We also would appreciate - if you will note the angles th\u2026"
+    },
+    {
+     "clip_start": 3277,
+     "clip_end": 3408.3,
+     "get_start": 342977.3,
+     "get_end": 343108.6,
+     "note": "Roger. The \"Black Bugle\" just arrived with some morning news briefs if\u2026"
+    }
+   ]
+  }
+ ],
+ "video": []
+}

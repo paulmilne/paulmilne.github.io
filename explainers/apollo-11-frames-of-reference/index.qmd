@@ -1,0 +1,430 @@
+---
+title: "Frames of Reference in the Apollo 11 Reconstruction"
+subtitle: "The coordinate systems, transformations and clocks behind the Apollo 11 series, how the views are kept in step, and what the data sources decided"
+description: "A companion to the Apollo 11 series: the working frame, time scales, Earth-, Moon- and spacecraft-fixed frames, the projections each view uses, the mathematics, how one clock synchronises every panel and recording, and how the 1969 sources shaped the reconstruction."
+author: "Paul Milne"
+date: "2026-10-30"
+categories: [explainer, space, orbital-mechanics, apollo, coordinates]
+format:
+  html:
+    toc: true
+---
+
+```{=html}
+<style>
+:root { --ink: var(--bs-body-color, #222); --muted: var(--bs-secondary-color, #6c757d); --rule: var(--bs-border-color, #dee2e6);
+  --accent: #b5600b; --accent-2: #2e6d9c; --accent-3: #3d8b6a; --paper: var(--bs-body-bg, #fff); --fr-muted: var(--bs-secondary-color, #6c757d); }
+.fr-scroll { overflow-x: auto; }
+.fr-diagram { min-width: 760px; display: block; }
+.fr-diagram text { font-family: ui-monospace, Menlo, monospace; fill: var(--ink); }
+.fr-diagram .node rect { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
+.fr-diagram .node.time rect { stroke: var(--accent); stroke-dasharray: 4 3; }
+.fr-diagram .node.disp rect { stroke: var(--accent-2); }
+.fr-diagram .node.craft rect { stroke: var(--accent-3); }
+.fr-diagram .node .t { font-weight: 600; font-size: 14px; }
+.fr-diagram .node .s { font-size: 10.5px; fill: var(--muted); }
+.fr-diagram .edge { stroke: var(--muted); stroke-width: 1.2; fill: none; }
+.fr-diagram .op { font-size: 10px; fill: var(--accent); }
+.fr-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; font-size: .8rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; margin: .5rem 0 1rem; }
+.fr-legend span::before { content: ""; display: inline-block; width: .9rem; height: .55rem; border: 1.5px solid var(--c); margin-right: .35rem; }
+.fr-demo { border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; margin: 1.2rem 0; }
+.fr-demo h4 { margin-top: 0; font-size: 1.05rem; }
+.fr-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .6rem; margin: .6rem 0 .8rem; }
+.fr-form label { display: flex; flex-direction: column; font-family: ui-monospace, Menlo, monospace; font-size: .72rem; color: var(--muted); gap: .2rem; }
+.fr-form input { font-family: ui-monospace, Menlo, monospace; font-size: .9rem; padding: .3rem .4rem; border: 1px solid var(--rule); border-radius: 3px; min-width: 0; }
+.fr-out { font-family: ui-monospace, Menlo, monospace; font-size: .82rem; background: rgba(127,127,127,.08); border-radius: 4px; padding: .7rem .9rem; overflow-x: auto; white-space: pre; line-height: 1.55; }
+.fr-controls { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; font-family: ui-monospace, Menlo, monospace; font-size: .82rem; }
+.fr-controls input[type=range] { flex: 1 1 220px; min-width: 0; }
+.fr-controls button { font-size: .82rem; padding: .25rem .8rem; border-radius: 999px; border: 1px solid #1d3557; background: #1d3557; color: #fff; }
+.fr-twin { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: .8rem; }
+.fr-twin figure { margin: 0; min-width: 0; }
+.fr-twin svg { width: 100%; height: auto; display: block; border: 1px solid var(--rule); border-radius: 4px; }
+.fr-twin figcaption { font-family: ui-monospace, Menlo, monospace; font-size: .75rem; color: var(--muted); margin-top: .3rem; }
+</style>
+```
+
+This explainer sits behind the Apollo 11 series in the Space section:
+
+1. [**Launch to translunar injection**](/space/apollo-11-part-1-launch-to-tli/)
+2. [**Translunar coast and lunar orbit**](/space/apollo-11-part-2-translunar-coast/)
+3. [**Descent and landing**](/space/apollo-11-part-3-descent-and-landing/)
+
+Every number in the series lives in one of about a dozen coordinate frames. This post sets out what those frames are, how one becomes another, which mathematics does the work, how a single clock keeps four panels, a 3D scene, a transcript, audio and film in step, and where the data came from and what it forced. The code is in `src/apollo11` in the blog's repository.
+
+## The map of frames
+
+There is one **working frame**, and everything is either computed in it or converted to it at the edges. It is geocentric and inertial, with its axes fixed to the mean equator and equinox of 16 July 1969. The physics is integrated there. Other frames exist for two reasons: to read the 1969 documents, which were written in Earth-fixed, Moon-fixed or spacecraft-local terms, and to draw the views, each of which picks the frame where its story is easiest to see.
+
+```{=html}
+<div class="fr-scroll">
+<svg class="fr-diagram" viewBox="0 0 980 640" role="img" aria-label="Diagram of the reference frames and the transformations between them">
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--fr-muted)"/></marker></defs>
+  <!-- edges -->
+  <g class="edges">
+    <path class="edge" d="M190 74 H345" marker-end="url(#ah)"/><text class="op" x="198" y="66">bias, then precession to 1969 (P₀)</text>
+    <path class="edge" d="M490 108 V150 H230 V190" marker-end="url(#ah)"/><text class="op" x="240" y="143">Rz(GMST(UT1))</text>
+    <path class="edge" d="M490 108 V190" marker-end="url(#ah)"/><text class="op" x="497" y="160">r − r☾(t) (Hermite)</text>
+    <path class="edge" d="M560 108 V150 H790 V190" marker-end="url(#ah)"/><text class="op" x="610" y="143">Rz(ν) to Earth–Moon line</text>
+    <path class="edge" d="M150 256 V300" marker-end="url(#ah)"/><text class="op" x="158" y="288">up/east/north, Fischer ellipsoid</text>
+    <path class="edge" d="M490 256 V300" marker-end="url(#ah)"/><text class="op" x="497" y="288">IAU 2009: Rz(W)Rx(90°−δ₀)Rz(90°+α₀)</text>
+    <path class="edge" d="M560 256 V300 H760 V330" marker-end="url(#ah)"/><text class="op" x="610" y="318">(r̂, v̂ ⊥ r̂, −ĥ)</text>
+    <path class="edge" d="M490 366 V420" marker-end="url(#ah)"/><text class="op" x="497" y="404">site vector, X up, Z downrange</text>
+    <path class="edge" d="M410 332 H330" marker-end="url(#ah)"/><text class="op" x="300" y="324" text-anchor="end"></text>
+    <path class="edge" d="M80 366 V520" marker-end="url(#ah)"/>
+    <path class="edge" d="M490 486 V520" marker-end="url(#ah)"/>
+    <path class="edge" d="M800 256 V520" marker-end="url(#ah)"/>
+    <path class="edge" d="M650 74 H700 V520" marker-end="url(#ah)" stroke-dasharray="4 3"/><text class="op" x="706" y="470">projection, floating origin</text>
+  </g>
+  <!-- nodes -->
+  <g class="node"><rect x="20" y="40" width="170" height="68" rx="6"/><text class="t" x="32" y="64">ICRF / J2000</text><text class="s" x="32" y="82">DE421 Moon &amp; Sun</text><text class="s" x="32" y="97">IAU lunar pole, meridian</text></g>
+  <g class="node"><rect x="345" y="40" width="305" height="68" rx="6"/><text class="t" x="357" y="64">Working frame: geocentric inertial</text><text class="s" x="357" y="82">mean equator &amp; equinox, 16 Jul 1969</text><text class="s" x="357" y="97">km, km/s · integration happens here</text></g>
+  <g class="node time"><rect x="742" y="34" width="232" height="80" rx="6"/><text class="t" x="754" y="58">Clock: GET (s)</text><text class="s" x="754" y="76">range zero 13:32:00 UTC</text><text class="s" x="754" y="91">UT1 = UTC + 0.0115 s (Earth spin)</text><text class="s" x="754" y="106">TT = UTC + 39.746 s (ephemeris)</text></g>
+  <g class="node"><rect x="60" y="190" width="200" height="66" rx="6"/><text class="t" x="72" y="214">Earth-fixed</text><text class="s" x="72" y="232">rotates at ω⊕ about z</text><text class="s" x="72" y="247">lat, lon, ground track</text></g>
+  <g class="node"><rect x="410" y="190" width="160" height="66" rx="6"/><text class="t" x="422" y="214">Moon-centred</text><text class="s" x="422" y="232">inertial axes</text><text class="s" x="422" y="247">lunar orbits, LOS/AOS</text></g>
+  <g class="node disp"><rect x="700" y="190" width="200" height="66" rx="6"/><text class="t" x="712" y="214">Rotating Earth–Moon</text><text class="s" x="712" y="232">x → Moon, z → orbit normal</text><text class="s" x="712" y="247">Part 2 figure-of-eight</text></g>
+  <g class="node"><rect x="20" y="300" width="230" height="66" rx="6"/><text class="t" x="32" y="324">1969 table quantities</text><text class="s" x="32" y="342">alt, v, flight-path γ, heading ψ</text><text class="s" x="32" y="357">ABTN, Boeing, TRW rows</text></g>
+  <g class="node"><rect x="410" y="300" width="230" height="66" rx="6"/><text class="t" x="422" y="324">Moon body (selenographic)</text><text class="s" x="422" y="342">lat, lon on 1738.09 km sphere</text><text class="s" x="422" y="357">site radius 1735.48 km</text></g>
+  <g class="node craft"><rect x="680" y="330" width="240" height="66" rx="6"/><text class="t" x="692" y="354">LVLH (Noun 81)</text><text class="s" x="692" y="372">X forward, Y = −h, Z down</text><text class="s" x="692" y="387">every burn and PAD</text></g>
+  <g class="node craft"><rect x="380" y="420" width="290" height="66" rx="6"/><text class="t" x="392" y="444">Guidance &amp; site frames</text><text class="s" x="392" y="462">Klumpp: X up, Y cross, Z downrange</text><text class="s" x="392" y="477">(s, c, h): great-circle ft from the site</text></g>
+  <g class="node disp"><rect x="20" y="520" width="940" height="96" rx="6"/><text class="t" x="32" y="545">Display frames</text>
+    <text class="s" x="32" y="565">orthographic globe (Earth- or Moon-fixed) · orbit-plane projection · rotating Earth–Moon · Moon-orbit plane</text>
+    <text class="s" x="32" y="582">side profile (s, h) · azimuthal-equidistant map round the site · 3D scenes with a floating origin at the spacecraft</text>
+    <text class="s" x="32" y="599">all read one track table, interpolated at one time T</text></g>
+</svg>
+</div>
+<div class="fr-legend"><span style="--c:var(--ink)">physical frame</span><span style="--c:var(--accent-3)">spacecraft-local frame</span><span style="--c:var(--accent-2)">display frame</span><span style="--c:var(--accent)">time scale</span></div>
+```
+
+Arrows show the direction the engine converts in. Every conversion is a rotation, a translation, or both, and each has an exact inverse that the code also uses: `table_from_state` undoes `state_from_table`, for example.
+
+## One clock, three time scales
+
+Every row of every table is keyed by **ground elapsed time** (GET), seconds from range zero, 13:32:00 UTC on 16 July 1969. GET is the mission's own clock: the transcripts, maneuver PADs and NASA tables all use it, so the reconstruction does too, and nothing in the pages is keyed to anything else.
+
+Two physical clocks hang off it. Earth's rotation follows **UT1**, which in July 1969 ran 0.0115 s ahead of UTC; it sets Greenwich sidereal time, and so where the launch pad and the tracking stations were. The planets follow **Terrestrial Time** (TT), 39.746 s ahead of UTC that day (32.184 s by definition plus 7.5622 s of accumulated leap time); it is the argument of the DE421 ephemeris and of the IAU model of the Moon's rotation. Running Earth's rotation on TT would misplace the launch pad by about 18 km, and running the ephemeris on UT1 would misplace the Moon by about 40 km, so each function asks for the one it needs:
+
+$$
+\begin{aligned}
+\text{JD}_\text{UT1} &= 2440419.06388889 + (\text{GET} + 0.0115)/86400, \\
+\text{JD}_\text{TT} &= 2440419.06388889 + (\text{GET} + 39.746)/86400, \\
+\text{GMST} &= 67310.54841\,\text{s} + (876600\,\text{h} + 8640184.812866\,\text{s})\,T + 0.093104\,\text{s}\,T^2 - 6.2\times10^{-6}\,\text{s}\,T^3,
+\end{aligned}
+$$
+
+with $T = (\text{JD}_\text{UT1} - 2451545)/36525$, converted to an angle at 240 s per degree.
+
+## The working frame, and why it is 1969's
+
+Modern ephemerides are referred to the ICRF, which is fixed to distant quasars and is within milliarcseconds of the J2000 equator. NASA's 1969 tables were written in the **mean equator and equinox of the launch date**: they give right ascension through Greenwich mean sidereal time, against an equator that had precessed by 0.43° between 1969 and 2000. Using the tables' own frame means the anchors go in unaltered, and the only rotation applied is to the modern data, once:
+
+$$
+\mathbf r_\text{work} = P_0\,B\,\mathbf r_\text{ICRF},
+$$
+
+where $B$ is the frame bias from the ICRF to the J2000 mean equator (milliarcseconds) and $P_0$ is precession from J2000 to the mean equator of 16 July 1969. The ephemeris uses skyfield's precession matrix at range zero; the Moon's axes use the IAU 1976 angles, $R_z(-z)\,R_y(\theta)\,R_z(-\zeta)$, cubic in Julian centuries of TT. The two agree to milliarcseconds over these 31 years.
+
+$P_0$ is evaluated once, at range zero. Precession over the eight-day mission is about 0.002°, a few hundred metres at the Moon's distance, so treating the frame as inertial costs nothing the tables could show. Nutation, the 18.6-year wobble on top of precession, is left out for the same reason the 1969 tables left it out: "mean" frames exclude it by definition.
+
+The Moon and Sun come from JPL's DE421 through the `skyfield` library, rotated with $P_0 B$ and written to `ephem_1969.csv` as hourly positions and velocities. That file is committed, so the engine needs only numpy. Between rows, positions are interpolated with **cubic Hermite** polynomials, which use the velocities as end slopes and reproduce DE421 to metres at a one-hour step.
+
+## Reading a 1969 table row
+
+The trajectory tables in *Apollo by the Numbers* and the Boeing and TRW reports give a state as six numbers: geocentric latitude $\varphi$, longitude $\lambda$, altitude $h$, space-fixed speed $v$, flight-path angle $\gamma$ (above the local horizontal) and heading $\psi$ (east of north). Turning that into a position and velocity in the working frame is the most frequently used conversion in the project:
+
+$$
+\begin{aligned}
+\alpha &= \lambda + \text{GMST}(\text{GET}), \qquad |\mathbf r| = R_\text{ellipsoid}(\varphi) + h, \\
+\mathbf r &= |\mathbf r|\,(\cos\varphi\cos\alpha,\ \cos\varphi\sin\alpha,\ \sin\varphi), \\
+\hat{\mathbf u} &= \frac{\mathbf r}{|\mathbf r|},\quad \hat{\mathbf e} = \frac{\hat{\mathbf z}\times\hat{\mathbf u}}{|\hat{\mathbf z}\times\hat{\mathbf u}|},\quad \hat{\mathbf n} = \hat{\mathbf u}\times\hat{\mathbf e}, \\
+\mathbf v &= v\,\big(\sin\gamma\,\hat{\mathbf u} + \cos\gamma\,(\cos\psi\,\hat{\mathbf n} + \sin\psi\,\hat{\mathbf e})\big).
+\end{aligned}
+$$
+
+Two details come straight from the documents. The ellipsoid is the 1960 Fischer ("Mercury") figure, $a = 6378.166$ km and $f = 1/298.3$, not WGS-84, because that is what the tables measured altitude from. And the velocity is **space-fixed**: it already includes Earth's rotation, so nothing is added. The inverse, `table_from_state`, subtracts $\boldsymbol\omega_\oplus\times\mathbf r$ only when it reports Earth-relative speed.
+
+```{=html}
+<div class="fr-demo" id="tablerow">
+  <h4>Try it: the translunar injection row</h4>
+  <p style="margin-top:0;font-size:.9rem;opacity:.75">Values from the Boeing AS-506 postflight trajectory (via Grant Hutchison) and <i>Apollo by the Numbers</i>. Change any field to see the inertial state and the orbit it implies.</p>
+  <div class="fr-form">
+    <label for="f-get">GET (s)<input id="f-get" value="10213.03" inputmode="decimal"></label>
+    <label for="f-lat">Geocentric lat (°)<input id="f-lat" value="9.9204" inputmode="decimal"></label>
+    <label for="f-lon">Longitude (° E)<input id="f-lon" value="-164.8373" inputmode="decimal"></label>
+    <label for="f-r">Radius (km)<input id="f-r" value="6711.964" inputmode="decimal"></label>
+    <label for="f-v">Speed (ft/s)<input id="f-v" value="35545.6" inputmode="decimal"></label>
+    <label for="f-g">Flight-path γ (°)<input id="f-g" value="7.367" inputmode="decimal"></label>
+    <label for="f-h">Heading ψ (°)<input id="f-h" value="60.073" inputmode="decimal"></label>
+  </div>
+  <div class="fr-out" id="tr-out" aria-live="polite"></div>
+</div>
+```
+
+## The Moon's frames
+
+**Moon-centred inertial** is the working frame with its origin moved to the Moon, $\mathbf r - \mathbf r_\text{M}(t)$, with the Moon's position from the Hermite-interpolated ephemeris. Its axes stay parallel to the working frame's, so no rotation is involved, and velocities subtract the same way. Lunar orbits, perilune and apolune, and the line-of-sight geometry for loss of signal are all computed here.
+
+**Moon body-fixed** turns with the Moon, and gives selenographic latitude and longitude. Its orientation comes from the IAU working group's model (Archinal et al. 2011): the pole's right ascension $\alpha_0$ and declination $\delta_0$, and the prime-meridian angle $W$, each a polynomial in TT plus thirteen periodic terms for the Moon's physical libration. That model approximates the Mean Earth/polar axis frame used for lunar maps and for the LRO-derived landing-site coordinates to a few hundred metres.
+
+$$
+M_{\text{body}\to\text{work}}(t) = P_0\,\big(R_z(W)\,R_x(90^\circ - \delta_0)\,R_z(90^\circ + \alpha_0)\big)^{\mathsf T},
+$$
+$$
+\mathbf b = M^{\mathsf T}(\mathbf r - \mathbf r_\text{M}),\qquad \text{lat} = \arcsin\frac{b_z}{|\mathbf b|},\qquad \text{lon} = \operatorname{atan2}(b_y, b_x).
+$$
+
+Heights above the Moon need a reference, and the documents use two. The 1969 lunar tables measure altitude above a **1738.09 km sphere**. The landing site lies 8,557 ft below it (TRW), so its radius is **1735.48 km**; the descent's altitudes, callouts and computer displays are all relative to that. A PDI altitude of 6.4 n mi in one source and 47,444 ft in another are the same point described from the two references.
+
+The same matrix places the Moon's gravity field. The model's two lunar harmonics, $J_2$ (flattening) and $C_{22}$ (elongation towards Earth), are defined in body axes, so the acceleration is computed as $M\,\mathbf a_\text{body}(M^{\mathsf T}\mathbf d)$, and only within 20,000 km of the Moon, where it matters.
+
+## Spacecraft-local frames
+
+### LVLH: the frame of every burn
+
+Maneuver PADs read up to the crew gave each burn's velocity change as three numbers, "Noun 81", in a **local vertical, local horizontal** frame built from the spacecraft's own position and velocity relative to whichever body it was orbiting:
+
+$$
+\hat{\mathbf Z} = -\hat{\mathbf r}\ \text{(down)},\qquad
+\hat{\mathbf X} = \frac{\mathbf v - (\mathbf v\cdot\hat{\mathbf r})\,\hat{\mathbf r}}{|\mathbf v - (\mathbf v\cdot\hat{\mathbf r})\,\hat{\mathbf r}|}\ \text{(forward)},\qquad
+\hat{\mathbf Y} = \hat{\mathbf Z}\times\hat{\mathbf X} = -\hat{\mathbf h}.
+$$
+
+Impulsive burns add $\Delta v_X\hat{\mathbf X} + \Delta v_Y\hat{\mathbf Y} + \Delta v_Z\hat{\mathbf Z}$. The six-minute lunar orbit insertion is different: the thrust direction is held in LVLH but recomputed at every integration substep as the frame turns with the spacecraft, plus a fitted pitch rate. The fit settled on 0.075°/s, almost the rate at which LVLH itself turns at that height ($v/r \approx 0.076$°/s), which says the real thrust stayed nearly fixed in inertial space.
+
+### Klumpp's guidance frame
+
+For the descent, *Eagle*'s computer worked in a frame centred on its landing site and rebuilt every two-second guidance cycle as the Moon turned:
+
+$$
+\hat{\mathbf X}_G = \frac{\mathbf r_\text{site}}{|\mathbf r_\text{site}|},\qquad
+\hat{\mathbf Z}_G = -\frac{\mathbf r_\text{LM} - (\mathbf r_\text{LM}\cdot\hat{\mathbf X}_G)\,\hat{\mathbf X}_G}{|\mathbf r_\text{LM} - (\mathbf r_\text{LM}\cdot\hat{\mathbf X}_G)\,\hat{\mathbf X}_G|},\qquad
+\hat{\mathbf Y}_G = \hat{\mathbf Z}_G\times\hat{\mathbf X}_G,
+$$
+$$
+\mathbf r_G = C\,(\mathbf r_\text{LM} - \mathbf r_\text{site}),\qquad \mathbf v_G = C\,(\mathbf v_\text{LM} - \boldsymbol\omega_\text{M}\times\mathbf r_\text{LM}),
+$$
+
+where $C$ has rows $\hat{\mathbf X}_G, \hat{\mathbf Y}_G, \hat{\mathbf Z}_G$. Velocity here is relative to the turning surface, which is why the Moon's angular velocity $\boldsymbol\omega_\text{M}$ appears. The code finds it numerically from two body matrices 60 s apart, $W = \big(M(t+30) - M(t-30)\big)/60 \cdot M(t)^{\mathsf T}$, and reads the vector off that skew-symmetric matrix.
+
+### The site frame $(s, c, h)$
+
+The descent profile, the callouts and the last two minutes use distances along the surface: $s$ downrange and $c$ across, as great-circle arcs times the site radius, and $h$ above the site radius. Flat-plane coordinates would be wrong by the Moon's curvature, which drops 66 km below the tangent plane over the 480 km from PDI. Converting back to a position is a pair of rotations of the site's unit vector by $s/R$ and $c/R$.
+
+## The views, panel by panel
+
+Each panel picks the frame where its point is easiest to see, then flattens it with a projection. "Basis" means the pair of unit vectors the 3D position is dotted with to get screen coordinates.
+
+| Part · panel | Frame and origin | Basis or projection | Why this frame |
+|---|---|---|---|
+| 1 · Ground track | Earth-fixed, Earth's centre | Orthographic globe centred on the spacecraft's sub-point | The launch, staging and Atlantic crossing are events over places on Earth. |
+| 1 · Inertial view | Working frame, Earth's centre | $\mathbf e_1$ towards the TLI position, $\mathbf e_2 = \hat{\mathbf h}\times\mathbf e_1$ from the translunar orbit | Looking down on the orbit plane shows the ellipse unchanged; Earth's spin would only smear it. |
+| 2 · Earth–Moon, turning | Rotating, Earth's centre | $\hat{\mathbf x}$ towards the Moon, $\hat{\mathbf z}$ along the Moon's orbital angular momentum, re-evaluated at each point's own time | The Moon sits still, so the free return appears as a figure-of-eight. |
+| 2 · Earth–Moon, fixed | Working frame, Earth's centre | Moon's orbit plane at LOI, $\hat{\mathbf x}$ towards the Moon then | Shows the real geometry: the spacecraft aims at where the Moon will be. |
+| 2 · Near the Moon | Moon-centred inertial | Plane of the final lunar orbit, $\hat{\mathbf x}$ towards Earth at LOI | Orbits, the radio-shadow strip and the night side on one drawing. |
+| 2 · Moon globe | Moon body-fixed | Orthographic on selenographic lat/lon; night and radio shadow as hemispheres round the anti-Sun and anti-Earth points | Ground track, landing site and libration are surface quantities. |
+| 3 · Descent profile | Site frame | $(s, h)$ at three scales, with West crater in the same $s$ | The descent is a 2D problem in the plane of the approach. |
+| 3 · Approach map | Moon body-fixed | Azimuthal equidistant centred on the site | Distances from the site read directly off the map at any zoom. |
+| 1–3 · 3D views | Working or Moon-centred frame, origin moved to the spacecraft | three.js perspective (next section) | Metre-scale hardware and 400,000 km distances in one scene. |
+
+```{=html}
+<div class="fr-demo" id="em">
+  <h4>Same trajectory, two frames, one clock</h4>
+  <p style="margin-top:0;font-size:.9rem;opacity:.75">Part 2's reconstructed path from 4 h to 78 h, sampled every 30 minutes, with the no-LOI free return dashed. Both drawings read the same time from the one slider, the way every panel in the series does. Units: thousands of km.</p>
+  <div class="fr-controls"><button type="button" id="em-play">Play</button><input id="em-t" type="range" min="0" max="146" step="0.02" value="60" aria-label="Mission time"><span id="em-get">GET</span></div>
+  <div class="fr-twin">
+    <figure><svg id="em-rot" viewBox="0 0 320 240" aria-label="Rotating frame"></svg><figcaption>Rotating with the Moon: x-axis always through the Moon</figcaption></figure>
+    <figure><svg id="em-ine" viewBox="0 0 320 240" aria-label="Inertial frame"></svg><figcaption>Fixed (inertial): Moon's orbit plane at LOI</figcaption></figure>
+  </div>
+</div>
+```
+
+## Inside the 3D scenes
+
+**Floating origin.** A GPU stores positions as 32-bit floats, good to about one part in 16 million. Placed at Earth's centre, the spacecraft would sit 400,000 km out and jitter by tens of metres. So each frame the scene is rebuilt around the spacecraft: the vehicle sits at the origin and Earth, the Moon and the terrain are translated by minus its position. Large objects keep their geometry relative to their own centres, and only the offsets change.
+
+**Depth.** One scene spans 5 cm (the camera's near plane) to 20 million km (the stars). A logarithmic depth buffer spreads depth precision evenly across that range so the Moon's limb does not flicker through the spacecraft.
+
+**Earth** is a latitude–longitude sphere textured from the same Natural Earth outlines as the 2D globe, flattened by 1/298.3 and turned about $z$ by $\text{GMST}_0 + \omega_\oplus t$. The **Moon** is placed by the body-to-working matrix above. The pages carry that matrix every hour or every 15 minutes, and linear interpolation of a rotation matrix is not quite a rotation, so the code re-orthonormalises it each frame by Gram–Schmidt: normalise the $x$ column, remove its component from $z$, take $y = z\times x$.
+
+**Attitude.** Each spacecraft's orientation is built from two directions and the cross product that completes them. In Part 2 the docked stack points along the burn's LVLH direction during burns and along the ecliptic normal, rolling at 0.3°/s, during passive thermal control; the hand-over into a burn is a quaternion **slerp** over 15 minutes with a smoothstep weight, so the stack turns instead of snapping. In Part 3 *Eagle*'s thrust axis is the reconstruction's own thrust vector, exported from the simulation, and its windows are found by projecting "up" onto the plane perpendicular to that axis. The yaw to windows-up at 102:36:57 rotates that window direction 180° about the thrust axis over the documented 62 seconds.
+
+**Terrain.** Part 3's lunar surface is a polar mesh centred on the landing site: 230 rings spaced geometrically from 0.6 m to 950 km, and 360 spokes. Near the LM a cell is decimetres across; at the horizon, kilometres. The mesh is built in the Moon's body frame relative to the site point, so its numbers stay small and precise, and it is placed each frame by the body matrix. Heights are sums of crater profiles; West crater and a handful of large named craters are at their approximate positions, and the rest are illustrative.
+
+**Cameras.** "Chase" cameras use local vertical for up and the horizontal part of the velocity for "behind", so the view stays level with the horizon. The "towards the Moon/Earth" views narrow the field of view to keep the body's angular size readable and move the camera back so the spacecraft spans about a third of the frame. "Aldrin's window" sits at the right-hand window in the LM's own axes and looks forward and down about 45°, roughly where the 16 mm camera pointed.
+
+## Keeping it all in step
+
+The pages never integrate physics. All of that happens offline in Python, and the result is one JSON file per part. The browser only interpolates and draws, which is what makes the synchronisation simple:
+
+1. **Engine.** Python and numpy compute every state in the working frame, keyed by GET and tagged documented, interpolated, propagated or fitted.
+2. **Data file.** One `partN.json` holds the track table, Moon and Sun tables, events and checks: the same time base and the same frame for every panel.
+3. **One clock.** A single reactive value $T$ (Observable's `viewof T`) is moved by the slider, the event chips or the player loop.
+4. **Every view.** Each panel interpolates the track at $T$ and redraws; the 3D scene, the computer display, the transcript and the media are updated in the same pass.
+
+**The player.** A `requestAnimationFrame` loop advances $T$ by the elapsed wall-clock time times a rate. The rate is a warp schedule chosen per phase (240× in the coast before DOI, 10× through the braking phase, 2× in the last minutes) times the speed menu, or exactly 1 in Real time. The frame step is capped at 0.1 s so a hidden tab does not leap ahead when it comes back.
+
+**Reading the state at $T$.** A binary search on the GET column finds the row $i$ with $\text{GET}_i \le T < \text{GET}_{i+1}$; every column is then interpolated linearly with $f = (T - \text{GET}_i)/(\text{GET}_{i+1} - \text{GET}_i)$, unwrapping longitudes across ±180° first. Rows are dense where things change quickly: 1 s in the last minutes of the landing, 2 s in the braking phase, 40 s in lunar orbit, 5 minutes in mid-coast. The few quantities derived in the browser use the same interpolation: Part 2's osculating perilune and apolune (velocity from a centred difference over ±5 s, then the eccentricity vector), the revolution count (from line-of-sight crossings found in the track), and Part 3's landing-point-designator angle.
+
+**Media.** Every audio or film clip is mapped to mission time by segments, each a straight line between clip time and GET:
+
+$$
+t_\text{clip} = t_\text{clip start} + \frac{T - \text{GET}_\text{start}}{\text{rate}}.
+$$
+
+The audio reels have rate 1 and re-seek if they drift more than 0.8 s. The 16 mm landing film has rate 5, because it was shot at 6 frames per second and transferred at 30; it plays at a fifth speed and re-seeks beyond 0.4 s. Audio plays only when the player runs at exactly real time; at any other speed the panel says where the next recording starts. When paused or scrubbing, the film seeks to the matching frame so it can be stepped with the slider. The transcript highlights the last line at or before $T$, found by the same binary search, and scrolls itself unless the reader has scrolled it in the last four seconds.
+
+**Rendering.** The 2D panels are rebuilt as SVG in one cell that depends on $T$. The 3D scene sets its matrices in `update(T)` and marks itself dirty; its own animation loop renders only when something has changed, so a paused page costs almost nothing.
+
+## The mathematics, collected
+
+| Operation | Where it is used |
+|---|---|
+| Rotation matrices $R_x, R_y, R_z$ and transposes | Precession, GMST, the Moon's orientation, the guidance frame, every frame change |
+| Dot and cross products, Gram–Schmidt | Local up/east/north, LVLH, guidance axes, orbit normals, plane projections, re-orthonormalising interpolated matrices |
+| Cubic Hermite interpolation | Moon and Sun between hourly ephemeris rows |
+| Monotone cubic (Fritsch–Carlson PCHIP) | Descent: altitude and forward-speed references through the crew's callouts |
+| Dormand–Prince 5(4), adaptive, rtol $10^{-11}$ | All propagation, forwards and (from Part 3) backwards in time |
+| Vis-viva and the eccentricity vector | Orbits from states: $\mathbf e = \mathbf v\times\mathbf h/\mu - \hat{\mathbf r}$, $a = 1/(2/r - v^2/\mu)$, apsides $a(1\pm e)$ |
+| Point-to-line distance | Loss and acquisition of signal, when the line to Earth's centre grazes the lunar limb |
+| Constant-thrust rocket, $a(\tau) = a_0/(1 - a_0\tau/v_e)$ | TLI, LOI-1, the descent engine |
+| Quadratic guidance law and a cubic for time-to-go | P63 and P64: $\mathbf a = 12(\mathbf r_T - \mathbf r)/T^2 + 6(\mathbf v_T + \mathbf v)/T + \mathbf a_T$ |
+| First-order rate controller with limits | P66: 1.5 s on descent rate, thrust within 20° of vertical and 11–65% throttle |
+| Levenberg–Marquardt least squares | Fitting burns and the PDI state to documented values, with PAD values as weak priors |
+| Quaternions and slerp | Smooth attitude changes in the 3D views |
+| Map projections (orthographic, azimuthal equidistant, equirectangular) | Globes, the approach map, the Earth and Moon textures |
+| Binary search and linear interpolation | Every panel, every frame, at time $T$ |
+
+## Where the data came from, and what it decided
+
+Most sources were used for what they say. Several also forced a design decision, exposed an error in the source, or showed something missing from the model.
+
+| Source | What it provided | What it decided or revealed |
+|---|---|---|
+| Orloff & Garber, *Apollo by the Numbers* | Ascent, orbit, coast, lunar-orbit and descent tables | Its frame (mean of date) became the working frame. Its two altitude references (Fischer ellipsoid for positions, a sphere for apogee and perigee) explained why insertion altitude exceeded apogee. Two typesetting slips were corrected: a longitude of −81.1517° that would put the rocket west of the pad (taken as −80.1517°), and a flight-path angle of 44.94° where every neighbouring value fits 49.94°. |
+| Boeing D5-15560-6, via Grant Hutchison | The TLI state to more digits, including geocentric radius | Used as the anchor for everything after TLI, in preference to the rounded table altitude. |
+| Apollo Flight Journal maneuver PADs | Noun 81 burn vectors, ignition times, LOS/AOS predictions | Defined the LVLH convention and supplied priors for every fitted burn. The LOI PAD's "AOS if no burn" time became one of the sharpest checks: 76:05:30 predicted, 76:05:30.4 reconstructed. |
+| TRW trajectory reconstruction (1970) | Event times, delta-v, landing-site height −8,557 ft | Set the site radius, 1735.48 km, that every descent altitude is measured from. |
+| Mission Director's report; Apollo 11 Mission Report | Sphere-of-influence crossing, DOI orbit, throttle-down, P64 altitude, the 21,000 ft navigation error, the 1,100 ft range extension | Turned the descent from a fit to two endpoints into a fit to events along the way. |
+| JPL DE421 through skyfield | Moon and Sun positions | The Mac that runs the blog has numpy but not skyfield, so the ephemeris is computed once and committed as a CSV, and the whole engine is numpy-only. |
+| IAU lunar rotation model; LRO landing-site coordinates | Moon orientation; Tranquility Base at 0.67416° N, 23.47314° E | Selenographic positions in the same frame as modern maps. The 1969 report's coordinates differ by about 0.04° because they used a 1969 map; the offset between the two placed the planned target in the modern frame. |
+| PAO commentary (transcript and audio) | Distances, speeds and altitudes read to the press | Used only as checks. They turned out to be heights above the surface, not distances from the centre, and switched from Earth to the Moon as reference partway out. |
+| The documented coast states | States at separation, docking and midcourse correction 2 | The midcourse correction would not fit until a missing 19.7 ft/s "evasive" burn at 4:40 was found in the PADs; Part 1 was corrected as a result. |
+| Lunar-orbit states, 80–100 h | Apolune and perilune over a day in orbit | Showed the drift the model could not follow, the mascons. That is why Part 2 re-anchors at MCC-2 and Part 3 works backwards from PDI instead of continuing Part 2's propagation. |
+| Bennett, TM X-58040; Klumpp, R-695 | Descent design, throttle limits, propellant budget; the guidance equations and the P66 control law | Made it possible to simulate the descent with the LM's own logic instead of an invented curve. |
+| Luminary 99 pad loads (Virtual AGC) | Descent targets; the LM's mass, 33,664 lb at DOI | Supplied the guidance targets directly. One target, the braking phase's downrange velocity, is illegible in the scan, so it is one of the three fitted values. |
+| Spacelog transcripts | Words, speakers, timestamps, CapCom shifts; the descent callouts | Callouts became the data for the last two minutes. The onboard recorder's timestamps run a few seconds from the air-to-ground ones, so the air-to-ground time was used wherever a call appears in both. |
+| NASA audio reels and the 16 mm film (Internet Archive) | Sound and pictures | The reels are edited, so each was pinned to GET by matching its speech-recognition captions to the transcript, segment by segment. The film runs five times fast; it was pinned at touchdown and checked against the documented yaw. |
+
+### What the data could not settle
+
+The descent engine's efficiency is assumed (specific impulse 303 s), which sets the propellant margin. The braking-phase velocity target, the PDI position along the orbit and its flight-path angle are fitted, not documented. The crater field and maria outlines in the views are illustrative. And the model's lunar gravity has only two terms, so it cannot reproduce the orbit changes the mascons caused; the posts say so wherever it shows.
+
+```{=html}
+<script>
+
+const EM = {"pts":[[15420,31.1,-4.2,22.6,-21.8,403.6,0.0,325.1,-239.2],[17220,38.8,-1.2,30.6,-23.8,403.5,0.0,326.1,-237.7],[19020,45.6,1.7,38.0,-25.3,403.5,-0.0,327.1,-236.3],[20820,51.9,4.5,44.8,-26.5,403.4,-0.0,328.0,-234.8],[22620,57.6,7.3,51.2,-27.4,403.4,0.0,329.0,-233.4],[24420,63.1,9.9,57.3,-28.1,403.4,0.0,330.0,-231.9],[26220,68.2,12.5,63.1,-28.7,403.3,-0.0,331.0,-230.5],[28020,73.1,15.0,68.7,-29.2,403.3,0.0,331.9,-229.0],[29820,77.8,17.4,74.0,-29.6,403.2,-0.0,332.9,-227.5],[31620,82.3,19.7,79.2,-29.9,403.2,0.0,333.9,-226.0],[33420,86.6,21.9,84.1,-30.1,403.1,-0.0,334.8,-224.5],[35220,90.9,24.0,89.0,-30.3,403.1,-0.0,335.7,-223.1],[37020,95.0,26.1,93.7,-30.4,403.0,0.0,336.7,-221.6],[38820,99.0,28.1,98.2,-30.5,403.0,0.0,337.6,-220.1],[40620,102.9,30.0,102.7,-30.6,402.9,-0.0,338.5,-218.6],[42420,106.7,31.9,107.0,-30.6,402.9,0.0,339.4,-217.1],[44220,110.4,33.7,111.3,-30.6,402.9,0.0,340.3,-215.5],[46020,114.0,35.4,115.4,-30.6,402.8,0.0,341.2,-214.0],[47820,117.6,37.1,119.5,-30.5,402.8,-0.0,342.1,-212.5],[49620,121.1,38.7,123.4,-30.5,402.7,-0.0,343.0,-211.0],[51420,124.6,40.3,127.3,-30.4,402.7,0.0,343.9,-209.5],[53220,128.0,41.8,131.2,-30.3,402.6,-0.0,344.8,-207.9],[55020,131.3,43.3,134.9,-30.2,402.6,0.0,345.6,-206.4],[56820,134.6,44.7,138.6,-30.0,402.5,0.0,346.5,-204.9],[58620,137.9,46.1,142.2,-29.9,402.5,-0.0,347.3,-203.3],[60420,141.1,47.4,145.8,-29.7,402.4,0.0,348.2,-201.8],[62220,144.2,48.7,149.3,-29.5,402.4,-0.0,349.0,-200.2],[64020,147.4,49.9,152.8,-29.4,402.3,0.0,349.9,-198.7],[65820,150.4,51.1,156.2,-29.2,402.3,-0.0,350.7,-197.1],[67620,153.5,52.3,159.5,-29.0,402.2,-0.0,351.5,-195.5],[69420,156.5,53.4,162.8,-28.8,402.2,0.0,352.3,-194.0],[71220,159.5,54.4,166.1,-28.5,402.1,-0.0,353.1,-192.4],[73020,162.5,55.5,169.3,-28.3,402.1,-0.0,353.9,-190.8],[74820,165.4,56.4,172.5,-28.1,402.0,0.0,354.7,-189.3],[76620,168.3,57.4,175.6,-27.8,402.0,0.0,355.5,-187.7],[78420,171.2,58.3,178.7,-27.6,401.9,-0.0,356.2,-186.1],[80220,174.0,59.2,181.8,-27.3,401.9,0.0,357.0,-184.5],[82020,176.9,60.0,184.8,-27.1,401.8,0.0,357.8,-182.9],[83820,179.7,60.8,187.8,-26.8,401.8,-0.0,358.5,-181.3],[85620,182.4,61.6,190.7,-26.5,401.7,-0.0,359.3,-179.7],[87420,185.2,62.3,193.6,-26.3,401.6,0.0,360.0,-178.1],[89220,187.9,63.0,196.5,-26.0,401.6,0.0,360.7,-176.5],[91020,190.6,63.7,199.3,-25.7,401.5,-0.0,361.5,-174.9],[92820,193.3,64.3,202.1,-25.4,401.5,-0.0,362.2,-173.3],[94620,196.0,64.9,204.9,-25.1,401.4,-0.0,362.9,-171.7],[96420,198.8,65.5,207.8,-24.9,401.4,0.0,363.6,-170.0],[98220,201.4,66.1,210.5,-24.6,401.3,0.0,364.3,-168.4],[100020,204.0,66.6,213.2,-24.3,401.3,-0.0,365.0,-166.8],[101820,206.6,67.0,215.9,-24.0,401.2,-0.0,365.6,-165.2],[103620,209.2,67.5,218.5,-23.6,401.2,0.0,366.3,-163.5],[105420,211.7,67.9,221.1,-23.3,401.1,-0.0,367.0,-161.9],[107220,214.3,68.3,223.7,-23.0,401.0,0.0,367.6,-160.2],[109020,216.8,68.6,226.3,-22.7,401.0,-0.0,368.3,-158.6],[110820,219.3,69.0,228.8,-22.4,400.9,-0.0,368.9,-157.0],[112620,221.8,69.3,231.3,-22.1,400.9,-0.0,369.6,-155.3],[114420,224.3,69.5,233.8,-21.7,400.8,-0.0,370.2,-153.7],[116220,226.7,69.8,236.2,-21.4,400.7,-0.0,370.8,-152.0],[118020,229.2,70.0,238.7,-21.1,400.7,0.0,371.4,-150.3],[119820,231.6,70.2,241.1,-20.8,400.6,0.0,372.0,-148.7],[121620,234.0,70.4,243.5,-20.4,400.6,-0.0,372.6,-147.0],[123420,236.4,70.5,245.9,-20.1,400.5,0.0,373.2,-145.3],[125220,238.8,70.6,248.2,-19.8,400.5,0.0,373.8,-143.7],[127020,241.1,70.7,250.5,-19.4,400.4,0.0,374.4,-142.0],[128820,243.5,70.8,252.9,-19.1,400.3,0.0,374.9,-140.3],[130620,245.8,70.8,255.1,-18.8,400.3,0.0,375.5,-138.7],[132420,248.2,70.8,257.4,-18.4,400.2,-0.0,376.0,-137.0],[134220,250.5,70.8,259.7,-18.1,400.1,-0.0,376.6,-135.3],[136020,252.8,70.7,261.9,-17.7,400.1,0.0,377.1,-133.6],[137820,255.1,70.7,264.1,-17.4,400.0,0.0,377.6,-131.9],[139620,257.4,70.6,266.3,-17.1,400.0,0.0,378.2,-130.2],[141420,259.6,70.5,268.5,-16.7,399.9,-0.0,378.7,-128.5],[143220,261.9,70.3,270.7,-16.4,399.8,-0.0,379.2,-126.8],[145020,264.1,70.2,272.8,-16.0,399.8,0.0,379.7,-125.1],[146820,266.3,70.0,274.9,-15.7,399.7,0.0,380.2,-123.4],[148620,268.6,69.8,277.0,-15.4,399.6,0.0,380.7,-121.7],[150420,270.8,69.5,279.1,-15.0,399.6,-0.0,381.1,-120.0],[152220,272.9,69.3,281.2,-14.7,399.5,0.0,381.6,-118.3],[154020,275.1,69.0,283.3,-14.3,399.4,0.0,382.1,-116.6],[155820,277.3,68.7,285.3,-14.0,399.4,-0.0,382.5,-114.9],[157620,279.4,68.4,287.4,-13.6,399.3,-0.0,382.9,-113.2],[159420,281.6,68.0,289.4,-13.3,399.3,0.0,383.4,-111.4],[161220,283.7,67.6,291.4,-12.9,399.2,-0.0,383.8,-109.7],[163020,285.8,67.3,293.4,-12.6,399.1,-0.0,384.2,-108.0],[164820,287.9,66.8,295.3,-12.2,399.1,-0.0,384.6,-106.3],[166620,290.0,66.4,297.3,-11.9,399.0,-0.0,385.0,-104.5],[168420,292.1,66.0,299.2,-11.6,398.9,0.0,385.4,-102.8],[170220,294.2,65.5,301.2,-11.2,398.8,0.0,385.8,-101.1],[172020,296.2,65.0,303.1,-10.9,398.8,-0.0,386.2,-99.3],[173820,298.3,64.5,305.0,-10.5,398.7,-0.0,386.6,-97.6],[175620,300.3,63.9,306.9,-10.2,398.6,-0.0,386.9,-95.9],[177420,302.4,63.4,308.8,-9.8,398.6,0.0,387.3,-94.1],[179220,304.4,62.8,310.6,-9.5,398.5,0.0,387.6,-92.4],[181020,306.4,62.2,312.5,-9.2,398.4,-0.0,388.0,-90.7],[182820,308.4,61.6,314.3,-8.8,398.4,-0.0,388.3,-88.9],[184620,310.3,60.9,316.2,-8.5,398.3,-0.0,388.6,-87.2],[186420,312.3,60.3,318.0,-8.1,398.2,-0.0,389.0,-85.4],[188220,314.3,59.6,319.8,-7.8,398.2,-0.0,389.3,-83.7],[190020,316.2,58.9,321.6,-7.5,398.1,-0.0,389.6,-81.9],[191820,318.2,58.2,323.4,-7.1,398.0,-0.0,389.9,-80.2],[193620,320.1,57.4,325.1,-6.8,397.9,0.0,390.1,-78.4],[195420,322.0,56.7,326.9,-6.4,397.9,-0.0,390.4,-76.6],[197220,323.9,55.9,328.6,-6.1,397.8,0.0,390.7,-74.9],[199020,325.8,55.1,330.4,-5.8,397.7,-0.0,390.9,-73.1],[200820,327.7,54.3,332.1,-5.4,397.7,-0.0,391.2,-71.4],[202620,329.5,53.4,333.8,-5.1,397.6,0.0,391.4,-69.6],[204420,331.4,52.6,335.5,-4.8,397.5,0.0,391.7,-67.8],[206220,333.3,51.7,337.2,-4.5,397.4,-0.0,391.9,-66.1],[208020,335.1,50.8,338.9,-4.1,397.4,-0.0,392.1,-64.3],[209820,336.9,49.9,340.6,-3.8,397.3,-0.0,392.3,-62.5],[211620,338.7,48.9,342.2,-3.5,397.2,-0.0,392.5,-60.8],[213420,340.5,48.0,343.9,-3.2,397.1,-0.0,392.7,-59.0],[215220,342.3,47.0,345.5,-2.8,397.1,-0.0,392.9,-57.2],[217020,344.1,46.0,347.2,-2.5,397.0,0.0,393.1,-55.5],[218820,345.9,45.0,348.8,-2.2,396.9,-0.0,393.3,-53.7],[220620,347.7,44.0,350.4,-1.9,396.8,-0.0,393.4,-51.9],[222420,349.4,42.9,352.0,-1.6,396.8,-0.0,393.6,-50.1],[224220,351.2,41.8,353.6,-1.3,396.7,-0.0,393.7,-48.4],[226020,352.9,40.8,355.2,-1.0,396.6,0.0,393.9,-46.6],[227820,354.6,39.6,356.8,-0.7,396.5,0.0,394.0,-44.8],[229620,356.3,38.5,358.4,-0.4,396.4,0.0,394.1,-43.0],[231420,358.0,37.4,360.0,-0.1,396.4,0.0,394.2,-41.3],[233220,359.7,36.2,361.6,0.2,396.3,-0.0,394.3,-39.5],[235020,361.4,35.0,363.1,0.5,396.2,0.0,394.4,-37.7],[236820,363.1,33.8,364.7,0.8,396.1,0.0,394.5,-35.9],[238620,364.8,32.6,366.2,1.0,396.0,-0.0,394.6,-34.1],[240420,366.4,31.3,367.8,1.3,396.0,0.0,394.6,-32.3],[242220,368.1,30.1,369.3,1.5,395.9,0.0,394.7,-30.6],[244020,369.7,28.8,370.9,1.8,395.8,0.0,394.8,-28.8],[245820,371.4,27.4,372.4,2.0,395.7,0.0,394.8,-27.0],[247620,373.0,26.1,373.9,2.3,395.6,0.0,394.8,-25.2],[249420,374.7,24.7,375.5,2.5,395.6,-0.0,394.9,-23.4],[251220,376.3,23.3,377.0,2.7,395.5,0.0,394.9,-21.6],[253020,377.9,21.9,378.5,2.9,395.4,-0.0,394.9,-19.8],[254820,379.5,20.4,380.1,3.1,395.3,0.0,394.9,-18.1],[256620,381.2,18.9,381.6,3.2,395.2,-0.0,394.9,-16.3],[258420,382.8,17.4,383.2,3.4,395.2,-0.0,394.9,-14.5],[260220,384.4,15.8,384.7,3.5,395.1,0.0,394.9,-12.7],[262020,386.0,14.2,386.3,3.6,395.0,0.0,394.8,-10.9],[263820,387.7,12.5,387.9,3.6,394.9,0.0,394.8,-9.1],[265620,389.4,10.8,389.5,3.5,394.8,0.0,394.8,-7.3],[267420,391.1,8.9,391.2,3.4,394.7,-0.0,394.7,-5.5],[269220,392.8,6.8,392.9,3.1,394.7,0.0,394.6,-3.7],[271020,394.6,4.4,394.7,2.4,394.6,0.0,394.6,-2.0],[272820,396.2,1.0,396.2,0.8,394.5,-0.0,394.5,-0.2],[274620,395.0,-1.8,395.0,-0.2,394.4,0.0,394.4,1.6],[276420,392.5,-0.8,392.5,2.6,394.3,0.0,394.3,3.4],[278220,393.0,1.6,392.9,6.8,394.2,-0.0,394.2,5.2]],"noloi":[[396.2,-1.0,396.2,-0.4],[394.4,-4.4,394.5,-2.0],[392.5,-6.8,392.5,-2.6],[390.5,-8.9,390.6,-3.0],[388.6,-10.7,388.8,-3.1],[386.8,-12.5,387.0,-3.1],[385.0,-14.2,385.2,-3.1],[383.2,-15.8,383.5,-3.1],[381.4,-17.4,381.7,-3.0],[379.6,-18.9,380.0,-2.8],[377.8,-20.4,378.3,-2.7],[376.0,-21.9,376.6,-2.5],[374.2,-23.3,374.9,-2.3],[372.4,-24.7,373.2,-2.1],[370.6,-26.1,371.5,-1.9],[368.8,-27.4,369.8,-1.6],[366.9,-28.7,368.1,-1.4],[365.1,-30.0,366.3,-1.1],[363.3,-31.3,364.6,-0.9],[361.4,-32.5,362.9,-0.6],[359.6,-33.7,361.2,-0.3],[357.7,-34.9,359.4,-0.1],[355.9,-36.1,357.7,0.2],[354.0,-37.3,356.0,0.5],[352.1,-38.4,354.2,0.8],[350.2,-39.5,352.5,1.1],[348.3,-40.6,350.7,1.4],[346.4,-41.7,348.9,1.7],[344.5,-42.8,347.1,2.0],[342.6,-43.8,345.3,2.3],[340.6,-44.8,343.5,2.6],[338.7,-45.8,341.7,2.9],[336.7,-46.8,339.9,3.2],[334.7,-47.8,338.1,3.5],[332.7,-48.7,336.3,3.8],[330.7,-49.6,334.4,4.2],[328.7,-50.5,332.6,4.5],[326.7,-51.4,330.7,4.8],[324.7,-52.3,328.8,5.1],[322.6,-53.1,326.9,5.4],[320.6,-53.9,325.0,5.8],[318.5,-54.7,323.1,6.1],[316.5,-55.5,321.2,6.4],[314.4,-56.3,319.3,6.8],[312.3,-57.0,317.4,7.1],[310.2,-57.7,315.4,7.4],[308.0,-58.4,313.4,7.7],[305.9,-59.1,311.5,8.1],[303.8,-59.8,309.5,8.4],[301.6,-60.4,307.5,8.7],[299.4,-61.0,305.4,9.1],[297.3,-61.6,303.4,9.4],[295.1,-62.2,301.4,9.8],[292.9,-62.7,299.3,10.1],[290.6,-63.2,297.3,10.4],[288.4,-63.7,295.2,10.8],[286.2,-64.2,293.1,11.1],[283.9,-64.7,291.0,11.4],[281.7,-65.1,288.8,11.8],[279.4,-65.5,286.7,12.1],[277.1,-65.9,284.5,12.4],[274.8,-66.3,282.4,12.8],[272.5,-66.6,280.2,13.1],[270.1,-66.9,278.0,13.5],[267.8,-67.2,275.8,13.8],[265.5,-67.5,273.5,14.1],[263.1,-67.7,271.3,14.5],[260.7,-67.9,269.0,14.8],[258.3,-68.1,266.7,15.1],[255.9,-68.3,264.4,15.5],[253.5,-68.4,262.1,15.8],[251.1,-68.5,259.8,16.1],[248.6,-68.6,257.4,16.5],[246.2,-68.7,255.0,16.8],[243.7,-68.7,252.6,17.1],[241.2,-68.8,250.2,17.5],[238.7,-68.7,247.8,17.8],[236.2,-68.7,245.3,18.1],[233.7,-68.6,242.8,18.4],[231.1,-68.5,240.3,18.8],[228.6,-68.4,237.8,19.1],[226.0,-68.2,235.3,19.4],[223.4,-68.0,232.7,19.7],[220.8,-67.8,230.1,20.0],[218.2,-67.6,227.5,20.4],[215.5,-67.3,224.9,20.7],[212.9,-67.0,222.2,21.0],[210.2,-66.7,219.5,21.3],[207.5,-66.3,216.8,21.6],[204.8,-65.9,214.0,21.9],[202.1,-65.5,211.3,22.2],[199.4,-65.0,208.5,22.5],[196.6,-64.5,205.7,22.8],[193.8,-64.0,202.8,23.1],[191.0,-63.4,199.9,23.4],[188.2,-62.8,197.0,23.7],[185.4,-62.2,194.0,24.0],[182.5,-61.5,191.1,24.2],[179.6,-60.8,188.0,24.5],[176.7,-60.0,185.0,24.8],[173.8,-59.3,181.9,25.0],[170.8,-58.4,178.8,25.3],[167.8,-57.6,175.6,25.6],[164.8,-56.7,172.4,25.8],[161.8,-55.7,169.1,26.1],[158.7,-54.7,165.8,26.3],[155.6,-53.7,162.5,26.5],[152.5,-52.6,159.1,26.7],[149.4,-51.5,155.7,27.0],[146.2,-50.4,152.2,27.2],[142.9,-49.1,148.7,27.4],[139.7,-47.9,145.1,27.5],[136.4,-46.6,141.4,27.7],[133.0,-45.2,137.7,27.9],[129.6,-43.8,133.9,28.0],[126.2,-42.4,130.1,28.2],[122.7,-40.8,126.2,28.3],[119.1,-39.3,122.2,28.4],[115.5,-37.6,118.1,28.5],[111.8,-35.9,113.9,28.5],[108.1,-34.2,109.7,28.6],[104.3,-32.4,105.4,28.6],[100.4,-30.5,100.9,28.6],[96.4,-28.5,96.3,28.5],[92.3,-26.5,91.7,28.5],[88.1,-24.4,86.8,28.3],[83.7,-22.2,81.9,28.2],[79.2,-19.9,76.8,28.0],[74.6,-17.5,71.4,27.7],[69.8,-15.0,65.9,27.3],[64.7,-12.5,60.2,26.8],[59.4,-9.8,54.2,26.2],[53.7,-7.0,47.8,25.5],[47.7,-4.1,41.1,24.5],[41.1,-1.1,33.9,23.3],[33.8,2.0,26.0,21.6],[25.3,5.1,17.3,19.1],[14.9,7.8,7.2,15.1],[0.3,7.3,-4.2,6.0],[-9.0,-7.0,-2.9,-11.0],[-8.1,-19.4,5.5,-20.3],[-5.8,-28.9,13.3,-26.4],[-3.2,-37.0,20.4,-31.1],[-0.7,-44.2,27.0,-35.0],[1.8,-50.7,33.2,-38.3],[4.3,-56.7,39.1,-41.3],[6.6,-62.4,44.7,-44.0],[8.9,-67.8,50.1,-46.5],[11.0,-72.9,55.2,-48.8]]};
+(() => {
+  // ---- Table row demo ----
+  const $ = id => document.getElementById(id);
+  const ids = ["get", "lat", "lon", "r", "v", "g", "h"];
+  const D2R = Math.PI / 180, MU = 398600.4418, FT = 0.3048e-3;
+  const gmst = get => {
+    const jd = 2440419.06388889 + (get + 0.0115) / 86400, T = (jd - 2451545) / 36525;
+    const sec = 67310.54841 + (876600 * 3600 + 8640184.812866) * T + 0.093104 * T * T - 6.2e-6 * T ** 3;
+    return (((sec / 240) % 360) + 360) % 360;
+  };
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  const norm = a => Math.hypot(...a), sc = (a, k) => a.map(x => x * k), add = (...v) => v.reduce((s, x) => s.map((y, i) => y + x[i]));
+  const f = (x, d = 3) => (x >= 0 ? " " : "") + x.toFixed(d);
+  function calc() {
+    const q = Object.fromEntries(ids.map(k => [k, parseFloat($("f-" + k).value)]));
+    if (Object.values(q).some(x => !isFinite(x))) { $("tr-out").textContent = "Enter a number in every field."; return; }
+    const G = gmst(q.get), ra = (q.lon + G) * D2R, la = q.lat * D2R;
+    const r = sc([Math.cos(la) * Math.cos(ra), Math.cos(la) * Math.sin(ra), Math.sin(la)], q.r);
+    const up = sc(r, 1 / norm(r)), e0 = cross([0, 0, 1], up), east = sc(e0, 1 / norm(e0)), north = cross(up, east);
+    const vk = q.v * FT, g = q.g * D2R, h = q.h * D2R;
+    const v = sc(add(sc(up, Math.sin(g)), sc(north, Math.cos(g) * Math.cos(h)), sc(east, Math.cos(g) * Math.sin(h))), vk);
+    const rn = norm(r), vn = norm(v), a = 1 / (2 / rn - vn * vn / MU), hv = cross(r, v);
+    const ev = add(sc(cross(v, hv), 1 / MU), sc(r, -1 / rn)), e = norm(ev), inc = Math.acos(hv[2] / norm(hv)) / D2R;
+    const eps = vn * vn / 2 - MU / rn;
+    $("tr-out").textContent =
+`GMST at GET            ${G.toFixed(4)}°   →  right ascension ${((q.lon + G + 360) % 360).toFixed(4)}°
+r  (km)                [${f(r[0], 1)}, ${f(r[1], 1)}, ${f(r[2], 1)}]
+v  (km/s)              [${f(v[0], 4)}, ${f(v[1], 4)}, ${f(v[2], 4)}]   |v| = ${vn.toFixed(4)}
+specific energy        ${eps.toFixed(3)} km²/s²
+semi-major axis a      ${a.toFixed(0)} km
+eccentricity e         ${e.toFixed(4)}      inclination ${inc.toFixed(3)}°
+apogee (a(1+e))        ${(a * (1 + e)).toFixed(0)} km  ${a < 0 ? "(hyperbola)" : ""}`;
+  }
+  ids.forEach(k => $("f-" + k).addEventListener("input", calc));
+  calc();
+
+  // ---- Two frames, one clock ----
+  const P = EM.pts, NS = "http://www.w3.org/2000/svg";
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const panes = [
+    {el: $("em-rot"), xi: 1, yi: 2, mx: 5, my: 6, fr: 0},
+    {el: $("em-ine"), xi: 3, yi: 4, mx: 7, my: 8, fr: 2},
+  ];
+  for (const p of panes) {
+    const xs = P.map(d => d[p.xi]).concat(P.map(d => d[p.mx]), EM.noloi.map(d => d[p.fr]), [0]);
+    const ys = P.map(d => d[p.yi]).concat(P.map(d => d[p.my]), EM.noloi.map(d => d[p.fr + 1]), [0]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const s = Math.min(300 / (x1 - x0), 220 / (y1 - y0));
+    p.X = x => 10 + (x - x0) * s + (300 - (x1 - x0) * s) / 2;
+    p.Y = y => 230 - (y - y0) * s - (220 - (y1 - y0) * s) / 2;
+    p.el.innerHTML = "";
+    const mk = (tag, at) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); p.el.append(e); return e; };
+    p.fr_ = mk("path", {d: "M" + EM.noloi.map(d => `${p.X(d[p.fr]).toFixed(1)},${p.Y(d[p.fr + 1]).toFixed(1)}`).join("L"), fill: "none", "stroke-dasharray": "3 3", "stroke-width": 1});
+    p.moonPath = mk("path", {d: "M" + P.map(d => `${p.X(d[p.mx]).toFixed(1)},${p.Y(d[p.my]).toFixed(1)}`).join("L"), fill: "none", "stroke-width": 1, "stroke-dasharray": "1 3"});
+    p.earth = mk("circle", {cx: p.X(0), cy: p.Y(0), r: 4});
+    p.past = mk("path", {fill: "none", "stroke-width": 2});
+    p.future = mk("path", {fill: "none", "stroke-width": 1});
+    p.moon = mk("circle", {r: 3.5});
+    p.sc = mk("circle", {r: 3.5, "stroke-width": 1.2});
+  }
+  function paint() {
+    const ink = css("--ink"), muted = css("--muted"), acc = css("--accent"), acc2 = css("--accent-2"), paper = css("--paper"), rule = css("--rule");
+    for (const p of panes) {
+      p.fr_.setAttribute("stroke", acc2); p.moonPath.setAttribute("stroke", muted);
+      p.earth.setAttribute("fill", acc2); p.past.setAttribute("stroke", acc); p.future.setAttribute("stroke", rule);
+      p.moon.setAttribute("fill", muted); p.sc.setAttribute("fill", acc); p.sc.setAttribute("stroke", paper);
+    }
+  }
+  const slider = $("em-t");
+  function draw() {
+    const u = +slider.value, i = Math.min(P.length - 2, Math.floor(u)), f = u - i, a = P[i], b = P[i + 1];
+    const L = k => a[k] + f * (b[k] - a[k]);
+    const t = L(0);
+    $("em-get").textContent = `GET ${String(Math.floor(t / 3600)).padStart(3, "0")}:${String(Math.floor(t % 3600 / 60)).padStart(2, "0")}`;
+    for (const p of panes) {
+      const pts = P.slice(0, i + 1).map(d => [d[p.xi], d[p.yi]]).concat([[L(p.xi), L(p.yi)]]);
+      const fut = [[L(p.xi), L(p.yi)]].concat(P.slice(i + 1).map(d => [d[p.xi], d[p.yi]]));
+      const path = arr => "M" + arr.map(q => `${p.X(q[0]).toFixed(1)},${p.Y(q[1]).toFixed(1)}`).join("L");
+      p.past.setAttribute("d", path(pts)); p.future.setAttribute("d", path(fut));
+      p.moon.setAttribute("cx", p.X(L(p.mx))); p.moon.setAttribute("cy", p.Y(L(p.my)));
+      p.sc.setAttribute("cx", p.X(L(p.xi))); p.sc.setAttribute("cy", p.Y(L(p.yi)));
+    }
+  }
+  paint(); draw();
+  slider.addEventListener("input", draw);
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { paint(); }); } catch (e) {}
+  new MutationObserver(paint).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+  let raf = null, last = null;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("em-play").addEventListener("click", () => {
+    if (raf) { cancelAnimationFrame(raf); raf = null; $("em-play").textContent = "Play"; return; }
+    if (+slider.value >= P.length - 1.01) slider.value = 0;
+    $("em-play").textContent = "Pause"; last = null;
+    const step = now => {
+      if (last != null) slider.value = Math.min(P.length - 1, +slider.value + (now - last) / 1000 * (reduce ? 4 : 8));
+      last = now; draw();
+      if (+slider.value >= P.length - 1) { raf = null; $("em-play").textContent = "Play"; return; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  });
+})();
+
+</script>
+```
