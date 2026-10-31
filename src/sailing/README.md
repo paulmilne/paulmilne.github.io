@@ -10,8 +10,8 @@ reef) that gives the most speed with at most 30 degrees of heel.
 | `vpp.py` | The model: apparent wind, sail forces (ORC coefficients), resistance (ORC residuary surfaces, friction), keel and rudder lift, righting moment, equilibrium solver, trim optimiser. numpy only. |
 | `build_sailing.py` | Fits the two unknown numbers (GM and sailing length) to the J/109's ORC certificates by least squares, solves the full polar and writes `data/sailing.json`. Needs scipy for the fit. |
 | `manoeuvre.py` | Part 2: tacks and gybes in the time domain (surge and roll dynamics, prescribed turn, luffing sails, centripetal keel load); writes `data/manoeuvres.json` from Part 1's `sailing.json`. |
-| `assemble.py` | Fills the numbers in the post's text from `sailing.json` (`post_template.qmd` -> `index.qmd`). |
-| `post_template.qmd` | The post with `%%NAME%%` placeholders. |
+| `assemble.py` | Fills the numbers in the post's text from `sailing.json` (`_post_template.qmd` -> `index.qmd`). |
+| `_post_template.qmd` | The post with `%%NAME%%` placeholders. |
 | `dat/` | Published coefficient tables (see below). |
 
 ## Data
@@ -30,7 +30,7 @@ reef) that gives the most speed with at most 30 degrees of heel.
 git clone --depth 1 https://github.com/jieter/orc-data /tmp/orc-data
 cd src/sailing
 python3 build_sailing.py /tmp/orc-data/ALL2024.json ../../mechanics/sailing-part-1-two-wings/data/sailing.json
-python3 assemble.py post_template.qmd ../../mechanics/sailing-part-1-two-wings/data/sailing.json \
+python3 assemble.py _post_template.qmd ../../mechanics/sailing-part-1-two-wings/data/sailing.json \
   ../../mechanics/sailing-part-1-two-wings/index.qmd
 ```
 

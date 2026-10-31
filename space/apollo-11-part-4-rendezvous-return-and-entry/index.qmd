@@ -922,3 +922,5 @@ Sources:
 
 This is the end of the series. Thank you for reading it.
 
+**Postscript: [Vent, Bent, Descent, Lament](../tindall-vent-bent-descent-lament/)**: Bill Tindall, his memos, and why *Eagle* landed four miles long.
+

@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="Bill Tindall ran the planning of Apollo’s mission techniques and wrote the frank memos known as Tindallgrams. One of them, ‘Vent bent descent, lament!’, followed Apollo 11’s long landing. This post explains, with the orbital mechanics and an interactive error budget, how tiny unplanned pushes after undocking moved Eagle’s landing point by miles, and how Apollo 12 fixed it.">
+
+<title>Vent, Bent, Descent, Lament: Bill Tindall and Why Eagle Landed Long – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Vent, Bent, Descent, Lament: Bill Tindall and Why Eagle Landed Long – math-blog">
+<meta property="og:description" content="Bill Tindall ran the planning of Apollo’s mission techniques and wrote the frank memos known as Tindallgrams. One of them, ‘Vent bent descent, lament!’, followed Apollo 11’s long landing. This post explains, with the orbital mechanics and an interactive error budget, how tiny unplanned pushes after undocking moved Eagle’s landing point by miles, and how Apollo 12 fixed it.">
+<meta property="og:image" content="https://paulmilne.github.io/space/tindall-vent-bent-descent-lament/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="Vent, Bent, Descent, Lament: Bill Tindall and Why Eagle Landed Long – math-blog">
+<meta name="twitter:description" content="Bill Tindall ran the planning of Apollo’s mission techniques and wrote the frank memos known as Tindallgrams. One of them, ‘Vent bent descent, lament!’, followed Apollo 11’s long landing. This post explains, with the orbital mechanics and an interactive error budget, how tiny unplanned pushes after undocking moved Eagle’s landing point by miles, and how Apollo 12 fixed it.">
+<meta name="twitter:image" content="https://paulmilne.github.io/space/tindall-vent-bent-descent-lament/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Vent, Bent, Descent, Lament: Bill Tindall and Why Eagle Landed Long</h1>
+            <p class="subtitle lead">The engineer behind the Apollo mission techniques, his memos, and the arithmetic of how a push of a foot per second became four miles on the Moon</p>
+                  <div>
+        <div class="description">
+          Bill Tindall ran the planning of Apollo’s mission techniques and wrote the frank memos known as Tindallgrams. One of them, ‘Vent bent descent, lament!’, followed Apollo 11’s long landing. This post explains, with the orbital mechanics and an interactive error budget, how tiny unplanned pushes after undocking moved Eagle’s landing point by miles, and how Apollo 12 fixed it.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">space</div>
+                <div class="quarto-category">apollo</div>
+                <div class="quarto-category">history</div>
+                <div class="quarto-category">orbital-mechanics</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#bill-tindall" id="toc-bill-tindall" class="nav-link active" data-scroll-target="#bill-tindall">Bill Tindall</a></li>
+  <li><a href="#the-tindallgrams" id="toc-the-tindallgrams" class="nav-link" data-scroll-target="#the-tindallgrams">The Tindallgrams</a></li>
+  <li><a href="#vent-bent-descent-lament" id="toc-vent-bent-descent-lament" class="nav-link" data-scroll-target="#vent-bent-descent-lament"><em>Vent bent descent, lament!</em></a></li>
+  <li><a href="#why-a-tiny-push-matters" id="toc-why-a-tiny-push-matters" class="nav-link" data-scroll-target="#why-a-tiny-push-matters">Why a tiny push matters</a></li>
+  <li><a href="#the-error-budget" id="toc-the-error-budget" class="nav-link" data-scroll-target="#the-error-budget">The error budget</a></li>
+  <li><a href="#what-the-record-says" id="toc-what-the-record-says" class="nav-link" data-scroll-target="#what-the-record-says">What the record says</a></li>
+  <li><a href="#apollo-12-landing-next-to-a-surveyor" id="toc-apollo-12-landing-next-to-a-surveyor" class="nav-link" data-scroll-target="#apollo-12-landing-next-to-a-surveyor">Apollo 12: landing next to a Surveyor</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.tg-memo { font-family: "Courier New", ui-monospace, monospace; background: rgba(240, 232, 210, .55); border: 1px solid rgba(120, 100, 60, .35);
+  border-radius: 4px; padding: .9rem 1.1rem; margin: 1rem 0; font-size: .9rem; line-height: 1.45; }
+.tg-memo .hd { display: grid; grid-template-columns: 6.5rem 1fr; gap: .1rem .5rem; margin-bottom: .6rem; }
+.tg-memo .hd b { font-weight: 700; }
+.tg-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); }
+.tg-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.tg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: .75rem; }
+.tg-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .5rem 1rem; font-variant-numeric: tabular-nums; margin: .4rem 0; }
+.tg-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.tg-kpis .v { font-size: 1.15rem; font-weight: 650; }
+.tg-kpis .s { font-size: .78rem; opacity: .7; }
+table.tg-t td.num, table.tg-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tg-panel form { margin-bottom: .2rem; }
+.tg-grid form { flex-wrap: wrap !important; }
+.tg-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.tg-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.tg-grid > div { min-width: 0; }
+.tg-note { font-size: .82rem; opacity: .75; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="42" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 41;"><span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/tindall.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>FT <span class="op">=</span> <span class="fl">0.3048</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>EV <span class="op">=</span> data<span class="op">.</span><span class="at">events</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> data<span class="op">.</span><span class="at">n</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>getStr <span class="op">=</span> t <span class="kw">=&gt;</span> { <span class="kw">const</span> h <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(t <span class="op">/</span> <span class="dv">3600</span>)<span class="op">,</span> m <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>((t <span class="op">%</span> <span class="dv">3600</span>) <span class="op">/</span> <span class="dv">60</span>)<span class="op">,</span> s <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(t <span class="op">%</span> <span class="dv">60</span>)<span class="op">;</span> <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span>h<span class="sc">}</span><span class="vs">:</span><span class="sc">${</span><span class="bu">String</span>(m)<span class="op">.</span><span class="fu">padStart</span>(<span class="dv">2</span><span class="op">,</span> <span class="st">"0"</span>)<span class="sc">}</span><span class="vs">:</span><span class="sc">${</span><span class="bu">String</span>(s)<span class="op">.</span><span class="fu">padStart</span>(<span class="dv">2</span><span class="op">,</span> <span class="st">"0"</span>)<span class="sc">}</span><span class="vs">`</span><span class="op">;</span> }</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p><a href="../apollo-11-part-3-descent-and-landing/">Part 3</a> of the Apollo 11 series ended with <em>Eagle</em> on the Moon about four miles from where it was meant to be. The reconstruction there found the reason in one number: at powered descent initiation the computer believed <em>Eagle</em> was about 21,000 feet further back along its orbit than it was, so it steered for a point four miles beyond the planned site. The guidance did its job; it was given the wrong starting point.</p>
+<p>Where did the 21,000 feet come from? Nobody fired an engine by mistake. The error came from pushes too small for anyone to notice: air left in the docking tunnel, cooling water boiling off into space, thrusters that nudged the spacecraft sideways as well as turning it. Each was worth a fraction of a foot per second. This post is about the man who made it his business to hunt down errors like these, Bill Tindall, and about one of his memos, written five weeks after the landing, with the title <em>Vent bent descent, lament!</em> It also does the arithmetic: how a push slower than a stroll turns into miles on the Moon, which of the suspects could have done it, and how Apollo 12, four months later, landed within 600 feet of its target.</p>
+<section id="bill-tindall" class="level2">
+<h2 class="anchored" data-anchor-id="bill-tindall">Bill Tindall</h2>
+<p>Howard Wilson Tindall Jr.&nbsp;was born in New York City on 20 February 1925 and grew up in Scituate, Massachusetts. He served on destroyers in the Pacific during the Second World War, graduated from Brown University in 1948, and joined the National Advisory Committee for Aeronautics at Langley, Virginia, working on wind tunnel instrumentation. Project Echo, the balloon satellite, took him into orbital mechanics; from there he worked on Mercury’s trajectories and on the rendezvous techniques that Gemini proved in orbit.</p>
+<p>For Apollo, George Low created a job for him with a title that explains nothing: Chief, Apollo Data Priority Coordination. In practice it meant deciding how each phase of a lunar mission would actually be flown. A landing involves the spacecraft’s computer programs (written at the MIT Instrumentation Laboratory), the ground’s computers in Houston, the tracking network, the flight controllers’ rules and the crew’s procedures, all built by different groups. Somebody had to make them fit together, and decide what to do when they did not. Tindall chaired the “mission techniques” meetings where this was settled, sometimes with a hundred people in the room over several days: astronauts, controllers, contractors, programmers. Steve Bales, the guidance officer during <em>Eagle</em>’s descent, described it as “a thousand-ring circus”. Gene Kranz called Tindall pretty much the architect of the techniques used to get to the surface of the Moon.</p>
+<p>In 1966 and 1967 he spent a large part of his time at MIT, where the onboard software was late and too large for the computer. His order to cut the programs down to size became known there as “Black Friday”. He later estimated that only 10 to 20 percent of his effort went into the standard mission techniques, and the rest into what to do when something went wrong; some of that planning was used, for real, on Apollo 13. He stayed at NASA’s Manned Spacecraft Center (later the Johnson Space Center) into the Skylab years, retired in 1979, and died on 20 November 1995.</p>
+</section>
+<section id="the-tindallgrams" class="level2">
+<h2 class="anchored" data-anchor-id="the-tindallgrams">The Tindallgrams</h2>
+<p>Tindall wrote down the decisions of every meeting, usually two to four memos a week, dictated to his secretary, Patsy Saur. They went to everyone involved, and because they were the record of what had been decided, people read them. They also read them because they were funny. Ken Mattingly remembered a folksy style that made complicated issues readable; colleagues called them “Tindallgrams”. The 1967 file includes a memo that ends with “Let’s vote”, and another that apologises for a schedule prediction with “just living dangerously, I guess.” The subject lines alone give the flavour:</p>
+<ul>
+<li><em>PIPA Surprise</em></li>
+<li><em>Let’s have no unscheduled water dumps on the F mission</em></li>
+<li><em>Descent Data Select procedures are finalized</em></li>
+<li><em>How to land next to a Surveyor</em></li>
+<li><em>Vent bent descent, lament!</em></li>
+</ul>
+<p>The water-dump memo is a clue to a long-running theme. A vent on a spacecraft is a small rocket engine nobody designed as one: water, oxygen or cabin air leaving through a pipe at the speed of a gas pushes the spacecraft the other way. Gemini and Apollo had many vents, for the fuel cells, the cabin, the water boilers, the urine dump. Tindall disliked all of them, because every one meant a push the navigation had not been told about.</p>
+<p>The memos survive in several places: NASA’s Apollo Lunar Surface Journal hosts scanned collections from 1966 to 1970, the University of Texas Medical Branch holds a set among astronaut William Thornton’s papers, and the Digging Apollo archive catalogues many more, with summaries.</p>
+</section>
+<section id="vent-bent-descent-lament" class="level2">
+<h2 class="anchored" data-anchor-id="vent-bent-descent-lament"><em>Vent bent descent, lament!</em></h2>
+<div class="tg-memo">
+<div class="hd">
+<b>DATE</b><span>28 August 1969</span><b>FROM</b><span>PA / Howard W. Tindall, Jr.</span><b>SUBJECT</b><span>Vent bent descent, lament!</span>
+</div>
+</div>
+<p>The memo is dated five weeks after the landing. According to the accounts of it, it deals with the vents other than the docking tunnel that had bent <em>Eagle</em>’s descent off course, and Tindall did not keep his view to his own working groups: it went up the line, including to Max Faget, the Manned Spacecraft Center’s chief designer, whose spacecraft carried the vents. I have not been able to read the memo itself (Digging Apollo holds the scan), so its title, and the memos either side of it, have to stand in for it here.</p>
+<p>The four rhyming words are the case in brief, as I read them. The vents push the spacecraft and bend its path; the navigation does not know, so the descent starts from the wrong place and the landing goes long; and there is little anyone can do about it after the fact, hence the lament. What the surrounding record does show is how seriously the point was taken. Tindall’s memo of 24 September 1969, recording the decisions of the second and last Apollo 12 mission techniques meeting, put a number on one vent: the thrust of the LM’s water boiler, about 0.16 lb and perhaps as much as 0.25 lb, could by itself cause a miss of 6,000 feet. The tunnel was dealt with by a new rule: on later missions Mission Control had to confirm the docking tunnel was fully vented before giving the crew a go to undock. And in November came another memo, its subject line in capitals, <em>VENTS</em>, which opens by offering that it will “either amuse you, waste your time, or just possibly accomplish something great.”</p>
+<p>To see why a fifth of a pound of thrust is worth more than a mile, it helps to do the orbital mechanics.</p>
+</section>
+<section id="why-a-tiny-push-matters" class="level2">
+<h2 class="anchored" data-anchor-id="why-a-tiny-push-matters">Why a tiny push matters</h2>
+<p>Watch <em>Eagle</em> from a point that moves round the Moon in a circular orbit at its height: the point where the computer believes it is. If <em>Eagle</em> is pushed slightly, it drifts away from that point. For small offsets <span class="math inline">\(x\)</span> (ahead, along the orbit) and <span class="math inline">\(z\)</span> (above), the motion obeys the Clohessy–Wiltshire equations, the same ones that described the rendezvous in <a href="../apollo-11-part-4-rendezvous-return-and-entry/">Part 4</a>:</p>
+<p><span class="math display">\[
+\ddot x = -2n\dot z + a_x, \qquad \ddot z = 3n^2 z + 2n\dot x + a_z,
+\]</span></p>
+<p>where <span class="math inline">\(n\)</span> is the orbit’s angular rate (one revolution in 119 minutes at <em>Eagle</em>’s height, so <span class="math inline">\(n = 8.8\times10^{-4}\)</span> per second) and <span class="math inline">\(a_x, a_z\)</span> are any small accelerations, such as a vent’s thrust. For a single push <span class="math inline">\(\Delta v\)</span> along the direction of travel at time zero, the solution is</p>
+<p><span class="math display">\[
+x(t) = \Delta v\left(\frac{4}{n}\sin nt - 3t\right), \qquad z(t) = \frac{2\,\Delta v}{n}\,(1 - \cos nt).
+\]</span></p>
+<p>The second term in <span class="math inline">\(x\)</span> grows without limit. A forward push raises the orbit, a higher orbit is slower, and so the spacecraft falls behind: by <span class="math inline">\(3\,\Delta v\)</span> for every second that passes. A push backwards, against the direction of travel, does the opposite: it lowers the orbit, and the spacecraft runs ahead. The navigation, unaware, keeps predicting the old orbit.</p>
+<p>Put in numbers: undocking was at 100:12:00 and powered descent began at 102:33:05, 8,465 seconds later. A backward push, <span class="math inline">\(\Delta v = -1\)</span> ft/s, at undocking gives</p>
+<p><span class="math display">\[
+x = -1\ \text{ft/s} \times \left(\frac{4}{8.8\times10^{-4}}\sin(7.45) - 3\times 8{,}465\ \text{s}\right) \approx +21{,}000\ \text{ft},
+\]</span></p>
+<p>so the spacecraft is about 21,000 feet ahead of where the computer thinks. That is the whole Apollo 11 discrepancy from one foot per second, a slow walking pace, delivered two and a half hours earlier.</p>
+<p>Pushes up or down are different. A radial push changes the shape of the orbit but not its period, so the offset loops round and comes back once an orbit instead of growing. This is why Collins’s separation burn, described in Part 3, was pointed straight down at the Moon: it opened a safe gap between the two spacecraft that closed again an orbit later, and it could not throw either one’s timing off.</p>
+<p>The timing of a push matters too. The <span class="math inline">\(\sin nt\)</span> term means a push half an orbit before powered descent is worth less than one a full orbit before, and a push in the last twenty minutes hardly moves the starting point at all, because there is no time for the drift to build up. The descent orbit insertion burn at 101:36 also changes the orbit, so the simple formula is only an approximation. To check it, I added pushes to Part 3’s reconstruction, with its full lunar gravity model and the real descent orbit, and propagated them to powered descent:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="116" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 115;"><span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>validation <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm tg-t"&gt;&lt;thead&gt;&lt;tr&gt;</span></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;th&gt;Backward push of 1 ft/s at&lt;/th&gt;&lt;th class="num"&gt;Minutes before PDI&lt;/th&gt;&lt;th class="num"&gt;Full model (ft ahead)&lt;/th&gt;&lt;th class="num"&gt;Formula (ft ahead)&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>data<span class="op">.</span><span class="at">full</span><span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span><span class="fu">getStr</span>(r<span class="op">.</span><span class="at">get</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">min_before</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">full_ft</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">cw_ft</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The two agree to within a few percent for pushes an hour or more before PDI, which is where it matters. Within half an hour of PDI the error from a push is a few hundred feet either way, swamped by the descent orbit’s shape. The steady thrust of a vent behaves the same way, summed over the time it is on: in the full model, 0.16 lb pushing straight backwards from undocking to PDI puts <em>Eagle</em> 16,000 ft ahead, but switched on only at descent orbit insertion, 1,300 ft.</p>
+</section>
+<section id="the-error-budget" class="level2">
+<h2 class="anchored" data-anchor-id="the-error-budget">The error budget</h2>
+<p>The panel below adds up the suspects. Each pushes <em>Eagle</em> in some direction in its orbital plane, measured from straight backwards (0°) through straight down (90°) to straight forwards (180°). A push at 90° makes no lasting error; one at 0° makes the most, and forwards pushes make <em>Eagle</em> land short. The tunnel’s push is estimated from its leftover pressure with a crude piston model: the pressure acts on the 32-inch hatch area while the gas escapes through the widening gap as the two spacecraft move apart. Use it for orders of magnitude, not decimals.</p>
+<div class="tg-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="131" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 130;"><span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a>viewof tunnel <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>  <span class="dt">psi</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.25</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Tunnel pressure at undocking (psi)"</span>})<span class="op">,</span></span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>  <span class="dt">vol</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">radio</span>([<span class="st">"0.5"</span><span class="op">,</span> <span class="st">"1.0"</span><span class="op">,</span> <span class="st">"2.0"</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"1.0"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Tunnel volume (m³)"</span>})<span class="op">,</span></span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ang</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">180</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Push direction (°)"</span>})</span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="139" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 138;"><span id="cb4-139"><a href="#cb4-139" aria-hidden="true" tabindex="-1"></a>viewof boiler <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb4-140"><a href="#cb4-140" aria-hidden="true" tabindex="-1"></a>  <span class="dt">lbf</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="fl">0.3</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">0.12</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.01</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Water boiler thrust (lb)"</span>})<span class="op">,</span></span>
+<span id="cb4-141"><a href="#cb4-141" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ang</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">180</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">45</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Thrust direction (°)"</span>})<span class="op">,</span></span>
+<span id="cb4-142"><a href="#cb4-142" aria-hidden="true" tabindex="-1"></a>  <span class="dt">start</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">radio</span>([<span class="st">"Undocking"</span><span class="op">,</span> <span class="st">"DOI"</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"Undocking"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Counts from"</span>})</span>
+<span id="cb4-143"><a href="#cb4-143" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="147" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 146;"><span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a>viewof other <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb5-148"><a href="#cb5-148" aria-hidden="true" tabindex="-1"></a>  <span class="dt">dv</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="fl">1.5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">0.3</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.05</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Other pushes: RCS, DOI residual (ft/s)"</span>})<span class="op">,</span></span>
+<span id="cb5-149"><a href="#cb5-149" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ang</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">180</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Direction (°)"</span>})<span class="op">,</span></span>
+<span id="cb5-150"><a href="#cb5-150" aria-hidden="true" tabindex="-1"></a>  <span class="dt">at</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">radio</span>([<span class="st">"Undocking"</span><span class="op">,</span> <span class="st">"Separation"</span><span class="op">,</span> <span class="st">"DOI"</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"Undocking"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"When"</span>})</span>
+<span id="cb5-151"><a href="#cb5-151" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="159" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 158;"><span id="cb6-159"><a href="#cb6-159" aria-hidden="true" tabindex="-1"></a>ventDv <span class="op">=</span> {</span>
+<span id="cb6-160"><a href="#cb6-160" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> xs <span class="op">=</span> data<span class="op">.</span><span class="at">vent</span><span class="op">.</span><span class="at">psi</span><span class="op">,</span> ys <span class="op">=</span> data<span class="op">.</span><span class="at">vent</span><span class="op">.</span><span class="at">dv_fps</span>[tunnel<span class="op">.</span><span class="at">vol</span>]<span class="op">;</span></span>
+<span id="cb6-161"><a href="#cb6-161" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> p <span class="op">=</span> tunnel<span class="op">.</span><span class="at">psi</span><span class="op">;</span></span>
+<span id="cb6-162"><a href="#cb6-162" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> i <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(xs<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">2</span><span class="op">,</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(<span class="dv">0</span><span class="op">,</span> xs<span class="op">.</span><span class="fu">findIndex</span>(x <span class="kw">=&gt;</span> x <span class="op">&gt;</span> p) <span class="op">-</span> <span class="dv">1</span>))<span class="op">;</span></span>
+<span id="cb6-163"><a href="#cb6-163" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (p <span class="op">&gt;=</span> xs[xs<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]) <span class="cf">return</span> ys[ys<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]<span class="op">;</span></span>
+<span id="cb6-164"><a href="#cb6-164" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> ys[i] <span class="op">+</span> (ys[i <span class="op">+</span> <span class="dv">1</span>] <span class="op">-</span> ys[i]) <span class="op">*</span> (p <span class="op">-</span> xs[i]) <span class="op">/</span> (xs[i <span class="op">+</span> <span class="dv">1</span>] <span class="op">-</span> xs[i])<span class="op">;</span></span>
+<span id="cb6-165"><a href="#cb6-165" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-166"><a href="#cb6-166" aria-hidden="true" tabindex="-1"></a><span class="co">// Clohessy-Wiltshire integration: x ahead, z above. Accelerations in ft/s^2.</span></span>
+<span id="cb6-167"><a href="#cb6-167" aria-hidden="true" tabindex="-1"></a>cw <span class="op">=</span> (impulses<span class="op">,</span> thrust) <span class="kw">=&gt;</span> {</span>
+<span id="cb6-168"><a href="#cb6-168" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> t0 <span class="op">=</span> EV<span class="op">.</span><span class="at">undock</span> <span class="op">-</span> <span class="dv">720</span><span class="op">,</span> t1 <span class="op">=</span> EV<span class="op">.</span><span class="at">pdi</span><span class="op">,</span> dt <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb6-169"><a href="#cb6-169" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> z <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> vx <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> vz <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-170"><a href="#cb6-170" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> out <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb6-171"><a href="#cb6-171" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> acc <span class="op">=</span> (t) <span class="kw">=&gt;</span> (thrust <span class="op">&amp;&amp;</span> t <span class="op">&gt;=</span> thrust<span class="op">.</span><span class="at">from</span>) <span class="op">?</span> [thrust<span class="op">.</span><span class="at">ax</span><span class="op">,</span> thrust<span class="op">.</span><span class="at">az</span>] <span class="op">:</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb6-172"><a href="#cb6-172" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> f <span class="op">=</span> (t<span class="op">,</span> s) <span class="kw">=&gt;</span> { <span class="kw">const</span> [ax<span class="op">,</span> az] <span class="op">=</span> <span class="fu">acc</span>(t)<span class="op">;</span> <span class="cf">return</span> [s[<span class="dv">2</span>]<span class="op">,</span> s[<span class="dv">3</span>]<span class="op">,</span> <span class="op">-</span><span class="dv">2</span> <span class="op">*</span> n <span class="op">*</span> s[<span class="dv">3</span>] <span class="op">+</span> ax<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> n <span class="op">*</span> n <span class="op">*</span> s[<span class="dv">1</span>] <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> n <span class="op">*</span> s[<span class="dv">2</span>] <span class="op">+</span> az]<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb6-173"><a href="#cb6-173" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> s <span class="op">=</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb6-174"><a href="#cb6-174" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> t <span class="op">=</span> t0<span class="op">;</span> t <span class="op">&lt;=</span> t1 <span class="op">+</span> <span class="fl">1e-6</span><span class="op">;</span> t <span class="op">+=</span> dt) {</span>
+<span id="cb6-175"><a href="#cb6-175" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">const</span> im <span class="kw">of</span> impulses) <span class="cf">if</span> (im<span class="op">.</span><span class="at">t</span> <span class="op">&gt;=</span> t <span class="op">&amp;&amp;</span> im<span class="op">.</span><span class="at">t</span> <span class="op">&lt;</span> t <span class="op">+</span> dt) { s[<span class="dv">2</span>] <span class="op">+=</span> im<span class="op">.</span><span class="at">dx</span><span class="op">;</span> s[<span class="dv">3</span>] <span class="op">+=</span> im<span class="op">.</span><span class="at">dz</span><span class="op">;</span> }</span>
+<span id="cb6-176"><a href="#cb6-176" aria-hidden="true" tabindex="-1"></a>    out<span class="op">.</span><span class="fu">push</span>({t<span class="op">,</span> <span class="dt">x</span><span class="op">:</span> s[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">z</span><span class="op">:</span> s[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">vx</span><span class="op">:</span> s[<span class="dv">2</span>]<span class="op">,</span> <span class="dt">vz</span><span class="op">:</span> s[<span class="dv">3</span>]})<span class="op">;</span></span>
+<span id="cb6-177"><a href="#cb6-177" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> k1 <span class="op">=</span> <span class="fu">f</span>(t<span class="op">,</span> s)<span class="op">,</span> k2 <span class="op">=</span> <span class="fu">f</span>(t <span class="op">+</span> dt <span class="op">/</span> <span class="dv">2</span><span class="op">,</span> s<span class="op">.</span><span class="fu">map</span>((v<span class="op">,</span> i) <span class="kw">=&gt;</span> v <span class="op">+</span> dt <span class="op">/</span> <span class="dv">2</span> <span class="op">*</span> k1[i]))<span class="op">,</span></span>
+<span id="cb6-178"><a href="#cb6-178" aria-hidden="true" tabindex="-1"></a>          k3 <span class="op">=</span> <span class="fu">f</span>(t <span class="op">+</span> dt <span class="op">/</span> <span class="dv">2</span><span class="op">,</span> s<span class="op">.</span><span class="fu">map</span>((v<span class="op">,</span> i) <span class="kw">=&gt;</span> v <span class="op">+</span> dt <span class="op">/</span> <span class="dv">2</span> <span class="op">*</span> k2[i]))<span class="op">,</span> k4 <span class="op">=</span> <span class="fu">f</span>(t <span class="op">+</span> dt<span class="op">,</span> s<span class="op">.</span><span class="fu">map</span>((v<span class="op">,</span> i) <span class="kw">=&gt;</span> v <span class="op">+</span> dt <span class="op">*</span> k3[i]))<span class="op">;</span></span>
+<span id="cb6-179"><a href="#cb6-179" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> s<span class="op">.</span><span class="fu">map</span>((v<span class="op">,</span> i) <span class="kw">=&gt;</span> v <span class="op">+</span> dt <span class="op">/</span> <span class="dv">6</span> <span class="op">*</span> (k1[i] <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> k2[i] <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> k3[i] <span class="op">+</span> k4[i]))<span class="op">;</span></span>
+<span id="cb6-180"><a href="#cb6-180" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-181"><a href="#cb6-181" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> out<span class="op">;</span></span>
+<span id="cb6-182"><a href="#cb6-182" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-183"><a href="#cb6-183" aria-hidden="true" tabindex="-1"></a><span class="co">// direction angle: 0 = backwards (-x), 90 = down (-z), 180 = forwards (+x)</span></span>
+<span id="cb6-184"><a href="#cb6-184" aria-hidden="true" tabindex="-1"></a>dir <span class="op">=</span> (deg) <span class="kw">=&gt;</span> { <span class="kw">const</span> a <span class="op">=</span> deg <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="cn">PI</span> <span class="op">/</span> <span class="dv">180</span><span class="op">;</span> <span class="cf">return</span> [<span class="op">-</span><span class="bu">Math</span><span class="op">.</span><span class="fu">cos</span>(a)<span class="op">,</span> <span class="op">-</span><span class="bu">Math</span><span class="op">.</span><span class="fu">sin</span>(a)]<span class="op">;</span> }</span>
+<span id="cb6-185"><a href="#cb6-185" aria-hidden="true" tabindex="-1"></a>LM_KG <span class="op">=</span> data<span class="op">.</span><span class="at">vent</span><span class="op">.</span><span class="at">lm_kg</span></span>
+<span id="cb6-186"><a href="#cb6-186" aria-hidden="true" tabindex="-1"></a>runs <span class="op">=</span> {</span>
+<span id="cb6-187"><a href="#cb6-187" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [tx<span class="op">,</span> tz] <span class="op">=</span> <span class="fu">dir</span>(tunnel<span class="op">.</span><span class="at">ang</span>)<span class="op">,</span> [bx<span class="op">,</span> bz] <span class="op">=</span> <span class="fu">dir</span>(boiler<span class="op">.</span><span class="at">ang</span>)<span class="op">,</span> [ox<span class="op">,</span> oz] <span class="op">=</span> <span class="fu">dir</span>(other<span class="op">.</span><span class="at">ang</span>)<span class="op">;</span></span>
+<span id="cb6-188"><a href="#cb6-188" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> aB <span class="op">=</span> boiler<span class="op">.</span><span class="at">lbf</span> <span class="op">*</span> <span class="fl">4.44822</span> <span class="op">/</span> LM_KG <span class="op">/</span> FT<span class="op">;</span>   <span class="co">// ft/s^2</span></span>
+<span id="cb6-189"><a href="#cb6-189" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> tOther <span class="op">=</span> {<span class="dt">Undocking</span><span class="op">:</span> EV<span class="op">.</span><span class="at">undock</span> <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">Separation</span><span class="op">:</span> EV<span class="op">.</span><span class="at">sep</span><span class="op">,</span> <span class="dt">DOI</span><span class="op">:</span> EV<span class="op">.</span><span class="at">doi</span>}[other<span class="op">.</span><span class="at">at</span>]<span class="op">;</span></span>
+<span id="cb6-190"><a href="#cb6-190" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> bFrom <span class="op">=</span> boiler<span class="op">.</span><span class="at">start</span> <span class="op">===</span> <span class="st">"Undocking"</span> <span class="op">?</span> EV<span class="op">.</span><span class="at">undock</span> <span class="op">:</span> EV<span class="op">.</span><span class="at">doi</span><span class="op">;</span></span>
+<span id="cb6-191"><a href="#cb6-191" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb6-192"><a href="#cb6-192" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Tunnel vent"</span><span class="op">:</span> <span class="fu">cw</span>([{<span class="dt">t</span><span class="op">:</span> EV<span class="op">.</span><span class="at">undock</span> <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> ventDv <span class="op">*</span> tx<span class="op">,</span> <span class="dt">dz</span><span class="op">:</span> ventDv <span class="op">*</span> tz}]<span class="op">,</span> <span class="kw">null</span>)<span class="op">,</span></span>
+<span id="cb6-193"><a href="#cb6-193" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Water boiler"</span><span class="op">:</span> <span class="fu">cw</span>([]<span class="op">,</span> {<span class="dt">from</span><span class="op">:</span> bFrom<span class="op">,</span> <span class="dt">ax</span><span class="op">:</span> aB <span class="op">*</span> bx<span class="op">,</span> <span class="dt">az</span><span class="op">:</span> aB <span class="op">*</span> bz})<span class="op">,</span></span>
+<span id="cb6-194"><a href="#cb6-194" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Other pushes"</span><span class="op">:</span> <span class="fu">cw</span>([{<span class="dt">t</span><span class="op">:</span> tOther<span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> other<span class="op">.</span><span class="at">dv</span> <span class="op">*</span> ox<span class="op">,</span> <span class="dt">dz</span><span class="op">:</span> other<span class="op">.</span><span class="at">dv</span> <span class="op">*</span> oz}]<span class="op">,</span> <span class="kw">null</span>)</span>
+<span id="cb6-195"><a href="#cb6-195" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb6-196"><a href="#cb6-196" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-197"><a href="#cb6-197" aria-hidden="true" tabindex="-1"></a>series <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">entries</span>(runs)<span class="op">.</span><span class="fu">flatMap</span>(([k<span class="op">,</span> rows]) <span class="kw">=&gt;</span> rows<span class="op">.</span><span class="fu">filter</span>((_<span class="op">,</span> i) <span class="kw">=&gt;</span> i <span class="op">%</span> <span class="dv">6</span> <span class="op">===</span> <span class="dv">0</span>)<span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> ({k<span class="op">,</span> <span class="dt">h</span><span class="op">:</span> r<span class="op">.</span><span class="at">t</span> <span class="op">/</span> <span class="dv">3600</span><span class="op">,</span> <span class="dt">x</span><span class="op">:</span> r<span class="op">.</span><span class="at">x</span>})))</span>
+<span id="cb6-198"><a href="#cb6-198" aria-hidden="true" tabindex="-1"></a>total <span class="op">=</span> runs[<span class="st">"Tunnel vent"</span>]<span class="op">.</span><span class="fu">map</span>((r<span class="op">,</span> i) <span class="kw">=&gt;</span> ({<span class="dt">t</span><span class="op">:</span> r<span class="op">.</span><span class="at">t</span><span class="op">,</span> <span class="dt">x</span><span class="op">:</span> r<span class="op">.</span><span class="at">x</span> <span class="op">+</span> runs[<span class="st">"Water boiler"</span>][i]<span class="op">.</span><span class="at">x</span> <span class="op">+</span> runs[<span class="st">"Other pushes"</span>][i]<span class="op">.</span><span class="at">x</span><span class="op">,</span></span>
+<span id="cb6-199"><a href="#cb6-199" aria-hidden="true" tabindex="-1"></a>  <span class="dt">z</span><span class="op">:</span> r<span class="op">.</span><span class="at">z</span> <span class="op">+</span> runs[<span class="st">"Water boiler"</span>][i]<span class="op">.</span><span class="at">z</span> <span class="op">+</span> runs[<span class="st">"Other pushes"</span>][i]<span class="op">.</span><span class="at">z</span><span class="op">,</span> <span class="dt">vz</span><span class="op">:</span> r<span class="op">.</span><span class="at">vz</span> <span class="op">+</span> runs[<span class="st">"Water boiler"</span>][i]<span class="op">.</span><span class="at">vz</span> <span class="op">+</span> runs[<span class="st">"Other pushes"</span>][i]<span class="op">.</span><span class="at">vz</span>}))</span>
+<span id="cb6-200"><a href="#cb6-200" aria-hidden="true" tabindex="-1"></a>atPdi <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">fromEntries</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">entries</span>(runs)<span class="op">.</span><span class="fu">map</span>(([k<span class="op">,</span> rows]) <span class="kw">=&gt;</span> [k<span class="op">,</span> rows[rows<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]<span class="op">.</span><span class="at">x</span>]))</span>
+<span id="cb6-201"><a href="#cb6-201" aria-hidden="true" tabindex="-1"></a>totPdi <span class="op">=</span> total[total<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="204" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 203;"><span id="cb7-204"><a href="#cb7-204" aria-hidden="true" tabindex="-1"></a>kpis <span class="op">=</span> {</span>
+<span id="cb7-205"><a href="#cb7-205" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> ahead <span class="op">=</span> totPdi<span class="op">.</span><span class="at">x</span><span class="op">;</span></span>
+<span id="cb7-206"><a href="#cb7-206" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> radialV <span class="op">=</span> data<span class="op">.</span><span class="at">v_pdi</span> <span class="op">*</span> ahead <span class="op">/</span> data<span class="op">.</span><span class="at">r_ft</span> <span class="op">+</span> totPdi<span class="op">.</span><span class="at">vz</span><span class="op">;</span></span>
+<span id="cb7-207"><a href="#cb7-207" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> card <span class="op">=</span> (k<span class="op">,</span> v<span class="op">,</span> s) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;div class="k"&gt;</span><span class="sc">${</span>k<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span>v<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;</span><span class="sc">${</span>s<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb7-208"><a href="#cb7-208" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tg-panel"&gt;&lt;h4&gt;At powered descent initiation, 102:33:05&lt;/h4&gt;&lt;div class="tg-kpis"&gt;</span></span>
+<span id="cb7-209"><a href="#cb7-209" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span><span class="fu">card</span>(<span class="st">"Tunnel vent"</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(ventDv<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> ft/s`</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(atPdi[<span class="st">"Tunnel vent"</span>])<span class="sc">}</span><span class="vs"> ft ahead`</span>)<span class="sc">}</span></span>
+<span id="cb7-210"><a href="#cb7-210" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span><span class="fu">card</span>(<span class="st">"Water boiler"</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(boiler<span class="op">.</span><span class="at">lbf</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> lb`</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(atPdi[<span class="st">"Water boiler"</span>])<span class="sc">}</span><span class="vs"> ft ahead`</span>)<span class="sc">}</span></span>
+<span id="cb7-211"><a href="#cb7-211" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span><span class="fu">card</span>(<span class="st">"Other pushes"</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(other<span class="op">.</span><span class="at">dv</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> ft/s`</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(atPdi[<span class="st">"Other pushes"</span>])<span class="sc">}</span><span class="vs"> ft ahead`</span>)<span class="sc">}</span></span>
+<span id="cb7-212"><a href="#cb7-212" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span><span class="fu">card</span>(<span class="st">"Total, ahead of the computer"</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(ahead)<span class="sc">}</span><span class="vs"> ft`</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(ahead <span class="op">/</span> <span class="fl">6076.1</span><span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs"> n mi; Apollo 11: about 21,000 ft`</span>)<span class="sc">}</span></span>
+<span id="cb7-213"><a href="#cb7-213" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span><span class="fu">card</span>(<span class="st">"Radial speed disagreement"</span><span class="op">,</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(radialV)<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> ft/s`</span><span class="op">,</span> <span class="st">"computer vs tracking at PDI; Apollo 11: 13 to 18 ft/s"</span>)<span class="sc">}</span></span>
+<span id="cb7-214"><a href="#cb7-214" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb7-215"><a href="#cb7-215" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="219" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 218;"><span id="cb8-219"><a href="#cb8-219" aria-hidden="true" tabindex="-1"></a>growthPlot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb8-220"><a href="#cb8-220" aria-hidden="true" tabindex="-1"></a>  width<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">300</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">60</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb8-221"><a href="#cb8-221" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Ground elapsed time (hours)"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="dv">100</span><span class="op">,</span> EV<span class="op">.</span><span class="at">pdi</span> <span class="op">/</span> <span class="dv">3600</span> <span class="op">+</span> <span class="fl">0.02</span>]}<span class="op">,</span></span>
+<span id="cb8-222"><a href="#cb8-222" aria-hidden="true" tabindex="-1"></a>  <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Distance ahead of where the computer thinks (ft)"</span>}<span class="op">,</span></span>
+<span id="cb8-223"><a href="#cb8-223" aria-hidden="true" tabindex="-1"></a>  <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="st">"Tunnel vent"</span><span class="op">,</span> <span class="st">"Water boiler"</span><span class="op">,</span> <span class="st">"Other pushes"</span><span class="op">,</span> <span class="st">"Total"</span>]<span class="op">,</span> <span class="dt">range</span><span class="op">:</span> [<span class="st">"#e76f51"</span><span class="op">,</span> <span class="st">"#2a9d8f"</span><span class="op">,</span> <span class="st">"#8d99ae"</span><span class="op">,</span> <span class="st">"#1d3557"</span>]}<span class="op">,</span></span>
+<span id="cb8-224"><a href="#cb8-224" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb8-225"><a href="#cb8-225" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">0</span>])<span class="op">,</span></span>
+<span id="cb8-226"><a href="#cb8-226" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">21000</span>]<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e9c46a"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"4 3"</span>})<span class="op">,</span></span>
+<span id="cb8-227"><a href="#cb8-227" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">text</span>([{<span class="dt">h</span><span class="op">:</span> <span class="fl">100.85</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="dv">21000</span>}]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"h"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">"Apollo 11 at PDI, 21,000 ft"</span><span class="op">,</span> <span class="dt">dy</span><span class="op">:</span> <span class="op">-</span><span class="dv">7</span><span class="op">,</span> <span class="dt">textAnchor</span><span class="op">:</span> <span class="st">"start"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#b08a1a"</span>})<span class="op">,</span></span>
+<span id="cb8-228"><a href="#cb8-228" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">ruleX</span>([EV<span class="op">.</span><span class="at">undock</span><span class="op">,</span> EV<span class="op">.</span><span class="at">sep</span><span class="op">,</span> EV<span class="op">.</span><span class="at">doi</span><span class="op">,</span> EV<span class="op">.</span><span class="at">pdi</span>]<span class="op">.</span><span class="fu">map</span>(t <span class="kw">=&gt;</span> t <span class="op">/</span> <span class="dv">3600</span>)<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"#999"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"2 3"</span>})<span class="op">,</span></span>
+<span id="cb8-229"><a href="#cb8-229" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">text</span>([[<span class="st">"Undock"</span><span class="op">,</span> EV<span class="op">.</span><span class="at">undock</span>]<span class="op">,</span> [<span class="st">"Sep"</span><span class="op">,</span> EV<span class="op">.</span><span class="at">sep</span>]<span class="op">,</span> [<span class="st">"DOI"</span><span class="op">,</span> EV<span class="op">.</span><span class="at">doi</span>]<span class="op">,</span> [<span class="st">"PDI"</span><span class="op">,</span> EV<span class="op">.</span><span class="at">pdi</span>]]<span class="op">.</span><span class="fu">map</span>(([l<span class="op">,</span> t]) <span class="kw">=&gt;</span> ({l<span class="op">,</span> <span class="dt">h</span><span class="op">:</span> t <span class="op">/</span> <span class="dv">3600</span>}))<span class="op">,</span></span>
+<span id="cb8-230"><a href="#cb8-230" aria-hidden="true" tabindex="-1"></a>      {<span class="dt">x</span><span class="op">:</span> <span class="st">"h"</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> <span class="st">"l"</span><span class="op">,</span> <span class="dt">dy</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">textAnchor</span><span class="op">:</span> <span class="st">"start"</span><span class="op">,</span> <span class="dt">fontSize</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">frameAnchor</span><span class="op">:</span> <span class="st">"top"</span><span class="op">,</span> <span class="dt">lineAnchor</span><span class="op">:</span> <span class="st">"top"</span>})<span class="op">,</span></span>
+<span id="cb8-231"><a href="#cb8-231" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>(series<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"h"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">1.4</span>})<span class="op">,</span></span>
+<span id="cb8-232"><a href="#cb8-232" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>(total<span class="op">.</span><span class="fu">filter</span>((_<span class="op">,</span> i) <span class="kw">=&gt;</span> i <span class="op">%</span> <span class="dv">6</span> <span class="op">===</span> <span class="dv">0</span>)<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">t</span> <span class="op">/</span> <span class="dv">3600</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">"Total"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">2.4</span>})</span>
+<span id="cb8-233"><a href="#cb8-233" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb8-234"><a href="#cb8-234" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="238" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 237;"><span id="cb9-238"><a href="#cb9-238" aria-hidden="true" tabindex="-1"></a>hillPlot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb9-239"><a href="#cb9-239" aria-hidden="true" tabindex="-1"></a>  <span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">640</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">260</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">60</span><span class="op">,</span> <span class="dt">marginRight</span><span class="op">:</span> <span class="dv">40</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb9-240"><a href="#cb9-240" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Ahead of the believed position (ft)"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Above it (ft)"</span>}<span class="op">,</span></span>
+<span id="cb9-241"><a href="#cb9-241" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb9-242"><a href="#cb9-242" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>(total<span class="op">.</span><span class="fu">filter</span>((_<span class="op">,</span> i) <span class="kw">=&gt;</span> i <span class="op">%</span> <span class="dv">3</span> <span class="op">===</span> <span class="dv">0</span>)<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"z"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#1d3557"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">1.8</span>})<span class="op">,</span></span>
+<span id="cb9-243"><a href="#cb9-243" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>([{<span class="dt">x</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">z</span><span class="op">:</span> <span class="dv">0</span>}]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"z"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#6fa8dc"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">5</span>})<span class="op">,</span></span>
+<span id="cb9-244"><a href="#cb9-244" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>([totPdi]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"z"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">5</span>})<span class="op">,</span></span>
+<span id="cb9-245"><a href="#cb9-245" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">text</span>([totPdi]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"z"</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">"PDI"</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> <span class="dv">8</span><span class="op">,</span> <span class="dt">textAnchor</span><span class="op">:</span> <span class="st">"start"</span>})</span>
+<span id="cb9-246"><a href="#cb9-246" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb9-247"><a href="#cb9-247" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The second chart is the same total seen as the Part 4 rendezvous view: <em>Eagle</em>’s path relative to where the computer believes it to be, from undocking to PDI. The loops are the periodic part of the motion; the drift is the part that lands you long.</p>
+<p>Some things to try. Set every source to straight down, 90°, and the error at PDI almost vanishes, however big the pushes. Move the “other pushes” from undocking to DOI and watch most of their effect go. And try to explain Apollo 11’s 21,000 ft with one suspect at a time:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="255" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 254;"><span id="cb10-255"><a href="#cb10-255" aria-hidden="true" tabindex="-1"></a>alone <span class="op">=</span> {</span>
+<span id="cb10-256"><a href="#cb10-256" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Backward push at undocking that alone gives 21,000 ft, and the steady backward thrust that would.</span></span>
+<span id="cb10-257"><a href="#cb10-257" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> perFps <span class="op">=</span> <span class="fu">cw</span>([{<span class="dt">t</span><span class="op">:</span> EV<span class="op">.</span><span class="at">undock</span> <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> <span class="op">-</span><span class="dv">1</span><span class="op">,</span> <span class="dt">dz</span><span class="op">:</span> <span class="dv">0</span>}]<span class="op">,</span> <span class="kw">null</span>)<span class="op">.</span><span class="fu">slice</span>(<span class="op">-</span><span class="dv">1</span>)[<span class="dv">0</span>]<span class="op">.</span><span class="at">x</span><span class="op">;</span></span>
+<span id="cb10-258"><a href="#cb10-258" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> needDv <span class="op">=</span> <span class="dv">21000</span> <span class="op">/</span> perFps<span class="op">;</span></span>
+<span id="cb10-259"><a href="#cb10-259" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> perLb <span class="op">=</span> <span class="fu">cw</span>([]<span class="op">,</span> {<span class="dt">from</span><span class="op">:</span> EV<span class="op">.</span><span class="at">undock</span><span class="op">,</span> <span class="dt">ax</span><span class="op">:</span> <span class="op">-</span><span class="fl">4.44822</span> <span class="op">/</span> LM_KG <span class="op">/</span> FT<span class="op">,</span> <span class="dt">az</span><span class="op">:</span> <span class="dv">0</span>})<span class="op">.</span><span class="fu">slice</span>(<span class="op">-</span><span class="dv">1</span>)[<span class="dv">0</span>]<span class="op">.</span><span class="at">x</span><span class="op">;</span></span>
+<span id="cb10-260"><a href="#cb10-260" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> needLb <span class="op">=</span> <span class="dv">21000</span> <span class="op">/</span> perLb<span class="op">;</span></span>
+<span id="cb10-261"><a href="#cb10-261" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> v2 <span class="op">=</span> data<span class="op">.</span><span class="at">vent</span><span class="op">.</span><span class="at">dv_fps</span>[<span class="st">"2.0"</span>]<span class="op">,</span> ps <span class="op">=</span> data<span class="op">.</span><span class="at">vent</span><span class="op">.</span><span class="at">psi</span><span class="op">;</span></span>
+<span id="cb10-262"><a href="#cb10-262" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> psiNeeded <span class="op">=</span> (() <span class="kw">=&gt;</span> { <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> ps<span class="op">.</span><span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="cf">if</span> (v2[i] <span class="op">&gt;=</span> needDv) <span class="cf">return</span> ps[i <span class="op">-</span> <span class="dv">1</span>] <span class="op">+</span> (ps[i] <span class="op">-</span> ps[i <span class="op">-</span> <span class="dv">1</span>]) <span class="op">*</span> (needDv <span class="op">-</span> v2[i <span class="op">-</span> <span class="dv">1</span>]) <span class="op">/</span> (v2[i] <span class="op">-</span> v2[i <span class="op">-</span> <span class="dv">1</span>])<span class="op">;</span> <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span> })()<span class="op">;</span></span>
+<span id="cb10-263"><a href="#cb10-263" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm tg-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Suspect, acting alone, straight backwards&lt;/th&gt;&lt;th class="num"&gt;Needed for 21,000 ft&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb10-264"><a href="#cb10-264" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;tr&gt;&lt;td&gt;A single push at undocking&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(needDv<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> ft/s&lt;/td&gt;&lt;/tr&gt;</span></span>
+<span id="cb10-265"><a href="#cb10-265" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;tr&gt;&lt;td&gt;Tunnel pressure, 2 m³ tunnel, piston model&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>psiNeeded <span class="op">?</span> <span class="fu">fmt</span>(psiNeeded<span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" psi"</span> <span class="op">:</span> <span class="st">"more than 5 psi"</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;</span></span>
+<span id="cb10-266"><a href="#cb10-266" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;tr&gt;&lt;td&gt;Steady thrust from undocking to PDI&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(needLb<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> lb&lt;/td&gt;&lt;/tr&gt;</span></span>
+<span id="cb10-267"><a href="#cb10-267" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/tbody&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb10-268"><a href="#cb10-268" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>None of them works comfortably on its own. A whole foot per second from the tunnel needs something close to full cabin pressure left in it, in the most favourable direction; the boiler would need a fifth of a pound or more, pointing straight backwards for the whole two and a half hours. But a quarter of a foot per second from the tunnel, a tenth of a pound from the boiler and a few tenths of a foot per second from the thrusters, all leaning the same way, add up to the Apollo 11 number. That is close to what the record says.</p>
+</section>
+<section id="what-the-record-says" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-record-says">What the record says</h2>
+<p>The <em>Apollo 11 Mission Report</em> (section 5.2) put the onboard state at PDI about 21,000 feet uprange of the true one, the same figure Part 3’s reconstruction arrived at from the throttle-down time and the landing radar. It listed five contributors without ranking them:</p>
+<ol type="1">
+<li>Uncoupled thruster firings during the docked landmark tracking exercise.</li>
+<li>Velocity picked up during undocking, inspection and station-keeping that was not accounted for.</li>
+<li>The descent orbit insertion residual.</li>
+<li>Errors in the lunar gravity model, propagated forward.</li>
+<li>Lunar module venting.</li>
+</ol>
+<p>“Uncoupled” means a thruster firing that turned the spacecraft without a matching thruster on the opposite side, so it also pushed it a little. Floyd Bennett’s 1970 analysis of the descents named uncoupled attitude manoeuvres and cooling-system venting. Kranz, writing later, blamed mostly the tunnel: an incomplete vent, its effect “propagated over one orbit after separation”, with a pressure gauge too coarse to show it. Jerry Bostick, the flight dynamics officer, thought it was a combination of the tunnel and the mascons. Tindall’s figure for the water boiler was a quarter of the miss on its own. The budget above suggests why they could all be partly right.</p>
+<p>There are two independent checks on the size of the error, and both match. The first is the crew’s. In the first minutes of the descent Armstrong timed landmarks passing under his window against the times on his charts, and found them early. As he put it afterwards, one second corresponded to about a mile of miss distance (at 5,560 ft/s, a second is 0.9 n mi), and his estimate was that they would be about three miles long. The second is Houston’s. A position error along the orbit tilts the computer’s idea of “down”: 21,000 ft out of a 6.07-million-foot orbital radius is 0.2°. Tilt a 5,560 ft/s horizontal velocity by 0.2° and about 19 ft/s of it appears to be vertical. That is what the ground saw: Bennett reports an 18 ft/s disagreement in radial velocity between the computer and the tracking data at PDI, and the mission report’s Doppler residual grew to about 13 ft/s. The budget panel shows the same check for whatever combination you set.</p>
+</section>
+<section id="apollo-12-landing-next-to-a-surveyor" class="level2">
+<h2 class="anchored" data-anchor-id="apollo-12-landing-next-to-a-surveyor">Apollo 12: landing next to a Surveyor</h2>
+<p>Apollo 12’s target was Surveyor 3, a robot lander that had been sitting in a crater in the Ocean of Storms since April 1967. Landing near it would show that Apollo could put a crew anywhere it chose, which later missions to rough terrain needed. Allan Klumpp and Nick Pippenger at MIT set out the method in a memo of 27 August 1969, <em>How to Land Beside Surveyor 3 on Apollo 12</em>, the day before <em>Vent bent descent, lament!</em>:</p>
+<ul>
+<li>Keep the orbit clean: stricter procedures for undocking, separation and DOI, so the navigation starts out several times better than on Apollo 11. The tunnel would be vented before undocking, confirmed by Mission Control.</li>
+<li>Let the ground correct the target, not the spacecraft. Houston would measure the error from tracking and read up a single number, a landing-site shift, which the crew typed into the computer as a new Noun 69. Moving the target costs no propellant if it is done early, because the guidance simply aims at a different point from the start.</li>
+<li>Fly an approach that leaves room for the commander to redesignate the landing point forwards by at least twice the expected error.</li>
+</ul>
+<p>Tindall’s 24 September memo turned this into rules: the downrange correction would be made during powered descent, from Houston’s new powered-flight processor, but only if it was between 2,000 and 20,000 feet. On 19 November 1969, about two minutes into <em>Intrepid</em>’s descent, Houston passed up a correction of 4,200 feet. Pete Conrad landed about 600 feet from Surveyor 3 (535 feet from where it stood in its crater, by one measure; 608 feet, by Bennett’s).</p>
+<p>Even with every precaution, the orbit had still drifted 4,200 feet. The pushes had not gone away. The difference was that the system now expected them, measured them and corrected for them, which is what most of Tindall’s memos were about.</p>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>The orbital model.</strong> The interactive panel integrates the Clohessy–Wiltshire equations with a 10-second fourth-order Runge–Kutta step, around a circular orbit at 111 km (60 n mi), <span class="math inline">\(n = 8.81\times10^{-4}\)</span> rad/s. It ignores the descent orbit’s eccentricity and lunar gravity harmonics. The validation table comes from Part 3’s reconstruction: <em>Eagle</em>’s state at undocking is taken from that reconstruction, the push is added in the local vertical frame, the 76.4 ft/s DOI burn is applied as an impulse at mid-burn, and the result is propagated to PDI with the series’ force model (Moon with <span class="math inline">\(J_2\)</span> and <span class="math inline">\(C_{22}\)</span>, Earth and Sun as third bodies, Dormand–Prince 5(4)) and compared with an unperturbed run. The LM’s mass after undocking is taken as 15,100 kg.</p>
+<p><strong>The tunnel model.</strong> The tunnel is a volume of air at the stated pressure and 290 K. On undocking the pressure pushes on a 32-inch (0.81 m) circle, accelerating the LM (15,100 kg) and the CSM (28,800 kg) apart; air escapes at choked flow (discharge coefficient 0.6) through the ring-shaped gap, of the tunnel’s circumference and the current separation. The LM’s change of speed is the impulse divided by its mass. Real tunnels had probes, drogues and hatches in them, the volume is uncertain, and the separation was also driven by the docking mechanism, so this is an order-of-magnitude estimate only.</p>
+<p><strong>The memo.</strong> The text of <em>Vent bent descent, lament!</em> is not quoted here. Its date and its subject come from the Digging Apollo catalogue and from published accounts of Tindall’s memos; the interpretation of the title is mine.</p>
+<p>Sources:</p>
+<ul>
+<li>NASA, <a href="https://www.nasa.gov/wp-content/uploads/static/apollo50th/pdf/A11_MissionReport.pdf"><em>Apollo 11 Mission Report</em></a>, MSC-00171 (1969), section 5.2: the 21,000 ft state-vector error, the Doppler residual, the five contributors.</li>
+<li>F. V. Bennett, <a href="https://ntrs.nasa.gov/citations/19700024568"><em>Apollo Lunar Descent and Ascent Trajectories</em></a>, NASA TM X-58040 (1970): the 3 n mi error at PDI, the 18 ft/s radial velocity disagreement, uncoupled RCS and cooling-system venting, Apollo 12’s 4,200 ft update and the 608 ft miss.</li>
+<li>H. W. Tindall, Jr., <a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/Tindallgram_19690924.pdf"><em>Apollo 12 Mission Techniques</em></a>, memo of 24 September 1969: the water boiler thrust and the 6,000 ft miss, the 2,000–20,000 ft rule for the downrange correction.</li>
+<li>A. R. Klumpp and N. Pippenger, <a href="https://www.ibiblio.org/apollo/Documents/Memo-Klumpp690827_text.pdf"><em>How to Land Beside Surveyor 3 on Apollo 12</em></a>, MIT Space Guidance Analysis Memo 7-69 (27 August 1969), via the Virtual AGC project.</li>
+<li>Digging Apollo, catalogue entries for <a href="https://diggingapollo.com/documents/docid-735/"><em>Vent bent descent, lament!</em></a>, <a href="https://diggingapollo.com/documents/docid-738/"><em>VENTS</em></a> and <a href="https://diggingapollo.com/documents/docid-415/"><em>Let’s have no unscheduled water dumps on the F mission</em></a>.</li>
+<li>Apollo Lunar Surface Journal: <a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/a11/a11.landing.html"><em>The First Lunar Landing</em></a>, with the commentary on the long landing, Kranz’s and Bostick’s accounts and the water boiler debate; the <a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/alsj-Tindallgrams.html">Tindallgrams collection</a>, including the <a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/1967_tindallgrams.pdf">1967 memos</a> and the <a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/tindallgrams02.pdf">1966–1970 compilation</a>.</li>
+<li>University of Texas Medical Branch, William Thornton papers: Tindall memos of 1969, for example the <a href="https://utmb-ir.tdl.org/items/c1c309e2-4ab9-439f-996a-3c956f27ea93">Apollo 12 Newsletter of 21 October 1969</a>.</li>
+<li>NASA, <a href="https://www.nasa.gov/missions/apollo/apollo-12-the-pinpoint-mission/"><em>Apollo 12: The Pinpoint Mission</em></a>: the landing site update and the distance from Surveyor 3.</li>
+<li>Biography: <a href="https://en.wikipedia.org/wiki/Bill_Tindall">Wikipedia</a>; <a href="https://finleyquality.net/the-thousand-ring-circus/"><em>The thousand-ring circus</em></a>, Finley Quality Network, for the mission techniques meetings, Black Friday, the dictation and the tunnel rule; <a href="https://wehackthemoon.com/bios/bill-tindall.html">We Hack the Moon</a> for his retirement.</li>
+</ul>
+<p><strong>The Apollo 11 series:</strong> <a href="../apollo-11-part-1-launch-to-tli/">Part 1, launch to TLI</a> · <a href="../apollo-11-part-2-translunar-coast/">Part 2, translunar coast</a> · <a href="../apollo-11-part-3-descent-and-landing/">Part 3, descent and landing</a> · <a href="../apollo-11-part-4-rendezvous-return-and-entry/">Part 4, rendezvous, return and entry</a> · <a href="../../explainers/apollo-11-frames-of-reference/">Frames of reference explainer</a></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImRhdGEgPSBGaWxlQXR0YWNobWVudChcImRhdGEvdGluZGFsbC5qc29uXCIpLmpzb24oKVxuRlQgPSAwLjMwNDhcbkVWID0gZGF0YS5ldmVudHNcbm4gPSBkYXRhLm5cbmdldFN0ciA9IHQgPT4geyBjb25zdCBoID0gTWF0aC5mbG9vcih0IC8gMzYwMCksIG0gPSBNYXRoLmZsb29yKCh0ICUgMzYwMCkgLyA2MCksIHMgPSBNYXRoLnJvdW5kKHQgJSA2MCk7IHJldHVybiBgJHtofToke1N0cmluZyhtKS5wYWRTdGFydCgyLCBcIjBcIil9OiR7U3RyaW5nKHMpLnBhZFN0YXJ0KDIsIFwiMFwiKX1gOyB9XG5mbXQgPSAoeCwgZCA9IDApID0+IHgudG9Mb2NhbGVTdHJpbmcoXCJlbi1HQlwiLCB7bWF4aW11bUZyYWN0aW9uRGlnaXRzOiBkLCBtaW5pbXVtRnJhY3Rpb25EaWdpdHM6IGR9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmFsaWRhdGlvbiA9IGh0bC5odG1sYDx0YWJsZSBjbGFzcz1cInRhYmxlIHRhYmxlLXNtIHRnLXRcIj48dGhlYWQ+PHRyPlxuICA8dGg+QmFja3dhcmQgcHVzaCBvZiAxIGZ0L3MgYXQ8L3RoPjx0aCBjbGFzcz1cIm51bVwiPk1pbnV0ZXMgYmVmb3JlIFBESTwvdGg+PHRoIGNsYXNzPVwibnVtXCI+RnVsbCBtb2RlbCAoZnQgYWhlYWQpPC90aD48dGggY2xhc3M9XCJudW1cIj5Gb3JtdWxhIChmdCBhaGVhZCk8L3RoPjwvdHI+PC90aGVhZD48dGJvZHk+XG4gICR7ZGF0YS5mdWxsLm1hcChyID0+IGh0bC5odG1sYDx0cj48dGQ+JHtnZXRTdHIoci5nZXQpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoci5taW5fYmVmb3JlKX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KHIuZnVsbF9mdCl9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdChyLmN3X2Z0KX08L3RkPjwvdHI+YCl9XG48L3Rib2R5PjwvdGFibGU+YFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0zIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIHR1bm5lbCA9IElucHV0cy5mb3JtKHtcbiAgcHNpOiBJbnB1dHMucmFuZ2UoWzAsIDVdLCB7dmFsdWU6IDEsIHN0ZXA6IDAuMjUsIGxhYmVsOiBcIlR1bm5lbCBwcmVzc3VyZSBhdCB1bmRvY2tpbmcgKHBzaSlcIn0pLFxuICB2b2w6IElucHV0cy5yYWRpbyhbXCIwLjVcIiwgXCIxLjBcIiwgXCIyLjBcIl0sIHt2YWx1ZTogXCIxLjBcIiwgbGFiZWw6IFwiVHVubmVsIHZvbHVtZSAobcKzKVwifSksXG4gIGFuZzogSW5wdXRzLnJhbmdlKFswLCAxODBdLCB7dmFsdWU6IDAsIHN0ZXA6IDUsIGxhYmVsOiBcIlB1c2ggZGlyZWN0aW9uICjCsClcIn0pXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGJvaWxlciA9IElucHV0cy5mb3JtKHtcbiAgbGJmOiBJbnB1dHMucmFuZ2UoWzAsIDAuM10sIHt2YWx1ZTogMC4xMiwgc3RlcDogMC4wMSwgbGFiZWw6IFwiV2F0ZXIgYm9pbGVyIHRocnVzdCAobGIpXCJ9KSxcbiAgYW5nOiBJbnB1dHMucmFuZ2UoWzAsIDE4MF0sIHt2YWx1ZTogNDUsIHN0ZXA6IDUsIGxhYmVsOiBcIlRocnVzdCBkaXJlY3Rpb24gKMKwKVwifSksXG4gIHN0YXJ0OiBJbnB1dHMucmFkaW8oW1wiVW5kb2NraW5nXCIsIFwiRE9JXCJdLCB7dmFsdWU6IFwiVW5kb2NraW5nXCIsIGxhYmVsOiBcIkNvdW50cyBmcm9tXCJ9KVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBvdGhlciA9IElucHV0cy5mb3JtKHtcbiAgZHY6IElucHV0cy5yYW5nZShbMCwgMS41XSwge3ZhbHVlOiAwLjMsIHN0ZXA6IDAuMDUsIGxhYmVsOiBcIk90aGVyIHB1c2hlczogUkNTLCBET0kgcmVzaWR1YWwgKGZ0L3MpXCJ9KSxcbiAgYW5nOiBJbnB1dHMucmFuZ2UoWzAsIDE4MF0sIHt2YWx1ZTogMCwgc3RlcDogNSwgbGFiZWw6IFwiRGlyZWN0aW9uICjCsClcIn0pLFxuICBhdDogSW5wdXRzLnJhZGlvKFtcIlVuZG9ja2luZ1wiLCBcIlNlcGFyYXRpb25cIiwgXCJET0lcIl0sIHt2YWx1ZTogXCJVbmRvY2tpbmdcIiwgbGFiZWw6IFwiV2hlblwifSlcbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2ZW50RHYgPSB7XG4gIGNvbnN0IHhzID0gZGF0YS52ZW50LnBzaSwgeXMgPSBkYXRhLnZlbnQuZHZfZnBzW3R1bm5lbC52b2xdO1xuICBjb25zdCBwID0gdHVubmVsLnBzaTtcbiAgbGV0IGkgPSBNYXRoLm1pbih4cy5sZW5ndGggLSAyLCBNYXRoLm1heCgwLCB4cy5maW5kSW5kZXgoeCA9PiB4ID4gcCkgLSAxKSk7XG4gIGlmIChwID49IHhzW3hzLmxlbmd0aCAtIDFdKSByZXR1cm4geXNbeXMubGVuZ3RoIC0gMV07XG4gIHJldHVybiB5c1tpXSArICh5c1tpICsgMV0gLSB5c1tpXSkgKiAocCAtIHhzW2ldKSAvICh4c1tpICsgMV0gLSB4c1tpXSk7XG59XG4vLyBDbG9oZXNzeS1XaWx0c2hpcmUgaW50ZWdyYXRpb246IHggYWhlYWQsIHogYWJvdmUuIEFjY2VsZXJhdGlvbnMgaW4gZnQvc14yLlxuY3cgPSAoaW1wdWxzZXMsIHRocnVzdCkgPT4ge1xuICBjb25zdCB0MCA9IEVWLnVuZG9jayAtIDcyMCwgdDEgPSBFVi5wZGksIGR0ID0gMTA7XG4gIGxldCB4ID0gMCwgeiA9IDAsIHZ4ID0gMCwgdnogPSAwO1xuICBjb25zdCBvdXQgPSBbXTtcbiAgY29uc3QgYWNjID0gKHQpID0+ICh0aHJ1c3QgJiYgdCA+PSB0aHJ1c3QuZnJvbSkgPyBbdGhydXN0LmF4LCB0aHJ1c3QuYXpdIDogWzAsIDBdO1xuICBjb25zdCBmID0gKHQsIHMpID0+IHsgY29uc3QgW2F4LCBhel0gPSBhY2ModCk7IHJldHVybiBbc1syXSwgc1szXSwgLTIgKiBuICogc1szXSArIGF4LCAzICogbiAqIG4gKiBzWzFdICsgMiAqIG4gKiBzWzJdICsgYXpdOyB9O1xuICBsZXQgcyA9IFswLCAwLCAwLCAwXTtcbiAgZm9yIChsZXQgdCA9IHQwOyB0IDw9IHQxICsgMWUtNjsgdCArPSBkdCkge1xuICAgIGZvciAoY29uc3QgaW0gb2YgaW1wdWxzZXMpIGlmIChpbS50ID49IHQgJiYgaW0udCA8IHQgKyBkdCkgeyBzWzJdICs9IGltLmR4OyBzWzNdICs9IGltLmR6OyB9XG4gICAgb3V0LnB1c2goe3QsIHg6IHNbMF0sIHo6IHNbMV0sIHZ4OiBzWzJdLCB2ejogc1szXX0pO1xuICAgIGNvbnN0IGsxID0gZih0LCBzKSwgazIgPSBmKHQgKyBkdCAvIDIsIHMubWFwKCh2LCBpKSA9PiB2ICsgZHQgLyAyICogazFbaV0pKSxcbiAgICAgICAgICBrMyA9IGYodCArIGR0IC8gMiwgcy5tYXAoKHYsIGkpID0+IHYgKyBkdCAvIDIgKiBrMltpXSkpLCBrNCA9IGYodCArIGR0LCBzLm1hcCgodiwgaSkgPT4gdiArIGR0ICogazNbaV0pKTtcbiAgICBzID0gcy5tYXAoKHYsIGkpID0+IHYgKyBkdCAvIDYgKiAoazFbaV0gKyAyICogazJbaV0gKyAyICogazNbaV0gKyBrNFtpXSkpO1xuICB9XG4gIHJldHVybiBvdXQ7XG59XG4vLyBkaXJlY3Rpb24gYW5nbGU6IDAgPSBiYWNrd2FyZHMgKC14KSwgOTAgPSBkb3duICgteiksIDE4MCA9IGZvcndhcmRzICgreClcbmRpciA9IChkZWcpID0+IHsgY29uc3QgYSA9IGRlZyAqIE1hdGguUEkgLyAxODA7IHJldHVybiBbLU1hdGguY29zKGEpLCAtTWF0aC5zaW4oYSldOyB9XG5MTV9LRyA9IGRhdGEudmVudC5sbV9rZ1xucnVucyA9IHtcbiAgY29uc3QgW3R4LCB0el0gPSBkaXIodHVubmVsLmFuZyksIFtieCwgYnpdID0gZGlyKGJvaWxlci5hbmcpLCBbb3gsIG96XSA9IGRpcihvdGhlci5hbmcpO1xuICBjb25zdCBhQiA9IGJvaWxlci5sYmYgKiA0LjQ0ODIyIC8gTE1fS0cgLyBGVDsgICAvLyBmdC9zXjJcbiAgY29uc3QgdE90aGVyID0ge1VuZG9ja2luZzogRVYudW5kb2NrICsgMSwgU2VwYXJhdGlvbjogRVYuc2VwLCBET0k6IEVWLmRvaX1bb3RoZXIuYXRdO1xuICBjb25zdCBiRnJvbSA9IGJvaWxlci5zdGFydCA9PT0gXCJVbmRvY2tpbmdcIiA/IEVWLnVuZG9jayA6IEVWLmRvaTtcbiAgcmV0dXJuIHtcbiAgICBcIlR1bm5lbCB2ZW50XCI6IGN3KFt7dDogRVYudW5kb2NrICsgMSwgZHg6IHZlbnREdiAqIHR4LCBkejogdmVudER2ICogdHp9XSwgbnVsbCksXG4gICAgXCJXYXRlciBib2lsZXJcIjogY3coW10sIHtmcm9tOiBiRnJvbSwgYXg6IGFCICogYngsIGF6OiBhQiAqIGJ6fSksXG4gICAgXCJPdGhlciBwdXNoZXNcIjogY3coW3t0OiB0T3RoZXIsIGR4OiBvdGhlci5kdiAqIG94LCBkejogb3RoZXIuZHYgKiBven1dLCBudWxsKVxuICB9O1xufVxuc2VyaWVzID0gT2JqZWN0LmVudHJpZXMocnVucykuZmxhdE1hcCgoW2ssIHJvd3NdKSA9PiByb3dzLmZpbHRlcigoXywgaSkgPT4gaSAlIDYgPT09IDApLm1hcChyID0+ICh7aywgaDogci50IC8gMzYwMCwgeDogci54fSkpKVxudG90YWwgPSBydW5zW1wiVHVubmVsIHZlbnRcIl0ubWFwKChyLCBpKSA9PiAoe3Q6IHIudCwgeDogci54ICsgcnVuc1tcIldhdGVyIGJvaWxlclwiXVtpXS54ICsgcnVuc1tcIk90aGVyIHB1c2hlc1wiXVtpXS54LFxuICB6OiByLnogKyBydW5zW1wiV2F0ZXIgYm9pbGVyXCJdW2ldLnogKyBydW5zW1wiT3RoZXIgcHVzaGVzXCJdW2ldLnosIHZ6OiByLnZ6ICsgcnVuc1tcIldhdGVyIGJvaWxlclwiXVtpXS52eiArIHJ1bnNbXCJPdGhlciBwdXNoZXNcIl1baV0udnp9KSlcbmF0UGRpID0gT2JqZWN0LmZyb21FbnRyaWVzKE9iamVjdC5lbnRyaWVzKHJ1bnMpLm1hcCgoW2ssIHJvd3NdKSA9PiBbaywgcm93c1tyb3dzLmxlbmd0aCAtIDFdLnhdKSlcbnRvdFBkaSA9IHRvdGFsW3RvdGFsLmxlbmd0aCAtIDFdXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJrcGlzID0ge1xuICBjb25zdCBhaGVhZCA9IHRvdFBkaS54O1xuICBjb25zdCByYWRpYWxWID0gZGF0YS52X3BkaSAqIGFoZWFkIC8gZGF0YS5yX2Z0ICsgdG90UGRpLnZ6O1xuICBjb25zdCBjYXJkID0gKGssIHYsIHMpID0+IGh0bC5odG1sYDxkaXY+PGRpdiBjbGFzcz1cImtcIj4ke2t9PC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke3Z9PC9kaXY+PGRpdiBjbGFzcz1cInNcIj4ke3N9PC9kaXY+PC9kaXY+YDtcbiAgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJ0Zy1wYW5lbFwiPjxoND5BdCBwb3dlcmVkIGRlc2NlbnQgaW5pdGlhdGlvbiwgMTAyOjMzOjA1PC9oND48ZGl2IGNsYXNzPVwidGcta3Bpc1wiPlxuICAgICR7Y2FyZChcIlR1bm5lbCB2ZW50XCIsIGAke2ZtdCh2ZW50RHYsIDIpfSBmdC9zYCwgYCR7Zm10KGF0UGRpW1wiVHVubmVsIHZlbnRcIl0pfSBmdCBhaGVhZGApfVxuICAgICR7Y2FyZChcIldhdGVyIGJvaWxlclwiLCBgJHtmbXQoYm9pbGVyLmxiZiwgMil9IGxiYCwgYCR7Zm10KGF0UGRpW1wiV2F0ZXIgYm9pbGVyXCJdKX0gZnQgYWhlYWRgKX1cbiAgICAke2NhcmQoXCJPdGhlciBwdXNoZXNcIiwgYCR7Zm10KG90aGVyLmR2LCAyKX0gZnQvc2AsIGAke2ZtdChhdFBkaVtcIk90aGVyIHB1c2hlc1wiXSl9IGZ0IGFoZWFkYCl9XG4gICAgJHtjYXJkKFwiVG90YWwsIGFoZWFkIG9mIHRoZSBjb21wdXRlclwiLCBgJHtmbXQoYWhlYWQpfSBmdGAsIGAke2ZtdChhaGVhZCAvIDYwNzYuMSwgMSl9IG4gbWk7IEFwb2xsbyAxMTogYWJvdXQgMjEsMDAwIGZ0YCl9XG4gICAgJHtjYXJkKFwiUmFkaWFsIHNwZWVkIGRpc2FncmVlbWVudFwiLCBgJHtmbXQoTWF0aC5hYnMocmFkaWFsViksIDApfSBmdC9zYCwgXCJjb21wdXRlciB2cyB0cmFja2luZyBhdCBQREk7IEFwb2xsbyAxMTogMTMgdG8gMTggZnQvc1wiKX1cbiAgPC9kaXY+PC9kaXY+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Imdyb3d0aFBsb3QgPSBQbG90LnBsb3Qoe1xuICB3aWR0aCwgaGVpZ2h0OiAzMDAsIG1hcmdpbkxlZnQ6IDYwLCBncmlkOiB0cnVlLFxuICB4OiB7bGFiZWw6IFwiR3JvdW5kIGVsYXBzZWQgdGltZSAoaG91cnMpXCIsIGRvbWFpbjogWzEwMCwgRVYucGRpIC8gMzYwMCArIDAuMDJdfSxcbiAgeToge2xhYmVsOiBcIkRpc3RhbmNlIGFoZWFkIG9mIHdoZXJlIHRoZSBjb21wdXRlciB0aGlua3MgKGZ0KVwifSxcbiAgY29sb3I6IHtsZWdlbmQ6IHRydWUsIGRvbWFpbjogW1wiVHVubmVsIHZlbnRcIiwgXCJXYXRlciBib2lsZXJcIiwgXCJPdGhlciBwdXNoZXNcIiwgXCJUb3RhbFwiXSwgcmFuZ2U6IFtcIiNlNzZmNTFcIiwgXCIjMmE5ZDhmXCIsIFwiIzhkOTlhZVwiLCBcIiMxZDM1NTdcIl19LFxuICBtYXJrczogW1xuICAgIFBsb3QucnVsZVkoWzBdKSxcbiAgICBQbG90LnJ1bGVZKFsyMTAwMF0sIHtzdHJva2U6IFwiI2U5YzQ2YVwiLCBzdHJva2VEYXNoYXJyYXk6IFwiNCAzXCJ9KSxcbiAgICBQbG90LnRleHQoW3toOiAxMDAuODUsIHk6IDIxMDAwfV0sIHt4OiBcImhcIiwgeTogXCJ5XCIsIHRleHQ6ICgpID0+IFwiQXBvbGxvIDExIGF0IFBESSwgMjEsMDAwIGZ0XCIsIGR5OiAtNywgdGV4dEFuY2hvcjogXCJzdGFydFwiLCBmaWxsOiBcIiNiMDhhMWFcIn0pLFxuICAgIFBsb3QucnVsZVgoW0VWLnVuZG9jaywgRVYuc2VwLCBFVi5kb2ksIEVWLnBkaV0ubWFwKHQgPT4gdCAvIDM2MDApLCB7c3Ryb2tlOiBcIiM5OTlcIiwgc3Ryb2tlRGFzaGFycmF5OiBcIjIgM1wifSksXG4gICAgUGxvdC50ZXh0KFtbXCJVbmRvY2tcIiwgRVYudW5kb2NrXSwgW1wiU2VwXCIsIEVWLnNlcF0sIFtcIkRPSVwiLCBFVi5kb2ldLCBbXCJQRElcIiwgRVYucGRpXV0ubWFwKChbbCwgdF0pID0+ICh7bCwgaDogdCAvIDM2MDB9KSksXG4gICAgICB7eDogXCJoXCIsIHRleHQ6IFwibFwiLCBkeTogMiwgZHg6IDMsIHRleHRBbmNob3I6IFwic3RhcnRcIiwgZm9udFNpemU6IDEwLCBmcmFtZUFuY2hvcjogXCJ0b3BcIiwgbGluZUFuY2hvcjogXCJ0b3BcIn0pLFxuICAgIFBsb3QubGluZShzZXJpZXMsIHt4OiBcImhcIiwgeTogXCJ4XCIsIHN0cm9rZTogXCJrXCIsIHN0cm9rZVdpZHRoOiAxLjR9KSxcbiAgICBQbG90LmxpbmUodG90YWwuZmlsdGVyKChfLCBpKSA9PiBpICUgNiA9PT0gMCksIHt4OiBkID0+IGQudCAvIDM2MDAsIHk6IFwieFwiLCBzdHJva2U6ICgpID0+IFwiVG90YWxcIiwgc3Ryb2tlV2lkdGg6IDIuNH0pXG4gIF1cbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJoaWxsUGxvdCA9IFBsb3QucGxvdCh7XG4gIHdpZHRoOiBNYXRoLm1pbih3aWR0aCwgNjQwKSwgaGVpZ2h0OiAyNjAsIG1hcmdpbkxlZnQ6IDYwLCBtYXJnaW5SaWdodDogNDAsIGdyaWQ6IHRydWUsXG4gIHg6IHtsYWJlbDogXCJBaGVhZCBvZiB0aGUgYmVsaWV2ZWQgcG9zaXRpb24gKGZ0KVwifSwgeToge2xhYmVsOiBcIkFib3ZlIGl0IChmdClcIn0sXG4gIG1hcmtzOiBbXG4gICAgUGxvdC5saW5lKHRvdGFsLmZpbHRlcigoXywgaSkgPT4gaSAlIDMgPT09IDApLCB7eDogXCJ4XCIsIHk6IFwielwiLCBzdHJva2U6IFwiIzFkMzU1N1wiLCBzdHJva2VXaWR0aDogMS44fSksXG4gICAgUGxvdC5kb3QoW3t4OiAwLCB6OiAwfV0sIHt4OiBcInhcIiwgeTogXCJ6XCIsIGZpbGw6IFwiIzZmYThkY1wiLCByOiA1fSksXG4gICAgUGxvdC5kb3QoW3RvdFBkaV0sIHt4OiBcInhcIiwgeTogXCJ6XCIsIGZpbGw6IFwiI2U3NmY1MVwiLCByOiA1fSksXG4gICAgUGxvdC50ZXh0KFt0b3RQZGldLCB7eDogXCJ4XCIsIHk6IFwielwiLCB0ZXh0OiAoKSA9PiBcIlBESVwiLCBkeDogOCwgdGV4dEFuY2hvcjogXCJzdGFydFwifSlcbiAgXVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTAiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJhbG9uZSA9IHtcbiAgLy8gQmFja3dhcmQgcHVzaCBhdCB1bmRvY2tpbmcgdGhhdCBhbG9uZSBnaXZlcyAyMSwwMDAgZnQsIGFuZCB0aGUgc3RlYWR5IGJhY2t3YXJkIHRocnVzdCB0aGF0IHdvdWxkLlxuICBjb25zdCBwZXJGcHMgPSBjdyhbe3Q6IEVWLnVuZG9jayArIDEsIGR4OiAtMSwgZHo6IDB9XSwgbnVsbCkuc2xpY2UoLTEpWzBdLng7XG4gIGNvbnN0IG5lZWREdiA9IDIxMDAwIC8gcGVyRnBzO1xuICBjb25zdCBwZXJMYiA9IGN3KFtdLCB7ZnJvbTogRVYudW5kb2NrLCBheDogLTQuNDQ4MjIgLyBMTV9LRyAvIEZULCBhejogMH0pLnNsaWNlKC0xKVswXS54O1xuICBjb25zdCBuZWVkTGIgPSAyMTAwMCAvIHBlckxiO1xuICBjb25zdCB2MiA9IGRhdGEudmVudC5kdl9mcHNbXCIyLjBcIl0sIHBzID0gZGF0YS52ZW50LnBzaTtcbiAgY29uc3QgcHNpTmVlZGVkID0gKCgpID0+IHsgZm9yIChsZXQgaSA9IDE7IGkgPCBwcy5sZW5ndGg7IGkrKykgaWYgKHYyW2ldID49IG5lZWREdikgcmV0dXJuIHBzW2kgLSAxXSArIChwc1tpXSAtIHBzW2kgLSAxXSkgKiAobmVlZER2IC0gdjJbaSAtIDFdKSAvICh2MltpXSAtIHYyW2kgLSAxXSk7IHJldHVybiBudWxsOyB9KSgpO1xuICByZXR1cm4gaHRsLmh0bWxgPHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gdGctdFwiPjx0aGVhZD48dHI+PHRoPlN1c3BlY3QsIGFjdGluZyBhbG9uZSwgc3RyYWlnaHQgYmFja3dhcmRzPC90aD48dGggY2xhc3M9XCJudW1cIj5OZWVkZWQgZm9yIDIxLDAwMCBmdDwvdGg+PC90cj48L3RoZWFkPjx0Ym9keT5cbiAgICA8dHI+PHRkPkEgc2luZ2xlIHB1c2ggYXQgdW5kb2NraW5nPC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdChuZWVkRHYsIDIpfSBmdC9zPC90ZD48L3RyPlxuICAgIDx0cj48dGQ+VHVubmVsIHByZXNzdXJlLCAyIG3CsyB0dW5uZWwsIHBpc3RvbiBtb2RlbDwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtwc2lOZWVkZWQgPyBmbXQocHNpTmVlZGVkLCAxKSArIFwiIHBzaVwiIDogXCJtb3JlIHRoYW4gNSBwc2lcIn08L3RkPjwvdHI+XG4gICAgPHRyPjx0ZD5TdGVhZHkgdGhydXN0IGZyb20gdW5kb2NraW5nIHRvIFBESTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQobmVlZExiLCAyKX0gbGI8L3RkPjwvdHI+XG4gIDwvdGJvZHk+PC90YWJsZT5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCd0dW5uZWwnKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnYm9pbGVyJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ290aGVyJykifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../space/tindall-vent-bent-descent-lament";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
