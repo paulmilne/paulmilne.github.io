@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="Sentence embedding models turn a whole passage into one vector so that text can be searched by meaning. This post runs one, all-MiniLM-L6-v2, over every passage of this blog, derives the contrastive loss it was trained with, compares it with keyword search on test questions, builds an HNSW index, measures what quantisation and truncation cost, and explains retrieval-augmented generation.">
+
+<title>Embeddings, Part 2: Search and Retrieval – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Embeddings, Part 2: Search and Retrieval – math-blog">
+<meta property="og:description" content="Sentence embedding models turn a whole passage into one vector so that text can be searched by meaning. This post runs one, all-MiniLM-L6-v2, over every passage of this blog, derives the contrastive loss it was trained with, compares it with keyword search on test questions, builds an HNSW index, measures what quantisation and truncation cost, and explains retrieval-augmented generation.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/embeddings-part-2-search-and-retrieval/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="Embeddings, Part 2: Search and Retrieval – math-blog">
+<meta name="twitter:description" content="Sentence embedding models turn a whole passage into one vector so that text can be searched by meaning. This post runs one, all-MiniLM-L6-v2, over every passage of this blog, derives the contrastive loss it was trained with, compares it with keyword search on test questions, builds an HNSW index, measures what quantisation and truncation cost, and explains retrieval-augmented generation.">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/embeddings-part-2-search-and-retrieval/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Embeddings, Part 2: Search and Retrieval</h1>
+            <p class="subtitle lead">From a vector per token to a vector per passage: how sentence embedding models are built and trained, how they search, and how they feed a language model the right documents</p>
+                  <div>
+        <div class="description">
+          Sentence embedding models turn a whole passage into one vector so that text can be searched by meaning. This post runs one, all-MiniLM-L6-v2, over every passage of this blog, derives the contrastive loss it was trained with, compares it with keyword search on test questions, builds an HNSW index, measures what quantisation and truncation cost, and explains retrieval-augmented generation.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">embeddings</div>
+                <div class="quarto-category">language-models</div>
+                <div class="quarto-category">information-retrieval</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#keyword-search-first" id="toc-keyword-search-first" class="nav-link active" data-scroll-target="#keyword-search-first">Keyword search first</a></li>
+  <li><a href="#one-vector-per-passage" id="toc-one-vector-per-passage" class="nav-link" data-scroll-target="#one-vector-per-passage">One vector per passage</a>
+  <ul class="collapse">
+  <li><a href="#the-encoder" id="toc-the-encoder" class="nav-link" data-scroll-target="#the-encoder">The encoder</a></li>
+  <li><a href="#why-a-pretrained-encoder-is-not-enough" id="toc-why-a-pretrained-encoder-is-not-enough" class="nav-link" data-scroll-target="#why-a-pretrained-encoder-is-not-enough">Why a pretrained encoder is not enough</a></li>
+  </ul></li>
+  <li><a href="#contrastive-training" id="toc-contrastive-training" class="nav-link" data-scroll-target="#contrastive-training">Contrastive training</a></li>
+  <li><a href="#searching-this-blog" id="toc-searching-this-blog" class="nav-link" data-scroll-target="#searching-this-blog">Searching this blog</a></li>
+  <li><a href="#a-map-of-the-blog" id="toc-a-map-of-the-blog" class="nav-link" data-scroll-target="#a-map-of-the-blog">A map of the blog</a></li>
+  <li><a href="#searching-millions-of-vectors" id="toc-searching-millions-of-vectors" class="nav-link" data-scroll-target="#searching-millions-of-vectors">Searching millions of vectors</a>
+  <ul class="collapse">
+  <li><a href="#hnsw" id="toc-hnsw" class="nav-link" data-scroll-target="#hnsw">HNSW</a></li>
+  <li><a href="#storing-less" id="toc-storing-less" class="nav-link" data-scroll-target="#storing-less">Storing less</a></li>
+  </ul></li>
+  <li><a href="#retrieval-augmented-generation" id="toc-retrieval-augmented-generation" class="nav-link" data-scroll-target="#retrieval-augmented-generation">Retrieval-augmented generation</a></li>
+  <li><a href="#terminology-and-where-it-comes-from" id="toc-terminology-and-where-it-comes-from" class="nav-link" data-scroll-target="#terminology-and-where-it-comes-from">Terminology and where it comes from</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.em-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.em-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.em-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+table.em-t td.num, table.em-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.em-note { font-size: .82rem; opacity: .75; }
+.em-scroll { overflow-x: auto; }
+.em-scroll table { min-width: 560px; }
+@media (max-width: 600px) { .em-scroll table { font-size: .85rem; } }
+.em-hit { padding: .45rem 0; border-top: 1px solid var(--bs-border-color, #eee); }
+.em-hit .t { font-weight: 600; } .em-hit .h { font-size: .82rem; opacity: .7; } .em-hit .x { font-size: .86rem; margin-top: .15rem; }
+.em-hit .s { float: right; font-variant-numeric: tabular-nums; font-size: .8rem; opacity: .7; }
+.em-status { font-size: .8rem; opacity: .75; margin: .2rem 0; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="36" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 35;"><span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/blog_index.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>idx <span class="op">=</span> {</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> bin <span class="op">=</span> <span class="bu">Uint8Array</span><span class="op">.</span><span class="fu">from</span>(<span class="fu">atob</span>(B<span class="op">.</span><span class="at">emb</span>)<span class="op">,</span> c <span class="kw">=&gt;</span> c<span class="op">.</span><span class="fu">charCodeAt</span>(<span class="dv">0</span>))<span class="op">;</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> q <span class="op">=</span> <span class="kw">new</span> <span class="bu">Int8Array</span>(bin<span class="op">.</span><span class="at">buffer</span>)<span class="op">,</span> N <span class="op">=</span> B<span class="op">.</span><span class="at">chunks</span><span class="op">.</span><span class="at">length</span><span class="op">,</span> D <span class="op">=</span> B<span class="op">.</span><span class="at">dim</span><span class="op">,</span> X <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float32Array</span>(N <span class="op">*</span> D)<span class="op">;</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) { <span class="kw">const</span> v <span class="op">=</span> q[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">*</span> B<span class="op">.</span><span class="at">scale</span>[i] <span class="op">/</span> <span class="dv">127</span><span class="op">;</span> X[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">=</span> v<span class="op">;</span> s <span class="op">+=</span> v <span class="op">*</span> v<span class="op">;</span> }</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(s)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) X[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">/=</span> s<span class="op">;</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {X<span class="op">,</span> N<span class="op">,</span> D}<span class="op">;</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>dot <span class="op">=</span> (i<span class="op">,</span> v) <span class="kw">=&gt;</span> { <span class="kw">let</span> s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="kw">const</span> o <span class="op">=</span> i <span class="op">*</span> idx<span class="op">.</span><span class="at">D</span><span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> idx<span class="op">.</span><span class="at">D</span><span class="op">;</span> j<span class="op">++</span>) s <span class="op">+=</span> idx<span class="op">.</span><span class="at">X</span>[o <span class="op">+</span> j] <span class="op">*</span> v[j]<span class="op">;</span> <span class="cf">return</span> s<span class="op">;</span> }</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>secColour <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">fromEntries</span>([<span class="st">"ai"</span><span class="op">,</span> <span class="st">"astronomy"</span><span class="op">,</span> <span class="st">"cosmology"</span><span class="op">,</span> <span class="st">"explainers"</span><span class="op">,</span> <span class="st">"mechanics"</span><span class="op">,</span> <span class="st">"papers"</span><span class="op">,</span> <span class="st">"posts"</span><span class="op">,</span> <span class="st">"probability"</span><span class="op">,</span> <span class="st">"sci-fi"</span><span class="op">,</span> <span class="st">"space"</span>]<span class="op">.</span><span class="fu">map</span>((s<span class="op">,</span> i) <span class="kw">=&gt;</span> [s<span class="op">,</span> d3<span class="op">.</span><span class="at">schemeTableau10</span>[i]]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p><a href="../embeddings-part-1-words-to-vectors/">Part 1</a> followed text into a language model: cut into tokens, each token replaced by a row of an embedding table, position added, and the vectors passed up through the layers where context changes them. This part is about a different use of the same machinery. Suppose you have a question and a large collection of documents, and want the passages that answer it. If every passage could be turned into one vector, placed so that passages about the same thing sit close together, then search would be geometry: embed the question, and return its nearest neighbours.</p>
+<p>That is what a sentence embedding model does, and it is the first half of retrieval-augmented generation, the most common way language models are connected to documents they were not trained on. This post runs a real one, <code>all-MiniLM-L6-v2</code>, over every passage of this blog, and uses it to search the blog.</p>
+<section id="keyword-search-first" class="level2">
+<h2 class="anchored" data-anchor-id="keyword-search-first">Keyword search first</h2>
+<p>The baseline to beat is older than any of this. A keyword engine scores a passage by the query words it contains, weighted by how informative each word is. The informativeness comes from Karen Spärck Jones’s 1972 observation that a term appearing in few documents is a better discriminator than one appearing in many, the <em>inverse document frequency</em>. The standard modern form, Okapi BM25 (Stephen Robertson and colleagues, through the 1990s), scores a document <span class="math inline">\(D\)</span> for a query <span class="math inline">\(Q\)</span> as</p>
+<p><span class="math display">\[
+\operatorname{BM25}(D, Q) = \sum_{w\in Q} \operatorname{idf}(w)\,\frac{f(w,D)\,(k_1+1)}{f(w,D) + k_1\left(1 - b + b\,\frac{|D|}{\overline{|D|}}\right)}, \qquad
+\operatorname{idf}(w) = \log\!\left(1 + \frac{N - n_w + \tfrac12}{n_w + \tfrac12}\right),
+\]</span></p>
+<p>where <span class="math inline">\(f(w,D)\)</span> is how often <span class="math inline">\(w\)</span> occurs in <span class="math inline">\(D\)</span>, <span class="math inline">\(n_w\)</span> how many of the <span class="math inline">\(N\)</span> documents contain it, and <span class="math inline">\(|D|/\overline{|D|}\)</span> the document’s length relative to the average. The fraction saturates: a word’s tenth occurrence adds much less than its first, with <span class="math inline">\(k_1\)</span> (usually 1.2) setting how fast. The parameter <span class="math inline">\(b\)</span> (usually 0.75) discounts long documents, which contain more words by chance. The idf is the log-odds that a random document does not contain the word, which is where it comes from in Robertson and Spärck Jones’s probabilistic model.</p>
+<p>BM25 is fast, needs no training and is very hard to beat when the query and the answer use the same words. It fails when they do not: <em>why did the lander miss its target</em> shares no informative word with a passage about <em>state vector error</em> and <em>uprange</em>. That gap, the vocabulary mismatch problem, is what embeddings are for.</p>
+</section>
+<section id="one-vector-per-passage" class="level2">
+<h2 class="anchored" data-anchor-id="one-vector-per-passage">One vector per passage</h2>
+<section id="the-encoder" class="level3">
+<h3 class="anchored" data-anchor-id="the-encoder">The encoder</h3>
+<p>A sentence embedding model is a transformer like the ones in Part 1 with two differences. First, it is usually an <strong>encoder</strong>: each token’s attention looks at every other token in the passage, before and after, rather than only at earlier ones, because it is reading and not predicting. BERT (Jacob Devlin and colleagues, 2018) is the model of this type, trained by hiding 15% of the tokens and predicting them from both sides. Second, its output is not a probability over the next token but one vector for the whole input, made by <strong>pooling</strong> the final token vectors: taking the vector of a special first token (<code>[CLS]</code>), taking the mean of all of them, or, for models built from decoders, the vector of the last token, the only one that has seen everything.</p>
+<p>The model used here is small. <code>all-MiniLM-L6-v2</code> has 6 layers, 12 attention heads and vectors of 384 dimensions, a WordPiece vocabulary of 30,522 tokens, and 22.7 million parameters, about a fifth of the smallest GPT-2. Its starting point, MiniLM (Wenhui Wang and colleagues, 2020), was made by distilling a larger BERT into a smaller network. For each layer, with input <span class="math inline">\(X \in \mathbb R^{n\times 384}\)</span> for <span class="math inline">\(n\)</span> tokens and twelve heads of size <span class="math inline">\(d_h = 32\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+A_h &amp;= \operatorname{softmax}\!\left(\frac{(XW^Q_h)(XW^K_h)^\top}{\sqrt{d_h}}\right) X W^V_h, \\
+X' &amp;= \operatorname{LayerNorm}\!\big(X + [A_1\,\cdots\,A_{12}]\,W^O\big), \\
+X'' &amp;= \operatorname{LayerNorm}\!\big(X' + \operatorname{GELU}(X'W_1 + b_1)\,W_2 + b_2\big),
+\end{aligned}
+\]</span></p>
+<p>with the feed-forward layer widening to 1,536 and back. The input is the sum of three embedding tables, one for tokens, one for positions (512 learned rows, as in GPT-2) and one for which segment of a pair the token is in. The output vector for a passage is the mean of the 384-dimensional vectors of its tokens after layer 6, divided by its length so that it lies on the unit sphere. To make sure nothing is hidden in a library, I implemented that forward pass in about sixty lines of NumPy from the published weights; it reproduces the reference PyTorch implementation to within <span class="math inline">\(10^{-7}\)</span> (method notes at the end). The four sentences on the model’s page come out with cosines of 0.94 between <em>That is a happy person</em> and <em>That is a very happy person</em>, 0.69 with <em>That is a happy dog</em>, and 0.26 with <em>Today is a sunny day</em>.</p>
+</section>
+<section id="why-a-pretrained-encoder-is-not-enough" class="level3">
+<h3 class="anchored" data-anchor-id="why-a-pretrained-encoder-is-not-enough">Why a pretrained encoder is not enough</h3>
+<p>You might expect that averaging BERT’s output vectors would already give good sentence embeddings. It does not. Nils Reimers and Iryna Gurevych found in 2019 that mean-pooled BERT vectors scored below simple averages of GloVe word vectors on standard sentence-similarity benchmarks, and the <code>[CLS]</code> vector was worse still. Nothing in masked-token prediction asks for passages with the same meaning to have nearby vectors, and the vectors share the anisotropy seen in Part 1, crowded into a narrow cone where every cosine is high. The fix is to train for the property you want directly.</p>
+</section>
+</section>
+<section id="contrastive-training" class="level2">
+<h2 class="anchored" data-anchor-id="contrastive-training">Contrastive training</h2>
+<p>The training data is pairs of texts that belong together: a question and its answer, a title and its abstract, two duplicate questions, a post and a reply. <code>all-MiniLM-L6-v2</code> was fine-tuned on 1.17 billion such pairs from 32 sources, the largest being 726 million Reddit comment–reply pairs, 116 million citation pairs from scientific papers and 77 million duplicate questions from WikiAnswers.</p>
+<p>Take a batch of <span class="math inline">\(N\)</span> pairs <span class="math inline">\((x_i, y_i)\)</span> and embed them all, <span class="math inline">\(\mathbf u_i = f(x_i)\)</span>, <span class="math inline">\(\mathbf v_j = f(y_j)\)</span>, unit vectors. Score every combination, <span class="math inline">\(s_{ij} = \mathbf u_i\cdot\mathbf v_j/\tau\)</span>. For anchor <span class="math inline">\(i\)</span>, the true partner is <span class="math inline">\(y_i\)</span>, and the other <span class="math inline">\(N-1\)</span> partners in the batch serve as negatives for free. The loss is a classification over the batch:</p>
+<p><span class="math display">\[
+\mathcal L = -\frac1N\sum_{i=1}^N \log\frac{e^{s_{ii}}}{\sum_{j=1}^N e^{s_{ij}}}.
+\]</span></p>
+<p>This is InfoNCE (Aaron van den Oord and colleagues, 2018), with in-batch negatives. It is exactly the softmax cross-entropy of Part 1, with the batch’s partners standing in for the vocabulary, so the gradient has the same shape. Writing <span class="math inline">\(p_{ij} = e^{s_{ij}}/\sum_k e^{s_{ik}}\)</span>,</p>
+<p><span class="math display">\[
+\frac{\partial\mathcal L}{\partial \mathbf u_i} = \frac{1}{N\tau}\left(\sum_j p_{ij}\,\mathbf v_j - \mathbf v_i\right):
+\]</span></p>
+<p>each anchor is pulled towards its partner and pushed away from the others, in proportion to how much probability the model wrongly gave them. Because the vectors are normalised, only the component of this gradient tangent to the sphere moves them.</p>
+<p><strong>Why it works: a bound on mutual information.</strong> Van den Oord and colleagues showed that minimising <span class="math inline">\(\mathcal L\)</span> maximises a lower bound on the mutual information between the two halves of a pair:</p>
+<p><span class="math display">\[
+I(X;Y) \;\ge\; \log N - \mathcal L.
+\]</span></p>
+<p>A sketch: the optimal scoring function for the classification is <span class="math inline">\(e^{s(x,y)} \propto p(y\mid x)/p(y)\)</span>, the density ratio. Substituting it, the loss for one anchor becomes <span class="math inline">\(\mathbb E\log\!\big(1 + \frac{p(y_j)}{p(y_i\mid x_i)}\sum_{j\ne i}\frac{p(y_j\mid x_i)}{p(y_j)}\big)\)</span>; for large <span class="math inline">\(N\)</span> the sum concentrates at <span class="math inline">\(N-1\)</span>, and the expectation is at least <span class="math inline">\(\log(N-1) - I(X;Y)\)</span>. Two consequences matter in practice. The bound can never exceed <span class="math inline">\(\log N\)</span>, so larger batches allow the model to capture more of the shared information: <code>all-MiniLM-L6-v2</code> was trained with a batch of 1,024 pairs. And the negatives that teach most are those the model finds hard, which is why training sets add <em>hard negatives</em>, passages that look relevant and are not, alongside each pair.</p>
+<p><strong>The temperature.</strong> <span class="math inline">\(\tau\)</span> sets how sharply the softmax concentrates. With cosine scores between <span class="math inline">\(-1\)</span> and <span class="math inline">\(1\)</span> and <span class="math inline">\(\tau = 1\)</span>, the softmax over a thousand candidates is almost uniform and the loss cannot fall far; dividing by a small <span class="math inline">\(\tau\)</span> stretches the scores. The training script for this model multiplies by 20, <span class="math inline">\(\tau = 0.05\)</span>, and uses the symmetric loss (anchor-to-partner and partner-to-anchor) introduced for image–text pairs by CLIP.</p>
+<p><strong>Alignment and uniformity.</strong> Tongzhou Wang and Phillip Isola (2020) showed the loss balances two properties, which can be measured directly. <em>Alignment</em>, <span class="math inline">\(\mathbb E\,\|f(x) - f(y)\|^2\)</span> over true pairs, should be small. <em>Uniformity</em>, <span class="math inline">\(\log \mathbb E\, e^{-2\|f(x) - f(x')\|^2}\)</span> over random pairs, should be low: the embeddings should spread over the sphere rather than crowd into a cone, so that unrelated things are far apart and the space has room for distinctions.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="121" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 120;"><span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a>geomText <span class="op">=</span> {</span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> g <span class="op">=</span> B<span class="op">.</span><span class="at">geometry</span><span class="op">;</span></span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">md</span><span class="vs">`On this blog's </span><span class="sc">${</span><span class="fu">fmt</span>(B<span class="op">.</span><span class="at">chunks</span><span class="op">.</span><span class="at">length</span>)<span class="sc">}</span><span class="vs"> passages, the average cosine between two random passages is </span><span class="sc">${</span><span class="fu">fmt</span>(g<span class="op">.</span><span class="at">mean_cos</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">, against </span><span class="sc">${</span><span class="fu">fmt</span>(g<span class="op">.</span><span class="at">cos_adjacent</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs"> for consecutive passages of the same post (</span><span class="sc">${</span><span class="fu">fmt</span>(g<span class="op">.</span><span class="at">n_adjacent</span>)<span class="sc">}</span><span class="vs"> such pairs, used here as stand-ins for related text). The uniformity is </span><span class="sc">${</span><span class="fu">fmt</span>(g<span class="op">.</span><span class="at">uniformity</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">; the lowest possible, for vectors spread perfectly evenly over a 384-dimensional sphere, is about </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="op">-</span><span class="dv">4</span><span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">, reached when every pair is orthogonal. A blog about mathematics and physics is not a uniform sample of text, so its passages crowd together somewhat, but nothing like the cone of GPT-2's raw table in Part 1, where two random tokens had a cosine of 0.27.`</span><span class="op">;</span></span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="searching-this-blog" class="level2">
+<h2 class="anchored" data-anchor-id="searching-this-blog">Searching this blog</h2>
+<p>Every passage of every post here, 860 of them, was embedded once, offline. Type a question and it is embedded in your browser by the same model (<code>all-MiniLM-L6-v2</code>, run with Transformers.js; the first search downloads it, about 23 MB, then it is cached), and the passages are ranked by cosine similarity. The same question is also run through BM25, and the two rankings combined by reciprocal rank fusion, which scores each result by <span class="math inline">\(\sum_r 1/(60 + \text{rank}_r)\)</span> over the rankings it appears in (Gordon Cormack and colleagues, 2009). Results are grouped by post, best passage first.</p>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="133" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 132;"><span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>tfjs <span class="op">=</span> {</span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="st">"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/dist/transformers.min.js"</span>)<span class="op">;</span></span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="dt">ok</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">pipe</span><span class="op">:</span> mod<span class="op">.</span><span class="fu">pipeline</span>(<span class="st">"feature-extraction"</span><span class="op">,</span> <span class="st">"Xenova/all-MiniLM-L6-v2"</span><span class="op">,</span> {<span class="dt">dtype</span><span class="op">:</span> <span class="st">"q8"</span>})}<span class="op">;</span></span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (e) { <span class="cf">return</span> {<span class="dt">ok</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span> <span class="dt">err</span><span class="op">:</span> <span class="bu">String</span>(e)}<span class="op">;</span> }</span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="142" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 141;"><span id="cb4-142"><a href="#cb4-142" aria-hidden="true" tabindex="-1"></a>viewof qText <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"why did the lander miss its target"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Question"</span><span class="op">,</span> <span class="dt">submit</span><span class="op">:</span> <span class="st">"Search"</span><span class="op">,</span> <span class="dt">width</span><span class="op">:</span> <span class="dv">520</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="146" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 145;"><span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a>viewof qExample <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>([<span class="kw">null</span><span class="op">,</span> <span class="op">...</span>B<span class="op">.</span><span class="at">queries</span><span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">q</span>)]<span class="op">,</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Or a test question (runs without the model)"</span><span class="op">,</span> <span class="dt">format</span><span class="op">:</span> d <span class="kw">=&gt;</span> d <span class="op">??</span> <span class="st">"—"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="151" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 150;"><span id="cb6-151"><a href="#cb6-151" aria-hidden="true" tabindex="-1"></a><span class="co">// BM25 in the browser, same tokenisation and parameters as offline</span></span>
+<span id="cb6-152"><a href="#cb6-152" aria-hidden="true" tabindex="-1"></a>bm25 <span class="op">=</span> {</span>
+<span id="cb6-153"><a href="#cb6-153" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> STOP <span class="op">=</span> <span class="kw">new</span> <span class="bu">Set</span>(<span class="st">"a an the of to in and or is are was were be been it its on for with as by at from that this which what how why where when who whose into than then there their they them can does do did not no"</span><span class="op">.</span><span class="fu">split</span>(<span class="st">" "</span>))<span class="op">;</span></span>
+<span id="cb6-154"><a href="#cb6-154" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> toks <span class="op">=</span> s <span class="kw">=&gt;</span> (s<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">.</span><span class="fu">match</span>(<span class="ss">/</span><span class="sc">[a-z0-9]+</span><span class="ss">/g</span>) <span class="op">||</span> [])<span class="op">.</span><span class="fu">filter</span>(w <span class="kw">=&gt;</span> <span class="op">!</span>STOP<span class="op">.</span><span class="fu">has</span>(w))<span class="op">;</span></span>
+<span id="cb6-155"><a href="#cb6-155" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> docs <span class="op">=</span> B<span class="op">.</span><span class="at">chunks</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> <span class="fu">toks</span>(B<span class="op">.</span><span class="at">posts</span>[c<span class="op">.</span><span class="at">post</span>]<span class="op">.</span><span class="at">title</span> <span class="op">+</span> <span class="st">". "</span> <span class="op">+</span> c<span class="op">.</span><span class="at">heading</span> <span class="op">+</span> <span class="st">". "</span> <span class="op">+</span> c<span class="op">.</span><span class="at">text</span>))<span class="op">;</span></span>
+<span id="cb6-156"><a href="#cb6-156" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> N <span class="op">=</span> docs<span class="op">.</span><span class="at">length</span><span class="op">,</span> avg <span class="op">=</span> docs<span class="op">.</span><span class="fu">reduce</span>((a<span class="op">,</span> d) <span class="kw">=&gt;</span> a <span class="op">+</span> d<span class="op">.</span><span class="at">length</span><span class="op">,</span> <span class="dv">0</span>) <span class="op">/</span> N<span class="op">;</span></span>
+<span id="cb6-157"><a href="#cb6-157" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> df <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span> docs<span class="op">.</span><span class="fu">forEach</span>(d <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="bu">Set</span>(d)<span class="op">.</span><span class="fu">forEach</span>(w <span class="kw">=&gt;</span> df<span class="op">.</span><span class="fu">set</span>(w<span class="op">,</span> (df<span class="op">.</span><span class="fu">get</span>(w) <span class="op">||</span> <span class="dv">0</span>) <span class="op">+</span> <span class="dv">1</span>)))<span class="op">;</span></span>
+<span id="cb6-158"><a href="#cb6-158" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> tf <span class="op">=</span> docs<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> { <span class="kw">const</span> m <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span> d<span class="op">.</span><span class="fu">forEach</span>(w <span class="kw">=&gt;</span> m<span class="op">.</span><span class="fu">set</span>(w<span class="op">,</span> (m<span class="op">.</span><span class="fu">get</span>(w) <span class="op">||</span> <span class="dv">0</span>) <span class="op">+</span> <span class="dv">1</span>))<span class="op">;</span> <span class="cf">return</span> m<span class="op">;</span> })<span class="op">;</span></span>
+<span id="cb6-159"><a href="#cb6-159" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> k1 <span class="op">=</span> B<span class="op">.</span><span class="at">bm25</span><span class="op">.</span><span class="at">k1</span><span class="op">,</span> b <span class="op">=</span> B<span class="op">.</span><span class="at">bm25</span><span class="op">.</span><span class="at">b</span><span class="op">;</span></span>
+<span id="cb6-160"><a href="#cb6-160" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> q <span class="kw">=&gt;</span> { <span class="kw">const</span> qs <span class="op">=</span> <span class="fu">toks</span>(q)<span class="op">;</span> <span class="cf">return</span> tf<span class="op">.</span><span class="fu">map</span>((m<span class="op">,</span> i) <span class="kw">=&gt;</span> qs<span class="op">.</span><span class="fu">reduce</span>((s<span class="op">,</span> w) <span class="kw">=&gt;</span> { <span class="kw">const</span> f <span class="op">=</span> m<span class="op">.</span><span class="fu">get</span>(w) <span class="op">||</span> <span class="dv">0</span><span class="op">;</span> <span class="cf">if</span> (<span class="op">!</span>f) <span class="cf">return</span> s<span class="op">;</span></span>
+<span id="cb6-161"><a href="#cb6-161" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> n <span class="op">=</span> df<span class="op">.</span><span class="fu">get</span>(w) <span class="op">||</span> <span class="dv">0</span><span class="op">,</span> idf <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(<span class="dv">1</span> <span class="op">+</span> (N <span class="op">-</span> n <span class="op">+</span> <span class="op">.</span><span class="dv">5</span>) <span class="op">/</span> (n <span class="op">+</span> <span class="op">.</span><span class="dv">5</span>))<span class="op">;</span> <span class="cf">return</span> s <span class="op">+</span> idf <span class="op">*</span> f <span class="op">*</span> (k1 <span class="op">+</span> <span class="dv">1</span>) <span class="op">/</span> (f <span class="op">+</span> k1 <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> b <span class="op">+</span> b <span class="op">*</span> docs[i]<span class="op">.</span><span class="at">length</span> <span class="op">/</span> avg))<span class="op">;</span> }<span class="op">,</span> <span class="dv">0</span>))<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb6-162"><a href="#cb6-162" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="167" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 166;"><span id="cb7-167"><a href="#cb7-167" aria-hidden="true" tabindex="-1"></a>qVec <span class="op">=</span> {</span>
+<span id="cb7-168"><a href="#cb7-168" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (qExample) <span class="cf">return</span> {<span class="dt">vec</span><span class="op">:</span> B<span class="op">.</span><span class="at">queries</span><span class="op">.</span><span class="fu">find</span>(d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">q</span> <span class="op">===</span> qExample)<span class="op">.</span><span class="at">vec</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> qExample<span class="op">,</span> <span class="dt">how</span><span class="op">:</span> <span class="st">"precomputed"</span>}<span class="op">;</span></span>
+<span id="cb7-169"><a href="#cb7-169" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>tfjs<span class="op">.</span><span class="at">ok</span>) <span class="cf">return</span> {<span class="dt">vec</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> qText<span class="op">,</span> <span class="dt">how</span><span class="op">:</span> <span class="st">"model unavailable"</span>}<span class="op">;</span></span>
+<span id="cb7-170"><a href="#cb7-170" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb7-171"><a href="#cb7-171" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> pipe <span class="op">=</span> <span class="cf">await</span> tfjs<span class="op">.</span><span class="at">pipe</span><span class="op">;</span></span>
+<span id="cb7-172"><a href="#cb7-172" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> out <span class="op">=</span> <span class="cf">await</span> <span class="fu">pipe</span>(qText<span class="op">,</span> {<span class="dt">pooling</span><span class="op">:</span> <span class="st">"mean"</span><span class="op">,</span> <span class="dt">normalize</span><span class="op">:</span> <span class="kw">true</span>})<span class="op">;</span></span>
+<span id="cb7-173"><a href="#cb7-173" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="dt">vec</span><span class="op">:</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>(out<span class="op">.</span><span class="at">data</span>)<span class="op">,</span> <span class="dt">text</span><span class="op">:</span> qText<span class="op">,</span> <span class="dt">how</span><span class="op">:</span> <span class="st">"embedded in your browser"</span>}<span class="op">;</span></span>
+<span id="cb7-174"><a href="#cb7-174" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (e) { <span class="cf">return</span> {<span class="dt">vec</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> qText<span class="op">,</span> <span class="dt">how</span><span class="op">:</span> <span class="st">"model unavailable"</span>}<span class="op">;</span> }</span>
+<span id="cb7-175"><a href="#cb7-175" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="179" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 178;"><span id="cb8-179"><a href="#cb8-179" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> {</span>
+<span id="cb8-180"><a href="#cb8-180" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> n <span class="op">=</span> B<span class="op">.</span><span class="at">chunks</span><span class="op">.</span><span class="at">length</span><span class="op">,</span> rankPosts <span class="op">=</span> sc <span class="kw">=&gt;</span> {</span>
+<span id="cb8-181"><a href="#cb8-181" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> best <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span></span>
+<span id="cb8-182"><a href="#cb8-182" aria-hidden="true" tabindex="-1"></a>    sc<span class="op">.</span><span class="fu">forEach</span>((s<span class="op">,</span> i) <span class="kw">=&gt;</span> { <span class="kw">const</span> p <span class="op">=</span> B<span class="op">.</span><span class="at">chunks</span>[i]<span class="op">.</span><span class="at">post</span><span class="op">;</span> <span class="cf">if</span> (<span class="op">!</span>best<span class="op">.</span><span class="fu">has</span>(p) <span class="op">||</span> s <span class="op">&gt;</span> best<span class="op">.</span><span class="fu">get</span>(p)[<span class="dv">0</span>]) best<span class="op">.</span><span class="fu">set</span>(p<span class="op">,</span> [s<span class="op">,</span> i])<span class="op">;</span> })<span class="op">;</span></span>
+<span id="cb8-183"><a href="#cb8-183" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [<span class="op">...</span>best<span class="op">.</span><span class="fu">entries</span>()]<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b[<span class="dv">1</span>][<span class="dv">0</span>] <span class="op">-</span> a[<span class="dv">1</span>][<span class="dv">0</span>])<span class="op">.</span><span class="fu">map</span>(([p<span class="op">,</span> [s<span class="op">,</span> i]]) <span class="kw">=&gt;</span> ({p<span class="op">,</span> s<span class="op">,</span> i}))<span class="op">;</span></span>
+<span id="cb8-184"><a href="#cb8-184" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb8-185"><a href="#cb8-185" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> lex <span class="op">=</span> <span class="fu">rankPosts</span>(<span class="fu">bm25</span>(qVec<span class="op">.</span><span class="at">text</span>))<span class="op">;</span></span>
+<span id="cb8-186"><a href="#cb8-186" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> dense <span class="op">=</span> qVec<span class="op">.</span><span class="at">vec</span> <span class="op">?</span> <span class="fu">rankPosts</span>(<span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> n}<span class="op">,</span> (_<span class="op">,</span> i) <span class="kw">=&gt;</span> <span class="fu">dot</span>(i<span class="op">,</span> qVec<span class="op">.</span><span class="at">vec</span>))) <span class="op">:</span> []<span class="op">;</span></span>
+<span id="cb8-187"><a href="#cb8-187" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> fused <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span></span>
+<span id="cb8-188"><a href="#cb8-188" aria-hidden="true" tabindex="-1"></a>  [lex<span class="op">,</span> dense]<span class="op">.</span><span class="fu">forEach</span>(r <span class="kw">=&gt;</span> r<span class="op">.</span><span class="fu">forEach</span>((d<span class="op">,</span> k) <span class="kw">=&gt;</span> { <span class="kw">const</span> e <span class="op">=</span> fused<span class="op">.</span><span class="fu">get</span>(d<span class="op">.</span><span class="at">p</span>) <span class="op">||</span> {<span class="dt">p</span><span class="op">:</span> d<span class="op">.</span><span class="at">p</span><span class="op">,</span> <span class="dt">s</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">i</span><span class="op">:</span> d<span class="op">.</span><span class="at">i</span>}<span class="op">;</span> e<span class="op">.</span><span class="at">s</span> <span class="op">+=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">61</span> <span class="op">+</span> k)<span class="op">;</span> fused<span class="op">.</span><span class="fu">set</span>(d<span class="op">.</span><span class="at">p</span><span class="op">,</span> e)<span class="op">;</span> }))<span class="op">;</span></span>
+<span id="cb8-189"><a href="#cb8-189" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {lex<span class="op">,</span> dense<span class="op">,</span> <span class="dt">hybrid</span><span class="op">:</span> [<span class="op">...</span>fused<span class="op">.</span><span class="fu">values</span>()]<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b<span class="op">.</span><span class="at">s</span> <span class="op">-</span> a<span class="op">.</span><span class="at">s</span>)<span class="op">,</span> <span class="dt">how</span><span class="op">:</span> qVec<span class="op">.</span><span class="at">how</span><span class="op">,</span> <span class="dt">q</span><span class="op">:</span> qVec<span class="op">.</span><span class="at">text</span>}<span class="op">;</span></span>
+<span id="cb8-190"><a href="#cb8-190" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="194" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 193;"><span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a>resultsView <span class="op">=</span> {</span>
+<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> col <span class="op">=</span> (title<span class="op">,</span> r<span class="op">,</span> dec) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span>title<span class="sc">}</span><span class="vs">&lt;/h4&gt;</span><span class="sc">${</span>r<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> {</span>
+<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> c <span class="op">=</span> B<span class="op">.</span><span class="at">chunks</span>[d<span class="op">.</span><span class="at">i</span>]<span class="op">,</span> post <span class="op">=</span> B<span class="op">.</span><span class="at">posts</span>[d<span class="op">.</span><span class="at">p</span>]<span class="op">;</span></span>
+<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-hit"&gt;&lt;span class="s"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(d<span class="op">.</span><span class="at">s</span><span class="op">,</span> dec)<span class="sc">}</span><span class="vs">&lt;/span&gt;&lt;div class="t"&gt;&lt;a href="</span><span class="sc">${</span>post<span class="op">.</span><span class="at">url</span><span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">^\/</span><span class="ss">/</span><span class="op">,</span> <span class="st">"../../"</span>)<span class="sc">}</span><span class="vs">"&gt;</span><span class="sc">${</span>post<span class="op">.</span><span class="at">title</span><span class="sc">}</span><span class="vs">&lt;/a&gt;&lt;/div&gt;</span></span>
+<span id="cb9-198"><a href="#cb9-198" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;div class="h"&gt;</span><span class="sc">${</span>c<span class="op">.</span><span class="at">heading</span><span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="x"&gt;</span><span class="sc">${</span>c<span class="op">.</span><span class="at">text</span><span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">180</span>)<span class="sc">}</span><span class="vs">…&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span> })<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-status"&gt;“</span><span class="sc">${</span>results<span class="op">.</span><span class="at">q</span><span class="sc">}</span><span class="vs">”: query vector </span><span class="sc">${</span>results<span class="op">.</span><span class="at">how</span><span class="sc">}</span><span class="vs">.&lt;/div&gt;&lt;div class="em-grid"&gt;</span></span>
+<span id="cb9-200"><a href="#cb9-200" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>results<span class="op">.</span><span class="at">dense</span><span class="op">.</span><span class="at">length</span> <span class="op">?</span> <span class="fu">col</span>(<span class="st">"Embedding (cosine)"</span><span class="op">,</span> results<span class="op">.</span><span class="at">dense</span><span class="op">,</span> <span class="dv">3</span>) <span class="op">:</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-panel"&gt;&lt;h4&gt;Embedding&lt;/h4&gt;&lt;p class="em-note"&gt;The model could not be loaded here; pick a test question to see precomputed results.&lt;/p&gt;&lt;/div&gt;`</span><span class="sc">}</span></span>
+<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span><span class="fu">col</span>(<span class="st">"BM25 keywords"</span><span class="op">,</span> results<span class="op">.</span><span class="at">lex</span><span class="op">,</span> <span class="dv">1</span>)<span class="sc">}${</span><span class="fu">col</span>(<span class="st">"Hybrid (reciprocal rank fusion)"</span><span class="op">,</span> results<span class="op">.</span><span class="at">hybrid</span><span class="op">,</span> <span class="dv">4</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb9-202"><a href="#cb9-202" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>To compare them fairly I wrote 30 test questions before running either method, each with the post or posts that answer it, phrased as a reader might ask rather than in the posts’ own words where possible. A question counts as answered at rank <span class="math inline">\(r\)</span> when the first relevant post is <span class="math inline">\(r\)</span>-th in the list:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="208" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 207;"><span id="cb10-208"><a href="#cb10-208" aria-hidden="true" tabindex="-1"></a>evalTable <span class="op">=</span> {</span>
+<span id="cb10-209"><a href="#cb10-209" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rows <span class="op">=</span> [[<span class="st">"BM25 keywords"</span><span class="op">,</span> B<span class="op">.</span><span class="at">eval</span><span class="op">.</span><span class="at">bm25</span>]<span class="op">,</span> [<span class="st">"Embedding"</span><span class="op">,</span> B<span class="op">.</span><span class="at">eval</span><span class="op">.</span><span class="at">dense</span>]<span class="op">,</span> [<span class="st">"Hybrid"</span><span class="op">,</span> B<span class="op">.</span><span class="at">eval</span><span class="op">.</span><span class="at">hybrid</span>]]<span class="op">;</span></span>
+<span id="cb10-210"><a href="#cb10-210" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm em-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Method&lt;/th&gt;&lt;th class="num"&gt;First result relevant&lt;/th&gt;&lt;th class="num"&gt;Relevant in top 3&lt;/th&gt;&lt;th class="num"&gt;Mean reciprocal rank&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb10-211"><a href="#cb10-211" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(([k<span class="op">,</span> v]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>k<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> v<span class="op">.</span><span class="at">hit1</span>)<span class="sc">}</span><span class="vs">%&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> v<span class="op">.</span><span class="at">hit3</span>)<span class="sc">}</span><span class="vs">%&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(v<span class="op">.</span><span class="at">mrr</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb10-212"><a href="#cb10-212" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb11" data-startfrom="216" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 215;"><span id="cb11-216"><a href="#cb11-216" aria-hidden="true" tabindex="-1"></a>evalDiff <span class="op">=</span> {</span>
+<span id="cb11-217"><a href="#cb11-217" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rows <span class="op">=</span> B<span class="op">.</span><span class="at">queries</span><span class="op">.</span><span class="fu">map</span>((q<span class="op">,</span> i) <span class="kw">=&gt;</span> ({<span class="dt">q</span><span class="op">:</span> q<span class="op">.</span><span class="at">q</span><span class="op">,</span> <span class="dt">bm</span><span class="op">:</span> B<span class="op">.</span><span class="at">eval</span><span class="op">.</span><span class="at">bm25</span><span class="op">.</span><span class="at">firsts</span>[i]<span class="op">,</span> <span class="dt">de</span><span class="op">:</span> B<span class="op">.</span><span class="at">eval</span><span class="op">.</span><span class="at">dense</span><span class="op">.</span><span class="at">firsts</span>[i]<span class="op">,</span> <span class="dt">hy</span><span class="op">:</span> B<span class="op">.</span><span class="at">eval</span><span class="op">.</span><span class="at">hybrid</span><span class="op">.</span><span class="at">firsts</span>[i]}))</span>
+<span id="cb11-218"><a href="#cb11-218" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">filter</span>(d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">bm</span> <span class="op">!==</span> d<span class="op">.</span><span class="at">de</span>)<span class="op">;</span></span>
+<span id="cb11-219"><a href="#cb11-219" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;details&gt;&lt;summary&gt;Questions where the two disagree (</span><span class="sc">${</span>rows<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs">)&lt;/summary&gt;&lt;table class="table table-sm em-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Question&lt;/th&gt;&lt;th class="num"&gt;BM25 rank&lt;/th&gt;&lt;th class="num"&gt;Embedding rank&lt;/th&gt;&lt;th class="num"&gt;Hybrid rank&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb11-220"><a href="#cb11-220" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">q</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">bm</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">de</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">hy</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/details&gt;`</span><span class="op">;</span></span>
+<span id="cb11-221"><a href="#cb11-221" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-11" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>This is a small test on a small collection, written by someone who knows the posts, so the numbers are a sketch rather than a benchmark. On it the embedding model does clearly better than keywords, and fusing the two did not help: BM25’s misses outnumbered the questions it rescued, and fusion averages them in. The embedding model also coped with names and codes here (try <em>J/109</em>, <em>Surveyor 3</em> or <em>mascons</em>), because its WordPiece vocabulary spells unknown words out of pieces as Part 1 described. The case for fusion is collections full of identifiers the embedding model has never seen used, part numbers, error codes, product names, where an exact match is the only signal; production systems usually run both and tune the mix on their own questions. The large public comparison of embedding models is MTEB, the Massive Text Embedding Benchmark (Niklas Muennighoff and colleagues, 2022), which tests retrieval, clustering, classification and similarity across dozens of datasets.</p>
+</section>
+<section id="a-map-of-the-blog" class="level2">
+<h2 class="anchored" data-anchor-id="a-map-of-the-blog">A map of the blog</h2>
+<p>The 384 dimensions can be squeezed into two for a picture with t-SNE (Laurens van der Maaten and Geoffrey Hinton, 2008), which places points so that each one’s near neighbours stay near. Distances between clusters in such a picture mean little; the clusters themselves are the point. Each dot is a passage, coloured by section of the blog:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb12" data-startfrom="231" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 230;"><span id="cb12-231"><a href="#cb12-231" aria-hidden="true" tabindex="-1"></a>mapPlot <span class="op">=</span> {</span>
+<span id="cb12-232"><a href="#cb12-232" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> d <span class="op">=</span> B<span class="op">.</span><span class="at">tsne</span><span class="op">.</span><span class="fu">map</span>(([x<span class="op">,</span> y]<span class="op">,</span> i) <span class="kw">=&gt;</span> ({x<span class="op">,</span> y<span class="op">,</span> <span class="dt">sec</span><span class="op">:</span> B<span class="op">.</span><span class="at">posts</span>[B<span class="op">.</span><span class="at">chunks</span>[i]<span class="op">.</span><span class="at">post</span>]<span class="op">.</span><span class="at">section</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> B<span class="op">.</span><span class="at">posts</span>[B<span class="op">.</span><span class="at">chunks</span>[i]<span class="op">.</span><span class="at">post</span>]<span class="op">.</span><span class="at">title</span><span class="op">,</span> <span class="dt">head</span><span class="op">:</span> B<span class="op">.</span><span class="at">chunks</span>[i]<span class="op">.</span><span class="at">heading</span>}))<span class="op">;</span></span>
+<span id="cb12-233"><a href="#cb12-233" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb12-234"><a href="#cb12-234" aria-hidden="true" tabindex="-1"></a>    <span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">720</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">520</span><span class="op">,</span> <span class="dt">x</span><span class="op">:</span> {<span class="dt">axis</span><span class="op">:</span> <span class="kw">null</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">axis</span><span class="op">:</span> <span class="kw">null</span>}<span class="op">,</span></span>
+<span id="cb12-235"><a href="#cb12-235" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(secColour)<span class="op">,</span> <span class="dt">range</span><span class="op">:</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">values</span>(secColour)}<span class="op">,</span></span>
+<span id="cb12-236"><a href="#cb12-236" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">dot</span>(d<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"sec"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="fl">3.2</span><span class="op">,</span> <span class="dt">fillOpacity</span><span class="op">:</span> <span class="fl">0.8</span><span class="op">,</span> <span class="dt">tip</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d<span class="op">.</span><span class="at">title</span><span class="sc">}\n${</span>d<span class="op">.</span><span class="at">head</span><span class="sc">}</span><span class="vs">`</span>})]</span>
+<span id="cb12-237"><a href="#cb12-237" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb12-238"><a href="#cb12-238" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-12" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Posts cluster by subject rather than by section. Averaging each post’s passage vectors and comparing the averages: the <em>Interstellar</em> post, filed under sci-fi, is closest to the Kerr black hole and black-hole ray-tracing explainers; the Apollo frames-of-reference explainer is closest to the Apollo series; the Martian tripod is closest to the walking, statics and kinematics explainers written for it; and the telescope post’s nearest neighbour is the black-hole ray tracer, the other post that traces rays.</p>
+</section>
+<section id="searching-millions-of-vectors" class="level2">
+<h2 class="anchored" data-anchor-id="searching-millions-of-vectors">Searching millions of vectors</h2>
+<p>Ranking 860 passages means 860 dot products of length 384, about 330,000 multiplications: nothing. A real collection might hold a hundred million passages, and an exact search then costs <span class="math inline">\(4\times10^{10}\)</span> multiplications per query. Two ideas make it practical: search approximately, and store less.</p>
+<section id="hnsw" class="level3">
+<h3 class="anchored" data-anchor-id="hnsw">HNSW</h3>
+<p>The standard approximate method is the hierarchical navigable small world graph (Yury Malkov and Dmitry Yashunin, 2016). Each vector is a node, linked to a few of its nearest neighbours. To search, start at an entry node and move greedily to whichever neighbour is closest to the query, until no neighbour is closer. On a graph that mixes short links with a few long ones (a <em>small world</em>, after Duncan Watts and Steven Strogatz), greedy routing reaches the right region in a few hops. HNSW gets the long links by building several layers: every node is in layer 0, a random fraction <span class="math inline">\(1/M\)</span> of them also in layer 1, a fraction <span class="math inline">\(1/M^2\)</span> in layer 2, and so on, like a skip list. A search starts at the sparse top layer, descends when it can get no closer, and finishes in layer 0 with a beam of the <code>ef</code> best candidates. Search cost grows roughly as <span class="math inline">\(\log N\)</span>.</p>
+<p>The panel builds an HNSW index over this blog’s passages in your browser and searches it for each of the test questions, counting how many vectors each search had to compare against the query:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb13" data-startfrom="254" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 253;"><span id="cb13-254"><a href="#cb13-254" aria-hidden="true" tabindex="-1"></a>viewof hn <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb13-255"><a href="#cb13-255" aria-hidden="true" tabindex="-1"></a>  <span class="dt">M</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">2</span><span class="op">,</span> <span class="dv">16</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">6</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Links per node, M"</span>})<span class="op">,</span></span>
+<span id="cb13-256"><a href="#cb13-256" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ef</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">64</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">8</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Search beam, ef"</span>})</span>
+<span id="cb13-257"><a href="#cb13-257" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-13" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb14" data-startfrom="262" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 261;"><span id="cb14-262"><a href="#cb14-262" aria-hidden="true" tabindex="-1"></a>hnsw <span class="op">=</span> {</span>
+<span id="cb14-263"><a href="#cb14-263" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> {X<span class="op">,</span> N<span class="op">,</span> D} <span class="op">=</span> idx<span class="op">,</span> M <span class="op">=</span> hn<span class="op">.</span><span class="at">M</span><span class="op">,</span> M0 <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> M<span class="op">,</span> efC <span class="op">=</span> <span class="dv">40</span><span class="op">;</span></span>
+<span id="cb14-264"><a href="#cb14-264" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> sim <span class="op">=</span> (a<span class="op">,</span> b) <span class="kw">=&gt;</span> { <span class="kw">let</span> s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="kw">const</span> oa <span class="op">=</span> a <span class="op">*</span> D<span class="op">,</span> ob <span class="op">=</span> b <span class="op">*</span> D<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) s <span class="op">+=</span> X[oa <span class="op">+</span> j] <span class="op">*</span> X[ob <span class="op">+</span> j]<span class="op">;</span> <span class="cf">return</span> s<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb14-265"><a href="#cb14-265" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed <span class="op">=</span> <span class="dv">7</span><span class="op">;</span> <span class="kw">const</span> rnd <span class="op">=</span> () <span class="kw">=&gt;</span> (seed <span class="op">=</span> (seed <span class="op">*</span> <span class="dv">16807</span>) <span class="op">%</span> <span class="dv">2147483647</span>) <span class="op">/</span> <span class="dv">2147483647</span><span class="op">;</span></span>
+<span id="cb14-266"><a href="#cb14-266" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> level <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> N}<span class="op">,</span> () <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="op">-</span><span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">rnd</span>() <span class="op">+</span> <span class="fl">1e-12</span>) <span class="op">/</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(M)))<span class="op">;</span></span>
+<span id="cb14-267"><a href="#cb14-267" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> links <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> N}<span class="op">,</span> (_<span class="op">,</span> i) <span class="kw">=&gt;</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> level[i] <span class="op">+</span> <span class="dv">1</span>}<span class="op">,</span> () <span class="kw">=&gt;</span> []))<span class="op">;</span></span>
+<span id="cb14-268"><a href="#cb14-268" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> entry <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> top <span class="op">=</span> level[<span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb14-269"><a href="#cb14-269" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> searchLayer <span class="op">=</span> (simq<span class="op">,</span> eps<span class="op">,</span> ef<span class="op">,</span> L<span class="op">,</span> count) <span class="kw">=&gt;</span> {</span>
+<span id="cb14-270"><a href="#cb14-270" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> vis <span class="op">=</span> <span class="kw">new</span> <span class="bu">Set</span>(eps)<span class="op">;</span> <span class="kw">let</span> C <span class="op">=</span> eps<span class="op">.</span><span class="fu">map</span>(e <span class="kw">=&gt;</span> [<span class="fu">simq</span>(e)<span class="op">,</span> e])<span class="op">;</span> count<span class="op">.</span><span class="at">n</span> <span class="op">+=</span> eps<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb14-271"><a href="#cb14-271" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> W <span class="op">=</span> C<span class="op">.</span><span class="fu">slice</span>()<span class="op">;</span></span>
+<span id="cb14-272"><a href="#cb14-272" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (C<span class="op">.</span><span class="at">length</span>) {</span>
+<span id="cb14-273"><a href="#cb14-273" aria-hidden="true" tabindex="-1"></a>      C<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b[<span class="dv">0</span>] <span class="op">-</span> a[<span class="dv">0</span>])<span class="op">;</span> <span class="kw">const</span> [cs<span class="op">,</span> c] <span class="op">=</span> C<span class="op">.</span><span class="fu">shift</span>()<span class="op">;</span></span>
+<span id="cb14-274"><a href="#cb14-274" aria-hidden="true" tabindex="-1"></a>      W<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b[<span class="dv">0</span>] <span class="op">-</span> a[<span class="dv">0</span>])<span class="op">;</span> <span class="cf">if</span> (cs <span class="op">&lt;</span> W[W<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>][<span class="dv">0</span>] <span class="op">&amp;&amp;</span> W<span class="op">.</span><span class="at">length</span> <span class="op">&gt;=</span> ef) <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb14-275"><a href="#cb14-275" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (<span class="kw">const</span> e <span class="kw">of</span> links[c][L] <span class="op">||</span> []) <span class="cf">if</span> (<span class="op">!</span>vis<span class="op">.</span><span class="fu">has</span>(e)) {</span>
+<span id="cb14-276"><a href="#cb14-276" aria-hidden="true" tabindex="-1"></a>        vis<span class="op">.</span><span class="fu">add</span>(e)<span class="op">;</span> <span class="kw">const</span> s <span class="op">=</span> <span class="fu">simq</span>(e)<span class="op">;</span> count<span class="op">.</span><span class="at">n</span><span class="op">++;</span></span>
+<span id="cb14-277"><a href="#cb14-277" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (W<span class="op">.</span><span class="at">length</span> <span class="op">&lt;</span> ef <span class="op">||</span> s <span class="op">&gt;</span> W[W<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>][<span class="dv">0</span>]) { C<span class="op">.</span><span class="fu">push</span>([s<span class="op">,</span> e])<span class="op">;</span> W<span class="op">.</span><span class="fu">push</span>([s<span class="op">,</span> e])<span class="op">;</span> W<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b[<span class="dv">0</span>] <span class="op">-</span> a[<span class="dv">0</span>])<span class="op">;</span> <span class="cf">if</span> (W<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> ef) W<span class="op">.</span><span class="fu">pop</span>()<span class="op">;</span> }</span>
+<span id="cb14-278"><a href="#cb14-278" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb14-279"><a href="#cb14-279" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-280"><a href="#cb14-280" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> W<span class="op">;</span></span>
+<span id="cb14-281"><a href="#cb14-281" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb14-282"><a href="#cb14-282" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb14-283"><a href="#cb14-283" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> simq <span class="op">=</span> e <span class="kw">=&gt;</span> <span class="fu">sim</span>(i<span class="op">,</span> e)<span class="op">,</span> cnt <span class="op">=</span> {<span class="dt">n</span><span class="op">:</span> <span class="dv">0</span>}<span class="op">;</span> <span class="kw">let</span> ep <span class="op">=</span> [entry]<span class="op">;</span></span>
+<span id="cb14-284"><a href="#cb14-284" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> L <span class="op">=</span> top<span class="op">;</span> L <span class="op">&gt;</span> level[i]<span class="op">;</span> L<span class="op">--</span>) ep <span class="op">=</span> [<span class="fu">searchLayer</span>(simq<span class="op">,</span> ep<span class="op">,</span> <span class="dv">1</span><span class="op">,</span> L<span class="op">,</span> cnt)[<span class="dv">0</span>][<span class="dv">1</span>]]<span class="op">;</span></span>
+<span id="cb14-285"><a href="#cb14-285" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> L <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(top<span class="op">,</span> level[i])<span class="op">;</span> L <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> L<span class="op">--</span>) {</span>
+<span id="cb14-286"><a href="#cb14-286" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> W <span class="op">=</span> <span class="fu">searchLayer</span>(simq<span class="op">,</span> ep<span class="op">,</span> efC<span class="op">,</span> L<span class="op">,</span> cnt)<span class="op">,</span> mx <span class="op">=</span> L <span class="op">===</span> <span class="dv">0</span> <span class="op">?</span> M0 <span class="op">:</span> M<span class="op">;</span></span>
+<span id="cb14-287"><a href="#cb14-287" aria-hidden="true" tabindex="-1"></a>      links[i][L] <span class="op">=</span> W<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> M)<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> d[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb14-288"><a href="#cb14-288" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (<span class="kw">const</span> e <span class="kw">of</span> links[i][L]) { <span class="kw">const</span> l <span class="op">=</span> links[e][L]<span class="op">;</span> l<span class="op">.</span><span class="fu">push</span>(i)<span class="op">;</span> <span class="cf">if</span> (l<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> mx) { l<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> <span class="fu">sim</span>(e<span class="op">,</span> b) <span class="op">-</span> <span class="fu">sim</span>(e<span class="op">,</span> a))<span class="op">;</span> l<span class="op">.</span><span class="at">length</span> <span class="op">=</span> mx<span class="op">;</span> } }</span>
+<span id="cb14-289"><a href="#cb14-289" aria-hidden="true" tabindex="-1"></a>      ep <span class="op">=</span> W<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> d[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb14-290"><a href="#cb14-290" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-291"><a href="#cb14-291" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (level[i] <span class="op">&gt;</span> top) { top <span class="op">=</span> level[i]<span class="op">;</span> entry <span class="op">=</span> i<span class="op">;</span> }</span>
+<span id="cb14-292"><a href="#cb14-292" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-293"><a href="#cb14-293" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> search <span class="op">=</span> (q<span class="op">,</span> ef) <span class="kw">=&gt;</span> {</span>
+<span id="cb14-294"><a href="#cb14-294" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> simq <span class="op">=</span> e <span class="kw">=&gt;</span> { <span class="kw">let</span> s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="kw">const</span> o <span class="op">=</span> e <span class="op">*</span> D<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) s <span class="op">+=</span> X[o <span class="op">+</span> j] <span class="op">*</span> q[j]<span class="op">;</span> <span class="cf">return</span> s<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb14-295"><a href="#cb14-295" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> cnt <span class="op">=</span> {<span class="dt">n</span><span class="op">:</span> <span class="dv">0</span>}<span class="op">;</span> <span class="kw">let</span> ep <span class="op">=</span> [entry]<span class="op">;</span></span>
+<span id="cb14-296"><a href="#cb14-296" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> L <span class="op">=</span> top<span class="op">;</span> L <span class="op">&gt;</span> <span class="dv">0</span><span class="op">;</span> L<span class="op">--</span>) ep <span class="op">=</span> [<span class="fu">searchLayer</span>(simq<span class="op">,</span> ep<span class="op">,</span> <span class="dv">1</span><span class="op">,</span> L<span class="op">,</span> cnt)[<span class="dv">0</span>][<span class="dv">1</span>]]<span class="op">;</span></span>
+<span id="cb14-297"><a href="#cb14-297" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> W <span class="op">=</span> <span class="fu">searchLayer</span>(simq<span class="op">,</span> ep<span class="op">,</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(ef<span class="op">,</span> <span class="dv">10</span>)<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> cnt)<span class="op">;</span></span>
+<span id="cb14-298"><a href="#cb14-298" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="dt">top</span><span class="op">:</span> W<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> d[<span class="dv">1</span>])<span class="op">,</span> <span class="dt">compared</span><span class="op">:</span> cnt<span class="op">.</span><span class="at">n</span>}<span class="op">;</span></span>
+<span id="cb14-299"><a href="#cb14-299" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb14-300"><a href="#cb14-300" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {search<span class="op">,</span> <span class="dt">layers</span><span class="op">:</span> top <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">perLayer</span><span class="op">:</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> top <span class="op">+</span> <span class="dv">1</span>}<span class="op">,</span> (_<span class="op">,</span> L) <span class="kw">=&gt;</span> level<span class="op">.</span><span class="fu">filter</span>(l <span class="kw">=&gt;</span> l <span class="op">&gt;=</span> L)<span class="op">.</span><span class="at">length</span>)}<span class="op">;</span></span>
+<span id="cb14-301"><a href="#cb14-301" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-14" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb15" data-startfrom="305" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 304;"><span id="cb15-305"><a href="#cb15-305" aria-hidden="true" tabindex="-1"></a>hnswOut <span class="op">=</span> {</span>
+<span id="cb15-306"><a href="#cb15-306" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> rec <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> comp <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb15-307"><a href="#cb15-307" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> q <span class="kw">of</span> B<span class="op">.</span><span class="at">queries</span>) {</span>
+<span id="cb15-308"><a href="#cb15-308" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> exact <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> idx<span class="op">.</span><span class="at">N</span>}<span class="op">,</span> (_<span class="op">,</span> i) <span class="kw">=&gt;</span> [<span class="fu">dot</span>(i<span class="op">,</span> q<span class="op">.</span><span class="at">vec</span>)<span class="op">,</span> i])<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b[<span class="dv">0</span>] <span class="op">-</span> a[<span class="dv">0</span>])<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> d[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb15-309"><a href="#cb15-309" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> r <span class="op">=</span> hnsw<span class="op">.</span><span class="fu">search</span>(q<span class="op">.</span><span class="at">vec</span><span class="op">,</span> hn<span class="op">.</span><span class="at">ef</span>)<span class="op">;</span></span>
+<span id="cb15-310"><a href="#cb15-310" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">+=</span> r<span class="op">.</span><span class="at">top</span><span class="op">.</span><span class="fu">filter</span>(i <span class="kw">=&gt;</span> exact<span class="op">.</span><span class="fu">includes</span>(i))<span class="op">.</span><span class="at">length</span> <span class="op">/</span> <span class="dv">10</span><span class="op">;</span> comp <span class="op">+=</span> r<span class="op">.</span><span class="at">compared</span><span class="op">;</span></span>
+<span id="cb15-311"><a href="#cb15-311" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb15-312"><a href="#cb15-312" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> n <span class="op">=</span> B<span class="op">.</span><span class="at">queries</span><span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb15-313"><a href="#cb15-313" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-panel"&gt;&lt;h4&gt;Over the </span><span class="sc">${</span>n<span class="sc">}</span><span class="vs"> test questions&lt;/h4&gt;</span></span>
+<span id="cb15-314"><a href="#cb15-314" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;p style="margin:0"&gt;Layers: </span><span class="sc">${</span>hnsw<span class="op">.</span><span class="at">perLayer</span><span class="op">.</span><span class="fu">map</span>((c<span class="op">,</span> L) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>L<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span>c<span class="sc">}</span><span class="vs"> nodes`</span>)<span class="op">.</span><span class="fu">join</span>(<span class="st">" · "</span>)<span class="sc">}</span><span class="vs">&lt;br&gt;</span></span>
+<span id="cb15-315"><a href="#cb15-315" aria-hidden="true" tabindex="-1"></a><span class="vs">  Recall of the exact top 10: &lt;b&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> rec <span class="op">/</span> n)<span class="sc">}</span><span class="vs">%&lt;/b&gt; · vectors compared per search: &lt;b&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(comp <span class="op">/</span> n)<span class="sc">}</span><span class="vs">&lt;/b&gt; of </span><span class="sc">${</span><span class="fu">fmt</span>(idx<span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/p&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb15-316"><a href="#cb15-316" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-15" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>On a collection this small the saving is modest, because the beam soon covers a good part of it; the logarithm pays off at millions of vectors, where a search touches a few thousand. The trade is between <code>ef</code> (and <code>M</code>) and recall: a narrow beam is fast and sometimes misses the true nearest neighbour.</p>
+</section>
+<section id="storing-less" class="level3">
+<h3 class="anchored" data-anchor-id="storing-less">Storing less</h3>
+<p>A 384-dimensional vector in 32-bit floats is 1,536 bytes; a hundred million of them is 154 GB. Three ways to shrink it, measured on this blog: how many of each passage’s exact ten nearest neighbours are still found, and the mean reciprocal rank on the test questions.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb16" data-startfrom="326" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 325;"><span id="cb16-326"><a href="#cb16-326" aria-hidden="true" tabindex="-1"></a>compTable <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm em-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Storage&lt;/th&gt;&lt;th class="num"&gt;Bytes per vector&lt;/th&gt;&lt;th class="num"&gt;Top-10 neighbours kept&lt;/th&gt;&lt;th class="num"&gt;Test MRR&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb16-327"><a href="#cb16-327" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>B<span class="op">.</span><span class="at">compression</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>c<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(c<span class="op">.</span><span class="at">bytes</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>c<span class="op">.</span><span class="at">recall</span> <span class="op">===</span> <span class="kw">null</span> <span class="op">?</span> <span class="st">"—"</span> <span class="op">:</span> <span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> c<span class="op">.</span><span class="at">recall</span>) <span class="op">+</span> <span class="st">"%"</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(c<span class="op">.</span><span class="at">mrr</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-16" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p><strong>Scalar quantisation</strong> rounds each coordinate to 8 bits, a quarter of the space, and costs almost nothing. <strong>Binary quantisation</strong> keeps only the sign of each coordinate, 48 bytes, and compares vectors by Hamming distance, which a processor computes with one instruction per 64 bits. It loses more, but used as a first pass that picks 50 candidates for exact rescoring it recovers almost everything at a thirty-second of the memory. <strong>Truncation</strong>, keeping only the first few dimensions, costs steadily: by 48 dimensions a third of each passage’s neighbours have changed, because nothing in this model’s training put the important information first. (Thirty questions are too few for the reciprocal rank column to separate the milder options; it moves by a question or two either way.) Models trained with <em>Matryoshka representation learning</em> (Aditya Kusupati and colleagues, 2022) apply the contrastive loss to several prefixes at once (the first 48, 96, 192 dimensions and so on), so that each prefix is a usable embedding on its own and can be cut to fit the budget; several commercial models are trained this way. Product quantisation (Hervé Jégou and colleagues, 2011), which splits the vector into blocks and replaces each block with the index of its nearest codebook entry, sits between these and is the other workhorse of large indexes.</p>
+</section>
+</section>
+<section id="retrieval-augmented-generation" class="level2">
+<h2 class="anchored" data-anchor-id="retrieval-augmented-generation">Retrieval-augmented generation</h2>
+<p>A language model knows what was in its training data and nothing since, and nothing private. Retrieval-augmented generation, named by Patrick Lewis and colleagues in 2020, connects it to documents at query time:</p>
+<ol type="1">
+<li><strong>Chunk</strong> the documents into passages, as this post did (here by section, then into pieces of about 100 words, so that each fits the model’s 256-token limit). Too short and a passage lacks context; too long and its one vector averages over several topics, the <em>bank</em> problem of Part 1 at a larger scale.</li>
+<li><strong>Embed</strong> every passage once and store the vectors in an index.</li>
+<li>At question time, <strong>retrieve</strong>: embed the question and find its nearest passages, usually with keyword search alongside.</li>
+<li><strong>Rerank</strong> the top few dozen with a <strong>cross-encoder</strong>, a model that reads the question and a passage together, with full attention between them, and outputs one relevance score (Rodrigo Nogueira and Kyunghyun Cho, 2019). It is far more accurate than comparing two separately computed vectors, and far too slow to run over a whole collection, which is why it comes second.</li>
+<li><strong>Generate</strong>: put the best passages into the prompt with the question and an instruction to answer from them, with citations.</li>
+</ol>
+<p>Each step has its own failure. The answer may be split across chunks; the right passage may rank eleventh when ten were kept; the model may ignore what it was given. Nelson Liu and colleagues (2023) found that models used information at the start and end of a long prompt much better than in the middle, so the order of passages matters too. Retrieval quality sets a ceiling on the whole system: the language model cannot cite a passage it never saw.</p>
+<p>The vector that does all this is the one Part 1 built: a token’s row in a table, refined by layers of attention into a representation of a whole passage, and trained, by a softmax over a batch, to sit near the questions it answers.</p>
+</section>
+<section id="terminology-and-where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="terminology-and-where-it-comes-from">Terminology and where it comes from</h2>
+<div class="em-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Retrieval</strong></td>
+<td>Finding the documents relevant to a query</td>
+<td>Old French <em>retrouver</em>, to find again. <em>Information retrieval</em> was coined by Calvin Mooers in 1950.</td>
+</tr>
+<tr class="even">
+<td><strong>Inverse document frequency</strong></td>
+<td>Weight of a term by how few documents contain it</td>
+<td>Karen Spärck Jones, “A statistical interpretation of term specificity”, 1972.</td>
+</tr>
+<tr class="odd">
+<td><strong>BM25</strong></td>
+<td>The standard keyword-ranking function</td>
+<td><em>Best Match</em> 25, the 25th of the weighting schemes tried in the Okapi system at City University London, by Stephen Robertson and colleagues, early 1990s.</td>
+</tr>
+<tr class="even">
+<td><strong>Encoder / decoder</strong></td>
+<td>A model that reads a whole input / one that generates left to right</td>
+<td>From communication theory: encode a message into a signal, decode it back. Used for neural networks in sequence-to-sequence translation (2014).</td>
+</tr>
+<tr class="odd">
+<td><strong>Pooling</strong></td>
+<td>Combining many token vectors into one</td>
+<td>From the pooling layers of convolutional networks, which merge neighbouring values into one; <em>pool</em>, to combine resources.</td>
+</tr>
+<tr class="even">
+<td><strong>Contrastive</strong></td>
+<td>Learning by comparing positives with negatives</td>
+<td>Latin <em>contra</em> + <em>stare</em>, to stand against. Raia Hadsell, Sumit Chopra and Yann LeCun’s 2006 “contrastive loss” for learning invariant mappings.</td>
+</tr>
+<tr class="odd">
+<td><strong>Siamese network</strong></td>
+<td>Two copies of one network with shared weights, comparing their outputs</td>
+<td>Jane Bromley and colleagues, 1993, for signature verification, after the conjoined twins Chang and Eng Bunker, born in Siam.</td>
+</tr>
+<tr class="even">
+<td><strong>InfoNCE</strong></td>
+<td>The batch-softmax contrastive loss</td>
+<td><em>Info</em>rmation (it bounds mutual information) + <em>N</em>oise-<em>C</em>ontrastive <em>E</em>stimation (Michael Gutmann and Aapo Hyvärinen, 2010).</td>
+</tr>
+<tr class="odd">
+<td><strong>Temperature</strong></td>
+<td>The divisor <span class="math inline">\(\tau\)</span> in the softmax</td>
+<td>From the Boltzmann distribution, <span class="math inline">\(e^{-E/kT}\)</span>: high temperature spreads probability evenly, low temperature concentrates it on the best state.</td>
+</tr>
+<tr class="even">
+<td><strong>Small world</strong></td>
+<td>A graph with short paths between any two nodes</td>
+<td>Stanley Milgram’s 1967 letter-forwarding experiment (“six degrees”), formalised by Watts and Strogatz in 1998.</td>
+</tr>
+<tr class="odd">
+<td><strong>Cosine similarity</strong></td>
+<td><span class="math inline">\(\mathbf u\cdot\mathbf v/(\|\mathbf u\|\|\mathbf v\|)\)</span></td>
+<td>Latin <em>cosinus</em>, from <em>complementi sinus</em>, the sine of the complementary angle; used as a similarity measure in Gerard Salton’s vector-space retrieval model of the 1960s–70s.</td>
+</tr>
+<tr class="even">
+<td><strong>RAG</strong></td>
+<td>Retrieval-augmented generation</td>
+<td>Lewis and colleagues, 2020.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>Passages.</strong> Every post’s source text, with code, equations, tables and HTML removed, split at second- and third-level headings, then into runs of paragraphs of at least 120 words, with any run longer than 140 words split at sentence boundaries into pieces of about 90 words: 860 passages from 40 posts, this post excluded (its test questions would have been found in it). Each passage is embedded with its post title and heading prefixed; mathematical text produces about one and a half WordPiece tokens per word, and one passage reaches the model’s 256-token limit and is truncated.</p>
+<p><strong>Model.</strong> <code>sentence-transformers/all-MiniLM-L6-v2</code> weights from Hugging Face. Offline embeddings use my NumPy implementation of the BERT forward pass (post-LayerNorm, exact GELU, mean pooling over tokens, L2 normalisation); its output matches the reference PyTorch <code>BertModel</code> from Hugging Face Transformers to within <span class="math inline">\(10^{-7}\)</span> in every coordinate on test sentences. One trap: the published <code>tokenizer.json</code> pads every input to 128 tokens, and mean pooling must exclude the padding. Stored in the page at 8 bits per coordinate. Queries typed into the page are embedded by Transformers.js 3.0.2 with the <code>Xenova/all-MiniLM-L6-v2</code> ONNX export, with its weights quantised to 8 bits, so live scores can differ from precomputed ones in the third decimal place.</p>
+<p><strong>Retrieval tests.</strong> 30 questions written before evaluation, each with one or more relevant posts. Rankings are by post, each post scored by its best passage. BM25 with <span class="math inline">\(k_1 = 1.2\)</span>, <span class="math inline">\(b = 0.75\)</span>, lower-cased alphanumeric tokens and a short stop-word list, over the same prefixed passages. Fusion is reciprocal rank fusion with <span class="math inline">\(k = 60\)</span>. Compression: neighbour recall is the overlap of each passage’s top 10 under compression with its exact top 10, averaged; binary rescoring takes the 50 best by Hamming distance and reranks them by float cosine.</p>
+<p><strong>Geometry.</strong> Mean cosine and uniformity from 20,000 random pairs of distinct passages; t-SNE with perplexity 25, cosine distance, PCA initialisation (scikit-learn).</p>
+<p><strong>HNSW.</strong> Built in the page with <span class="math inline">\(M\)</span> links per node in the upper layers and <span class="math inline">\(2M\)</span> in layer 0, construction beam 40, levels drawn with probability <span class="math inline">\(M^{-\ell}\)</span>, the simple neighbour-selection rule (keep the closest), fixed random seed.</p>
+<p>Sources:</p>
+<ul>
+<li>K. Spärck Jones, “A statistical interpretation of term specificity and its application in retrieval”, <em>Journal of Documentation</em> 28, 1972. S. Robertson, H. Zaragoza, <a href="https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf"><em>The Probabilistic Relevance Framework: BM25 and Beyond</em></a>, 2009.</li>
+<li>J. Devlin and colleagues, <a href="https://arxiv.org/abs/1810.04805"><em>BERT</em></a>, 2018. W. Wang and colleagues, <a href="https://arxiv.org/abs/2002.10957"><em>MiniLM</em></a>, 2020. N. Reimers, I. Gurevych, <a href="https://arxiv.org/abs/1908.10084"><em>Sentence-BERT</em></a>, EMNLP 2019.</li>
+<li><a href="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2"><code>all-MiniLM-L6-v2</code> model card and training script</a>: training data, batch size, scale 20, symmetric loss.</li>
+<li>A. van den Oord, Y. Li, O. Vinyals, <a href="https://arxiv.org/abs/1807.03748"><em>Representation Learning with Contrastive Predictive Coding</em></a>, 2018. B. Poole and colleagues, <a href="https://arxiv.org/abs/1905.06922"><em>On Variational Bounds of Mutual Information</em></a>, ICML 2019. T. Wang, P. Isola, <a href="https://arxiv.org/abs/2005.10242"><em>Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere</em></a>, ICML 2020. A. Radford and colleagues, <a href="https://arxiv.org/abs/2103.00020"><em>CLIP</em></a>, 2021.</li>
+<li>G. Cormack, C. Clarke, S. Büttcher, “Reciprocal Rank Fusion outperforms Condorcet and individual rank learning methods”, SIGIR 2009. N. Muennighoff and colleagues, <a href="https://arxiv.org/abs/2210.07316"><em>MTEB: Massive Text Embedding Benchmark</em></a>, 2022.</li>
+<li>Y. Malkov, D. Yashunin, <a href="https://arxiv.org/abs/1603.09320"><em>Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs</em></a>, 2016. H. Jégou, M. Douze, C. Schmid, “Product Quantization for Nearest Neighbor Search”, <em>IEEE TPAMI</em> 33, 2011. A. Kusupati and colleagues, <a href="https://arxiv.org/abs/2205.13147"><em>Matryoshka Representation Learning</em></a>, NeurIPS 2022.</li>
+<li>P. Lewis and colleagues, <a href="https://arxiv.org/abs/2005.11401"><em>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</em></a>, NeurIPS 2020. R. Nogueira, K. Cho, <a href="https://arxiv.org/abs/1901.04085"><em>Passage Re-ranking with BERT</em></a>, 2019. N. Liu and colleagues, <a href="https://arxiv.org/abs/2307.03172"><em>Lost in the Middle</em></a>, 2023.</li>
+<li>L. van der Maaten, G. Hinton, “Visualizing Data using t-SNE”, <em>JMLR</em> 9, 2008.</li>
+<li><a href="https://huggingface.co/docs/transformers.js">Transformers.js</a> for the in-browser model.</li>
+</ul>
+<p><strong>Previous: <a href="../embeddings-part-1-words-to-vectors/">Part 1, from words to vectors</a></strong>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG5CID0gRmlsZUF0dGFjaG1lbnQoXCJkYXRhL2Jsb2dfaW5kZXguanNvblwiKS5qc29uKClcbmlkeCA9IHtcbiAgY29uc3QgYmluID0gVWludDhBcnJheS5mcm9tKGF0b2IoQi5lbWIpLCBjID0+IGMuY2hhckNvZGVBdCgwKSk7XG4gIGNvbnN0IHEgPSBuZXcgSW50OEFycmF5KGJpbi5idWZmZXIpLCBOID0gQi5jaHVua3MubGVuZ3RoLCBEID0gQi5kaW0sIFggPSBuZXcgRmxvYXQzMkFycmF5KE4gKiBEKTtcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBOOyBpKyspIHtcbiAgICBsZXQgcyA9IDA7XG4gICAgZm9yIChsZXQgaiA9IDA7IGogPCBEOyBqKyspIHsgY29uc3QgdiA9IHFbaSAqIEQgKyBqXSAqIEIuc2NhbGVbaV0gLyAxMjc7IFhbaSAqIEQgKyBqXSA9IHY7IHMgKz0gdiAqIHY7IH1cbiAgICBzID0gTWF0aC5zcXJ0KHMpOyBmb3IgKGxldCBqID0gMDsgaiA8IEQ7IGorKykgWFtpICogRCArIGpdIC89IHM7XG4gIH1cbiAgcmV0dXJuIHtYLCBOLCBEfTtcbn1cbmRvdCA9IChpLCB2KSA9PiB7IGxldCBzID0gMDsgY29uc3QgbyA9IGkgKiBpZHguRDsgZm9yIChsZXQgaiA9IDA7IGogPCBpZHguRDsgaisrKSBzICs9IGlkeC5YW28gKyBqXSAqIHZbal07IHJldHVybiBzOyB9XG5zZWNDb2xvdXIgPSBPYmplY3QuZnJvbUVudHJpZXMoW1wiYWlcIiwgXCJhc3Ryb25vbXlcIiwgXCJjb3Ntb2xvZ3lcIiwgXCJleHBsYWluZXJzXCIsIFwibWVjaGFuaWNzXCIsIFwicGFwZXJzXCIsIFwicG9zdHNcIiwgXCJwcm9iYWJpbGl0eVwiLCBcInNjaS1maVwiLCBcInNwYWNlXCJdLm1hcCgocywgaSkgPT4gW3MsIGQzLnNjaGVtZVRhYmxlYXUxMFtpXV0pKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZ2VvbVRleHQgPSB7XG4gIGNvbnN0IGcgPSBCLmdlb21ldHJ5O1xuICByZXR1cm4gbWRgT24gdGhpcyBibG9nJ3MgJHtmbXQoQi5jaHVua3MubGVuZ3RoKX0gcGFzc2FnZXMsIHRoZSBhdmVyYWdlIGNvc2luZSBiZXR3ZWVuIHR3byByYW5kb20gcGFzc2FnZXMgaXMgJHtmbXQoZy5tZWFuX2NvcywgMyl9LCBhZ2FpbnN0ICR7Zm10KGcuY29zX2FkamFjZW50LCAzKX0gZm9yIGNvbnNlY3V0aXZlIHBhc3NhZ2VzIG9mIHRoZSBzYW1lIHBvc3QgKCR7Zm10KGcubl9hZGphY2VudCl9IHN1Y2ggcGFpcnMsIHVzZWQgaGVyZSBhcyBzdGFuZC1pbnMgZm9yIHJlbGF0ZWQgdGV4dCkuIFRoZSB1bmlmb3JtaXR5IGlzICR7Zm10KGcudW5pZm9ybWl0eSwgMil9OyB0aGUgbG93ZXN0IHBvc3NpYmxlLCBmb3IgdmVjdG9ycyBzcHJlYWQgcGVyZmVjdGx5IGV2ZW5seSBvdmVyIGEgMzg0LWRpbWVuc2lvbmFsIHNwaGVyZSwgaXMgYWJvdXQgJHtmbXQoLTQsIDEpfSwgcmVhY2hlZCB3aGVuIGV2ZXJ5IHBhaXIgaXMgb3J0aG9nb25hbC4gQSBibG9nIGFib3V0IG1hdGhlbWF0aWNzIGFuZCBwaHlzaWNzIGlzIG5vdCBhIHVuaWZvcm0gc2FtcGxlIG9mIHRleHQsIHNvIGl0cyBwYXNzYWdlcyBjcm93ZCB0b2dldGhlciBzb21ld2hhdCwgYnV0IG5vdGhpbmcgbGlrZSB0aGUgY29uZSBvZiBHUFQtMidzIHJhdyB0YWJsZSBpbiBQYXJ0IDEsIHdoZXJlIHR3byByYW5kb20gdG9rZW5zIGhhZCBhIGNvc2luZSBvZiAwLjI3LmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTMiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ0ZmpzID0ge1xuICB0cnkge1xuICAgIGNvbnN0IG1vZCA9IGF3YWl0IGltcG9ydChcImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9ucG0vQGh1Z2dpbmdmYWNlL3RyYW5zZm9ybWVyc0AzLjAuMi9kaXN0L3RyYW5zZm9ybWVycy5taW4uanNcIik7XG4gICAgcmV0dXJuIHtvazogdHJ1ZSwgcGlwZTogbW9kLnBpcGVsaW5lKFwiZmVhdHVyZS1leHRyYWN0aW9uXCIsIFwiWGVub3ZhL2FsbC1NaW5pTE0tTDYtdjJcIiwge2R0eXBlOiBcInE4XCJ9KX07XG4gIH0gY2F0Y2ggKGUpIHsgcmV0dXJuIHtvazogZmFsc2UsIGVycjogU3RyaW5nKGUpfTsgfVxufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIHFUZXh0ID0gSW5wdXRzLnRleHQoe3ZhbHVlOiBcIndoeSBkaWQgdGhlIGxhbmRlciBtaXNzIGl0cyB0YXJnZXRcIiwgbGFiZWw6IFwiUXVlc3Rpb25cIiwgc3VibWl0OiBcIlNlYXJjaFwiLCB3aWR0aDogNTIwfSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBxRXhhbXBsZSA9IElucHV0cy5zZWxlY3QoW251bGwsIC4uLkIucXVlcmllcy5tYXAoZCA9PiBkLnEpXSwge2xhYmVsOiBcIk9yIGEgdGVzdCBxdWVzdGlvbiAocnVucyB3aXRob3V0IHRoZSBtb2RlbClcIiwgZm9ybWF0OiBkID0+IGQgPz8gXCLigJRcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiIvLyBCTTI1IGluIHRoZSBicm93c2VyLCBzYW1lIHRva2VuaXNhdGlvbiBhbmQgcGFyYW1ldGVycyBhcyBvZmZsaW5lXG5ibTI1ID0ge1xuICBjb25zdCBTVE9QID0gbmV3IFNldChcImEgYW4gdGhlIG9mIHRvIGluIGFuZCBvciBpcyBhcmUgd2FzIHdlcmUgYmUgYmVlbiBpdCBpdHMgb24gZm9yIHdpdGggYXMgYnkgYXQgZnJvbSB0aGF0IHRoaXMgd2hpY2ggd2hhdCBob3cgd2h5IHdoZXJlIHdoZW4gd2hvIHdob3NlIGludG8gdGhhbiB0aGVuIHRoZXJlIHRoZWlyIHRoZXkgdGhlbSBjYW4gZG9lcyBkbyBkaWQgbm90IG5vXCIuc3BsaXQoXCIgXCIpKTtcbiAgY29uc3QgdG9rcyA9IHMgPT4gKHMudG9Mb3dlckNhc2UoKS5tYXRjaCgvW2EtejAtOV0rL2cpIHx8IFtdKS5maWx0ZXIodyA9PiAhU1RPUC5oYXModykpO1xuICBjb25zdCBkb2NzID0gQi5jaHVua3MubWFwKGMgPT4gdG9rcyhCLnBvc3RzW2MucG9zdF0udGl0bGUgKyBcIi4gXCIgKyBjLmhlYWRpbmcgKyBcIi4gXCIgKyBjLnRleHQpKTtcbiAgY29uc3QgTiA9IGRvY3MubGVuZ3RoLCBhdmcgPSBkb2NzLnJlZHVjZSgoYSwgZCkgPT4gYSArIGQubGVuZ3RoLCAwKSAvIE47XG4gIGNvbnN0IGRmID0gbmV3IE1hcCgpOyBkb2NzLmZvckVhY2goZCA9PiBuZXcgU2V0KGQpLmZvckVhY2godyA9PiBkZi5zZXQodywgKGRmLmdldCh3KSB8fCAwKSArIDEpKSk7XG4gIGNvbnN0IHRmID0gZG9jcy5tYXAoZCA9PiB7IGNvbnN0IG0gPSBuZXcgTWFwKCk7IGQuZm9yRWFjaCh3ID0+IG0uc2V0KHcsIChtLmdldCh3KSB8fCAwKSArIDEpKTsgcmV0dXJuIG07IH0pO1xuICBjb25zdCBrMSA9IEIuYm0yNS5rMSwgYiA9IEIuYm0yNS5iO1xuICByZXR1cm4gcSA9PiB7IGNvbnN0IHFzID0gdG9rcyhxKTsgcmV0dXJuIHRmLm1hcCgobSwgaSkgPT4gcXMucmVkdWNlKChzLCB3KSA9PiB7IGNvbnN0IGYgPSBtLmdldCh3KSB8fCAwOyBpZiAoIWYpIHJldHVybiBzO1xuICAgIGNvbnN0IG4gPSBkZi5nZXQodykgfHwgMCwgaWRmID0gTWF0aC5sb2coMSArIChOIC0gbiArIC41KSAvIChuICsgLjUpKTsgcmV0dXJuIHMgKyBpZGYgKiBmICogKGsxICsgMSkgLyAoZiArIGsxICogKDEgLSBiICsgYiAqIGRvY3NbaV0ubGVuZ3RoIC8gYXZnKSk7IH0sIDApKTsgfTtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InFWZWMgPSB7XG4gIGlmIChxRXhhbXBsZSkgcmV0dXJuIHt2ZWM6IEIucXVlcmllcy5maW5kKGQgPT4gZC5xID09PSBxRXhhbXBsZSkudmVjLCB0ZXh0OiBxRXhhbXBsZSwgaG93OiBcInByZWNvbXB1dGVkXCJ9O1xuICBpZiAoIXRmanMub2spIHJldHVybiB7dmVjOiBudWxsLCB0ZXh0OiBxVGV4dCwgaG93OiBcIm1vZGVsIHVuYXZhaWxhYmxlXCJ9O1xuICB0cnkge1xuICAgIGNvbnN0IHBpcGUgPSBhd2FpdCB0ZmpzLnBpcGU7XG4gICAgY29uc3Qgb3V0ID0gYXdhaXQgcGlwZShxVGV4dCwge3Bvb2xpbmc6IFwibWVhblwiLCBub3JtYWxpemU6IHRydWV9KTtcbiAgICByZXR1cm4ge3ZlYzogQXJyYXkuZnJvbShvdXQuZGF0YSksIHRleHQ6IHFUZXh0LCBob3c6IFwiZW1iZWRkZWQgaW4geW91ciBicm93c2VyXCJ9O1xuICB9IGNhdGNoIChlKSB7IHJldHVybiB7dmVjOiBudWxsLCB0ZXh0OiBxVGV4dCwgaG93OiBcIm1vZGVsIHVuYXZhaWxhYmxlXCJ9OyB9XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTgiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJyZXN1bHRzID0ge1xuICBjb25zdCBuID0gQi5jaHVua3MubGVuZ3RoLCByYW5rUG9zdHMgPSBzYyA9PiB7XG4gICAgY29uc3QgYmVzdCA9IG5ldyBNYXAoKTtcbiAgICBzYy5mb3JFYWNoKChzLCBpKSA9PiB7IGNvbnN0IHAgPSBCLmNodW5rc1tpXS5wb3N0OyBpZiAoIWJlc3QuaGFzKHApIHx8IHMgPiBiZXN0LmdldChwKVswXSkgYmVzdC5zZXQocCwgW3MsIGldKTsgfSk7XG4gICAgcmV0dXJuIFsuLi5iZXN0LmVudHJpZXMoKV0uc29ydCgoYSwgYikgPT4gYlsxXVswXSAtIGFbMV1bMF0pLm1hcCgoW3AsIFtzLCBpXV0pID0+ICh7cCwgcywgaX0pKTtcbiAgfTtcbiAgY29uc3QgbGV4ID0gcmFua1Bvc3RzKGJtMjUocVZlYy50ZXh0KSk7XG4gIGNvbnN0IGRlbnNlID0gcVZlYy52ZWMgPyByYW5rUG9zdHMoQXJyYXkuZnJvbSh7bGVuZ3RoOiBufSwgKF8sIGkpID0+IGRvdChpLCBxVmVjLnZlYykpKSA6IFtdO1xuICBjb25zdCBmdXNlZCA9IG5ldyBNYXAoKTtcbiAgW2xleCwgZGVuc2VdLmZvckVhY2gociA9PiByLmZvckVhY2goKGQsIGspID0+IHsgY29uc3QgZSA9IGZ1c2VkLmdldChkLnApIHx8IHtwOiBkLnAsIHM6IDAsIGk6IGQuaX07IGUucyArPSAxIC8gKDYxICsgayk7IGZ1c2VkLnNldChkLnAsIGUpOyB9KSk7XG4gIHJldHVybiB7bGV4LCBkZW5zZSwgaHlicmlkOiBbLi4uZnVzZWQudmFsdWVzKCldLnNvcnQoKGEsIGIpID0+IGIucyAtIGEucyksIGhvdzogcVZlYy5ob3csIHE6IHFWZWMudGV4dH07XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJyZXN1bHRzVmlldyA9IHtcbiAgY29uc3QgY29sID0gKHRpdGxlLCByLCBkZWMpID0+IGh0bC5odG1sYDxkaXYgY2xhc3M9XCJlbS1wYW5lbFwiPjxoND4ke3RpdGxlfTwvaDQ+JHtyLnNsaWNlKDAsIDUpLm1hcChkID0+IHtcbiAgICBjb25zdCBjID0gQi5jaHVua3NbZC5pXSwgcG9zdCA9IEIucG9zdHNbZC5wXTtcbiAgICByZXR1cm4gaHRsLmh0bWxgPGRpdiBjbGFzcz1cImVtLWhpdFwiPjxzcGFuIGNsYXNzPVwic1wiPiR7Zm10KGQucywgZGVjKX08L3NwYW4+PGRpdiBjbGFzcz1cInRcIj48YSBocmVmPVwiJHtwb3N0LnVybC5yZXBsYWNlKC9eXFwvLywgXCIuLi8uLi9cIil9XCI+JHtwb3N0LnRpdGxlfTwvYT48L2Rpdj5cbiAgICAgIDxkaXYgY2xhc3M9XCJoXCI+JHtjLmhlYWRpbmd9PC9kaXY+PGRpdiBjbGFzcz1cInhcIj4ke2MudGV4dC5zbGljZSgwLCAxODApfeKApjwvZGl2PjwvZGl2PmA7IH0pfTwvZGl2PmA7XG4gIHJldHVybiBodGwuaHRtbGA8ZGl2IGNsYXNzPVwiZW0tc3RhdHVzXCI+4oCcJHtyZXN1bHRzLnF94oCdOiBxdWVyeSB2ZWN0b3IgJHtyZXN1bHRzLmhvd30uPC9kaXY+PGRpdiBjbGFzcz1cImVtLWdyaWRcIj5cbiAgICAke3Jlc3VsdHMuZGVuc2UubGVuZ3RoID8gY29sKFwiRW1iZWRkaW5nIChjb3NpbmUpXCIsIHJlc3VsdHMuZGVuc2UsIDMpIDogaHRsLmh0bWxgPGRpdiBjbGFzcz1cImVtLXBhbmVsXCI+PGg0PkVtYmVkZGluZzwvaDQ+PHAgY2xhc3M9XCJlbS1ub3RlXCI+VGhlIG1vZGVsIGNvdWxkIG5vdCBiZSBsb2FkZWQgaGVyZTsgcGljayBhIHRlc3QgcXVlc3Rpb24gdG8gc2VlIHByZWNvbXB1dGVkIHJlc3VsdHMuPC9wPjwvZGl2PmB9XG4gICAgJHtjb2woXCJCTTI1IGtleXdvcmRzXCIsIHJlc3VsdHMubGV4LCAxKX0ke2NvbChcIkh5YnJpZCAocmVjaXByb2NhbCByYW5rIGZ1c2lvbilcIiwgcmVzdWx0cy5oeWJyaWQsIDQpfTwvZGl2PmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZXZhbFRhYmxlID0ge1xuICBjb25zdCByb3dzID0gW1tcIkJNMjUga2V5d29yZHNcIiwgQi5ldmFsLmJtMjVdLCBbXCJFbWJlZGRpbmdcIiwgQi5ldmFsLmRlbnNlXSwgW1wiSHlicmlkXCIsIEIuZXZhbC5oeWJyaWRdXTtcbiAgcmV0dXJuIGh0bC5odG1sYDx0YWJsZSBjbGFzcz1cInRhYmxlIHRhYmxlLXNtIGVtLXRcIj48dGhlYWQ+PHRyPjx0aD5NZXRob2Q8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkZpcnN0IHJlc3VsdCByZWxldmFudDwvdGg+PHRoIGNsYXNzPVwibnVtXCI+UmVsZXZhbnQgaW4gdG9wIDM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPk1lYW4gcmVjaXByb2NhbCByYW5rPC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAke3Jvd3MubWFwKChbaywgdl0pID0+IGh0bC5odG1sYDx0cj48dGQ+JHtrfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoMTAwICogdi5oaXQxKX0lPC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdCgxMDAgKiB2LmhpdDMpfSU8L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KHYubXJyLCAzKX08L3RkPjwvdHI+YCl9PC90Ym9keT48L3RhYmxlPmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTExIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZXZhbERpZmYgPSB7XG4gIGNvbnN0IHJvd3MgPSBCLnF1ZXJpZXMubWFwKChxLCBpKSA9PiAoe3E6IHEucSwgYm06IEIuZXZhbC5ibTI1LmZpcnN0c1tpXSwgZGU6IEIuZXZhbC5kZW5zZS5maXJzdHNbaV0sIGh5OiBCLmV2YWwuaHlicmlkLmZpcnN0c1tpXX0pKVxuICAgIC5maWx0ZXIoZCA9PiBkLmJtICE9PSBkLmRlKTtcbiAgcmV0dXJuIGh0bC5odG1sYDxkZXRhaWxzPjxzdW1tYXJ5PlF1ZXN0aW9ucyB3aGVyZSB0aGUgdHdvIGRpc2FncmVlICgke3Jvd3MubGVuZ3RofSk8L3N1bW1hcnk+PHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZW0tdFwiPjx0aGVhZD48dHI+PHRoPlF1ZXN0aW9uPC90aD48dGggY2xhc3M9XCJudW1cIj5CTTI1IHJhbms8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkVtYmVkZGluZyByYW5rPC90aD48dGggY2xhc3M9XCJudW1cIj5IeWJyaWQgcmFuazwvdGg+PC90cj48L3RoZWFkPjx0Ym9keT5cbiAgJHtyb3dzLm1hcChkID0+IGh0bC5odG1sYDx0cj48dGQ+JHtkLnF9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2QuYm19PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2QuZGV9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2QuaHl9PC90ZD48L3RyPmApfTwvdGJvZHk+PC90YWJsZT48L2RldGFpbHM+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJtYXBQbG90ID0ge1xuICBjb25zdCBkID0gQi50c25lLm1hcCgoW3gsIHldLCBpKSA9PiAoe3gsIHksIHNlYzogQi5wb3N0c1tCLmNodW5rc1tpXS5wb3N0XS5zZWN0aW9uLCB0aXRsZTogQi5wb3N0c1tCLmNodW5rc1tpXS5wb3N0XS50aXRsZSwgaGVhZDogQi5jaHVua3NbaV0uaGVhZGluZ30pKTtcbiAgcmV0dXJuIFBsb3QucGxvdCh7XG4gICAgd2lkdGg6IE1hdGgubWluKHdpZHRoLCA3MjApLCBoZWlnaHQ6IDUyMCwgeDoge2F4aXM6IG51bGx9LCB5OiB7YXhpczogbnVsbH0sXG4gICAgY29sb3I6IHtsZWdlbmQ6IHRydWUsIGRvbWFpbjogT2JqZWN0LmtleXMoc2VjQ29sb3VyKSwgcmFuZ2U6IE9iamVjdC52YWx1ZXMoc2VjQ29sb3VyKX0sXG4gICAgbWFya3M6IFtQbG90LmRvdChkLCB7eDogXCJ4XCIsIHk6IFwieVwiLCBmaWxsOiBcInNlY1wiLCByOiAzLjIsIGZpbGxPcGFjaXR5OiAwLjgsIHRpcDogdHJ1ZSwgdGl0bGU6IGQgPT4gYCR7ZC50aXRsZX1cXG4ke2QuaGVhZH1gfSldXG4gIH0pO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBobiA9IElucHV0cy5mb3JtKHtcbiAgTTogSW5wdXRzLnJhbmdlKFsyLCAxNl0sIHt2YWx1ZTogNiwgc3RlcDogMSwgbGFiZWw6IFwiTGlua3MgcGVyIG5vZGUsIE1cIn0pLFxuICBlZjogSW5wdXRzLnJhbmdlKFsxLCA2NF0sIHt2YWx1ZTogOCwgc3RlcDogMSwgbGFiZWw6IFwiU2VhcmNoIGJlYW0sIGVmXCJ9KVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTQiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJobnN3ID0ge1xuICBjb25zdCB7WCwgTiwgRH0gPSBpZHgsIE0gPSBobi5NLCBNMCA9IDIgKiBNLCBlZkMgPSA0MDtcbiAgY29uc3Qgc2ltID0gKGEsIGIpID0+IHsgbGV0IHMgPSAwOyBjb25zdCBvYSA9IGEgKiBELCBvYiA9IGIgKiBEOyBmb3IgKGxldCBqID0gMDsgaiA8IEQ7IGorKykgcyArPSBYW29hICsgal0gKiBYW29iICsgal07IHJldHVybiBzOyB9O1xuICBsZXQgc2VlZCA9IDc7IGNvbnN0IHJuZCA9ICgpID0+IChzZWVkID0gKHNlZWQgKiAxNjgwNykgJSAyMTQ3NDgzNjQ3KSAvIDIxNDc0ODM2NDc7XG4gIGNvbnN0IGxldmVsID0gQXJyYXkuZnJvbSh7bGVuZ3RoOiBOfSwgKCkgPT4gTWF0aC5mbG9vcigtTWF0aC5sb2cocm5kKCkgKyAxZS0xMikgLyBNYXRoLmxvZyhNKSkpO1xuICBjb25zdCBsaW5rcyA9IEFycmF5LmZyb20oe2xlbmd0aDogTn0sIChfLCBpKSA9PiBBcnJheS5mcm9tKHtsZW5ndGg6IGxldmVsW2ldICsgMX0sICgpID0+IFtdKSk7XG4gIGxldCBlbnRyeSA9IDAsIHRvcCA9IGxldmVsWzBdO1xuICBjb25zdCBzZWFyY2hMYXllciA9IChzaW1xLCBlcHMsIGVmLCBMLCBjb3VudCkgPT4ge1xuICAgIGNvbnN0IHZpcyA9IG5ldyBTZXQoZXBzKTsgbGV0IEMgPSBlcHMubWFwKGUgPT4gW3NpbXEoZSksIGVdKTsgY291bnQubiArPSBlcHMubGVuZ3RoO1xuICAgIGxldCBXID0gQy5zbGljZSgpO1xuICAgIHdoaWxlIChDLmxlbmd0aCkge1xuICAgICAgQy5zb3J0KChhLCBiKSA9PiBiWzBdIC0gYVswXSk7IGNvbnN0IFtjcywgY10gPSBDLnNoaWZ0KCk7XG4gICAgICBXLnNvcnQoKGEsIGIpID0+IGJbMF0gLSBhWzBdKTsgaWYgKGNzIDwgV1tXLmxlbmd0aCAtIDFdWzBdICYmIFcubGVuZ3RoID49IGVmKSBicmVhaztcbiAgICAgIGZvciAoY29uc3QgZSBvZiBsaW5rc1tjXVtMXSB8fCBbXSkgaWYgKCF2aXMuaGFzKGUpKSB7XG4gICAgICAgIHZpcy5hZGQoZSk7IGNvbnN0IHMgPSBzaW1xKGUpOyBjb3VudC5uKys7XG4gICAgICAgIGlmIChXLmxlbmd0aCA8IGVmIHx8IHMgPiBXW1cubGVuZ3RoIC0gMV1bMF0pIHsgQy5wdXNoKFtzLCBlXSk7IFcucHVzaChbcywgZV0pOyBXLnNvcnQoKGEsIGIpID0+IGJbMF0gLSBhWzBdKTsgaWYgKFcubGVuZ3RoID4gZWYpIFcucG9wKCk7IH1cbiAgICAgIH1cbiAgICB9XG4gICAgcmV0dXJuIFc7XG4gIH07XG4gIGZvciAobGV0IGkgPSAxOyBpIDwgTjsgaSsrKSB7XG4gICAgY29uc3Qgc2ltcSA9IGUgPT4gc2ltKGksIGUpLCBjbnQgPSB7bjogMH07IGxldCBlcCA9IFtlbnRyeV07XG4gICAgZm9yIChsZXQgTCA9IHRvcDsgTCA+IGxldmVsW2ldOyBMLS0pIGVwID0gW3NlYXJjaExheWVyKHNpbXEsIGVwLCAxLCBMLCBjbnQpWzBdWzFdXTtcbiAgICBmb3IgKGxldCBMID0gTWF0aC5taW4odG9wLCBsZXZlbFtpXSk7IEwgPj0gMDsgTC0tKSB7XG4gICAgICBjb25zdCBXID0gc2VhcmNoTGF5ZXIoc2ltcSwgZXAsIGVmQywgTCwgY250KSwgbXggPSBMID09PSAwID8gTTAgOiBNO1xuICAgICAgbGlua3NbaV1bTF0gPSBXLnNsaWNlKDAsIE0pLm1hcChkID0+IGRbMV0pO1xuICAgICAgZm9yIChjb25zdCBlIG9mIGxpbmtzW2ldW0xdKSB7IGNvbnN0IGwgPSBsaW5rc1tlXVtMXTsgbC5wdXNoKGkpOyBpZiAobC5sZW5ndGggPiBteCkgeyBsLnNvcnQoKGEsIGIpID0+IHNpbShlLCBiKSAtIHNpbShlLCBhKSk7IGwubGVuZ3RoID0gbXg7IH0gfVxuICAgICAgZXAgPSBXLm1hcChkID0+IGRbMV0pO1xuICAgIH1cbiAgICBpZiAobGV2ZWxbaV0gPiB0b3ApIHsgdG9wID0gbGV2ZWxbaV07IGVudHJ5ID0gaTsgfVxuICB9XG4gIGNvbnN0IHNlYXJjaCA9IChxLCBlZikgPT4ge1xuICAgIGNvbnN0IHNpbXEgPSBlID0+IHsgbGV0IHMgPSAwOyBjb25zdCBvID0gZSAqIEQ7IGZvciAobGV0IGogPSAwOyBqIDwgRDsgaisrKSBzICs9IFhbbyArIGpdICogcVtqXTsgcmV0dXJuIHM7IH07XG4gICAgY29uc3QgY250ID0ge246IDB9OyBsZXQgZXAgPSBbZW50cnldO1xuICAgIGZvciAobGV0IEwgPSB0b3A7IEwgPiAwOyBMLS0pIGVwID0gW3NlYXJjaExheWVyKHNpbXEsIGVwLCAxLCBMLCBjbnQpWzBdWzFdXTtcbiAgICBjb25zdCBXID0gc2VhcmNoTGF5ZXIoc2ltcSwgZXAsIE1hdGgubWF4KGVmLCAxMCksIDAsIGNudCk7XG4gICAgcmV0dXJuIHt0b3A6IFcuc2xpY2UoMCwgMTApLm1hcChkID0+IGRbMV0pLCBjb21wYXJlZDogY250Lm59O1xuICB9O1xuICByZXR1cm4ge3NlYXJjaCwgbGF5ZXJzOiB0b3AgKyAxLCBwZXJMYXllcjogQXJyYXkuZnJvbSh7bGVuZ3RoOiB0b3AgKyAxfSwgKF8sIEwpID0+IGxldmVsLmZpbHRlcihsID0+IGwgPj0gTCkubGVuZ3RoKX07XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE1IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaG5zd091dCA9IHtcbiAgbGV0IHJlYyA9IDAsIGNvbXAgPSAwO1xuICBmb3IgKGNvbnN0IHEgb2YgQi5xdWVyaWVzKSB7XG4gICAgY29uc3QgZXhhY3QgPSBBcnJheS5mcm9tKHtsZW5ndGg6IGlkeC5OfSwgKF8sIGkpID0+IFtkb3QoaSwgcS52ZWMpLCBpXSkuc29ydCgoYSwgYikgPT4gYlswXSAtIGFbMF0pLnNsaWNlKDAsIDEwKS5tYXAoZCA9PiBkWzFdKTtcbiAgICBjb25zdCByID0gaG5zdy5zZWFyY2gocS52ZWMsIGhuLmVmKTtcbiAgICByZWMgKz0gci50b3AuZmlsdGVyKGkgPT4gZXhhY3QuaW5jbHVkZXMoaSkpLmxlbmd0aCAvIDEwOyBjb21wICs9IHIuY29tcGFyZWQ7XG4gIH1cbiAgY29uc3QgbiA9IEIucXVlcmllcy5sZW5ndGg7XG4gIHJldHVybiBodGwuaHRtbGA8ZGl2IGNsYXNzPVwiZW0tcGFuZWxcIj48aDQ+T3ZlciB0aGUgJHtufSB0ZXN0IHF1ZXN0aW9uczwvaDQ+XG4gIDxwIHN0eWxlPVwibWFyZ2luOjBcIj5MYXllcnM6ICR7aG5zdy5wZXJMYXllci5tYXAoKGMsIEwpID0+IGAke0x9OiAke2N9IG5vZGVzYCkuam9pbihcIiDCtyBcIil9PGJyPlxuICBSZWNhbGwgb2YgdGhlIGV4YWN0IHRvcCAxMDogPGI+JHtmbXQoMTAwICogcmVjIC8gbil9JTwvYj4gwrcgdmVjdG9ycyBjb21wYXJlZCBwZXIgc2VhcmNoOiA8Yj4ke2ZtdChjb21wIC8gbil9PC9iPiBvZiAke2ZtdChpZHguTil9PC9wPjwvZGl2PmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE2IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiY29tcFRhYmxlID0gaHRsLmh0bWxgPHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZW0tdFwiPjx0aGVhZD48dHI+PHRoPlN0b3JhZ2U8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkJ5dGVzIHBlciB2ZWN0b3I8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlRvcC0xMCBuZWlnaGJvdXJzIGtlcHQ8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlRlc3QgTVJSPC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAke0IuY29tcHJlc3Npb24ubWFwKGMgPT4gaHRsLmh0bWxgPHRyPjx0ZD4ke2MubmFtZX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KGMuYnl0ZXMpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtjLnJlY2FsbCA9PT0gbnVsbCA/IFwi4oCUXCIgOiBmbXQoMTAwICogYy5yZWNhbGwpICsgXCIlXCJ9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdChjLm1yciwgMyl9PC90ZD48L3RyPmApfTwvdGJvZHk+PC90YWJsZT5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3FUZXh0JykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3FFeGFtcGxlJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2huJykifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../ai/embeddings-part-2-search-and-retrieval";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

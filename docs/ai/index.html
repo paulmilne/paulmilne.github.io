@@ -80,9 +80,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-categories"],
+      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -134,10 +134,16 @@ window.Quarto = {
 <link rel="stylesheet" href="../styles.css">
 <meta property="og:title" content="AI – math-blog">
 <meta property="og:description" content="Notes, explainers and experiments on artificial intelligence.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/embeddings-part-1-words-to-vectors/thumbnail.png">
 <meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
 <meta name="twitter:title" content="AI – math-blog">
 <meta name="twitter:description" content="Notes, explainers and experiments on artificial intelligence.">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/embeddings-part-1-words-to-vectors/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -247,7 +253,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(0)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(2)</span></div><div class="category" data-category="YWk=">ai <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZW1iZWRkaW5ncw==">embeddings <span class="quarto-category-count">(2)</span></div><div class="category" data-category="aW5mb3JtYXRpb24tcmV0cmlldmFs">information-retrieval <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGFuZ3VhZ2UtbW9kZWxz">language-models <span class="quarto-category-count">(2)</span></div><div class="category" data-category="bGluZWFyLWFsZ2VicmE=">linear-algebra <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -262,7 +268,84 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="YWklMkNlbWJlZGRpbmdzJTJDbGFuZ3VhZ2UtbW9kZWxzJTJDbGluZWFyLWFsZ2VicmE=" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793455646755" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="32" data-listing-word-count-sort="6229">
+<div class="thumbnail"><a href="../ai/embeddings-part-1-words-to-vectors/index.html" class="no-external">
 
+<img loading="lazy" src="../ai/embeddings-part-1-words-to-vectors/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../ai/embeddings-part-1-words-to-vectors/index.html" class="no-external">Embeddings, Part 1: From Words to Vectors</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../ai/embeddings-part-1-words-to-vectors/index.html" class="no-external">How a language model turns text into numbers: tokenisation, the embedding table, word2vec and what it really factorises, analogies, and how position is added</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('YWk='); return false;">ai</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZW1iZWRkaW5ncw=='); return false;">embeddings</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('bGFuZ3VhZ2UtbW9kZWxz'); return false;">language-models</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('bGluZWFyLWFsZ2VicmE='); return false;">linear-algebra</div>
+
+</div>
+<div class="delink listing-description"><a href="../ai/embeddings-part-1-words-to-vectors/index.html" class="no-external">
+<p>The first layer of every large language model is a table of vectors, one per token. This post builds a byte-pair tokeniser, derives word2vec’s objective and shows it factorises shifted pointwise mutual information, tests the famous analogies, explains how a transformer learns its own embeddings, and derives sinusoidal and rotary position encodings. Real vectors throughout: word2vec trained on text8, GloVe, and GPT-2.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../ai/embeddings-part-1-words-to-vectors/index.html" class="no-external">
+<div class="listing-date">
+Oct 31, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="YWklMkNlbWJlZGRpbmdzJTJDbGFuZ3VhZ2UtbW9kZWxzJTJDaW5mb3JtYXRpb24tcmV0cmlldmFs" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793455646762" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="28" data-listing-word-count-sort="5562">
+<div class="thumbnail"><a href="../ai/embeddings-part-2-search-and-retrieval/index.html" class="no-external">
+
+<img loading="lazy" src="../ai/embeddings-part-2-search-and-retrieval/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../ai/embeddings-part-2-search-and-retrieval/index.html" class="no-external">Embeddings, Part 2: Search and Retrieval</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../ai/embeddings-part-2-search-and-retrieval/index.html" class="no-external">From a vector per token to a vector per passage: how sentence embedding models are built and trained, how they search, and how they feed a language model the right documents</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('YWk='); return false;">ai</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZW1iZWRkaW5ncw=='); return false;">embeddings</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('bGFuZ3VhZ2UtbW9kZWxz'); return false;">language-models</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aW5mb3JtYXRpb24tcmV0cmlldmFs'); return false;">information-retrieval</div>
+
+</div>
+<div class="delink listing-description"><a href="../ai/embeddings-part-2-search-and-retrieval/index.html" class="no-external">
+<p>Sentence embedding models turn a whole passage into one vector so that text can be searched by meaning. This post runs one, all-MiniLM-L6-v2, over every passage of this blog, derives the contrastive loss it was trained with, compares it with keyword search on test questions, builds an HNSW index, measures what quantisation and truncation cost, and explains retrieval-augmented generation.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../ai/embeddings-part-2-search-and-retrieval/index.html" class="no-external">
+<div class="listing-date">
+Oct 31, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
 </div>
 <div class="listing-no-matching d-none">No matching items</div>
 </div></main> <!-- /main -->

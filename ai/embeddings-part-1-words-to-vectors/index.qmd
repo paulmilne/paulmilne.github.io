@@ -1,0 +1,519 @@
+---
+title: "Embeddings, Part 1: From Words to Vectors"
+subtitle: "How a language model turns text into numbers: tokenisation, the embedding table, word2vec and what it really factorises, analogies, and how position is added"
+description: "The first layer of every large language model is a table of vectors, one per token. This post builds a byte-pair tokeniser, derives word2vec's objective and shows it factorises shifted pointwise mutual information, tests the famous analogies, explains how a transformer learns its own embeddings, and derives sinusoidal and rotary position encodings. Real vectors throughout: word2vec trained on text8, GloVe, and GPT-2."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, embeddings, language-models, linear-algebra]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.em-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.em-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.em-toks { display: flex; flex-wrap: wrap; gap: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; line-height: 1.9; }
+.em-toks span { padding: 0 .25rem; border-radius: 3px; white-space: pre; }
+.em-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+table.em-t td.num, table.em-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.em-note { font-size: .82rem; opacity: .75; }
+.em-scroll { overflow-x: auto; }
+.em-scroll table { min-width: 560px; }
+@media (max-width: 600px) { .em-scroll table { font-size: .85rem; } }
+.em-grid form { flex-wrap: wrap !important; }
+.em-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.em-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+palette = ["#e9c46a55", "#2a9d8f44", "#e76f5144", "#8ab17d55", "#6fa8dc55", "#b388eb55", "#f4a26155"]
+tokSpans = (toks) => htl.html`<div class="em-toks">${toks.map((t, i) => htl.html`<span style="background:${palette[i % palette.length]}">${t}</span>`)}</div>`
+```
+
+A language model never sees a letter. Before any of the machinery people talk about, attention, layers, billions of parameters, the text is cut into pieces and each piece is replaced by a list of numbers: its **embedding**. Everything the model knows about a word has to be reachable from that list, or built up from it.
+
+This is the first of two posts on embeddings. This one is about the vectors inside the model: how text is cut into tokens, how the table of token vectors is learned, what the geometry of those vectors means and does not mean, and how a model is told where in the sentence each token sits. [Part 2](../embeddings-part-2-search-and-retrieval/) is about the separate embedding models that turn a whole sentence or document into one vector, and how they are used to search and to feed language models the right documents.
+
+Nothing here is illustrative. The tokeniser is trained on text8, the first 100 million characters of an English Wikipedia dump; word2vec is trained on the same text; the analogy tests use the 6-billion-token GloVe vectors; and the transformer section uses GPT-2's own embedding table.
+
+## The embedding table
+
+Fix a vocabulary of $V$ tokens and a dimension $d$. The embedding is a matrix $E \in \mathbb R^{V \times d}$, one row per token. Token $t$ becomes row $t$:
+
+$$
+\mathbf e_t = E^{\top}\mathbf x_t,
+$$
+
+where $\mathbf x_t \in \{0,1\}^V$ is the one-hot vector with a single 1 in position $t$. The matrix product is how it is written; in practice it is an array lookup. The point of writing it as a product is that the lookup is linear, so the gradient of anything with respect to $E$ is easy to find, which is how the table gets learned.
+
+The table is large. GPT-2's smallest model has $V = 50{,}257$ tokens and $d = 768$, so $E$ holds 38.6 million numbers: almost a third of that model's 124 million parameters. Recent models have bigger vocabularies and wider vectors: Llama 3 uses 128,256 tokens of dimension 4,096 in its 8-billion-parameter version, over half a billion numbers for the input table alone.
+
+Two choices sit behind that table: what the $V$ tokens are, and how the rows get their values. The next sections take them in turn.
+
+## Cutting text into tokens
+
+The obvious unit is the word, and it fails twice. English has an unbounded supply of words (names, numbers, misspellings, "tokenisation"), so any fixed list leaves some out, and those become an unknown-word symbol the model can learn nothing about. And a list long enough to cover most text would make $E$ enormous, with most rows seen too rarely to learn. Characters fix both problems and create a third: sequences become five or six times longer, and the cost of attention grows with the square of the sequence length.
+
+Subword tokenisation sits between them. Frequent words get one token; rare words are spelled out from common pieces. The method used by the GPT family is **byte-pair encoding** (BPE). Philip Gage published it in 1994 as a data compression algorithm: repeatedly find the most frequent pair of adjacent bytes and replace it with a new byte that does not occur in the data. Rico Sennrich, Barry Haddow and Alexandra Birch adapted it for machine translation in 2016. As a tokeniser it is learned once, from a corpus:
+
+1. Start with every word spelled as characters, plus an end-of-word marker (written `_` here).
+2. Count every adjacent pair of symbols, weighted by how often each word occurs.
+3. Merge the most frequent pair into a single new symbol, everywhere. Record the merge.
+4. Repeat until the vocabulary is the size you want.
+
+To tokenise new text, apply the recorded merges in the order they were learned. I ran this on text8: 17,005,207 words, 253,854 of them distinct.
+
+```{ojs}
+//| output: false
+bpe = FileAttachment("data/bpe8k.json").json()
+rank = { const m = new Map(); bpe.merges.forEach(([a, b], i) => m.set(a + "\u0000" + b, i)); return m; }
+bpeWord = (w, n) => {
+  let s = [...w, "_"];
+  for (;;) {
+    let best = -1, bi = -1;
+    for (let i = 0; i < s.length - 1; i++) {
+      const r = rank.get(s[i] + "\u0000" + s[i + 1]);
+      if (r !== undefined && r < n && (best < 0 || r < best)) { best = r; bi = i; }
+    }
+    if (bi < 0) return s;
+    s = [...s.slice(0, bi), s[bi] + s[bi + 1], ...s.slice(bi + 2)];
+  }
+}
+```
+
+```{ojs}
+viewof bpeIn = Inputs.text({value: "the embedding of unbelievably rare words like tindall", label: "Text (lower case)", width: 520})
+```
+
+```{ojs}
+viewof nMerges = Inputs.range([0, 8000], {value: 1000, step: 10, label: "Merges learned"})
+```
+
+```{ojs}
+bpeOut = {
+  const words = bpeIn.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/).filter(Boolean);
+  const toks = words.flatMap(w => bpeWord(w, nMerges));
+  return htl.html`<div class="em-panel"><h4>${fmt(toks.length)} tokens for ${fmt(words.length)} words, vocabulary ${fmt(27 + nMerges)}</h4>${tokSpans(toks)}</div>`;
+}
+```
+
+The first merges are the most common pairs in English: `e` + `_` (a word ending in e), `s_`, `th`, `in`, `er`, then `th` + `e_` to make the word *the* by the tenth merge. By a hundred merges the common short words are whole tokens: *for*, *was*, *that*, *with*, and the number words that text8 spells out. By a thousand, frequent suffixes such as *ation* and *ings* have their own tokens. The cost of the text falls fast and then slowly:
+
+```{ojs}
+bpeTable = {
+  const rows = [[0, bpe.chars_per_word], ...Object.entries(bpe.snapshots).map(([k, v]) => [+k, v.tokens_per_word])];
+  return htl.html`<table class="table table-sm em-t"><thead><tr><th class="num">Merges</th><th class="num">Vocabulary</th><th class="num">Tokens per word</th></tr></thead><tbody>
+  ${rows.map(([k, v]) => htl.html`<tr><td class="num">${fmt(k)}</td><td class="num">${fmt(27 + k)}</td><td class="num">${fmt(v, 2)}</td></tr>`)}</tbody></table>`;
+}
+```
+
+Sixteen thousand merges bring the average to 1.16 tokens a word, against 5.88 symbols a word with characters alone. That is the trade the vocabulary size controls.
+
+GPT-2 made two changes. It works on **bytes** rather than characters, so the 256 possible bytes are the starting alphabet and no input can ever be unrepresentable: an emoji or a Chinese character is just a few bytes. And before merging, the text is split by a regular expression into words, numbers and punctuation, with a leading space kept attached to the word that follows it. GPT-2's 50,257 tokens are the 256 bytes, 50,000 merges and one end-of-text marker. Its vocabulary therefore has `" token"` (with the space) and `"token"` (without) as different tokens with different embeddings. Here is GPT-2's tokeniser next to the one used by GPT-4o, which has about four times the vocabulary:
+
+```{ojs}
+//| output: false
+r50k = require("gpt-tokenizer@2.9.0/dist/r50k_base.js")
+o200k = require("gpt-tokenizer@2.9.0/dist/o200k_base.js")
+```
+
+```{ojs}
+viewof gptIn = Inputs.textarea({value: "Tokenisation of embeddings: GPT-2 sees ' token' and 'token' as different symbols. 1969 → 19 + 69?", label: "Text", rows: 3, width: 520})
+```
+
+```{ojs}
+gptOut = {
+  const a = r50k.encode(gptIn), b = o200k.encode(gptIn);
+  const show = (enc, ids) => tokSpans(ids.map(i => enc.decode([i]).replace(/ /g, "␣")));
+  return htl.html`<div class="em-grid">
+    <div class="em-panel"><h4>GPT-2 (50,257 tokens): ${a.length} tokens</h4>${show(r50k, a)}</div>
+    <div class="em-panel"><h4>GPT-4o (about 200,000 tokens): ${b.length} tokens</h4>${show(o200k, b)}</div></div>`;
+}
+```
+
+The spaces are shown as ␣. Numbers are a well-known weak point: GPT-2 cuts digit strings wherever its merges happen to fall, so the same number can be split differently in different contexts, which is one reason early models were poor at arithmetic. Later tokenisers split numbers into fixed groups of digits.
+
+Other subword schemes work on the same principle with a different rule for choosing what to merge or keep. WordPiece, used by BERT, merges the pair that most increases the likelihood of the training data under a unigram model; the Unigram method in SentencePiece starts from a large vocabulary and prunes it. All of them produce the same kind of object: a fixed list of $V$ strings, each to be given a vector.
+
+## Meaning from company
+
+Where do the vectors come from? The idea that makes it possible is old. Zellig Harris proposed in 1954 that words occurring in similar contexts tend to have similar meanings, the *distributional hypothesis*; J. R. Firth put it as "You shall know a word by the company it keeps" in 1957. If that is right, meaning can be measured by counting.
+
+Count, over a corpus, how often word $w$ appears within a few positions of context word $c$: call it $\#(w,c)$, with $\#(w) = \sum_c \#(w,c)$, $\#(c)$ likewise and $|D|$ the total number of pairs. Raw counts are dominated by frequent words (everything co-occurs with *the*), so the useful measure is how much more often the pair occurs than chance:
+
+$$
+\operatorname{PMI}(w,c) = \log \frac{P(w,c)}{P(w)\,P(c)} = \log\frac{\#(w,c)\,|D|}{\#(w)\,\#(c)}.
+$$
+
+This is **pointwise mutual information**. A word's row of PMI values against every context is already a vector that captures meaning: *coffee* and *tea* have high PMI with *cup*, *drink* and *hot*. But the rows are as long as the vocabulary and mostly empty (unobserved pairs have PMI $-\infty$, usually clipped to zero). The classical fix is to compress the matrix: take the singular value decomposition $M = U\Sigma V^\top$ and keep the top $d$ singular values. By the Eckart–Young theorem, $U_d\Sigma_d V_d^\top$ is the best rank-$d$ approximation to $M$ in the Frobenius norm, and the rows of $U_d\Sigma_d^{1/2}$ are $d$-dimensional word vectors. Applied to word–document counts, this is latent semantic analysis (Deerwester and colleagues, 1990).
+
+## word2vec
+
+In 2013 Tomas Mikolov and colleagues at Google published word2vec, which learned word vectors with a shallow neural network instead of by counting and factorising. It was fast, it scaled to billions of words, and its vectors did something that made it famous: the analogies of the next section. Its most successful form is the **skip-gram with negative sampling** (SGNS).
+
+Every word $w$ gets two vectors: $\mathbf w$ when it is the centre word and $\mathbf c$ when it is a context word. Slide a window along the text. Each (centre, context) pair seen in the window is a positive example, and the model should say "yes, these occur together" with probability $\sigma(\mathbf w\cdot\mathbf c)$, where $\sigma(x) = 1/(1+e^{-x})$. For each positive pair, draw $k$ negative context words at random from a noise distribution $P_n$; for those the model should say "no". The loss for one pair is
+
+$$
+\ell(w,c) = -\log\sigma(\mathbf w\cdot\mathbf c) \;-\; \sum_{i=1}^{k}\log\sigma(-\mathbf w\cdot\mathbf c_i), \qquad c_i \sim P_n.
+$$
+
+Using $\sigma'(x) = \sigma(x)\,(1-\sigma(x))$, so that $\frac{d}{dx}\log\sigma(x) = 1-\sigma(x) = \sigma(-x)$, the gradients are
+
+$$
+\frac{\partial \ell}{\partial \mathbf w} = -\sigma(-\mathbf w\cdot\mathbf c)\,\mathbf c + \sum_{i=1}^k \sigma(\mathbf w\cdot\mathbf c_i)\,\mathbf c_i, \qquad
+\frac{\partial \ell}{\partial \mathbf c} = -\sigma(-\mathbf w\cdot\mathbf c)\,\mathbf w, \qquad
+\frac{\partial \ell}{\partial \mathbf c_i} = \sigma(\mathbf w\cdot\mathbf c_i)\,\mathbf w.
+$$
+
+Read as an update, gradient descent pulls $\mathbf w$ towards the true context by an amount proportional to how wrong the model was ($\sigma(-\mathbf w\cdot\mathbf c)$ is the probability it gave to "no"), and pushes it away from each noise word in proportion to how much it wrongly believed in it. Only $k+2$ vectors change per pair, which is what made it cheap. The original paper uses $k$ between 5 and 20, a noise distribution of unigram frequencies raised to the power $\tfrac34$ (which samples rare words more often than their frequency would), and randomly discards very frequent words so that *the* and *of* do not dominate the training pairs.
+
+### What word2vec actually learns
+
+For a few years word2vec looked like a different kind of thing from counting and SVD. Omer Levy and Yoav Goldberg showed in 2014 that it is not. Collect the loss over the whole corpus and group the terms by the pair $(w,c)$. The pair appears as a positive $\#(w,c)$ times, and as a negative $k\,\#(w)\,P_n(c)$ times on average. Writing $x = \mathbf w\cdot\mathbf c$, the part of the total loss that depends on $x$ is
+
+$$
+L(x) = -\#(w,c)\,\log\sigma(x) \;-\; k\,\#(w)\,P_n(c)\,\log\sigma(-x).
+$$
+
+Suppose the dimension is large enough that each dot product can be chosen freely. Setting $L'(x) = 0$:
+
+$$
+-\#(w,c)\,\sigma(-x) + k\,\#(w)\,P_n(c)\,\sigma(x) = 0
+\;\;\Longrightarrow\;\; e^{x} = \frac{\sigma(x)}{\sigma(-x)} = \frac{\#(w,c)}{k\,\#(w)\,P_n(c)},
+$$
+
+so the optimum is
+
+$$
+\mathbf w\cdot\mathbf c = \log\frac{\#(w,c)}{\#(w)\,P_n(c)} - \log k = \operatorname{PMI}(w,c) - \log k,
+$$
+
+with $P_n$ standing in for $P(c)$. Skip-gram with negative sampling is factorising the matrix of pointwise mutual information, shifted down by $\log k$, as $W C^\top$. It is a weighted, implicit version of the counting method it replaced. The difference in practice comes from the weighting, the smoothed noise distribution and the subsampling, not from a different principle.
+
+The theorem assumes unlimited dimension and full convergence. To see how close a real model comes, I trained word2vec with gensim on all of text8 (100 dimensions, window 5, $k = 5$, 5 epochs; 71,290 words kept) and counted the co-occurrences of the 3,000 most frequent words with the same window weighting and subsampling the training used. For the 247,000 pairs seen at least 20 times:
+
+```{ojs}
+//| output: false
+pmi = FileAttachment("data/pmi_check.json").json()
+```
+
+```{ojs}
+pmiPlot = Plot.plot({
+  width: Math.min(width, 640), height: 340, marginLeft: 50, grid: true,
+  x: {label: "PMI(w, c) − log k, from the counts"}, y: {label: "w · c in the trained model"},
+  marks: [
+    Plot.dot(pmi.sample, {x: d => d[0], y: d => d[1], r: 1.5, fill: "#6fa8dc", fillOpacity: 0.35}),
+    Plot.line([[-4, -4], [6, 6]], {stroke: "#999", strokeDasharray: "4 3"}),
+    Plot.line(pmi.binned, {x: d => d[0], y: d => d[1], stroke: "#e76f51", strokeWidth: 2.5}),
+    Plot.text([[5.2, 5.6]], {text: () => "y = x", fill: "#888"})
+  ]
+})
+```
+
+```{ojs}
+md`The correlation is ${fmt(pmi.corr, 3)}. The blue dots are a random sample of pairs and the orange line the average in bins. The trained dot products track shifted PMI closely but with a slope of ${fmt(pmi.slope, 2)} rather than 1: a hundred dimensions cannot fit a 3,000 by 3,000 matrix exactly, and five passes do not reach the optimum, so the model shrinks the extremes towards the middle.`
+```
+
+GloVe (Jeffrey Pennington, Richard Socher and Christopher Manning, 2014) makes the factorisation explicit. It fits the log of the co-occurrence counts $X_{ij}$ directly, by weighted least squares:
+
+$$
+J = \sum_{i,j} f(X_{ij})\left(\mathbf w_i\cdot\tilde{\mathbf w}_j + b_i + \tilde b_j - \log X_{ij}\right)^2, \qquad f(x) = \min\!\left(1, (x/x_{\max})^{3/4}\right),
+$$
+
+with biases $b_i, \tilde b_j$ absorbing the $\log \#(w)$ and $\log \#(c)$ terms of PMI, and $f$ stopping rare, noisy pairs from dominating and very common ones from swamping everything. The published GloVe vectors trained on 6 billion tokens of Wikipedia and newswire are used below.
+
+## The geometry of meaning
+
+Similarity between two embeddings is measured by the cosine of the angle between them, $\cos\theta = \mathbf u\cdot\mathbf v / (\|\mathbf u\|\,\|\mathbf v\|)$. Length mostly reflects how often a word occurs and how consistently it is used; direction carries the meaning. Here are the nearest neighbours in the GloVe space (100 dimensions, the 20,000 most frequent words, stored here to 8 bits):
+
+```{ojs}
+//| output: false
+glove = {
+  const g = await FileAttachment("data/glove20k.json").json();
+  const bin = Uint8Array.from(atob(g.q), c => c.charCodeAt(0));
+  const q = new Int8Array(bin.buffer), N = g.words.length, D = g.dim;
+  const U = new Float32Array(N * D);
+  for (let i = 0; i < N; i++) {
+    let s = 0;
+    for (let j = 0; j < D; j++) { const v = q[i * D + j] * g.scale[i] / 127; U[i * D + j] = v; s += v * v; }
+    s = Math.sqrt(s); for (let j = 0; j < D; j++) U[i * D + j] /= s;
+  }
+  const idx = new Map(g.words.map((w, i) => [w, i]));
+  return {U, N, D, words: g.words, idx};
+}
+gvec = (w) => { const i = glove.idx.get(w); return i === undefined ? null : glove.U.subarray(i * glove.D, (i + 1) * glove.D); }
+nearest = (v, k, exclude = []) => {
+  const {U, N, D, words} = glove, ex = new Set(exclude), out = [];
+  let n = 0; for (let j = 0; j < D; j++) n += v[j] * v[j]; n = Math.sqrt(n);
+  for (let i = 0; i < N; i++) {
+    let s = 0; for (let j = 0; j < D; j++) s += U[i * D + j] * v[j];
+    out.push([s / n, i]);
+  }
+  out.sort((a, b) => b[0] - a[0]);
+  return out.filter(([, i]) => !ex.has(words[i])).slice(0, k).map(([s, i]) => ({word: words[i], cos: s}));
+}
+```
+
+```{ojs}
+viewof nnWord = Inputs.text({value: "physics", label: "Word", submit: "Find"})
+```
+
+```{ojs}
+nnOut = {
+  const v = gvec(nnWord.trim().toLowerCase());
+  if (!v) return htl.html`<p class="em-note">Not among the 20,000 most frequent words.</p>`;
+  const r = nearest(v, 11).slice(1);
+  return htl.html`<table class="table table-sm em-t" style="max-width:360px"><tbody>${r.map(d => htl.html`<tr><td>${d.word}</td><td class="num">${fmt(d.cos, 3)}</td></tr>`)}</tbody></table>`;
+}
+```
+
+Try *bank*, whose neighbours are all financial: a single vector per word has to average over every sense of it, and the commonest sense wins. That is the main limitation of static embeddings, and the reason transformers exist, as the next section explains.
+
+### Analogies, and a caveat
+
+The result that made word2vec famous was that relationships appear as directions. If *king* is to *man* as *queen* is to *woman*, then $\mathbf{king} - \mathbf{man} + \mathbf{woman}$ should land near $\mathbf{queen}$. The test set Mikolov's group released has 19,544 such questions in fourteen categories, from capital cities to plural verbs. The method, called 3CosAdd, answers $a : b :: c : ?$ with
+
+$$
+\hat d = \arg\max_{x}\;\cos\!\left(\mathbf x,\; \mathbf b - \mathbf a + \mathbf c\right), \qquad x \notin \{a, b, c\}.
+$$
+
+The last condition matters more than its size suggests. For GloVe on the 19,230 questions whose words are all in its top 100,000:
+
+```{ojs}
+//| output: false
+ga = FileAttachment("data/glove_analogy.json").json()
+w2v = FileAttachment("data/w2v_eval.json").json()
+```
+
+```{ojs}
+anaTable = {
+  const nice = s => s.replace("gram", "").replace(/^\d-/, "").replace(/-/g, " ");
+  const rows = Object.entries(ga.sections);
+  return htl.html`<table class="table table-sm em-t"><thead><tr><th>Category</th><th class="num">Questions</th><th class="num">Correct, inputs excluded</th><th class="num">Correct, inputs allowed</th></tr></thead><tbody>
+  ${rows.map(([k, v]) => htl.html`<tr><td>${nice(k)}</td><td class="num">${fmt(v.n)}</td><td class="num">${fmt(100 * v.excl / v.n)}%</td><td class="num">${fmt(100 * v.incl / v.n)}%</td></tr>`)}
+  <tr style="font-weight:600"><td>All</td><td class="num">${fmt(ga.tot.n)}</td><td class="num">${fmt(100 * ga.tot.ex / ga.tot.n)}%</td><td class="num">${fmt(100 * ga.tot.inc / ga.tot.n)}%</td></tr></tbody></table>`;
+}
+```
+
+Allow the input words as answers and accuracy falls from 64% to 34%. Of the 12,717 answers then wrong, 10,392 are $c$ itself, the word the offset $\mathbf b - \mathbf a$ was added to, and another 1,308 are $b$. The nearest vector to $\mathbf{king} - \mathbf{man} + \mathbf{woman}$ in GloVe is *king* itself, at a cosine of 0.84; *queen* is second, at 0.77. Offsets between related words are small compared with the distance between unrelated ones, so the sum stays close to its starting point, and the test only works because the starting point is ruled out. Tal Linzen (2016) and Malvina Nissim and colleagues (2020) made this point at length. The parallelogram is real, the categories where it works best (capitals, nationalities, comparatives) are real, but the famous example is weaker than its reputation.
+
+```{ojs}
+viewof ana = Inputs.form({
+  a: Inputs.text({value: "man", label: "a"}), b: Inputs.text({value: "king", label: "b"}),
+  c: Inputs.text({value: "woman", label: "c"}),
+  ex: Inputs.toggle({value: true, label: "Exclude a, b, c"})
+})
+```
+
+```{ojs}
+anaOut = {
+  const ws = [ana.a, ana.b, ana.c].map(s => s.trim().toLowerCase()), vs = ws.map(gvec);
+  if (vs.some(v => !v)) return htl.html`<p class="em-note">Each word must be among the 20,000 most frequent.</p>`;
+  const t = new Float32Array(glove.D); for (let j = 0; j < glove.D; j++) t[j] = vs[1][j] - vs[0][j] + vs[2][j];
+  const r = nearest(t, 8, ana.ex ? ws : []);
+  return htl.html`<div class="em-panel"><h4>${ws[0]} : ${ws[1]} :: ${ws[2]} : ?</h4><table class="table table-sm em-t" style="max-width:360px"><tbody>${r.map(d => htl.html`<tr><td>${ws.includes(d.word) ? htl.html`<i>${d.word}</i> (input)` : d.word}</td><td class="num">${fmt(d.cos, 3)}</td></tr>`)}</tbody></table></div>`;
+}
+```
+
+```{ojs}
+md`Corpus size matters too. The text8 word2vec model, trained on 17 million words rather than 6 billion, answers ${fmt(100 * w2v.acc)}% of the questions it has the words for (${fmt(w2v.tot[1])} of them), against GloVe's ${fmt(100 * ga.tot.ex / ga.tot.n)}%. It also has text8's view of the world: its nearest neighbours of *king* include *canute*, *valdemar* and *haakon*, because a Wikipedia sample is full of medieval monarchs.`
+```
+
+The same geometry carries the corpus's biases. Tolga Bolukbasi and colleagues showed in 2016 that $\mathbf{programmer} - \mathbf{man} + \mathbf{woman}$ in a widely used word2vec model landed near *homemaker*. Embeddings record how words are used, not how they should be.
+
+## Inside a transformer
+
+A transformer language model does not train its embeddings separately. The table $E$ is just the first layer, initialised at random and learned with everything else, from one task: predict the next token.
+
+Write $\mathbf h \in \mathbb R^d$ for the model's final hidden state at some position, after all the layers have mixed in context from earlier tokens. The output layer scores every token in the vocabulary with a matrix $W \in \mathbb R^{V\times d}$, $\mathbf z = W\mathbf h$, and turns the scores into probabilities with the softmax, $p_v = e^{z_v}/\sum_u e^{z_u}$. If the true next token is $y$, the loss is the cross-entropy $L = -\log p_y$. Its gradient with respect to the scores is the standard result
+
+$$
+\frac{\partial L}{\partial z_v} = p_v - [v = y],
+$$
+
+so for the output matrix,
+
+$$
+\frac{\partial L}{\partial \mathbf w_v} = (p_v - [v=y])\,\mathbf h.
+$$
+
+The row for the correct token is pulled towards $\mathbf h$; every other row is pushed away from it, in proportion to the probability the model wrongly gave it. Compare the input table: its gradient reaches only the rows of tokens that actually appeared in the input. The two tables are trained very differently.
+
+Many models, GPT-2 among them, use the same matrix for both, $W = E$. Ofir Press and Lior Wolf (2017) and Hakan Inan and colleagues (2017) showed this tying works as well or better while saving $V d$ parameters, and it has a clean reading: the model predicts the next token by producing a hidden state that points in the direction of that token's embedding. Tying also has a side effect. Every update pushes all the rows that were not the answer away from $\mathbf h$, and rare tokens are almost never the answer, so they receive nothing but these pushes. Jun Gao and colleagues (2019) showed this drives rare token embeddings into a narrow cone, in a common direction, the "representation degeneration problem". GPT-2's table, below, shows it.
+
+The embedding is only the starting point. The vector for *bank* is the same whether the sentence is about rivers or money; the attention layers that follow combine it with the vectors around it, and by the middle layers the representation of *bank* in "river bank" and in "bank account" have moved apart. Kawin Ethayarajh (2019) measured this, and also found that these contextual vectors occupy a narrow cone of the space, the same anisotropy as the static table. Part 2 is about what to do with those contextual vectors.
+
+### GPT-2's table
+
+```{ojs}
+//| output: false
+gpt2 = FileAttachment("data/gpt2.json").json()
+```
+
+```{ojs}
+gpt2Intro = md`GPT-2's 50,257 rows are 768-dimensional. Their lengths range from ${fmt(gpt2.norm_min, 2)} to ${fmt(gpt2.norm_max, 2)}, with a median of ${fmt(gpt2.norm_median, 2)}. The average cosine between two random tokens is ${fmt(gpt2.mean_cos, 3)}, not the zero you would expect from random directions in 768 dimensions: the table is anisotropic. The vectors sit on average ${fmt(gpt2.mean_dir_angle, 0)}° from their shared mean direction, where random directions in 768 dimensions would sit at almost exactly 90°. Token ids in GPT-2 follow the order in which the BPE merges were learned, which roughly follows frequency, so the id is a rough frequency rank:`
+```
+
+```{ojs}
+gpt2NormPlot = Plot.plot({
+  width: Math.min(width, 680), height: 280, marginLeft: 50, grid: true,
+  x: {label: "Token id (roughly frequency rank)"}, y: {label: "Embedding length ‖e‖"},
+  marks: [Plot.dot(gpt2.norm_sample, {x: d => d[0], y: d => d[1], r: 1.2, fill: "#2a9d8f", fillOpacity: 0.4}),
+          Plot.line(gpt2.norm_binned, {x: d => d[0], y: d => d[1], stroke: "#e76f51", strokeWidth: 2})]
+})
+```
+
+```{ojs}
+gpt2Lengths = md`Frequent tokens have the shortest vectors: the median length is ${fmt(gpt2.norm_bands.first1000, 2)} for the first thousand ids and ${fmt(gpt2.norm_bands.last20000, 2)} beyond id 30,000, and the twenty shortest of all are words like ${gpt2.smallest_norm_tokens.slice(0, 8).map(t => "\`" + t.replace(/ /g, "␣") + "\`").join(", ")}. A token that appears everywhere is used in every kind of context, and its vector is pulled in many directions at once.`
+```
+
+```{ojs}
+gpt2Centre = md`At the other extreme are the tokens whose vectors point most nearly along the mean direction, with cosines to it near 0.9 where the median token has ${fmt(0.52, 2)}: ${gpt2.centroid_tokens.slice(0, 11).filter(t => !/Ã/.test(t)).map(t => "\`" + t.replace(/ /g, "␣") + "\`").join(", ")}. These are fragments of usernames, code and web-page boilerplate. They were common enough in the text the tokeniser was built from to get merges of their own, but almost absent from the text the model was trained on, so their rows received almost nothing but the push towards the common direction described above. Jessica Rumbelow and Matthew Watkins found tokens like these in 2023 and called them glitch tokens (*SolidGoldMagikarp*, a Reddit username, is the best known): GPT-2 and GPT-3 behaved erratically when they appeared, because the model had never learned what their vectors meant.`
+```
+
+```{ojs}
+viewof gpWord = Inputs.text({value: " king", label: "GPT-2 token (a leading space matters)", submit: "Find"})
+```
+
+```{ojs}
+gpOut = {
+  const t = gpt2.nn[gpWord];
+  if (!t) return htl.html`<p class="em-note">Neighbours are stored for the ${fmt(Object.keys(gpt2.nn).length)} most frequent whole-word tokens. Try " king", " Paris", " computer", " bank", " three", " the".</p>`;
+  return htl.html`<table class="table table-sm em-t" style="max-width:380px"><tbody>${t.map(([w, s]) => htl.html`<tr><td><code>${JSON.stringify(w)}</code></td><td class="num">${fmt(s, 3)}</td></tr>`)}</tbody></table>`;
+}
+```
+
+The neighbours mix meaning with form: case and spacing variants of the same word sit next to each other, because the model has to learn that `" King"`, `" king"` and `"King"` are related from use alone.
+
+## Where am I in the sentence?
+
+Attention, the operation at the heart of a transformer, compares every token's vector with every other token's and mixes them according to the comparison. It has no notion of order. If $X$ is the matrix of input vectors and $P$ any permutation matrix, self-attention satisfies $\operatorname{Attn}(PX) = P\operatorname{Attn}(X)$: shuffle the words and the outputs are shuffled in the same way and otherwise unchanged. "Dog bites man" and "man bites dog" would be the same input. (A decoder's causal mask, which lets each token see only earlier ones, breaks the symmetry slightly, and models can infer some position from it; but every major model adds position explicitly.) Position has to be added.
+
+**Learned positions.** The simplest answer is a second table, one vector per position, added to the token embedding. GPT-2 does this: a $1{,}024 \times 768$ table, learned like everything else.
+
+```{ojs}
+gpt2PosPlot = {
+  const d = gpt2.wpe_pcs.flatMap((r, p) => r.map((v, k) => ({p, v, k: `PC ${k + 1}`})));
+  return Plot.plot({
+    width: Math.min(width, 680), height: 260, marginLeft: 50, grid: true,
+    x: {label: "Position"}, y: {label: "Projection"},
+    color: {legend: true},
+    marks: [Plot.line(d, {x: "p", y: "v", stroke: "k", strokeWidth: 1.4})]
+  });
+}
+```
+
+```{ojs}
+md`Those are GPT-2's 1,024 position vectors projected on their first three principal components, which hold ${fmt(100 * gpt2.wpe_var3, 0)}% of the variance. Nobody told the model to use waves; it learned smooth, oscillating functions of position, close to what the original transformer prescribed by hand.`
+```
+
+**Sinusoidal positions.** Ashish Vaswani and colleagues, in the 2017 paper that introduced the transformer, added a fixed vector to each token instead:
+
+$$
+\mathrm{PE}(p, 2i) = \sin\!\left(\frac{p}{10000^{2i/d}}\right), \qquad \mathrm{PE}(p, 2i+1) = \cos\!\left(\frac{p}{10000^{2i/d}}\right).
+$$
+
+Each pair of coordinates is a point going round a circle at frequency $\omega_i = 10000^{-2i/d}$, from one radian per position down to one cycle in about 63,000 positions. The reason for sines and cosines is that a shift is linear. By the angle-addition formulas,
+
+$$
+\begin{pmatrix}\sin\omega(p+k)\\ \cos\omega(p+k)\end{pmatrix} =
+\begin{pmatrix}\cos\omega k & \sin\omega k\\ -\sin\omega k & \cos\omega k\end{pmatrix}
+\begin{pmatrix}\sin\omega p\\ \cos\omega p\end{pmatrix},
+$$
+
+so $\mathrm{PE}(p+k)$ is a fixed rotation of $\mathrm{PE}(p)$, the same for every $p$. A layer can learn to attend "three tokens back" with one linear map.
+
+**Rotary positions.** Most current models use a refinement, rotary position embedding, or RoPE (Jianlin Su and colleagues, 2021). Instead of adding a position vector to the input, it rotates the query and key vectors inside each attention layer. Split a $d$-dimensional vector into $d/2$ pairs and treat each pair as a complex number; at position $m$, multiply pair $i$ by $e^{\mathrm i m\theta_i}$, with $\theta_i = 10000^{-2i/d}$ as before. Attention compares a query $\mathbf q$ at position $m$ with a key $\mathbf k$ at position $n$ through their dot product, which for one pair is the real part of $q\,\bar k$:
+
+$$
+\operatorname{Re}\!\left[(q\,e^{\mathrm i m\theta})\,\overline{(k\,e^{\mathrm i n\theta})}\right] = \operatorname{Re}\!\left[q\,\bar k\,e^{\mathrm i (m-n)\theta}\right].
+$$
+
+The absolute positions cancel; only the offset $m-n$ remains. Summing over pairs, the attention score depends on the content of the two tokens and on how far apart they are, and nothing else, without adding anything to the token's embedding. RoPE also builds in a decay with distance. The panel takes a random query, sets the key equal to it, so that without rotation they would match perfectly, and plots their rotary score against the distance between them. Each pair contributes $|q_i|^2\cos\big((m-n)\theta_i\big)$, so the score is a sum of cosines at $d/2$ frequencies:
+
+```{ojs}
+viewof rope = Inputs.form({
+  d: Inputs.select([16, 64, 128], {value: 128, label: "Dimension d"}),
+  base: Inputs.select([100, 10000, 500000], {value: 10000, label: "Base (θᵢ = base^(−2i/d))"}),
+  seed: Inputs.range([1, 20], {value: 3, step: 1, label: "Random vector"})
+})
+```
+
+```{ojs}
+ropePlot = {
+  const {d, base, seed} = rope;
+  let s = seed * 9301 + 49297; const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  const g = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  const q = Array.from({length: d}, g);
+  const nrm = q.reduce((a, x) => a + x * x, 0);
+  const pts = [];
+  for (let off = 0; off <= 2000; off += 2) {
+    let sc = 0;
+    for (let i = 0; i < d / 2; i++) {
+      const th = Math.pow(base, -2 * i / d), r2 = q[2 * i] ** 2 + q[2 * i + 1] ** 2;
+      sc += r2 * Math.cos(off * th);
+    }
+    pts.push({off, sc: sc / nrm});
+  }
+  return Plot.plot({width: Math.min(width, 680), height: 260, marginLeft: 50, grid: true,
+    x: {label: "Distance between query and key (tokens)"}, y: {label: "Score relative to distance 0", domain: [-0.6, 1.02]},
+    marks: [Plot.ruleY([0]), Plot.line(pts, {x: "off", y: "sc", stroke: "#1d3557", strokeWidth: 1.4})]});
+}
+```
+
+The fast pairs fall out of phase within a few tokens, so the score drops quickly at first; the slow pairs, whose wavelengths run to tens of thousands of tokens, hardly turn at all over this range, and the score levels off at the share they carry. The base sets that balance: lower it to 100 and almost every pair turns fast, so the score falls to noise around zero; raise it and more of the score survives at long range. Llama 3 raised the base from 10,000 to 500,000 to stretch the useful range to longer documents, and later methods for extending context work mostly by rescaling these frequencies.
+
+## Terminology and where it comes from
+
+::: {.em-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Token** | One unit of text in a model's vocabulary | Old English *tācen*, a sign or symbol. Charles Sanders Peirce's distinction between a *type* (the word *the*) and its *tokens* (each occurrence) dates from 1906; corpus linguistics and compiler design both use *token* for one unit of input. |
+| **Vocabulary** | The fixed list of $V$ tokens | Latin *vocabulum*, a name, from *vocare*, to call. |
+| **Corpus** | The text a tokeniser or model is trained on | Latin for *body*: a body of texts. |
+| **Vector** | A list of $d$ numbers treated as a point or direction | Latin *vector*, a carrier, from *vehere*, to carry. William Rowan Hamilton introduced the mathematical sense in the 1840s for the part of a quaternion that carries a point from one place to another. |
+| **Embedding** | The vector assigned to a token; also the map that assigns it | English *embed*, to fix firmly in a surrounding mass. In topology an embedding (often spelled *imbedding* in the mid-twentieth century) is a map that places one space inside another faithfully, as in Hassler Whitney's 1936 theorem that every smooth $n$-dimensional manifold embeds in $\mathbb R^{2n}$. Machine learning borrowed it for maps of discrete symbols into $\mathbb R^d$; the survey by Almeida and Xexéo dates the phrase *word embedding* in this sense to Morin and Bengio in 2005. |
+| **Byte-pair encoding** | The merge-based tokeniser | Philip Gage's compression scheme, published in *The C Users Journal* in February 1994: a frequent *pair* of *bytes* is *encoded* as one new byte. |
+| **Distributional hypothesis** | Similar contexts imply similar meanings | Zellig Harris, "Distributional Structure", 1954. |
+| **Logit** | An unnormalised score $z_v$ before the softmax | Joseph Berkson, 1944, as the *log*istic counterpart of the *probit* (Chester Bliss, 1934, from *prob*ability un*it*). |
+| **Softmax** | $e^{z_v}/\sum_u e^{z_u}$ | John Bridle, 1990: a smooth ("soft") version of picking the maximum. The function itself is the Boltzmann distribution of statistical mechanics. |
+| **Skip-gram** | Predict the words around a word, skipping over it | From *n*-gram, a run of *n* words, the unit of the statistical language models that go back to Claude Shannon's 1948 paper on information theory. |
+| **Transformer** | The attention-based architecture | Named by Vaswani and colleagues, 2017, for transforming one sequence of vectors into another. |
+:::
+
+## Method and sources
+
+**Tokeniser.** Classic BPE (Sennrich and colleagues' variant, with an end-of-word marker) on the 253,854 distinct words of text8, weighted by count, with incremental pair-count updates; ties broken by the pair's characters. The page holds the first 8,000 merges and applies them by rank, as the learned tokeniser would. The GPT-2 and GPT-4o tokenisers are the `r50k_base` and `o200k_base` encodings, loaded in your browser from the `gpt-tokenizer` package.
+
+**word2vec.** gensim 4.4, skip-gram, 100 dimensions, window 5, 5 negative samples, subsampling threshold $10^{-3}$, minimum count 5, 5 epochs, seed 1. For the PMI comparison, co-occurrences among the 3,000 most frequent words were counted with gensim's effective weighting: a context at distance $\delta$ in a window of 5 counts with weight $(6-\delta)/5$ (its dynamic window), multiplied by the probability that subsampling keeps each word. $\#(w)$ is the weighted count of all pairs with centre $w$, $P_n$ is the unigram distribution to the $\frac34$ power, and the dot products use the input vectors and gensim's output (`syn1neg`) vectors. Analogy accuracy uses gensim's `evaluate_word_analogies` with the 30,000 most frequent words.
+
+**GloVe.** The 100-dimensional `glove-wiki-gigaword-100` vectors (Wikipedia 2014 and Gigaword 5, 6 billion tokens), via the gensim-data repository. Analogy accuracy over the 100,000 most frequent words, with and without excluding the three input words; the page uses the 20,000 most frequent words, unit-normalised and quantised to 8 bits.
+
+**GPT-2.** The `openai-community/gpt2` weights from Hugging Face (124M parameters). Norms and cosines are computed over all 50,257 rows of `wte`; the mean direction is the normalised mean of the unit-normalised rows. Neighbours by cosine. Principal components of `wpe` after centring.
+
+Sources:
+
+- P. Gage, "A New Algorithm for Data Compression", *The C Users Journal* 12(2), 1994. R. Sennrich, B. Haddow, A. Birch, [*Neural Machine Translation of Rare Words with Subword Units*](https://arxiv.org/abs/1508.07909), ACL 2016.
+- A. Radford and colleagues, [*Language Models are Unsupervised Multitask Learners*](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf) (GPT-2), 2019.
+- Z. Harris, "Distributional Structure", *Word* 10, 1954. J. R. Firth, "A synopsis of linguistic theory 1930–55", 1957. S. Deerwester and colleagues, "Indexing by Latent Semantic Analysis", *JASIS* 41, 1990.
+- T. Mikolov, I. Sutskever, K. Chen, G. Corrado, J. Dean, [*Distributed Representations of Words and Phrases and their Compositionality*](https://arxiv.org/abs/1310.4546), NeurIPS 2013.
+- O. Levy, Y. Goldberg, [*Neural Word Embedding as Implicit Matrix Factorization*](https://papers.nips.cc/paper/5477-neural-word-embedding-as-implicit-matrix-factorization), NeurIPS 2014.
+- J. Pennington, R. Socher, C. Manning, [*GloVe: Global Vectors for Word Representation*](https://nlp.stanford.edu/pubs/glove.pdf), EMNLP 2014.
+- T. Linzen, [*Issues in evaluating semantic spaces using word analogies*](https://arxiv.org/abs/1606.07736), 2016. M. Nissim, R. van Noord, R. van der Goot, [*Fair is Better than Sensational*](https://arxiv.org/abs/1905.09866), *Computational Linguistics* 2020. T. Bolukbasi and colleagues, [*Man is to Computer Programmer as Woman is to Homemaker?*](https://arxiv.org/abs/1607.06520), NeurIPS 2016.
+- O. Press, L. Wolf, [*Using the Output Embedding to Improve Language Models*](https://arxiv.org/abs/1608.05859), EACL 2017. H. Inan, K. Khosravi, R. Socher, [*Tying Word Vectors and Word Classifiers*](https://arxiv.org/abs/1611.01462), ICLR 2017. J. Gao and colleagues, [*Representation Degeneration Problem in Training Natural Language Generation Models*](https://arxiv.org/abs/1907.12009), ICLR 2019.
+- K. Ethayarajh, [*How Contextual are Contextualized Word Representations?*](https://arxiv.org/abs/1909.00512), EMNLP 2019.
+- J. Rumbelow, M. Watkins, [*SolidGoldMagikarp (plus, prompt generation)*](https://www.lesswrong.com/posts/aPeJE8bSo6rAFoLqg/solidgoldmagikarp-plus-prompt-generation), 2023.
+- A. Vaswani and colleagues, [*Attention Is All You Need*](https://arxiv.org/abs/1706.03762), NeurIPS 2017. J. Su and colleagues, [*RoFormer: Enhanced Transformer with Rotary Position Embedding*](https://arxiv.org/abs/2104.09864), 2021. Meta, [*The Llama 3 Herd of Models*](https://arxiv.org/abs/2407.21783), 2024.
+- F. Almeida, G. Xexéo, [*Word Embeddings: A Survey*](https://arxiv.org/abs/1901.09069), 2019.
+- Data: [text8](https://mattmahoney.net/dc/textdata.html) (M. Mahoney); [gensim-data](https://github.com/RaRe-Technologies/gensim-data) for text8 and GloVe; [gensim](https://radimrehurek.com/gensim/); [gpt-tokenizer](https://github.com/niieani/gpt-tokenizer).
+
+**Next: [Part 2, search and retrieval](../embeddings-part-2-search-and-retrieval/)**: from token vectors to one vector per sentence, contrastive training, and how embedding models find the right document for a language model to read.

@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="The first layer of every large language model is a table of vectors, one per token. This post builds a byte-pair tokeniser, derives word2vec’s objective and shows it factorises shifted pointwise mutual information, tests the famous analogies, explains how a transformer learns its own embeddings, and derives sinusoidal and rotary position encodings. Real vectors throughout: word2vec trained on text8, GloVe, and GPT-2.">
+
+<title>Embeddings, Part 1: From Words to Vectors – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Embeddings, Part 1: From Words to Vectors – math-blog">
+<meta property="og:description" content="The first layer of every large language model is a table of vectors, one per token. This post builds a byte-pair tokeniser, derives word2vec’s objective and shows it factorises shifted pointwise mutual information, tests the famous analogies, explains how a transformer learns its own embeddings, and derives sinusoidal and rotary position encodings. Real vectors throughout: word2vec trained on text8, GloVe, and GPT-2.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/embeddings-part-1-words-to-vectors/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="Embeddings, Part 1: From Words to Vectors – math-blog">
+<meta name="twitter:description" content="The first layer of every large language model is a table of vectors, one per token. This post builds a byte-pair tokeniser, derives word2vec’s objective and shows it factorises shifted pointwise mutual information, tests the famous analogies, explains how a transformer learns its own embeddings, and derives sinusoidal and rotary position encodings. Real vectors throughout: word2vec trained on text8, GloVe, and GPT-2.">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/embeddings-part-1-words-to-vectors/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Embeddings, Part 1: From Words to Vectors</h1>
+            <p class="subtitle lead">How a language model turns text into numbers: tokenisation, the embedding table, word2vec and what it really factorises, analogies, and how position is added</p>
+                  <div>
+        <div class="description">
+          The first layer of every large language model is a table of vectors, one per token. This post builds a byte-pair tokeniser, derives word2vec’s objective and shows it factorises shifted pointwise mutual information, tests the famous analogies, explains how a transformer learns its own embeddings, and derives sinusoidal and rotary position encodings. Real vectors throughout: word2vec trained on text8, GloVe, and GPT-2.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">embeddings</div>
+                <div class="quarto-category">language-models</div>
+                <div class="quarto-category">linear-algebra</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-embedding-table" id="toc-the-embedding-table" class="nav-link active" data-scroll-target="#the-embedding-table">The embedding table</a></li>
+  <li><a href="#cutting-text-into-tokens" id="toc-cutting-text-into-tokens" class="nav-link" data-scroll-target="#cutting-text-into-tokens">Cutting text into tokens</a></li>
+  <li><a href="#meaning-from-company" id="toc-meaning-from-company" class="nav-link" data-scroll-target="#meaning-from-company">Meaning from company</a></li>
+  <li><a href="#word2vec" id="toc-word2vec" class="nav-link" data-scroll-target="#word2vec">word2vec</a>
+  <ul class="collapse">
+  <li><a href="#what-word2vec-actually-learns" id="toc-what-word2vec-actually-learns" class="nav-link" data-scroll-target="#what-word2vec-actually-learns">What word2vec actually learns</a></li>
+  </ul></li>
+  <li><a href="#the-geometry-of-meaning" id="toc-the-geometry-of-meaning" class="nav-link" data-scroll-target="#the-geometry-of-meaning">The geometry of meaning</a>
+  <ul class="collapse">
+  <li><a href="#analogies-and-a-caveat" id="toc-analogies-and-a-caveat" class="nav-link" data-scroll-target="#analogies-and-a-caveat">Analogies, and a caveat</a></li>
+  </ul></li>
+  <li><a href="#inside-a-transformer" id="toc-inside-a-transformer" class="nav-link" data-scroll-target="#inside-a-transformer">Inside a transformer</a>
+  <ul class="collapse">
+  <li><a href="#gpt-2s-table" id="toc-gpt-2s-table" class="nav-link" data-scroll-target="#gpt-2s-table">GPT-2’s table</a></li>
+  </ul></li>
+  <li><a href="#where-am-i-in-the-sentence" id="toc-where-am-i-in-the-sentence" class="nav-link" data-scroll-target="#where-am-i-in-the-sentence">Where am I in the sentence?</a></li>
+  <li><a href="#terminology-and-where-it-comes-from" id="toc-terminology-and-where-it-comes-from" class="nav-link" data-scroll-target="#terminology-and-where-it-comes-from">Terminology and where it comes from</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.em-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.em-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.em-toks { display: flex; flex-wrap: wrap; gap: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; line-height: 1.9; }
+.em-toks span { padding: 0 .25rem; border-radius: 3px; white-space: pre; }
+.em-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+table.em-t td.num, table.em-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.em-note { font-size: .82rem; opacity: .75; }
+.em-scroll { overflow-x: auto; }
+.em-scroll table { min-width: 560px; }
+@media (max-width: 600px) { .em-scroll table { font-size: .85rem; } }
+.em-grid form { flex-wrap: wrap !important; }
+.em-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.em-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="37" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 36;"><span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>palette <span class="op">=</span> [<span class="st">"#e9c46a55"</span><span class="op">,</span> <span class="st">"#2a9d8f44"</span><span class="op">,</span> <span class="st">"#e76f5144"</span><span class="op">,</span> <span class="st">"#8ab17d55"</span><span class="op">,</span> <span class="st">"#6fa8dc55"</span><span class="op">,</span> <span class="st">"#b388eb55"</span><span class="op">,</span> <span class="st">"#f4a26155"</span>]</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>tokSpans <span class="op">=</span> (toks) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-toks"&gt;</span><span class="sc">${</span>toks<span class="op">.</span><span class="fu">map</span>((t<span class="op">,</span> i) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;span style="background:</span><span class="sc">${</span>palette[i <span class="op">%</span> palette<span class="op">.</span><span class="at">length</span>]<span class="sc">}</span><span class="vs">"&gt;</span><span class="sc">${</span>t<span class="sc">}</span><span class="vs">&lt;/span&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p>A language model never sees a letter. Before any of the machinery people talk about, attention, layers, billions of parameters, the text is cut into pieces and each piece is replaced by a list of numbers: its <strong>embedding</strong>. Everything the model knows about a word has to be reachable from that list, or built up from it.</p>
+<p>This is the first of two posts on embeddings. This one is about the vectors inside the model: how text is cut into tokens, how the table of token vectors is learned, what the geometry of those vectors means and does not mean, and how a model is told where in the sentence each token sits. <a href="../embeddings-part-2-search-and-retrieval/">Part 2</a> is about the separate embedding models that turn a whole sentence or document into one vector, and how they are used to search and to feed language models the right documents.</p>
+<p>Nothing here is illustrative. The tokeniser is trained on text8, the first 100 million characters of an English Wikipedia dump; word2vec is trained on the same text; the analogy tests use the 6-billion-token GloVe vectors; and the transformer section uses GPT-2’s own embedding table.</p>
+<section id="the-embedding-table" class="level2">
+<h2 class="anchored" data-anchor-id="the-embedding-table">The embedding table</h2>
+<p>Fix a vocabulary of <span class="math inline">\(V\)</span> tokens and a dimension <span class="math inline">\(d\)</span>. The embedding is a matrix <span class="math inline">\(E \in \mathbb R^{V \times d}\)</span>, one row per token. Token <span class="math inline">\(t\)</span> becomes row <span class="math inline">\(t\)</span>:</p>
+<p><span class="math display">\[
+\mathbf e_t = E^{\top}\mathbf x_t,
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf x_t \in \{0,1\}^V\)</span> is the one-hot vector with a single 1 in position <span class="math inline">\(t\)</span>. The matrix product is how it is written; in practice it is an array lookup. The point of writing it as a product is that the lookup is linear, so the gradient of anything with respect to <span class="math inline">\(E\)</span> is easy to find, which is how the table gets learned.</p>
+<p>The table is large. GPT-2’s smallest model has <span class="math inline">\(V = 50{,}257\)</span> tokens and <span class="math inline">\(d = 768\)</span>, so <span class="math inline">\(E\)</span> holds 38.6 million numbers: almost a third of that model’s 124 million parameters. Recent models have bigger vocabularies and wider vectors: Llama 3 uses 128,256 tokens of dimension 4,096 in its 8-billion-parameter version, over half a billion numbers for the input table alone.</p>
+<p>Two choices sit behind that table: what the <span class="math inline">\(V\)</span> tokens are, and how the rows get their values. The next sections take them in turn.</p>
+</section>
+<section id="cutting-text-into-tokens" class="level2">
+<h2 class="anchored" data-anchor-id="cutting-text-into-tokens">Cutting text into tokens</h2>
+<p>The obvious unit is the word, and it fails twice. English has an unbounded supply of words (names, numbers, misspellings, “tokenisation”), so any fixed list leaves some out, and those become an unknown-word symbol the model can learn nothing about. And a list long enough to cover most text would make <span class="math inline">\(E\)</span> enormous, with most rows seen too rarely to learn. Characters fix both problems and create a third: sequences become five or six times longer, and the cost of attention grows with the square of the sequence length.</p>
+<p>Subword tokenisation sits between them. Frequent words get one token; rare words are spelled out from common pieces. The method used by the GPT family is <strong>byte-pair encoding</strong> (BPE). Philip Gage published it in 1994 as a data compression algorithm: repeatedly find the most frequent pair of adjacent bytes and replace it with a new byte that does not occur in the data. Rico Sennrich, Barry Haddow and Alexandra Birch adapted it for machine translation in 2016. As a tokeniser it is learned once, from a corpus:</p>
+<ol type="1">
+<li>Start with every word spelled as characters, plus an end-of-word marker (written <code>_</code> here).</li>
+<li>Count every adjacent pair of symbols, weighted by how often each word occurs.</li>
+<li>Merge the most frequent pair into a single new symbol, everywhere. Record the merge.</li>
+<li>Repeat until the vocabulary is the size you want.</li>
+</ol>
+<p>To tokenise new text, apply the recorded merges in the order they were learned. I ran this on text8: 17,005,207 words, 253,854 of them distinct.</p>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="77" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 76;"><span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>bpe <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/bpe8k.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>rank <span class="op">=</span> { <span class="kw">const</span> m <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span> bpe<span class="op">.</span><span class="at">merges</span><span class="op">.</span><span class="fu">forEach</span>(([a<span class="op">,</span> b]<span class="op">,</span> i) <span class="kw">=&gt;</span> m<span class="op">.</span><span class="fu">set</span>(a <span class="op">+</span> <span class="st">"</span><span class="sc">\u0000</span><span class="st">"</span> <span class="op">+</span> b<span class="op">,</span> i))<span class="op">;</span> <span class="cf">return</span> m<span class="op">;</span> }</span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a>bpeWord <span class="op">=</span> (w<span class="op">,</span> n) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> s <span class="op">=</span> [<span class="op">...</span>w<span class="op">,</span> <span class="st">"_"</span>]<span class="op">;</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="op">;;</span>) {</span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> best <span class="op">=</span> <span class="op">-</span><span class="dv">1</span><span class="op">,</span> bi <span class="op">=</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> s<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> r <span class="op">=</span> rank<span class="op">.</span><span class="fu">get</span>(s[i] <span class="op">+</span> <span class="st">"</span><span class="sc">\u0000</span><span class="st">"</span> <span class="op">+</span> s[i <span class="op">+</span> <span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (r <span class="op">!==</span> <span class="kw">undefined</span> <span class="op">&amp;&amp;</span> r <span class="op">&lt;</span> n <span class="op">&amp;&amp;</span> (best <span class="op">&lt;</span> <span class="dv">0</span> <span class="op">||</span> r <span class="op">&lt;</span> best)) { best <span class="op">=</span> r<span class="op">;</span> bi <span class="op">=</span> i<span class="op">;</span> }</span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (bi <span class="op">&lt;</span> <span class="dv">0</span>) <span class="cf">return</span> s<span class="op">;</span></span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="op">...</span>s<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> bi)<span class="op">,</span> s[bi] <span class="op">+</span> s[bi <span class="op">+</span> <span class="dv">1</span>]<span class="op">,</span> <span class="op">...</span>s<span class="op">.</span><span class="fu">slice</span>(bi <span class="op">+</span> <span class="dv">2</span>)]<span class="op">;</span></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-2-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-2-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-2-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="93" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 92;"><span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>viewof bpeIn <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"the embedding of unbelievably rare words like tindall"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Text (lower case)"</span><span class="op">,</span> <span class="dt">width</span><span class="op">:</span> <span class="dv">520</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="97" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 96;"><span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a>viewof nMerges <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">8000</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">1000</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Merges learned"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="101" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 100;"><span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>bpeOut <span class="op">=</span> {</span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> words <span class="op">=</span> bpeIn<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">[^a-z ]</span><span class="ss">/g</span><span class="op">,</span> <span class="st">" "</span>)<span class="op">.</span><span class="fu">split</span>(<span class="ss">/</span><span class="sc">\s+</span><span class="ss">/</span>)<span class="op">.</span><span class="fu">filter</span>(<span class="bu">Boolean</span>)<span class="op">;</span></span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> toks <span class="op">=</span> words<span class="op">.</span><span class="fu">flatMap</span>(w <span class="kw">=&gt;</span> <span class="fu">bpeWord</span>(w<span class="op">,</span> nMerges))<span class="op">;</span></span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(toks<span class="op">.</span><span class="at">length</span>)<span class="sc">}</span><span class="vs"> tokens for </span><span class="sc">${</span><span class="fu">fmt</span>(words<span class="op">.</span><span class="at">length</span>)<span class="sc">}</span><span class="vs"> words, vocabulary </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">27</span> <span class="op">+</span> nMerges)<span class="sc">}</span><span class="vs">&lt;/h4&gt;</span><span class="sc">${</span><span class="fu">tokSpans</span>(toks)<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The first merges are the most common pairs in English: <code>e</code> + <code>_</code> (a word ending in e), <code>s_</code>, <code>th</code>, <code>in</code>, <code>er</code>, then <code>th</code> + <code>e_</code> to make the word <em>the</em> by the tenth merge. By a hundred merges the common short words are whole tokens: <em>for</em>, <em>was</em>, <em>that</em>, <em>with</em>, and the number words that text8 spells out. By a thousand, frequent suffixes such as <em>ation</em> and <em>ings</em> have their own tokens. The cost of the text falls fast and then slowly:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="111" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 110;"><span id="cb6-111"><a href="#cb6-111" aria-hidden="true" tabindex="-1"></a>bpeTable <span class="op">=</span> {</span>
+<span id="cb6-112"><a href="#cb6-112" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rows <span class="op">=</span> [[<span class="dv">0</span><span class="op">,</span> bpe<span class="op">.</span><span class="at">chars_per_word</span>]<span class="op">,</span> <span class="op">...</span><span class="bu">Object</span><span class="op">.</span><span class="fu">entries</span>(bpe<span class="op">.</span><span class="at">snapshots</span>)<span class="op">.</span><span class="fu">map</span>(([k<span class="op">,</span> v]) <span class="kw">=&gt;</span> [<span class="op">+</span>k<span class="op">,</span> v<span class="op">.</span><span class="at">tokens_per_word</span>])]<span class="op">;</span></span>
+<span id="cb6-113"><a href="#cb6-113" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm em-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th class="num"&gt;Merges&lt;/th&gt;&lt;th class="num"&gt;Vocabulary&lt;/th&gt;&lt;th class="num"&gt;Tokens per word&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb6-114"><a href="#cb6-114" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(([k<span class="op">,</span> v]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(k)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">27</span> <span class="op">+</span> k)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(v<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb6-115"><a href="#cb6-115" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Sixteen thousand merges bring the average to 1.16 tokens a word, against 5.88 symbols a word with characters alone. That is the trade the vocabulary size controls.</p>
+<p>GPT-2 made two changes. It works on <strong>bytes</strong> rather than characters, so the 256 possible bytes are the starting alphabet and no input can ever be unrepresentable: an emoji or a Chinese character is just a few bytes. And before merging, the text is split by a regular expression into words, numbers and punctuation, with a leading space kept attached to the word that follows it. GPT-2’s 50,257 tokens are the 256 bytes, 50,000 merges and one end-of-text marker. Its vocabulary therefore has <code>" token"</code> (with the space) and <code>"token"</code> (without) as different tokens with different embeddings. Here is GPT-2’s tokeniser next to the one used by GPT-4o, which has about four times the vocabulary:</p>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="125" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 124;"><span id="cb7-125"><a href="#cb7-125" aria-hidden="true" tabindex="-1"></a>r50k <span class="op">=</span> <span class="pp">require</span>(<span class="st">"gpt-tokenizer@2.9.0/dist/r50k_base.js"</span>)</span>
+<span id="cb7-126"><a href="#cb7-126" aria-hidden="true" tabindex="-1"></a>o200k <span class="op">=</span> <span class="pp">require</span>(<span class="st">"gpt-tokenizer@2.9.0/dist/o200k_base.js"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-7-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-7-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="129" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 128;"><span id="cb8-129"><a href="#cb8-129" aria-hidden="true" tabindex="-1"></a>viewof gptIn <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">textarea</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"Tokenisation of embeddings: GPT-2 sees ' token' and 'token' as different symbols. 1969 → 19 + 69?"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Text"</span><span class="op">,</span> <span class="dt">rows</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">width</span><span class="op">:</span> <span class="dv">520</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="133" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 132;"><span id="cb9-133"><a href="#cb9-133" aria-hidden="true" tabindex="-1"></a>gptOut <span class="op">=</span> {</span>
+<span id="cb9-134"><a href="#cb9-134" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> a <span class="op">=</span> r50k<span class="op">.</span><span class="fu">encode</span>(gptIn)<span class="op">,</span> b <span class="op">=</span> o200k<span class="op">.</span><span class="fu">encode</span>(gptIn)<span class="op">;</span></span>
+<span id="cb9-135"><a href="#cb9-135" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> show <span class="op">=</span> (enc<span class="op">,</span> ids) <span class="kw">=&gt;</span> <span class="fu">tokSpans</span>(ids<span class="op">.</span><span class="fu">map</span>(i <span class="kw">=&gt;</span> enc<span class="op">.</span><span class="fu">decode</span>([i])<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/ /g</span><span class="op">,</span> <span class="st">"␣"</span>)))<span class="op">;</span></span>
+<span id="cb9-136"><a href="#cb9-136" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-grid"&gt;</span></span>
+<span id="cb9-137"><a href="#cb9-137" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div class="em-panel"&gt;&lt;h4&gt;GPT-2 (50,257 tokens): </span><span class="sc">${</span>a<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs"> tokens&lt;/h4&gt;</span><span class="sc">${</span><span class="fu">show</span>(r50k<span class="op">,</span> a)<span class="sc">}</span><span class="vs">&lt;/div&gt;</span></span>
+<span id="cb9-138"><a href="#cb9-138" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div class="em-panel"&gt;&lt;h4&gt;GPT-4o (about 200,000 tokens): </span><span class="sc">${</span>b<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs"> tokens&lt;/h4&gt;</span><span class="sc">${</span><span class="fu">show</span>(o200k<span class="op">,</span> b)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb9-139"><a href="#cb9-139" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The spaces are shown as ␣. Numbers are a well-known weak point: GPT-2 cuts digit strings wherever its merges happen to fall, so the same number can be split differently in different contexts, which is one reason early models were poor at arithmetic. Later tokenisers split numbers into fixed groups of digits.</p>
+<p>Other subword schemes work on the same principle with a different rule for choosing what to merge or keep. WordPiece, used by BERT, merges the pair that most increases the likelihood of the training data under a unigram model; the Unigram method in SentencePiece starts from a large vocabulary and prunes it. All of them produce the same kind of object: a fixed list of <span class="math inline">\(V\)</span> strings, each to be given a vector.</p>
+</section>
+<section id="meaning-from-company" class="level2">
+<h2 class="anchored" data-anchor-id="meaning-from-company">Meaning from company</h2>
+<p>Where do the vectors come from? The idea that makes it possible is old. Zellig Harris proposed in 1954 that words occurring in similar contexts tend to have similar meanings, the <em>distributional hypothesis</em>; J. R. Firth put it as “You shall know a word by the company it keeps” in 1957. If that is right, meaning can be measured by counting.</p>
+<p>Count, over a corpus, how often word <span class="math inline">\(w\)</span> appears within a few positions of context word <span class="math inline">\(c\)</span>: call it <span class="math inline">\(\#(w,c)\)</span>, with <span class="math inline">\(\#(w) = \sum_c \#(w,c)\)</span>, <span class="math inline">\(\#(c)\)</span> likewise and <span class="math inline">\(|D|\)</span> the total number of pairs. Raw counts are dominated by frequent words (everything co-occurs with <em>the</em>), so the useful measure is how much more often the pair occurs than chance:</p>
+<p><span class="math display">\[
+\operatorname{PMI}(w,c) = \log \frac{P(w,c)}{P(w)\,P(c)} = \log\frac{\#(w,c)\,|D|}{\#(w)\,\#(c)}.
+\]</span></p>
+<p>This is <strong>pointwise mutual information</strong>. A word’s row of PMI values against every context is already a vector that captures meaning: <em>coffee</em> and <em>tea</em> have high PMI with <em>cup</em>, <em>drink</em> and <em>hot</em>. But the rows are as long as the vocabulary and mostly empty (unobserved pairs have PMI <span class="math inline">\(-\infty\)</span>, usually clipped to zero). The classical fix is to compress the matrix: take the singular value decomposition <span class="math inline">\(M = U\Sigma V^\top\)</span> and keep the top <span class="math inline">\(d\)</span> singular values. By the Eckart–Young theorem, <span class="math inline">\(U_d\Sigma_d V_d^\top\)</span> is the best rank-<span class="math inline">\(d\)</span> approximation to <span class="math inline">\(M\)</span> in the Frobenius norm, and the rows of <span class="math inline">\(U_d\Sigma_d^{1/2}\)</span> are <span class="math inline">\(d\)</span>-dimensional word vectors. Applied to word–document counts, this is latent semantic analysis (Deerwester and colleagues, 1990).</p>
+</section>
+<section id="word2vec" class="level2">
+<h2 class="anchored" data-anchor-id="word2vec">word2vec</h2>
+<p>In 2013 Tomas Mikolov and colleagues at Google published word2vec, which learned word vectors with a shallow neural network instead of by counting and factorising. It was fast, it scaled to billions of words, and its vectors did something that made it famous: the analogies of the next section. Its most successful form is the <strong>skip-gram with negative sampling</strong> (SGNS).</p>
+<p>Every word <span class="math inline">\(w\)</span> gets two vectors: <span class="math inline">\(\mathbf w\)</span> when it is the centre word and <span class="math inline">\(\mathbf c\)</span> when it is a context word. Slide a window along the text. Each (centre, context) pair seen in the window is a positive example, and the model should say “yes, these occur together” with probability <span class="math inline">\(\sigma(\mathbf w\cdot\mathbf c)\)</span>, where <span class="math inline">\(\sigma(x) = 1/(1+e^{-x})\)</span>. For each positive pair, draw <span class="math inline">\(k\)</span> negative context words at random from a noise distribution <span class="math inline">\(P_n\)</span>; for those the model should say “no”. The loss for one pair is</p>
+<p><span class="math display">\[
+\ell(w,c) = -\log\sigma(\mathbf w\cdot\mathbf c) \;-\; \sum_{i=1}^{k}\log\sigma(-\mathbf w\cdot\mathbf c_i), \qquad c_i \sim P_n.
+\]</span></p>
+<p>Using <span class="math inline">\(\sigma'(x) = \sigma(x)\,(1-\sigma(x))\)</span>, so that <span class="math inline">\(\frac{d}{dx}\log\sigma(x) = 1-\sigma(x) = \sigma(-x)\)</span>, the gradients are</p>
+<p><span class="math display">\[
+\frac{\partial \ell}{\partial \mathbf w} = -\sigma(-\mathbf w\cdot\mathbf c)\,\mathbf c + \sum_{i=1}^k \sigma(\mathbf w\cdot\mathbf c_i)\,\mathbf c_i, \qquad
+\frac{\partial \ell}{\partial \mathbf c} = -\sigma(-\mathbf w\cdot\mathbf c)\,\mathbf w, \qquad
+\frac{\partial \ell}{\partial \mathbf c_i} = \sigma(\mathbf w\cdot\mathbf c_i)\,\mathbf w.
+\]</span></p>
+<p>Read as an update, gradient descent pulls <span class="math inline">\(\mathbf w\)</span> towards the true context by an amount proportional to how wrong the model was (<span class="math inline">\(\sigma(-\mathbf w\cdot\mathbf c)\)</span> is the probability it gave to “no”), and pushes it away from each noise word in proportion to how much it wrongly believed in it. Only <span class="math inline">\(k+2\)</span> vectors change per pair, which is what made it cheap. The original paper uses <span class="math inline">\(k\)</span> between 5 and 20, a noise distribution of unigram frequencies raised to the power <span class="math inline">\(\tfrac34\)</span> (which samples rare words more often than their frequency would), and randomly discards very frequent words so that <em>the</em> and <em>of</em> do not dominate the training pairs.</p>
+<section id="what-word2vec-actually-learns" class="level3">
+<h3 class="anchored" data-anchor-id="what-word2vec-actually-learns">What word2vec actually learns</h3>
+<p>For a few years word2vec looked like a different kind of thing from counting and SVD. Omer Levy and Yoav Goldberg showed in 2014 that it is not. Collect the loss over the whole corpus and group the terms by the pair <span class="math inline">\((w,c)\)</span>. The pair appears as a positive <span class="math inline">\(\#(w,c)\)</span> times, and as a negative <span class="math inline">\(k\,\#(w)\,P_n(c)\)</span> times on average. Writing <span class="math inline">\(x = \mathbf w\cdot\mathbf c\)</span>, the part of the total loss that depends on <span class="math inline">\(x\)</span> is</p>
+<p><span class="math display">\[
+L(x) = -\#(w,c)\,\log\sigma(x) \;-\; k\,\#(w)\,P_n(c)\,\log\sigma(-x).
+\]</span></p>
+<p>Suppose the dimension is large enough that each dot product can be chosen freely. Setting <span class="math inline">\(L'(x) = 0\)</span>:</p>
+<p><span class="math display">\[
+-\#(w,c)\,\sigma(-x) + k\,\#(w)\,P_n(c)\,\sigma(x) = 0
+\;\;\Longrightarrow\;\; e^{x} = \frac{\sigma(x)}{\sigma(-x)} = \frac{\#(w,c)}{k\,\#(w)\,P_n(c)},
+\]</span></p>
+<p>so the optimum is</p>
+<p><span class="math display">\[
+\mathbf w\cdot\mathbf c = \log\frac{\#(w,c)}{\#(w)\,P_n(c)} - \log k = \operatorname{PMI}(w,c) - \log k,
+\]</span></p>
+<p>with <span class="math inline">\(P_n\)</span> standing in for <span class="math inline">\(P(c)\)</span>. Skip-gram with negative sampling is factorising the matrix of pointwise mutual information, shifted down by <span class="math inline">\(\log k\)</span>, as <span class="math inline">\(W C^\top\)</span>. It is a weighted, implicit version of the counting method it replaced. The difference in practice comes from the weighting, the smoothed noise distribution and the subsampling, not from a different principle.</p>
+<p>The theorem assumes unlimited dimension and full convergence. To see how close a real model comes, I trained word2vec with gensim on all of text8 (100 dimensions, window 5, <span class="math inline">\(k = 5\)</span>, 5 epochs; 71,290 words kept) and counted the co-occurrences of the 3,000 most frequent words with the same window weighting and subsampling the training used. For the 247,000 pairs seen at least 20 times:</p>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="205" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 204;"><span id="cb10-205"><a href="#cb10-205" aria-hidden="true" tabindex="-1"></a>pmi <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/pmi_check.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb11" data-startfrom="209" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 208;"><span id="cb11-209"><a href="#cb11-209" aria-hidden="true" tabindex="-1"></a>pmiPlot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb11-210"><a href="#cb11-210" aria-hidden="true" tabindex="-1"></a>  <span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">640</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">340</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">50</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb11-211"><a href="#cb11-211" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"PMI(w, c) − log k, from the counts"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"w · c in the trained model"</span>}<span class="op">,</span></span>
+<span id="cb11-212"><a href="#cb11-212" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb11-213"><a href="#cb11-213" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>(pmi<span class="op">.</span><span class="at">sample</span><span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="fl">1.5</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#6fa8dc"</span><span class="op">,</span> <span class="dt">fillOpacity</span><span class="op">:</span> <span class="fl">0.35</span>})<span class="op">,</span></span>
+<span id="cb11-214"><a href="#cb11-214" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>([[<span class="op">-</span><span class="dv">4</span><span class="op">,</span> <span class="op">-</span><span class="dv">4</span>]<span class="op">,</span> [<span class="dv">6</span><span class="op">,</span> <span class="dv">6</span>]]<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"#999"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"4 3"</span>})<span class="op">,</span></span>
+<span id="cb11-215"><a href="#cb11-215" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>(pmi<span class="op">.</span><span class="at">binned</span><span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">2.5</span>})<span class="op">,</span></span>
+<span id="cb11-216"><a href="#cb11-216" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">text</span>([[<span class="fl">5.2</span><span class="op">,</span> <span class="fl">5.6</span>]]<span class="op">,</span> {<span class="dt">text</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">"y = x"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#888"</span>})</span>
+<span id="cb11-217"><a href="#cb11-217" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb11-218"><a href="#cb11-218" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-11" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb12" data-startfrom="222" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 221;"><span id="cb12-222"><a href="#cb12-222" aria-hidden="true" tabindex="-1"></a><span class="fu">md</span><span class="vs">`The correlation is </span><span class="sc">${</span><span class="fu">fmt</span>(pmi<span class="op">.</span><span class="at">corr</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">. The blue dots are a random sample of pairs and the orange line the average in bins. The trained dot products track shifted PMI closely but with a slope of </span><span class="sc">${</span><span class="fu">fmt</span>(pmi<span class="op">.</span><span class="at">slope</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> rather than 1: a hundred dimensions cannot fit a 3,000 by 3,000 matrix exactly, and five passes do not reach the optimum, so the model shrinks the extremes towards the middle.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-12" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>GloVe (Jeffrey Pennington, Richard Socher and Christopher Manning, 2014) makes the factorisation explicit. It fits the log of the co-occurrence counts <span class="math inline">\(X_{ij}\)</span> directly, by weighted least squares:</p>
+<p><span class="math display">\[
+J = \sum_{i,j} f(X_{ij})\left(\mathbf w_i\cdot\tilde{\mathbf w}_j + b_i + \tilde b_j - \log X_{ij}\right)^2, \qquad f(x) = \min\!\left(1, (x/x_{\max})^{3/4}\right),
+\]</span></p>
+<p>with biases <span class="math inline">\(b_i, \tilde b_j\)</span> absorbing the <span class="math inline">\(\log \#(w)\)</span> and <span class="math inline">\(\log \#(c)\)</span> terms of PMI, and <span class="math inline">\(f\)</span> stopping rare, noisy pairs from dominating and very common ones from swamping everything. The published GloVe vectors trained on 6 billion tokens of Wikipedia and newswire are used below.</p>
+</section>
+</section>
+<section id="the-geometry-of-meaning" class="level2">
+<h2 class="anchored" data-anchor-id="the-geometry-of-meaning">The geometry of meaning</h2>
+<p>Similarity between two embeddings is measured by the cosine of the angle between them, <span class="math inline">\(\cos\theta = \mathbf u\cdot\mathbf v / (\|\mathbf u\|\,\|\mathbf v\|)\)</span>. Length mostly reflects how often a word occurs and how consistently it is used; direction carries the meaning. Here are the nearest neighbours in the GloVe space (100 dimensions, the 20,000 most frequent words, stored here to 8 bits):</p>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb13" data-startfrom="240" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 239;"><span id="cb13-240"><a href="#cb13-240" aria-hidden="true" tabindex="-1"></a>glove <span class="op">=</span> {</span>
+<span id="cb13-241"><a href="#cb13-241" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> g <span class="op">=</span> <span class="cf">await</span> <span class="fu">FileAttachment</span>(<span class="st">"data/glove20k.json"</span>)<span class="op">.</span><span class="fu">json</span>()<span class="op">;</span></span>
+<span id="cb13-242"><a href="#cb13-242" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> bin <span class="op">=</span> <span class="bu">Uint8Array</span><span class="op">.</span><span class="fu">from</span>(<span class="fu">atob</span>(g<span class="op">.</span><span class="at">q</span>)<span class="op">,</span> c <span class="kw">=&gt;</span> c<span class="op">.</span><span class="fu">charCodeAt</span>(<span class="dv">0</span>))<span class="op">;</span></span>
+<span id="cb13-243"><a href="#cb13-243" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> q <span class="op">=</span> <span class="kw">new</span> <span class="bu">Int8Array</span>(bin<span class="op">.</span><span class="at">buffer</span>)<span class="op">,</span> N <span class="op">=</span> g<span class="op">.</span><span class="at">words</span><span class="op">.</span><span class="at">length</span><span class="op">,</span> D <span class="op">=</span> g<span class="op">.</span><span class="at">dim</span><span class="op">;</span></span>
+<span id="cb13-244"><a href="#cb13-244" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> U <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float32Array</span>(N <span class="op">*</span> D)<span class="op">;</span></span>
+<span id="cb13-245"><a href="#cb13-245" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb13-246"><a href="#cb13-246" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb13-247"><a href="#cb13-247" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) { <span class="kw">const</span> v <span class="op">=</span> q[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">*</span> g<span class="op">.</span><span class="at">scale</span>[i] <span class="op">/</span> <span class="dv">127</span><span class="op">;</span> U[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">=</span> v<span class="op">;</span> s <span class="op">+=</span> v <span class="op">*</span> v<span class="op">;</span> }</span>
+<span id="cb13-248"><a href="#cb13-248" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(s)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) U[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">/=</span> s<span class="op">;</span></span>
+<span id="cb13-249"><a href="#cb13-249" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-250"><a href="#cb13-250" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> idx <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>(g<span class="op">.</span><span class="at">words</span><span class="op">.</span><span class="fu">map</span>((w<span class="op">,</span> i) <span class="kw">=&gt;</span> [w<span class="op">,</span> i]))<span class="op">;</span></span>
+<span id="cb13-251"><a href="#cb13-251" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {U<span class="op">,</span> N<span class="op">,</span> D<span class="op">,</span> <span class="dt">words</span><span class="op">:</span> g<span class="op">.</span><span class="at">words</span><span class="op">,</span> idx}<span class="op">;</span></span>
+<span id="cb13-252"><a href="#cb13-252" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-253"><a href="#cb13-253" aria-hidden="true" tabindex="-1"></a>gvec <span class="op">=</span> (w) <span class="kw">=&gt;</span> { <span class="kw">const</span> i <span class="op">=</span> glove<span class="op">.</span><span class="at">idx</span><span class="op">.</span><span class="fu">get</span>(w)<span class="op">;</span> <span class="cf">return</span> i <span class="op">===</span> <span class="kw">undefined</span> <span class="op">?</span> <span class="kw">null</span> <span class="op">:</span> glove<span class="op">.</span><span class="at">U</span><span class="op">.</span><span class="fu">subarray</span>(i <span class="op">*</span> glove<span class="op">.</span><span class="at">D</span><span class="op">,</span> (i <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> glove<span class="op">.</span><span class="at">D</span>)<span class="op">;</span> }</span>
+<span id="cb13-254"><a href="#cb13-254" aria-hidden="true" tabindex="-1"></a>nearest <span class="op">=</span> (v<span class="op">,</span> k<span class="op">,</span> exclude <span class="op">=</span> []) <span class="kw">=&gt;</span> {</span>
+<span id="cb13-255"><a href="#cb13-255" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> {U<span class="op">,</span> N<span class="op">,</span> D<span class="op">,</span> words} <span class="op">=</span> glove<span class="op">,</span> ex <span class="op">=</span> <span class="kw">new</span> <span class="bu">Set</span>(exclude)<span class="op">,</span> out <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb13-256"><a href="#cb13-256" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> n <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) n <span class="op">+=</span> v[j] <span class="op">*</span> v[j]<span class="op">;</span> n <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(n)<span class="op">;</span></span>
+<span id="cb13-257"><a href="#cb13-257" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb13-258"><a href="#cb13-258" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> D<span class="op">;</span> j<span class="op">++</span>) s <span class="op">+=</span> U[i <span class="op">*</span> D <span class="op">+</span> j] <span class="op">*</span> v[j]<span class="op">;</span></span>
+<span id="cb13-259"><a href="#cb13-259" aria-hidden="true" tabindex="-1"></a>    out<span class="op">.</span><span class="fu">push</span>([s <span class="op">/</span> n<span class="op">,</span> i])<span class="op">;</span></span>
+<span id="cb13-260"><a href="#cb13-260" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-261"><a href="#cb13-261" aria-hidden="true" tabindex="-1"></a>  out<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b[<span class="dv">0</span>] <span class="op">-</span> a[<span class="dv">0</span>])<span class="op">;</span></span>
+<span id="cb13-262"><a href="#cb13-262" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> out<span class="op">.</span><span class="fu">filter</span>(([<span class="op">,</span> i]) <span class="kw">=&gt;</span> <span class="op">!</span>ex<span class="op">.</span><span class="fu">has</span>(words[i]))<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> k)<span class="op">.</span><span class="fu">map</span>(([s<span class="op">,</span> i]) <span class="kw">=&gt;</span> ({<span class="dt">word</span><span class="op">:</span> words[i]<span class="op">,</span> <span class="dt">cos</span><span class="op">:</span> s}))<span class="op">;</span></span>
+<span id="cb13-263"><a href="#cb13-263" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-13-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-13-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-13-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb14" data-startfrom="266" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 265;"><span id="cb14-266"><a href="#cb14-266" aria-hidden="true" tabindex="-1"></a>viewof nnWord <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"physics"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Word"</span><span class="op">,</span> <span class="dt">submit</span><span class="op">:</span> <span class="st">"Find"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-14" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb15" data-startfrom="270" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 269;"><span id="cb15-270"><a href="#cb15-270" aria-hidden="true" tabindex="-1"></a>nnOut <span class="op">=</span> {</span>
+<span id="cb15-271"><a href="#cb15-271" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> v <span class="op">=</span> <span class="fu">gvec</span>(nnWord<span class="op">.</span><span class="fu">trim</span>()<span class="op">.</span><span class="fu">toLowerCase</span>())<span class="op">;</span></span>
+<span id="cb15-272"><a href="#cb15-272" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>v) <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;p class="em-note"&gt;Not among the 20,000 most frequent words.&lt;/p&gt;`</span><span class="op">;</span></span>
+<span id="cb15-273"><a href="#cb15-273" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> r <span class="op">=</span> <span class="fu">nearest</span>(v<span class="op">,</span> <span class="dv">11</span>)<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb15-274"><a href="#cb15-274" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm em-t" style="max-width:360px"&gt;&lt;tbody&gt;</span><span class="sc">${</span>r<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">word</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(d<span class="op">.</span><span class="at">cos</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb15-275"><a href="#cb15-275" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-15" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Try <em>bank</em>, whose neighbours are all financial: a single vector per word has to average over every sense of it, and the commonest sense wins. That is the main limitation of static embeddings, and the reason transformers exist, as the next section explains.</p>
+<section id="analogies-and-a-caveat" class="level3">
+<h3 class="anchored" data-anchor-id="analogies-and-a-caveat">Analogies, and a caveat</h3>
+<p>The result that made word2vec famous was that relationships appear as directions. If <em>king</em> is to <em>man</em> as <em>queen</em> is to <em>woman</em>, then <span class="math inline">\(\mathbf{king} - \mathbf{man} + \mathbf{woman}\)</span> should land near <span class="math inline">\(\mathbf{queen}\)</span>. The test set Mikolov’s group released has 19,544 such questions in fourteen categories, from capital cities to plural verbs. The method, called 3CosAdd, answers <span class="math inline">\(a : b :: c : ?\)</span> with</p>
+<p><span class="math display">\[
+\hat d = \arg\max_{x}\;\cos\!\left(\mathbf x,\; \mathbf b - \mathbf a + \mathbf c\right), \qquad x \notin \{a, b, c\}.
+\]</span></p>
+<p>The last condition matters more than its size suggests. For GloVe on the 19,230 questions whose words are all in its top 100,000:</p>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb16" data-startfrom="293" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 292;"><span id="cb16-293"><a href="#cb16-293" aria-hidden="true" tabindex="-1"></a>ga <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/glove_analogy.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span>
+<span id="cb16-294"><a href="#cb16-294" aria-hidden="true" tabindex="-1"></a>w2v <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/w2v_eval.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-16-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-16-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb17" data-startfrom="297" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 296;"><span id="cb17-297"><a href="#cb17-297" aria-hidden="true" tabindex="-1"></a>anaTable <span class="op">=</span> {</span>
+<span id="cb17-298"><a href="#cb17-298" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> nice <span class="op">=</span> s <span class="kw">=&gt;</span> s<span class="op">.</span><span class="fu">replace</span>(<span class="st">"gram"</span><span class="op">,</span> <span class="st">""</span>)<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">^\d</span><span class="ss">-/</span><span class="op">,</span> <span class="st">""</span>)<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/-/g</span><span class="op">,</span> <span class="st">" "</span>)<span class="op">;</span></span>
+<span id="cb17-299"><a href="#cb17-299" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rows <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">entries</span>(ga<span class="op">.</span><span class="at">sections</span>)<span class="op">;</span></span>
+<span id="cb17-300"><a href="#cb17-300" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm em-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Category&lt;/th&gt;&lt;th class="num"&gt;Questions&lt;/th&gt;&lt;th class="num"&gt;Correct, inputs excluded&lt;/th&gt;&lt;th class="num"&gt;Correct, inputs allowed&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb17-301"><a href="#cb17-301" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(([k<span class="op">,</span> v]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span><span class="fu">nice</span>(k)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(v<span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> v<span class="op">.</span><span class="at">excl</span> <span class="op">/</span> v<span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">%&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> v<span class="op">.</span><span class="at">incl</span> <span class="op">/</span> v<span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">%&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb17-302"><a href="#cb17-302" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;tr style="font-weight:600"&gt;&lt;td&gt;All&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">ex</span> <span class="op">/</span> ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">%&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">inc</span> <span class="op">/</span> ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">%&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb17-303"><a href="#cb17-303" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-17" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Allow the input words as answers and accuracy falls from 64% to 34%. Of the 12,717 answers then wrong, 10,392 are <span class="math inline">\(c\)</span> itself, the word the offset <span class="math inline">\(\mathbf b - \mathbf a\)</span> was added to, and another 1,308 are <span class="math inline">\(b\)</span>. The nearest vector to <span class="math inline">\(\mathbf{king} - \mathbf{man} + \mathbf{woman}\)</span> in GloVe is <em>king</em> itself, at a cosine of 0.84; <em>queen</em> is second, at 0.77. Offsets between related words are small compared with the distance between unrelated ones, so the sum stays close to its starting point, and the test only works because the starting point is ruled out. Tal Linzen (2016) and Malvina Nissim and colleagues (2020) made this point at length. The parallelogram is real, the categories where it works best (capitals, nationalities, comparatives) are real, but the famous example is weaker than its reputation.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb18" data-startfrom="309" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 308;"><span id="cb18-309"><a href="#cb18-309" aria-hidden="true" tabindex="-1"></a>viewof ana <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb18-310"><a href="#cb18-310" aria-hidden="true" tabindex="-1"></a>  <span class="dt">a</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"man"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"a"</span>})<span class="op">,</span> <span class="dt">b</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"king"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"b"</span>})<span class="op">,</span></span>
+<span id="cb18-311"><a href="#cb18-311" aria-hidden="true" tabindex="-1"></a>  <span class="dt">c</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">"woman"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"c"</span>})<span class="op">,</span></span>
+<span id="cb18-312"><a href="#cb18-312" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ex</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">toggle</span>({<span class="dt">value</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Exclude a, b, c"</span>})</span>
+<span id="cb18-313"><a href="#cb18-313" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-18" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb19" data-startfrom="317" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 316;"><span id="cb19-317"><a href="#cb19-317" aria-hidden="true" tabindex="-1"></a>anaOut <span class="op">=</span> {</span>
+<span id="cb19-318"><a href="#cb19-318" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> ws <span class="op">=</span> [ana<span class="op">.</span><span class="at">a</span><span class="op">,</span> ana<span class="op">.</span><span class="at">b</span><span class="op">,</span> ana<span class="op">.</span><span class="at">c</span>]<span class="op">.</span><span class="fu">map</span>(s <span class="kw">=&gt;</span> s<span class="op">.</span><span class="fu">trim</span>()<span class="op">.</span><span class="fu">toLowerCase</span>())<span class="op">,</span> vs <span class="op">=</span> ws<span class="op">.</span><span class="fu">map</span>(gvec)<span class="op">;</span></span>
+<span id="cb19-319"><a href="#cb19-319" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (vs<span class="op">.</span><span class="fu">some</span>(v <span class="kw">=&gt;</span> <span class="op">!</span>v)) <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;p class="em-note"&gt;Each word must be among the 20,000 most frequent.&lt;/p&gt;`</span><span class="op">;</span></span>
+<span id="cb19-320"><a href="#cb19-320" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> t <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float32Array</span>(glove<span class="op">.</span><span class="at">D</span>)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> glove<span class="op">.</span><span class="at">D</span><span class="op">;</span> j<span class="op">++</span>) t[j] <span class="op">=</span> vs[<span class="dv">1</span>][j] <span class="op">-</span> vs[<span class="dv">0</span>][j] <span class="op">+</span> vs[<span class="dv">2</span>][j]<span class="op">;</span></span>
+<span id="cb19-321"><a href="#cb19-321" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> r <span class="op">=</span> <span class="fu">nearest</span>(t<span class="op">,</span> <span class="dv">8</span><span class="op">,</span> ana<span class="op">.</span><span class="at">ex</span> <span class="op">?</span> ws <span class="op">:</span> [])<span class="op">;</span></span>
+<span id="cb19-322"><a href="#cb19-322" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="em-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span>ws[<span class="dv">0</span>]<span class="sc">}</span><span class="vs"> : </span><span class="sc">${</span>ws[<span class="dv">1</span>]<span class="sc">}</span><span class="vs"> :: </span><span class="sc">${</span>ws[<span class="dv">2</span>]<span class="sc">}</span><span class="vs"> : ?&lt;/h4&gt;&lt;table class="table table-sm em-t" style="max-width:360px"&gt;&lt;tbody&gt;</span><span class="sc">${</span>r<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>ws<span class="op">.</span><span class="fu">includes</span>(d<span class="op">.</span><span class="at">word</span>) <span class="op">?</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;i&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">word</span><span class="sc">}</span><span class="vs">&lt;/i&gt; (input)`</span> <span class="op">:</span> d<span class="op">.</span><span class="at">word</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(d<span class="op">.</span><span class="at">cos</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb19-323"><a href="#cb19-323" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-19" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb20" data-startfrom="327" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 326;"><span id="cb20-327"><a href="#cb20-327" aria-hidden="true" tabindex="-1"></a><span class="fu">md</span><span class="vs">`Corpus size matters too. The text8 word2vec model, trained on 17 million words rather than 6 billion, answers </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> w2v<span class="op">.</span><span class="at">acc</span>)<span class="sc">}</span><span class="vs">% of the questions it has the words for (</span><span class="sc">${</span><span class="fu">fmt</span>(w2v<span class="op">.</span><span class="at">tot</span>[<span class="dv">1</span>])<span class="sc">}</span><span class="vs"> of them), against GloVe's </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">ex</span> <span class="op">/</span> ga<span class="op">.</span><span class="at">tot</span><span class="op">.</span><span class="at">n</span>)<span class="sc">}</span><span class="vs">%. It also has text8's view of the world: its nearest neighbours of *king* include *canute*, *valdemar* and *haakon*, because a Wikipedia sample is full of medieval monarchs.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-20" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>The same geometry carries the corpus’s biases. Tolga Bolukbasi and colleagues showed in 2016 that <span class="math inline">\(\mathbf{programmer} - \mathbf{man} + \mathbf{woman}\)</span> in a widely used word2vec model landed near <em>homemaker</em>. Embeddings record how words are used, not how they should be.</p>
+</section>
+</section>
+<section id="inside-a-transformer" class="level2">
+<h2 class="anchored" data-anchor-id="inside-a-transformer">Inside a transformer</h2>
+<p>A transformer language model does not train its embeddings separately. The table <span class="math inline">\(E\)</span> is just the first layer, initialised at random and learned with everything else, from one task: predict the next token.</p>
+<p>Write <span class="math inline">\(\mathbf h \in \mathbb R^d\)</span> for the model’s final hidden state at some position, after all the layers have mixed in context from earlier tokens. The output layer scores every token in the vocabulary with a matrix <span class="math inline">\(W \in \mathbb R^{V\times d}\)</span>, <span class="math inline">\(\mathbf z = W\mathbf h\)</span>, and turns the scores into probabilities with the softmax, <span class="math inline">\(p_v = e^{z_v}/\sum_u e^{z_u}\)</span>. If the true next token is <span class="math inline">\(y\)</span>, the loss is the cross-entropy <span class="math inline">\(L = -\log p_y\)</span>. Its gradient with respect to the scores is the standard result</p>
+<p><span class="math display">\[
+\frac{\partial L}{\partial z_v} = p_v - [v = y],
+\]</span></p>
+<p>so for the output matrix,</p>
+<p><span class="math display">\[
+\frac{\partial L}{\partial \mathbf w_v} = (p_v - [v=y])\,\mathbf h.
+\]</span></p>
+<p>The row for the correct token is pulled towards <span class="math inline">\(\mathbf h\)</span>; every other row is pushed away from it, in proportion to the probability the model wrongly gave it. Compare the input table: its gradient reaches only the rows of tokens that actually appeared in the input. The two tables are trained very differently.</p>
+<p>Many models, GPT-2 among them, use the same matrix for both, <span class="math inline">\(W = E\)</span>. Ofir Press and Lior Wolf (2017) and Hakan Inan and colleagues (2017) showed this tying works as well or better while saving <span class="math inline">\(V d\)</span> parameters, and it has a clean reading: the model predicts the next token by producing a hidden state that points in the direction of that token’s embedding. Tying also has a side effect. Every update pushes all the rows that were not the answer away from <span class="math inline">\(\mathbf h\)</span>, and rare tokens are almost never the answer, so they receive nothing but these pushes. Jun Gao and colleagues (2019) showed this drives rare token embeddings into a narrow cone, in a common direction, the “representation degeneration problem”. GPT-2’s table, below, shows it.</p>
+<p>The embedding is only the starting point. The vector for <em>bank</em> is the same whether the sentence is about rivers or money; the attention layers that follow combine it with the vectors around it, and by the middle layers the representation of <em>bank</em> in “river bank” and in “bank account” have moved apart. Kawin Ethayarajh (2019) measured this, and also found that these contextual vectors occupy a narrow cone of the space, the same anisotropy as the static table. Part 2 is about what to do with those contextual vectors.</p>
+<section id="gpt-2s-table" class="level3">
+<h3 class="anchored" data-anchor-id="gpt-2s-table">GPT-2’s table</h3>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb21" data-startfrom="358" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 357;"><span id="cb21-358"><a href="#cb21-358" aria-hidden="true" tabindex="-1"></a>gpt2 <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/gpt2.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-21" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb22" data-startfrom="362" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 361;"><span id="cb22-362"><a href="#cb22-362" aria-hidden="true" tabindex="-1"></a>gpt2Intro <span class="op">=</span> <span class="fu">md</span><span class="vs">`GPT-2's 50,257 rows are 768-dimensional. Their lengths range from </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">norm_min</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> to </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">norm_max</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">, with a median of </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">norm_median</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">. The average cosine between two random tokens is </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">mean_cos</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">, not the zero you would expect from random directions in 768 dimensions: the table is anisotropic. The vectors sit on average </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">mean_dir_angle</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">° from their shared mean direction, where random directions in 768 dimensions would sit at almost exactly 90°. Token ids in GPT-2 follow the order in which the BPE merges were learned, which roughly follows frequency, so the id is a rough frequency rank:`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-22" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb23" data-startfrom="366" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 365;"><span id="cb23-366"><a href="#cb23-366" aria-hidden="true" tabindex="-1"></a>gpt2NormPlot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb23-367"><a href="#cb23-367" aria-hidden="true" tabindex="-1"></a>  <span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">680</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">280</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">50</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb23-368"><a href="#cb23-368" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Token id (roughly frequency rank)"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Embedding length ‖e‖"</span>}<span class="op">,</span></span>
+<span id="cb23-369"><a href="#cb23-369" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">dot</span>(gpt2<span class="op">.</span><span class="at">norm_sample</span><span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="fl">1.2</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#2a9d8f"</span><span class="op">,</span> <span class="dt">fillOpacity</span><span class="op">:</span> <span class="fl">0.4</span>})<span class="op">,</span></span>
+<span id="cb23-370"><a href="#cb23-370" aria-hidden="true" tabindex="-1"></a>          Plot<span class="op">.</span><span class="fu">line</span>(gpt2<span class="op">.</span><span class="at">norm_binned</span><span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> d <span class="kw">=&gt;</span> d[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span>})]</span>
+<span id="cb23-371"><a href="#cb23-371" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-23" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb24" data-startfrom="375" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 374;"><span id="cb24-375"><a href="#cb24-375" aria-hidden="true" tabindex="-1"></a>gpt2Lengths <span class="op">=</span> <span class="fu">md</span><span class="vs">`Frequent tokens have the shortest vectors: the median length is </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">norm_bands</span><span class="op">.</span><span class="at">first1000</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> for the first thousand ids and </span><span class="sc">${</span><span class="fu">fmt</span>(gpt2<span class="op">.</span><span class="at">norm_bands</span><span class="op">.</span><span class="at">last20000</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> beyond id 30,000, and the twenty shortest of all are words like </span><span class="sc">${</span>gpt2<span class="op">.</span><span class="at">smallest_norm_tokens</span><span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">8</span>)<span class="op">.</span><span class="fu">map</span>(t <span class="kw">=&gt;</span> <span class="st">"</span><span class="sc">\`</span><span class="st">"</span> <span class="op">+</span> t<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/ /g</span><span class="op">,</span> <span class="st">"␣"</span>) <span class="op">+</span> <span class="st">"</span><span class="sc">\`</span><span class="st">"</span>)<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">. A token that appears everywhere is used in every kind of context, and its vector is pulled in many directions at once.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-24" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb25" data-startfrom="379" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 378;"><span id="cb25-379"><a href="#cb25-379" aria-hidden="true" tabindex="-1"></a>gpt2Centre <span class="op">=</span> <span class="fu">md</span><span class="vs">`At the other extreme are the tokens whose vectors point most nearly along the mean direction, with cosines to it near 0.9 where the median token has </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="fl">0.52</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span>gpt2<span class="op">.</span><span class="at">centroid_tokens</span><span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">11</span>)<span class="op">.</span><span class="fu">filter</span>(t <span class="kw">=&gt;</span> <span class="op">!</span><span class="ss">/Ã/</span><span class="op">.</span><span class="fu">test</span>(t))<span class="op">.</span><span class="fu">map</span>(t <span class="kw">=&gt;</span> <span class="st">"</span><span class="sc">\`</span><span class="st">"</span> <span class="op">+</span> t<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/ /g</span><span class="op">,</span> <span class="st">"␣"</span>) <span class="op">+</span> <span class="st">"</span><span class="sc">\`</span><span class="st">"</span>)<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">. These are fragments of usernames, code and web-page boilerplate. They were common enough in the text the tokeniser was built from to get merges of their own, but almost absent from the text the model was trained on, so their rows received almost nothing but the push towards the common direction described above. Jessica Rumbelow and Matthew Watkins found tokens like these in 2023 and called them glitch tokens (*SolidGoldMagikarp*, a Reddit username, is the best known): GPT-2 and GPT-3 behaved erratically when they appeared, because the model had never learned what their vectors meant.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-25" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb26" data-startfrom="383" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 382;"><span id="cb26-383"><a href="#cb26-383" aria-hidden="true" tabindex="-1"></a>viewof gpWord <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> <span class="st">" king"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"GPT-2 token (a leading space matters)"</span><span class="op">,</span> <span class="dt">submit</span><span class="op">:</span> <span class="st">"Find"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-26" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb27" data-startfrom="387" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 386;"><span id="cb27-387"><a href="#cb27-387" aria-hidden="true" tabindex="-1"></a>gpOut <span class="op">=</span> {</span>
+<span id="cb27-388"><a href="#cb27-388" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> t <span class="op">=</span> gpt2<span class="op">.</span><span class="at">nn</span>[gpWord]<span class="op">;</span></span>
+<span id="cb27-389"><a href="#cb27-389" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>t) <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;p class="em-note"&gt;Neighbours are stored for the </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(gpt2<span class="op">.</span><span class="at">nn</span>)<span class="op">.</span><span class="at">length</span>)<span class="sc">}</span><span class="vs"> most frequent whole-word tokens. Try " king", " Paris", " computer", " bank", " three", " the".&lt;/p&gt;`</span><span class="op">;</span></span>
+<span id="cb27-390"><a href="#cb27-390" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm em-t" style="max-width:380px"&gt;&lt;tbody&gt;</span><span class="sc">${</span>t<span class="op">.</span><span class="fu">map</span>(([w<span class="op">,</span> s]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;&lt;code&gt;</span><span class="sc">${</span><span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(w)<span class="sc">}</span><span class="vs">&lt;/code&gt;&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(s<span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb27-391"><a href="#cb27-391" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-27" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The neighbours mix meaning with form: case and spacing variants of the same word sit next to each other, because the model has to learn that <code>" King"</code>, <code>" king"</code> and <code>"King"</code> are related from use alone.</p>
+</section>
+</section>
+<section id="where-am-i-in-the-sentence" class="level2">
+<h2 class="anchored" data-anchor-id="where-am-i-in-the-sentence">Where am I in the sentence?</h2>
+<p>Attention, the operation at the heart of a transformer, compares every token’s vector with every other token’s and mixes them according to the comparison. It has no notion of order. If <span class="math inline">\(X\)</span> is the matrix of input vectors and <span class="math inline">\(P\)</span> any permutation matrix, self-attention satisfies <span class="math inline">\(\operatorname{Attn}(PX) = P\operatorname{Attn}(X)\)</span>: shuffle the words and the outputs are shuffled in the same way and otherwise unchanged. “Dog bites man” and “man bites dog” would be the same input. (A decoder’s causal mask, which lets each token see only earlier ones, breaks the symmetry slightly, and models can infer some position from it; but every major model adds position explicitly.) Position has to be added.</p>
+<p><strong>Learned positions.</strong> The simplest answer is a second table, one vector per position, added to the token embedding. GPT-2 does this: a <span class="math inline">\(1{,}024 \times 768\)</span> table, learned like everything else.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb28" data-startfrom="403" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 402;"><span id="cb28-403"><a href="#cb28-403" aria-hidden="true" tabindex="-1"></a>gpt2PosPlot <span class="op">=</span> {</span>
+<span id="cb28-404"><a href="#cb28-404" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> d <span class="op">=</span> gpt2<span class="op">.</span><span class="at">wpe_pcs</span><span class="op">.</span><span class="fu">flatMap</span>((r<span class="op">,</span> p) <span class="kw">=&gt;</span> r<span class="op">.</span><span class="fu">map</span>((v<span class="op">,</span> k) <span class="kw">=&gt;</span> ({p<span class="op">,</span> v<span class="op">,</span> <span class="dt">k</span><span class="op">:</span> <span class="vs">`PC </span><span class="sc">${</span>k <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="vs">`</span>})))<span class="op">;</span></span>
+<span id="cb28-405"><a href="#cb28-405" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb28-406"><a href="#cb28-406" aria-hidden="true" tabindex="-1"></a>    <span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">680</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">260</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">50</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb28-407"><a href="#cb28-407" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Position"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Projection"</span>}<span class="op">,</span></span>
+<span id="cb28-408"><a href="#cb28-408" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span>}<span class="op">,</span></span>
+<span id="cb28-409"><a href="#cb28-409" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(d<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"p"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"v"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">1.4</span>})]</span>
+<span id="cb28-410"><a href="#cb28-410" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb28-411"><a href="#cb28-411" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-28" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb29" data-startfrom="415" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 414;"><span id="cb29-415"><a href="#cb29-415" aria-hidden="true" tabindex="-1"></a><span class="fu">md</span><span class="vs">`Those are GPT-2's 1,024 position vectors projected on their first three principal components, which hold </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> gpt2<span class="op">.</span><span class="at">wpe_var3</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">% of the variance. Nobody told the model to use waves; it learned smooth, oscillating functions of position, close to what the original transformer prescribed by hand.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-29" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p><strong>Sinusoidal positions.</strong> Ashish Vaswani and colleagues, in the 2017 paper that introduced the transformer, added a fixed vector to each token instead:</p>
+<p><span class="math display">\[
+\mathrm{PE}(p, 2i) = \sin\!\left(\frac{p}{10000^{2i/d}}\right), \qquad \mathrm{PE}(p, 2i+1) = \cos\!\left(\frac{p}{10000^{2i/d}}\right).
+\]</span></p>
+<p>Each pair of coordinates is a point going round a circle at frequency <span class="math inline">\(\omega_i = 10000^{-2i/d}\)</span>, from one radian per position down to one cycle in about 63,000 positions. The reason for sines and cosines is that a shift is linear. By the angle-addition formulas,</p>
+<p><span class="math display">\[
+\begin{pmatrix}\sin\omega(p+k)\\ \cos\omega(p+k)\end{pmatrix} =
+\begin{pmatrix}\cos\omega k &amp; \sin\omega k\\ -\sin\omega k &amp; \cos\omega k\end{pmatrix}
+\begin{pmatrix}\sin\omega p\\ \cos\omega p\end{pmatrix},
+\]</span></p>
+<p>so <span class="math inline">\(\mathrm{PE}(p+k)\)</span> is a fixed rotation of <span class="math inline">\(\mathrm{PE}(p)\)</span>, the same for every <span class="math inline">\(p\)</span>. A layer can learn to attend “three tokens back” with one linear map.</p>
+<p><strong>Rotary positions.</strong> Most current models use a refinement, rotary position embedding, or RoPE (Jianlin Su and colleagues, 2021). Instead of adding a position vector to the input, it rotates the query and key vectors inside each attention layer. Split a <span class="math inline">\(d\)</span>-dimensional vector into <span class="math inline">\(d/2\)</span> pairs and treat each pair as a complex number; at position <span class="math inline">\(m\)</span>, multiply pair <span class="math inline">\(i\)</span> by <span class="math inline">\(e^{\mathrm i m\theta_i}\)</span>, with <span class="math inline">\(\theta_i = 10000^{-2i/d}\)</span> as before. Attention compares a query <span class="math inline">\(\mathbf q\)</span> at position <span class="math inline">\(m\)</span> with a key <span class="math inline">\(\mathbf k\)</span> at position <span class="math inline">\(n\)</span> through their dot product, which for one pair is the real part of <span class="math inline">\(q\,\bar k\)</span>:</p>
+<p><span class="math display">\[
+\operatorname{Re}\!\left[(q\,e^{\mathrm i m\theta})\,\overline{(k\,e^{\mathrm i n\theta})}\right] = \operatorname{Re}\!\left[q\,\bar k\,e^{\mathrm i (m-n)\theta}\right].
+\]</span></p>
+<p>The absolute positions cancel; only the offset <span class="math inline">\(m-n\)</span> remains. Summing over pairs, the attention score depends on the content of the two tokens and on how far apart they are, and nothing else, without adding anything to the token’s embedding. RoPE also builds in a decay with distance. The panel takes a random query, sets the key equal to it, so that without rotation they would match perfectly, and plots their rotary score against the distance between them. Each pair contributes <span class="math inline">\(|q_i|^2\cos\big((m-n)\theta_i\big)\)</span>, so the score is a sum of cosines at <span class="math inline">\(d/2\)</span> frequencies:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb30" data-startfrom="443" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 442;"><span id="cb30-443"><a href="#cb30-443" aria-hidden="true" tabindex="-1"></a>viewof rope <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb30-444"><a href="#cb30-444" aria-hidden="true" tabindex="-1"></a>  <span class="dt">d</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">select</span>([<span class="dv">16</span><span class="op">,</span> <span class="dv">64</span><span class="op">,</span> <span class="dv">128</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">128</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Dimension d"</span>})<span class="op">,</span></span>
+<span id="cb30-445"><a href="#cb30-445" aria-hidden="true" tabindex="-1"></a>  <span class="dt">base</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">select</span>([<span class="dv">100</span><span class="op">,</span> <span class="dv">10000</span><span class="op">,</span> <span class="dv">500000</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">10000</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Base (θᵢ = base^(−2i/d))"</span>})<span class="op">,</span></span>
+<span id="cb30-446"><a href="#cb30-446" aria-hidden="true" tabindex="-1"></a>  <span class="dt">seed</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">20</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Random vector"</span>})</span>
+<span id="cb30-447"><a href="#cb30-447" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-30" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb31" data-startfrom="451" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 450;"><span id="cb31-451"><a href="#cb31-451" aria-hidden="true" tabindex="-1"></a>ropePlot <span class="op">=</span> {</span>
+<span id="cb31-452"><a href="#cb31-452" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> {d<span class="op">,</span> base<span class="op">,</span> seed} <span class="op">=</span> rope<span class="op">;</span></span>
+<span id="cb31-453"><a href="#cb31-453" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> s <span class="op">=</span> seed <span class="op">*</span> <span class="dv">9301</span> <span class="op">+</span> <span class="dv">49297</span><span class="op">;</span> <span class="kw">const</span> rnd <span class="op">=</span> () <span class="kw">=&gt;</span> { s <span class="op">=</span> (s <span class="op">*</span> <span class="dv">9301</span> <span class="op">+</span> <span class="dv">49297</span>) <span class="op">%</span> <span class="dv">233280</span><span class="op">;</span> <span class="cf">return</span> s <span class="op">/</span> <span class="dv">233280</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb31-454"><a href="#cb31-454" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> g <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">rnd</span>() <span class="op">+</span> <span class="fl">1e-9</span>)) <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">cos</span>(<span class="dv">2</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="cn">PI</span> <span class="op">*</span> <span class="fu">rnd</span>())<span class="op">;</span></span>
+<span id="cb31-455"><a href="#cb31-455" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> q <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>({<span class="dt">length</span><span class="op">:</span> d}<span class="op">,</span> g)<span class="op">;</span></span>
+<span id="cb31-456"><a href="#cb31-456" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> nrm <span class="op">=</span> q<span class="op">.</span><span class="fu">reduce</span>((a<span class="op">,</span> x) <span class="kw">=&gt;</span> a <span class="op">+</span> x <span class="op">*</span> x<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb31-457"><a href="#cb31-457" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> pts <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb31-458"><a href="#cb31-458" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> off <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> off <span class="op">&lt;=</span> <span class="dv">2000</span><span class="op">;</span> off <span class="op">+=</span> <span class="dv">2</span>) {</span>
+<span id="cb31-459"><a href="#cb31-459" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> sc <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb31-460"><a href="#cb31-460" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> d <span class="op">/</span> <span class="dv">2</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb31-461"><a href="#cb31-461" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> th <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(base<span class="op">,</span> <span class="op">-</span><span class="dv">2</span> <span class="op">*</span> i <span class="op">/</span> d)<span class="op">,</span> r2 <span class="op">=</span> q[<span class="dv">2</span> <span class="op">*</span> i] <span class="op">**</span> <span class="dv">2</span> <span class="op">+</span> q[<span class="dv">2</span> <span class="op">*</span> i <span class="op">+</span> <span class="dv">1</span>] <span class="op">**</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb31-462"><a href="#cb31-462" aria-hidden="true" tabindex="-1"></a>      sc <span class="op">+=</span> r2 <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">cos</span>(off <span class="op">*</span> th)<span class="op">;</span></span>
+<span id="cb31-463"><a href="#cb31-463" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb31-464"><a href="#cb31-464" aria-hidden="true" tabindex="-1"></a>    pts<span class="op">.</span><span class="fu">push</span>({off<span class="op">,</span> <span class="dt">sc</span><span class="op">:</span> sc <span class="op">/</span> nrm})<span class="op">;</span></span>
+<span id="cb31-465"><a href="#cb31-465" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb31-466"><a href="#cb31-466" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">680</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">260</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">50</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb31-467"><a href="#cb31-467" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Distance between query and key (tokens)"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Score relative to distance 0"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="op">-</span><span class="fl">0.6</span><span class="op">,</span> <span class="fl">1.02</span>]}<span class="op">,</span></span>
+<span id="cb31-468"><a href="#cb31-468" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">0</span>])<span class="op">,</span> Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"off"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"sc"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#1d3557"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">1.4</span>})]})<span class="op">;</span></span>
+<span id="cb31-469"><a href="#cb31-469" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-31" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The fast pairs fall out of phase within a few tokens, so the score drops quickly at first; the slow pairs, whose wavelengths run to tens of thousands of tokens, hardly turn at all over this range, and the score levels off at the share they carry. The base sets that balance: lower it to 100 and almost every pair turns fast, so the score falls to noise around zero; raise it and more of the score survives at long range. Llama 3 raised the base from 10,000 to 500,000 to stretch the useful range to longer documents, and later methods for extending context work mostly by rescaling these frequencies.</p>
+</section>
+<section id="terminology-and-where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="terminology-and-where-it-comes-from">Terminology and where it comes from</h2>
+<div class="em-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Token</strong></td>
+<td>One unit of text in a model’s vocabulary</td>
+<td>Old English <em>tācen</em>, a sign or symbol. Charles Sanders Peirce’s distinction between a <em>type</em> (the word <em>the</em>) and its <em>tokens</em> (each occurrence) dates from 1906; corpus linguistics and compiler design both use <em>token</em> for one unit of input.</td>
+</tr>
+<tr class="even">
+<td><strong>Vocabulary</strong></td>
+<td>The fixed list of <span class="math inline">\(V\)</span> tokens</td>
+<td>Latin <em>vocabulum</em>, a name, from <em>vocare</em>, to call.</td>
+</tr>
+<tr class="odd">
+<td><strong>Corpus</strong></td>
+<td>The text a tokeniser or model is trained on</td>
+<td>Latin for <em>body</em>: a body of texts.</td>
+</tr>
+<tr class="even">
+<td><strong>Vector</strong></td>
+<td>A list of <span class="math inline">\(d\)</span> numbers treated as a point or direction</td>
+<td>Latin <em>vector</em>, a carrier, from <em>vehere</em>, to carry. William Rowan Hamilton introduced the mathematical sense in the 1840s for the part of a quaternion that carries a point from one place to another.</td>
+</tr>
+<tr class="odd">
+<td><strong>Embedding</strong></td>
+<td>The vector assigned to a token; also the map that assigns it</td>
+<td>English <em>embed</em>, to fix firmly in a surrounding mass. In topology an embedding (often spelled <em>imbedding</em> in the mid-twentieth century) is a map that places one space inside another faithfully, as in Hassler Whitney’s 1936 theorem that every smooth <span class="math inline">\(n\)</span>-dimensional manifold embeds in <span class="math inline">\(\mathbb R^{2n}\)</span>. Machine learning borrowed it for maps of discrete symbols into <span class="math inline">\(\mathbb R^d\)</span>; the survey by Almeida and Xexéo dates the phrase <em>word embedding</em> in this sense to Morin and Bengio in 2005.</td>
+</tr>
+<tr class="even">
+<td><strong>Byte-pair encoding</strong></td>
+<td>The merge-based tokeniser</td>
+<td>Philip Gage’s compression scheme, published in <em>The C Users Journal</em> in February 1994: a frequent <em>pair</em> of <em>bytes</em> is <em>encoded</em> as one new byte.</td>
+</tr>
+<tr class="odd">
+<td><strong>Distributional hypothesis</strong></td>
+<td>Similar contexts imply similar meanings</td>
+<td>Zellig Harris, “Distributional Structure”, 1954.</td>
+</tr>
+<tr class="even">
+<td><strong>Logit</strong></td>
+<td>An unnormalised score <span class="math inline">\(z_v\)</span> before the softmax</td>
+<td>Joseph Berkson, 1944, as the <em>log</em>istic counterpart of the <em>probit</em> (Chester Bliss, 1934, from <em>prob</em>ability un<em>it</em>).</td>
+</tr>
+<tr class="odd">
+<td><strong>Softmax</strong></td>
+<td><span class="math inline">\(e^{z_v}/\sum_u e^{z_u}\)</span></td>
+<td>John Bridle, 1990: a smooth (“soft”) version of picking the maximum. The function itself is the Boltzmann distribution of statistical mechanics.</td>
+</tr>
+<tr class="even">
+<td><strong>Skip-gram</strong></td>
+<td>Predict the words around a word, skipping over it</td>
+<td>From <em>n</em>-gram, a run of <em>n</em> words, the unit of the statistical language models that go back to Claude Shannon’s 1948 paper on information theory.</td>
+</tr>
+<tr class="odd">
+<td><strong>Transformer</strong></td>
+<td>The attention-based architecture</td>
+<td>Named by Vaswani and colleagues, 2017, for transforming one sequence of vectors into another.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>Tokeniser.</strong> Classic BPE (Sennrich and colleagues’ variant, with an end-of-word marker) on the 253,854 distinct words of text8, weighted by count, with incremental pair-count updates; ties broken by the pair’s characters. The page holds the first 8,000 merges and applies them by rank, as the learned tokeniser would. The GPT-2 and GPT-4o tokenisers are the <code>r50k_base</code> and <code>o200k_base</code> encodings, loaded in your browser from the <code>gpt-tokenizer</code> package.</p>
+<p><strong>word2vec.</strong> gensim 4.4, skip-gram, 100 dimensions, window 5, 5 negative samples, subsampling threshold <span class="math inline">\(10^{-3}\)</span>, minimum count 5, 5 epochs, seed 1. For the PMI comparison, co-occurrences among the 3,000 most frequent words were counted with gensim’s effective weighting: a context at distance <span class="math inline">\(\delta\)</span> in a window of 5 counts with weight <span class="math inline">\((6-\delta)/5\)</span> (its dynamic window), multiplied by the probability that subsampling keeps each word. <span class="math inline">\(\#(w)\)</span> is the weighted count of all pairs with centre <span class="math inline">\(w\)</span>, <span class="math inline">\(P_n\)</span> is the unigram distribution to the <span class="math inline">\(\frac34\)</span> power, and the dot products use the input vectors and gensim’s output (<code>syn1neg</code>) vectors. Analogy accuracy uses gensim’s <code>evaluate_word_analogies</code> with the 30,000 most frequent words.</p>
+<p><strong>GloVe.</strong> The 100-dimensional <code>glove-wiki-gigaword-100</code> vectors (Wikipedia 2014 and Gigaword 5, 6 billion tokens), via the gensim-data repository. Analogy accuracy over the 100,000 most frequent words, with and without excluding the three input words; the page uses the 20,000 most frequent words, unit-normalised and quantised to 8 bits.</p>
+<p><strong>GPT-2.</strong> The <code>openai-community/gpt2</code> weights from Hugging Face (124M parameters). Norms and cosines are computed over all 50,257 rows of <code>wte</code>; the mean direction is the normalised mean of the unit-normalised rows. Neighbours by cosine. Principal components of <code>wpe</code> after centring.</p>
+<p>Sources:</p>
+<ul>
+<li>P. Gage, “A New Algorithm for Data Compression”, <em>The C Users Journal</em> 12(2), 1994. R. Sennrich, B. Haddow, A. Birch, <a href="https://arxiv.org/abs/1508.07909"><em>Neural Machine Translation of Rare Words with Subword Units</em></a>, ACL 2016.</li>
+<li>A. Radford and colleagues, <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"><em>Language Models are Unsupervised Multitask Learners</em></a> (GPT-2), 2019.</li>
+<li>Z. Harris, “Distributional Structure”, <em>Word</em> 10, 1954. J. R. Firth, “A synopsis of linguistic theory 1930–55”, 1957. S. Deerwester and colleagues, “Indexing by Latent Semantic Analysis”, <em>JASIS</em> 41, 1990.</li>
+<li>T. Mikolov, I. Sutskever, K. Chen, G. Corrado, J. Dean, <a href="https://arxiv.org/abs/1310.4546"><em>Distributed Representations of Words and Phrases and their Compositionality</em></a>, NeurIPS 2013.</li>
+<li>O. Levy, Y. Goldberg, <a href="https://papers.nips.cc/paper/5477-neural-word-embedding-as-implicit-matrix-factorization"><em>Neural Word Embedding as Implicit Matrix Factorization</em></a>, NeurIPS 2014.</li>
+<li>J. Pennington, R. Socher, C. Manning, <a href="https://nlp.stanford.edu/pubs/glove.pdf"><em>GloVe: Global Vectors for Word Representation</em></a>, EMNLP 2014.</li>
+<li>T. Linzen, <a href="https://arxiv.org/abs/1606.07736"><em>Issues in evaluating semantic spaces using word analogies</em></a>, 2016. M. Nissim, R. van Noord, R. van der Goot, <a href="https://arxiv.org/abs/1905.09866"><em>Fair is Better than Sensational</em></a>, <em>Computational Linguistics</em> 2020. T. Bolukbasi and colleagues, <a href="https://arxiv.org/abs/1607.06520"><em>Man is to Computer Programmer as Woman is to Homemaker?</em></a>, NeurIPS 2016.</li>
+<li>O. Press, L. Wolf, <a href="https://arxiv.org/abs/1608.05859"><em>Using the Output Embedding to Improve Language Models</em></a>, EACL 2017. H. Inan, K. Khosravi, R. Socher, <a href="https://arxiv.org/abs/1611.01462"><em>Tying Word Vectors and Word Classifiers</em></a>, ICLR 2017. J. Gao and colleagues, <a href="https://arxiv.org/abs/1907.12009"><em>Representation Degeneration Problem in Training Natural Language Generation Models</em></a>, ICLR 2019.</li>
+<li>K. Ethayarajh, <a href="https://arxiv.org/abs/1909.00512"><em>How Contextual are Contextualized Word Representations?</em></a>, EMNLP 2019.</li>
+<li>J. Rumbelow, M. Watkins, <a href="https://www.lesswrong.com/posts/aPeJE8bSo6rAFoLqg/solidgoldmagikarp-plus-prompt-generation"><em>SolidGoldMagikarp (plus, prompt generation)</em></a>, 2023.</li>
+<li>A. Vaswani and colleagues, <a href="https://arxiv.org/abs/1706.03762"><em>Attention Is All You Need</em></a>, NeurIPS 2017. J. Su and colleagues, <a href="https://arxiv.org/abs/2104.09864"><em>RoFormer: Enhanced Transformer with Rotary Position Embedding</em></a>, 2021. Meta, <a href="https://arxiv.org/abs/2407.21783"><em>The Llama 3 Herd of Models</em></a>, 2024.</li>
+<li>F. Almeida, G. Xexéo, <a href="https://arxiv.org/abs/1901.09069"><em>Word Embeddings: A Survey</em></a>, 2019.</li>
+<li>Data: <a href="https://mattmahoney.net/dc/textdata.html">text8</a> (M. Mahoney); <a href="https://github.com/RaRe-Technologies/gensim-data">gensim-data</a> for text8 and GloVe; <a href="https://radimrehurek.com/gensim/">gensim</a>; <a href="https://github.com/niieani/gpt-tokenizer">gpt-tokenizer</a>.</li>
+</ul>
+<p><strong>Next: <a href="../embeddings-part-2-search-and-retrieval/">Part 2, search and retrieval</a></strong>: from token vectors to one vector per sentence, contrastive training, and how embedding models find the right document for a language model to read.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG5wYWxldHRlID0gW1wiI2U5YzQ2YTU1XCIsIFwiIzJhOWQ4ZjQ0XCIsIFwiI2U3NmY1MTQ0XCIsIFwiIzhhYjE3ZDU1XCIsIFwiIzZmYThkYzU1XCIsIFwiI2IzODhlYjU1XCIsIFwiI2Y0YTI2MTU1XCJdXG50b2tTcGFucyA9ICh0b2tzKSA9PiBodGwuaHRtbGA8ZGl2IGNsYXNzPVwiZW0tdG9rc1wiPiR7dG9rcy5tYXAoKHQsIGkpID0+IGh0bC5odG1sYDxzcGFuIHN0eWxlPVwiYmFja2dyb3VuZDoke3BhbGV0dGVbaSAlIHBhbGV0dGUubGVuZ3RoXX1cIj4ke3R9PC9zcGFuPmApfTwvZGl2PmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImJwZSA9IEZpbGVBdHRhY2htZW50KFwiZGF0YS9icGU4ay5qc29uXCIpLmpzb24oKVxucmFuayA9IHsgY29uc3QgbSA9IG5ldyBNYXAoKTsgYnBlLm1lcmdlcy5mb3JFYWNoKChbYSwgYl0sIGkpID0+IG0uc2V0KGEgKyBcIlxcdTAwMDBcIiArIGIsIGkpKTsgcmV0dXJuIG07IH1cbmJwZVdvcmQgPSAodywgbikgPT4ge1xuICBsZXQgcyA9IFsuLi53LCBcIl9cIl07XG4gIGZvciAoOzspIHtcbiAgICBsZXQgYmVzdCA9IC0xLCBiaSA9IC0xO1xuICAgIGZvciAobGV0IGkgPSAwOyBpIDwgcy5sZW5ndGggLSAxOyBpKyspIHtcbiAgICAgIGNvbnN0IHIgPSByYW5rLmdldChzW2ldICsgXCJcXHUwMDAwXCIgKyBzW2kgKyAxXSk7XG4gICAgICBpZiAociAhPT0gdW5kZWZpbmVkICYmIHIgPCBuICYmIChiZXN0IDwgMCB8fCByIDwgYmVzdCkpIHsgYmVzdCA9IHI7IGJpID0gaTsgfVxuICAgIH1cbiAgICBpZiAoYmkgPCAwKSByZXR1cm4gcztcbiAgICBzID0gWy4uLnMuc2xpY2UoMCwgYmkpLCBzW2JpXSArIHNbYmkgKyAxXSwgLi4ucy5zbGljZShiaSArIDIpXTtcbiAgfVxufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0zIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGJwZUluID0gSW5wdXRzLnRleHQoe3ZhbHVlOiBcInRoZSBlbWJlZGRpbmcgb2YgdW5iZWxpZXZhYmx5IHJhcmUgd29yZHMgbGlrZSB0aW5kYWxsXCIsIGxhYmVsOiBcIlRleHQgKGxvd2VyIGNhc2UpXCIsIHdpZHRoOiA1MjB9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIG5NZXJnZXMgPSBJbnB1dHMucmFuZ2UoWzAsIDgwMDBdLCB7dmFsdWU6IDEwMDAsIHN0ZXA6IDEwLCBsYWJlbDogXCJNZXJnZXMgbGVhcm5lZFwifSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImJwZU91dCA9IHtcbiAgY29uc3Qgd29yZHMgPSBicGVJbi50b0xvd2VyQ2FzZSgpLnJlcGxhY2UoL1teYS16IF0vZywgXCIgXCIpLnNwbGl0KC9cXHMrLykuZmlsdGVyKEJvb2xlYW4pO1xuICBjb25zdCB0b2tzID0gd29yZHMuZmxhdE1hcCh3ID0+IGJwZVdvcmQodywgbk1lcmdlcykpO1xuICByZXR1cm4gaHRsLmh0bWxgPGRpdiBjbGFzcz1cImVtLXBhbmVsXCI+PGg0PiR7Zm10KHRva3MubGVuZ3RoKX0gdG9rZW5zIGZvciAke2ZtdCh3b3Jkcy5sZW5ndGgpfSB3b3Jkcywgdm9jYWJ1bGFyeSAke2ZtdCgyNyArIG5NZXJnZXMpfTwvaDQ+JHt0b2tTcGFucyh0b2tzKX08L2Rpdj5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC02IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiYnBlVGFibGUgPSB7XG4gIGNvbnN0IHJvd3MgPSBbWzAsIGJwZS5jaGFyc19wZXJfd29yZF0sIC4uLk9iamVjdC5lbnRyaWVzKGJwZS5zbmFwc2hvdHMpLm1hcCgoW2ssIHZdKSA9PiBbK2ssIHYudG9rZW5zX3Blcl93b3JkXSldO1xuICByZXR1cm4gaHRsLmh0bWxgPHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZW0tdFwiPjx0aGVhZD48dHI+PHRoIGNsYXNzPVwibnVtXCI+TWVyZ2VzPC90aD48dGggY2xhc3M9XCJudW1cIj5Wb2NhYnVsYXJ5PC90aD48dGggY2xhc3M9XCJudW1cIj5Ub2tlbnMgcGVyIHdvcmQ8L3RoPjwvdHI+PC90aGVhZD48dGJvZHk+XG4gICR7cm93cy5tYXAoKFtrLCB2XSkgPT4gaHRsLmh0bWxgPHRyPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KGspfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoMjcgKyBrKX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KHYsIDIpfTwvdGQ+PC90cj5gKX08L3Rib2R5PjwvdGFibGU+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InI1MGsgPSByZXF1aXJlKFwiZ3B0LXRva2VuaXplckAyLjkuMC9kaXN0L3I1MGtfYmFzZS5qc1wiKVxubzIwMGsgPSByZXF1aXJlKFwiZ3B0LXRva2VuaXplckAyLjkuMC9kaXN0L28yMDBrX2Jhc2UuanNcIilcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBncHRJbiA9IElucHV0cy50ZXh0YXJlYSh7dmFsdWU6IFwiVG9rZW5pc2F0aW9uIG9mIGVtYmVkZGluZ3M6IEdQVC0yIHNlZXMgJyB0b2tlbicgYW5kICd0b2tlbicgYXMgZGlmZmVyZW50IHN5bWJvbHMuIDE5Njkg4oaSIDE5ICsgNjk/XCIsIGxhYmVsOiBcIlRleHRcIiwgcm93czogMywgd2lkdGg6IDUyMH0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJncHRPdXQgPSB7XG4gIGNvbnN0IGEgPSByNTBrLmVuY29kZShncHRJbiksIGIgPSBvMjAway5lbmNvZGUoZ3B0SW4pO1xuICBjb25zdCBzaG93ID0gKGVuYywgaWRzKSA9PiB0b2tTcGFucyhpZHMubWFwKGkgPT4gZW5jLmRlY29kZShbaV0pLnJlcGxhY2UoLyAvZywgXCLikKNcIikpKTtcbiAgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJlbS1ncmlkXCI+XG4gICAgPGRpdiBjbGFzcz1cImVtLXBhbmVsXCI+PGg0PkdQVC0yICg1MCwyNTcgdG9rZW5zKTogJHthLmxlbmd0aH0gdG9rZW5zPC9oND4ke3Nob3cocjUwaywgYSl9PC9kaXY+XG4gICAgPGRpdiBjbGFzcz1cImVtLXBhbmVsXCI+PGg0PkdQVC00byAoYWJvdXQgMjAwLDAwMCB0b2tlbnMpOiAke2IubGVuZ3RofSB0b2tlbnM8L2g0PiR7c2hvdyhvMjAwaywgYil9PC9kaXY+PC9kaXY+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTAiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJwbWkgPSBGaWxlQXR0YWNobWVudChcImRhdGEvcG1pX2NoZWNrLmpzb25cIikuanNvbigpXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTExIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoicG1pUGxvdCA9IFBsb3QucGxvdCh7XG4gIHdpZHRoOiBNYXRoLm1pbih3aWR0aCwgNjQwKSwgaGVpZ2h0OiAzNDAsIG1hcmdpbkxlZnQ6IDUwLCBncmlkOiB0cnVlLFxuICB4OiB7bGFiZWw6IFwiUE1JKHcsIGMpIOKIkiBsb2cgaywgZnJvbSB0aGUgY291bnRzXCJ9LCB5OiB7bGFiZWw6IFwidyDCtyBjIGluIHRoZSB0cmFpbmVkIG1vZGVsXCJ9LFxuICBtYXJrczogW1xuICAgIFBsb3QuZG90KHBtaS5zYW1wbGUsIHt4OiBkID0+IGRbMF0sIHk6IGQgPT4gZFsxXSwgcjogMS41LCBmaWxsOiBcIiM2ZmE4ZGNcIiwgZmlsbE9wYWNpdHk6IDAuMzV9KSxcbiAgICBQbG90LmxpbmUoW1stNCwgLTRdLCBbNiwgNl1dLCB7c3Ryb2tlOiBcIiM5OTlcIiwgc3Ryb2tlRGFzaGFycmF5OiBcIjQgM1wifSksXG4gICAgUGxvdC5saW5lKHBtaS5iaW5uZWQsIHt4OiBkID0+IGRbMF0sIHk6IGQgPT4gZFsxXSwgc3Ryb2tlOiBcIiNlNzZmNTFcIiwgc3Ryb2tlV2lkdGg6IDIuNX0pLFxuICAgIFBsb3QudGV4dChbWzUuMiwgNS42XV0sIHt0ZXh0OiAoKSA9PiBcInkgPSB4XCIsIGZpbGw6IFwiIzg4OFwifSlcbiAgXVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJtZGBUaGUgY29ycmVsYXRpb24gaXMgJHtmbXQocG1pLmNvcnIsIDMpfS4gVGhlIGJsdWUgZG90cyBhcmUgYSByYW5kb20gc2FtcGxlIG9mIHBhaXJzIGFuZCB0aGUgb3JhbmdlIGxpbmUgdGhlIGF2ZXJhZ2UgaW4gYmlucy4gVGhlIHRyYWluZWQgZG90IHByb2R1Y3RzIHRyYWNrIHNoaWZ0ZWQgUE1JIGNsb3NlbHkgYnV0IHdpdGggYSBzbG9wZSBvZiAke2ZtdChwbWkuc2xvcGUsIDIpfSByYXRoZXIgdGhhbiAxOiBhIGh1bmRyZWQgZGltZW5zaW9ucyBjYW5ub3QgZml0IGEgMywwMDAgYnkgMywwMDAgbWF0cml4IGV4YWN0bHksIGFuZCBmaXZlIHBhc3NlcyBkbyBub3QgcmVhY2ggdGhlIG9wdGltdW0sIHNvIHRoZSBtb2RlbCBzaHJpbmtzIHRoZSBleHRyZW1lcyB0b3dhcmRzIHRoZSBtaWRkbGUuYFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Imdsb3ZlID0ge1xuICBjb25zdCBnID0gYXdhaXQgRmlsZUF0dGFjaG1lbnQoXCJkYXRhL2dsb3ZlMjBrLmpzb25cIikuanNvbigpO1xuICBjb25zdCBiaW4gPSBVaW50OEFycmF5LmZyb20oYXRvYihnLnEpLCBjID0+IGMuY2hhckNvZGVBdCgwKSk7XG4gIGNvbnN0IHEgPSBuZXcgSW50OEFycmF5KGJpbi5idWZmZXIpLCBOID0gZy53b3Jkcy5sZW5ndGgsIEQgPSBnLmRpbTtcbiAgY29uc3QgVSA9IG5ldyBGbG9hdDMyQXJyYXkoTiAqIEQpO1xuICBmb3IgKGxldCBpID0gMDsgaSA8IE47IGkrKykge1xuICAgIGxldCBzID0gMDtcbiAgICBmb3IgKGxldCBqID0gMDsgaiA8IEQ7IGorKykgeyBjb25zdCB2ID0gcVtpICogRCArIGpdICogZy5zY2FsZVtpXSAvIDEyNzsgVVtpICogRCArIGpdID0gdjsgcyArPSB2ICogdjsgfVxuICAgIHMgPSBNYXRoLnNxcnQocyk7IGZvciAobGV0IGogPSAwOyBqIDwgRDsgaisrKSBVW2kgKiBEICsgal0gLz0gcztcbiAgfVxuICBjb25zdCBpZHggPSBuZXcgTWFwKGcud29yZHMubWFwKCh3LCBpKSA9PiBbdywgaV0pKTtcbiAgcmV0dXJuIHtVLCBOLCBELCB3b3JkczogZy53b3JkcywgaWR4fTtcbn1cbmd2ZWMgPSAodykgPT4geyBjb25zdCBpID0gZ2xvdmUuaWR4LmdldCh3KTsgcmV0dXJuIGkgPT09IHVuZGVmaW5lZCA/IG51bGwgOiBnbG92ZS5VLnN1YmFycmF5KGkgKiBnbG92ZS5ELCAoaSArIDEpICogZ2xvdmUuRCk7IH1cbm5lYXJlc3QgPSAodiwgaywgZXhjbHVkZSA9IFtdKSA9PiB7XG4gIGNvbnN0IHtVLCBOLCBELCB3b3Jkc30gPSBnbG92ZSwgZXggPSBuZXcgU2V0KGV4Y2x1ZGUpLCBvdXQgPSBbXTtcbiAgbGV0IG4gPSAwOyBmb3IgKGxldCBqID0gMDsgaiA8IEQ7IGorKykgbiArPSB2W2pdICogdltqXTsgbiA9IE1hdGguc3FydChuKTtcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBOOyBpKyspIHtcbiAgICBsZXQgcyA9IDA7IGZvciAobGV0IGogPSAwOyBqIDwgRDsgaisrKSBzICs9IFVbaSAqIEQgKyBqXSAqIHZbal07XG4gICAgb3V0LnB1c2goW3MgLyBuLCBpXSk7XG4gIH1cbiAgb3V0LnNvcnQoKGEsIGIpID0+IGJbMF0gLSBhWzBdKTtcbiAgcmV0dXJuIG91dC5maWx0ZXIoKFssIGldKSA9PiAhZXguaGFzKHdvcmRzW2ldKSkuc2xpY2UoMCwgaykubWFwKChbcywgaV0pID0+ICh7d29yZDogd29yZHNbaV0sIGNvczogc30pKTtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTQiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2Ygbm5Xb3JkID0gSW5wdXRzLnRleHQoe3ZhbHVlOiBcInBoeXNpY3NcIiwgbGFiZWw6IFwiV29yZFwiLCBzdWJtaXQ6IFwiRmluZFwifSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTUiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJubk91dCA9IHtcbiAgY29uc3QgdiA9IGd2ZWMobm5Xb3JkLnRyaW0oKS50b0xvd2VyQ2FzZSgpKTtcbiAgaWYgKCF2KSByZXR1cm4gaHRsLmh0bWxgPHAgY2xhc3M9XCJlbS1ub3RlXCI+Tm90IGFtb25nIHRoZSAyMCwwMDAgbW9zdCBmcmVxdWVudCB3b3Jkcy48L3A+YDtcbiAgY29uc3QgciA9IG5lYXJlc3QodiwgMTEpLnNsaWNlKDEpO1xuICByZXR1cm4gaHRsLmh0bWxgPHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZW0tdFwiIHN0eWxlPVwibWF4LXdpZHRoOjM2MHB4XCI+PHRib2R5PiR7ci5tYXAoZCA9PiBodGwuaHRtbGA8dHI+PHRkPiR7ZC53b3JkfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoZC5jb3MsIDMpfTwvdGQ+PC90cj5gKX08L3Rib2R5PjwvdGFibGU+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJnYSA9IEZpbGVBdHRhY2htZW50KFwiZGF0YS9nbG92ZV9hbmFsb2d5Lmpzb25cIikuanNvbigpXG53MnYgPSBGaWxlQXR0YWNobWVudChcImRhdGEvdzJ2X2V2YWwuanNvblwiKS5qc29uKClcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJhbmFUYWJsZSA9IHtcbiAgY29uc3QgbmljZSA9IHMgPT4gcy5yZXBsYWNlKFwiZ3JhbVwiLCBcIlwiKS5yZXBsYWNlKC9eXFxkLS8sIFwiXCIpLnJlcGxhY2UoLy0vZywgXCIgXCIpO1xuICBjb25zdCByb3dzID0gT2JqZWN0LmVudHJpZXMoZ2Euc2VjdGlvbnMpO1xuICByZXR1cm4gaHRsLmh0bWxgPHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZW0tdFwiPjx0aGVhZD48dHI+PHRoPkNhdGVnb3J5PC90aD48dGggY2xhc3M9XCJudW1cIj5RdWVzdGlvbnM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkNvcnJlY3QsIGlucHV0cyBleGNsdWRlZDwvdGg+PHRoIGNsYXNzPVwibnVtXCI+Q29ycmVjdCwgaW5wdXRzIGFsbG93ZWQ8L3RoPjwvdHI+PC90aGVhZD48dGJvZHk+XG4gICR7cm93cy5tYXAoKFtrLCB2XSkgPT4gaHRsLmh0bWxgPHRyPjx0ZD4ke25pY2Uoayl9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdCh2Lm4pfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoMTAwICogdi5leGNsIC8gdi5uKX0lPC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdCgxMDAgKiB2LmluY2wgLyB2Lm4pfSU8L3RkPjwvdHI+YCl9XG4gIDx0ciBzdHlsZT1cImZvbnQtd2VpZ2h0OjYwMFwiPjx0ZD5BbGw8L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KGdhLnRvdC5uKX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KDEwMCAqIGdhLnRvdC5leCAvIGdhLnRvdC5uKX0lPC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdCgxMDAgKiBnYS50b3QuaW5jIC8gZ2EudG90Lm4pfSU8L3RkPjwvdHI+PC90Ym9keT48L3RhYmxlPmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE4IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGFuYSA9IElucHV0cy5mb3JtKHtcbiAgYTogSW5wdXRzLnRleHQoe3ZhbHVlOiBcIm1hblwiLCBsYWJlbDogXCJhXCJ9KSwgYjogSW5wdXRzLnRleHQoe3ZhbHVlOiBcImtpbmdcIiwgbGFiZWw6IFwiYlwifSksXG4gIGM6IElucHV0cy50ZXh0KHt2YWx1ZTogXCJ3b21hblwiLCBsYWJlbDogXCJjXCJ9KSxcbiAgZXg6IElucHV0cy50b2dnbGUoe3ZhbHVlOiB0cnVlLCBsYWJlbDogXCJFeGNsdWRlIGEsIGIsIGNcIn0pXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xOSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImFuYU91dCA9IHtcbiAgY29uc3Qgd3MgPSBbYW5hLmEsIGFuYS5iLCBhbmEuY10ubWFwKHMgPT4gcy50cmltKCkudG9Mb3dlckNhc2UoKSksIHZzID0gd3MubWFwKGd2ZWMpO1xuICBpZiAodnMuc29tZSh2ID0+ICF2KSkgcmV0dXJuIGh0bC5odG1sYDxwIGNsYXNzPVwiZW0tbm90ZVwiPkVhY2ggd29yZCBtdXN0IGJlIGFtb25nIHRoZSAyMCwwMDAgbW9zdCBmcmVxdWVudC48L3A+YDtcbiAgY29uc3QgdCA9IG5ldyBGbG9hdDMyQXJyYXkoZ2xvdmUuRCk7IGZvciAobGV0IGogPSAwOyBqIDwgZ2xvdmUuRDsgaisrKSB0W2pdID0gdnNbMV1bal0gLSB2c1swXVtqXSArIHZzWzJdW2pdO1xuICBjb25zdCByID0gbmVhcmVzdCh0LCA4LCBhbmEuZXggPyB3cyA6IFtdKTtcbiAgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJlbS1wYW5lbFwiPjxoND4ke3dzWzBdfSA6ICR7d3NbMV19IDo6ICR7d3NbMl19IDogPzwvaDQ+PHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZW0tdFwiIHN0eWxlPVwibWF4LXdpZHRoOjM2MHB4XCI+PHRib2R5PiR7ci5tYXAoZCA9PiBodGwuaHRtbGA8dHI+PHRkPiR7d3MuaW5jbHVkZXMoZC53b3JkKSA/IGh0bC5odG1sYDxpPiR7ZC53b3JkfTwvaT4gKGlucHV0KWAgOiBkLndvcmR9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdChkLmNvcywgMyl9PC90ZD48L3RyPmApfTwvdGJvZHk+PC90YWJsZT48L2Rpdj5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yMCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Im1kYENvcnB1cyBzaXplIG1hdHRlcnMgdG9vLiBUaGUgdGV4dDggd29yZDJ2ZWMgbW9kZWwsIHRyYWluZWQgb24gMTcgbWlsbGlvbiB3b3JkcyByYXRoZXIgdGhhbiA2IGJpbGxpb24sIGFuc3dlcnMgJHtmbXQoMTAwICogdzJ2LmFjYyl9JSBvZiB0aGUgcXVlc3Rpb25zIGl0IGhhcyB0aGUgd29yZHMgZm9yICgke2ZtdCh3MnYudG90WzFdKX0gb2YgdGhlbSksIGFnYWluc3QgR2xvVmUncyAke2ZtdCgxMDAgKiBnYS50b3QuZXggLyBnYS50b3Qubil9JS4gSXQgYWxzbyBoYXMgdGV4dDgncyB2aWV3IG9mIHRoZSB3b3JsZDogaXRzIG5lYXJlc3QgbmVpZ2hib3VycyBvZiAqa2luZyogaW5jbHVkZSAqY2FudXRlKiwgKnZhbGRlbWFyKiBhbmQgKmhhYWtvbiosIGJlY2F1c2UgYSBXaWtpcGVkaWEgc2FtcGxlIGlzIGZ1bGwgb2YgbWVkaWV2YWwgbW9uYXJjaHMuYFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImdwdDIgPSBGaWxlQXR0YWNobWVudChcImRhdGEvZ3B0Mi5qc29uXCIpLmpzb24oKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yMiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImdwdDJJbnRybyA9IG1kYEdQVC0yJ3MgNTAsMjU3IHJvd3MgYXJlIDc2OC1kaW1lbnNpb25hbC4gVGhlaXIgbGVuZ3RocyByYW5nZSBmcm9tICR7Zm10KGdwdDIubm9ybV9taW4sIDIpfSB0byAke2ZtdChncHQyLm5vcm1fbWF4LCAyKX0sIHdpdGggYSBtZWRpYW4gb2YgJHtmbXQoZ3B0Mi5ub3JtX21lZGlhbiwgMil9LiBUaGUgYXZlcmFnZSBjb3NpbmUgYmV0d2VlbiB0d28gcmFuZG9tIHRva2VucyBpcyAke2ZtdChncHQyLm1lYW5fY29zLCAzKX0sIG5vdCB0aGUgemVybyB5b3Ugd291bGQgZXhwZWN0IGZyb20gcmFuZG9tIGRpcmVjdGlvbnMgaW4gNzY4IGRpbWVuc2lvbnM6IHRoZSB0YWJsZSBpcyBhbmlzb3Ryb3BpYy4gVGhlIHZlY3RvcnMgc2l0IG9uIGF2ZXJhZ2UgJHtmbXQoZ3B0Mi5tZWFuX2Rpcl9hbmdsZSwgMCl9wrAgZnJvbSB0aGVpciBzaGFyZWQgbWVhbiBkaXJlY3Rpb24sIHdoZXJlIHJhbmRvbSBkaXJlY3Rpb25zIGluIDc2OCBkaW1lbnNpb25zIHdvdWxkIHNpdCBhdCBhbG1vc3QgZXhhY3RseSA5MMKwLiBUb2tlbiBpZHMgaW4gR1BULTIgZm9sbG93IHRoZSBvcmRlciBpbiB3aGljaCB0aGUgQlBFIG1lcmdlcyB3ZXJlIGxlYXJuZWQsIHdoaWNoIHJvdWdobHkgZm9sbG93cyBmcmVxdWVuY3ksIHNvIHRoZSBpZCBpcyBhIHJvdWdoIGZyZXF1ZW5jeSByYW5rOmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMjMiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJncHQyTm9ybVBsb3QgPSBQbG90LnBsb3Qoe1xuICB3aWR0aDogTWF0aC5taW4od2lkdGgsIDY4MCksIGhlaWdodDogMjgwLCBtYXJnaW5MZWZ0OiA1MCwgZ3JpZDogdHJ1ZSxcbiAgeDoge2xhYmVsOiBcIlRva2VuIGlkIChyb3VnaGx5IGZyZXF1ZW5jeSByYW5rKVwifSwgeToge2xhYmVsOiBcIkVtYmVkZGluZyBsZW5ndGgg4oCWZeKAllwifSxcbiAgbWFya3M6IFtQbG90LmRvdChncHQyLm5vcm1fc2FtcGxlLCB7eDogZCA9PiBkWzBdLCB5OiBkID0+IGRbMV0sIHI6IDEuMiwgZmlsbDogXCIjMmE5ZDhmXCIsIGZpbGxPcGFjaXR5OiAwLjR9KSxcbiAgICAgICAgICBQbG90LmxpbmUoZ3B0Mi5ub3JtX2Jpbm5lZCwge3g6IGQgPT4gZFswXSwgeTogZCA9PiBkWzFdLCBzdHJva2U6IFwiI2U3NmY1MVwiLCBzdHJva2VXaWR0aDogMn0pXVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMjQiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJncHQyTGVuZ3RocyA9IG1kYEZyZXF1ZW50IHRva2VucyBoYXZlIHRoZSBzaG9ydGVzdCB2ZWN0b3JzOiB0aGUgbWVkaWFuIGxlbmd0aCBpcyAke2ZtdChncHQyLm5vcm1fYmFuZHMuZmlyc3QxMDAwLCAyKX0gZm9yIHRoZSBmaXJzdCB0aG91c2FuZCBpZHMgYW5kICR7Zm10KGdwdDIubm9ybV9iYW5kcy5sYXN0MjAwMDAsIDIpfSBiZXlvbmQgaWQgMzAsMDAwLCBhbmQgdGhlIHR3ZW50eSBzaG9ydGVzdCBvZiBhbGwgYXJlIHdvcmRzIGxpa2UgJHtncHQyLnNtYWxsZXN0X25vcm1fdG9rZW5zLnNsaWNlKDAsIDgpLm1hcCh0ID0+IFwiXFxgXCIgKyB0LnJlcGxhY2UoLyAvZywgXCLikKNcIikgKyBcIlxcYFwiKS5qb2luKFwiLCBcIil9LiBBIHRva2VuIHRoYXQgYXBwZWFycyBldmVyeXdoZXJlIGlzIHVzZWQgaW4gZXZlcnkga2luZCBvZiBjb250ZXh0LCBhbmQgaXRzIHZlY3RvciBpcyBwdWxsZWQgaW4gbWFueSBkaXJlY3Rpb25zIGF0IG9uY2UuYFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImdwdDJDZW50cmUgPSBtZGBBdCB0aGUgb3RoZXIgZXh0cmVtZSBhcmUgdGhlIHRva2VucyB3aG9zZSB2ZWN0b3JzIHBvaW50IG1vc3QgbmVhcmx5IGFsb25nIHRoZSBtZWFuIGRpcmVjdGlvbiwgd2l0aCBjb3NpbmVzIHRvIGl0IG5lYXIgMC45IHdoZXJlIHRoZSBtZWRpYW4gdG9rZW4gaGFzICR7Zm10KDAuNTIsIDIpfTogJHtncHQyLmNlbnRyb2lkX3Rva2Vucy5zbGljZSgwLCAxMSkuZmlsdGVyKHQgPT4gIS/Dgy8udGVzdCh0KSkubWFwKHQgPT4gXCJcXGBcIiArIHQucmVwbGFjZSgvIC9nLCBcIuKQo1wiKSArIFwiXFxgXCIpLmpvaW4oXCIsIFwiKX0uIFRoZXNlIGFyZSBmcmFnbWVudHMgb2YgdXNlcm5hbWVzLCBjb2RlIGFuZCB3ZWItcGFnZSBib2lsZXJwbGF0ZS4gVGhleSB3ZXJlIGNvbW1vbiBlbm91Z2ggaW4gdGhlIHRleHQgdGhlIHRva2VuaXNlciB3YXMgYnVpbHQgZnJvbSB0byBnZXQgbWVyZ2VzIG9mIHRoZWlyIG93biwgYnV0IGFsbW9zdCBhYnNlbnQgZnJvbSB0aGUgdGV4dCB0aGUgbW9kZWwgd2FzIHRyYWluZWQgb24sIHNvIHRoZWlyIHJvd3MgcmVjZWl2ZWQgYWxtb3N0IG5vdGhpbmcgYnV0IHRoZSBwdXNoIHRvd2FyZHMgdGhlIGNvbW1vbiBkaXJlY3Rpb24gZGVzY3JpYmVkIGFib3ZlLiBKZXNzaWNhIFJ1bWJlbG93IGFuZCBNYXR0aGV3IFdhdGtpbnMgZm91bmQgdG9rZW5zIGxpa2UgdGhlc2UgaW4gMjAyMyBhbmQgY2FsbGVkIHRoZW0gZ2xpdGNoIHRva2VucyAoKlNvbGlkR29sZE1hZ2lrYXJwKiwgYSBSZWRkaXQgdXNlcm5hbWUsIGlzIHRoZSBiZXN0IGtub3duKTogR1BULTIgYW5kIEdQVC0zIGJlaGF2ZWQgZXJyYXRpY2FsbHkgd2hlbiB0aGV5IGFwcGVhcmVkLCBiZWNhdXNlIHRoZSBtb2RlbCBoYWQgbmV2ZXIgbGVhcm5lZCB3aGF0IHRoZWlyIHZlY3RvcnMgbWVhbnQuYFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yNiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBncFdvcmQgPSBJbnB1dHMudGV4dCh7dmFsdWU6IFwiIGtpbmdcIiwgbGFiZWw6IFwiR1BULTIgdG9rZW4gKGEgbGVhZGluZyBzcGFjZSBtYXR0ZXJzKVwiLCBzdWJtaXQ6IFwiRmluZFwifSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMjciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJncE91dCA9IHtcbiAgY29uc3QgdCA9IGdwdDIubm5bZ3BXb3JkXTtcbiAgaWYgKCF0KSByZXR1cm4gaHRsLmh0bWxgPHAgY2xhc3M9XCJlbS1ub3RlXCI+TmVpZ2hib3VycyBhcmUgc3RvcmVkIGZvciB0aGUgJHtmbXQoT2JqZWN0LmtleXMoZ3B0Mi5ubikubGVuZ3RoKX0gbW9zdCBmcmVxdWVudCB3aG9sZS13b3JkIHRva2Vucy4gVHJ5IFwiIGtpbmdcIiwgXCIgUGFyaXNcIiwgXCIgY29tcHV0ZXJcIiwgXCIgYmFua1wiLCBcIiB0aHJlZVwiLCBcIiB0aGVcIi48L3A+YDtcbiAgcmV0dXJuIGh0bC5odG1sYDx0YWJsZSBjbGFzcz1cInRhYmxlIHRhYmxlLXNtIGVtLXRcIiBzdHlsZT1cIm1heC13aWR0aDozODBweFwiPjx0Ym9keT4ke3QubWFwKChbdywgc10pID0+IGh0bC5odG1sYDx0cj48dGQ+PGNvZGU+JHtKU09OLnN0cmluZ2lmeSh3KX08L2NvZGU+PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdChzLCAzKX08L3RkPjwvdHI+YCl9PC90Ym9keT48L3RhYmxlPmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTI4IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZ3B0MlBvc1Bsb3QgPSB7XG4gIGNvbnN0IGQgPSBncHQyLndwZV9wY3MuZmxhdE1hcCgociwgcCkgPT4gci5tYXAoKHYsIGspID0+ICh7cCwgdiwgazogYFBDICR7ayArIDF9YH0pKSk7XG4gIHJldHVybiBQbG90LnBsb3Qoe1xuICAgIHdpZHRoOiBNYXRoLm1pbih3aWR0aCwgNjgwKSwgaGVpZ2h0OiAyNjAsIG1hcmdpbkxlZnQ6IDUwLCBncmlkOiB0cnVlLFxuICAgIHg6IHtsYWJlbDogXCJQb3NpdGlvblwifSwgeToge2xhYmVsOiBcIlByb2plY3Rpb25cIn0sXG4gICAgY29sb3I6IHtsZWdlbmQ6IHRydWV9LFxuICAgIG1hcmtzOiBbUGxvdC5saW5lKGQsIHt4OiBcInBcIiwgeTogXCJ2XCIsIHN0cm9rZTogXCJrXCIsIHN0cm9rZVdpZHRoOiAxLjR9KV1cbiAgfSk7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTI5IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibWRgVGhvc2UgYXJlIEdQVC0yJ3MgMSwwMjQgcG9zaXRpb24gdmVjdG9ycyBwcm9qZWN0ZWQgb24gdGhlaXIgZmlyc3QgdGhyZWUgcHJpbmNpcGFsIGNvbXBvbmVudHMsIHdoaWNoIGhvbGQgJHtmbXQoMTAwICogZ3B0Mi53cGVfdmFyMywgMCl9JSBvZiB0aGUgdmFyaWFuY2UuIE5vYm9keSB0b2xkIHRoZSBtb2RlbCB0byB1c2Ugd2F2ZXM7IGl0IGxlYXJuZWQgc21vb3RoLCBvc2NpbGxhdGluZyBmdW5jdGlvbnMgb2YgcG9zaXRpb24sIGNsb3NlIHRvIHdoYXQgdGhlIG9yaWdpbmFsIHRyYW5zZm9ybWVyIHByZXNjcmliZWQgYnkgaGFuZC5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTMwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIHJvcGUgPSBJbnB1dHMuZm9ybSh7XG4gIGQ6IElucHV0cy5zZWxlY3QoWzE2LCA2NCwgMTI4XSwge3ZhbHVlOiAxMjgsIGxhYmVsOiBcIkRpbWVuc2lvbiBkXCJ9KSxcbiAgYmFzZTogSW5wdXRzLnNlbGVjdChbMTAwLCAxMDAwMCwgNTAwMDAwXSwge3ZhbHVlOiAxMDAwMCwgbGFiZWw6IFwiQmFzZSAozrjhtaIgPSBiYXNlXijiiJIyaS9kKSlcIn0pLFxuICBzZWVkOiBJbnB1dHMucmFuZ2UoWzEsIDIwXSwge3ZhbHVlOiAzLCBzdGVwOiAxLCBsYWJlbDogXCJSYW5kb20gdmVjdG9yXCJ9KVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMzEiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJyb3BlUGxvdCA9IHtcbiAgY29uc3Qge2QsIGJhc2UsIHNlZWR9ID0gcm9wZTtcbiAgbGV0IHMgPSBzZWVkICogOTMwMSArIDQ5Mjk3OyBjb25zdCBybmQgPSAoKSA9PiB7IHMgPSAocyAqIDkzMDEgKyA0OTI5NykgJSAyMzMyODA7IHJldHVybiBzIC8gMjMzMjgwOyB9O1xuICBjb25zdCBnID0gKCkgPT4gTWF0aC5zcXJ0KC0yICogTWF0aC5sb2cocm5kKCkgKyAxZS05KSkgKiBNYXRoLmNvcygyICogTWF0aC5QSSAqIHJuZCgpKTtcbiAgY29uc3QgcSA9IEFycmF5LmZyb20oe2xlbmd0aDogZH0sIGcpO1xuICBjb25zdCBucm0gPSBxLnJlZHVjZSgoYSwgeCkgPT4gYSArIHggKiB4LCAwKTtcbiAgY29uc3QgcHRzID0gW107XG4gIGZvciAobGV0IG9mZiA9IDA7IG9mZiA8PSAyMDAwOyBvZmYgKz0gMikge1xuICAgIGxldCBzYyA9IDA7XG4gICAgZm9yIChsZXQgaSA9IDA7IGkgPCBkIC8gMjsgaSsrKSB7XG4gICAgICBjb25zdCB0aCA9IE1hdGgucG93KGJhc2UsIC0yICogaSAvIGQpLCByMiA9IHFbMiAqIGldICoqIDIgKyBxWzIgKiBpICsgMV0gKiogMjtcbiAgICAgIHNjICs9IHIyICogTWF0aC5jb3Mob2ZmICogdGgpO1xuICAgIH1cbiAgICBwdHMucHVzaCh7b2ZmLCBzYzogc2MgLyBucm19KTtcbiAgfVxuICByZXR1cm4gUGxvdC5wbG90KHt3aWR0aDogTWF0aC5taW4od2lkdGgsIDY4MCksIGhlaWdodDogMjYwLCBtYXJnaW5MZWZ0OiA1MCwgZ3JpZDogdHJ1ZSxcbiAgICB4OiB7bGFiZWw6IFwiRGlzdGFuY2UgYmV0d2VlbiBxdWVyeSBhbmQga2V5ICh0b2tlbnMpXCJ9LCB5OiB7bGFiZWw6IFwiU2NvcmUgcmVsYXRpdmUgdG8gZGlzdGFuY2UgMFwiLCBkb21haW46IFstMC42LCAxLjAyXX0sXG4gICAgbWFya3M6IFtQbG90LnJ1bGVZKFswXSksIFBsb3QubGluZShwdHMsIHt4OiBcIm9mZlwiLCB5OiBcInNjXCIsIHN0cm9rZTogXCIjMWQzNTU3XCIsIHN0cm9rZVdpZHRoOiAxLjR9KV19KTtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnYnBlSW4nKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnbk1lcmdlcycpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdncHRJbicpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdubldvcmQnKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnYW5hJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2dwV29yZCcpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdyb3BlJykifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../ai/embeddings-part-1-words-to-vectors";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

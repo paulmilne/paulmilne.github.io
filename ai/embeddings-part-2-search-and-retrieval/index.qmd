@@ -1,0 +1,390 @@
+---
+title: "Embeddings, Part 2: Search and Retrieval"
+subtitle: "From a vector per token to a vector per passage: how sentence embedding models are built and trained, how they search, and how they feed a language model the right documents"
+description: "Sentence embedding models turn a whole passage into one vector so that text can be searched by meaning. This post runs one, all-MiniLM-L6-v2, over every passage of this blog, derives the contrastive loss it was trained with, compares it with keyword search on test questions, builds an HNSW index, measures what quantisation and truncation cost, and explains retrieval-augmented generation."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, embeddings, language-models, information-retrieval]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.em-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.em-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.em-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+table.em-t td.num, table.em-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.em-note { font-size: .82rem; opacity: .75; }
+.em-scroll { overflow-x: auto; }
+.em-scroll table { min-width: 560px; }
+@media (max-width: 600px) { .em-scroll table { font-size: .85rem; } }
+.em-hit { padding: .45rem 0; border-top: 1px solid var(--bs-border-color, #eee); }
+.em-hit .t { font-weight: 600; } .em-hit .h { font-size: .82rem; opacity: .7; } .em-hit .x { font-size: .86rem; margin-top: .15rem; }
+.em-hit .s { float: right; font-variant-numeric: tabular-nums; font-size: .8rem; opacity: .7; }
+.em-status { font-size: .8rem; opacity: .75; margin: .2rem 0; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+B = FileAttachment("data/blog_index.json").json()
+idx = {
+  const bin = Uint8Array.from(atob(B.emb), c => c.charCodeAt(0));
+  const q = new Int8Array(bin.buffer), N = B.chunks.length, D = B.dim, X = new Float32Array(N * D);
+  for (let i = 0; i < N; i++) {
+    let s = 0;
+    for (let j = 0; j < D; j++) { const v = q[i * D + j] * B.scale[i] / 127; X[i * D + j] = v; s += v * v; }
+    s = Math.sqrt(s); for (let j = 0; j < D; j++) X[i * D + j] /= s;
+  }
+  return {X, N, D};
+}
+dot = (i, v) => { let s = 0; const o = i * idx.D; for (let j = 0; j < idx.D; j++) s += idx.X[o + j] * v[j]; return s; }
+secColour = Object.fromEntries(["ai", "astronomy", "cosmology", "explainers", "mechanics", "papers", "posts", "probability", "sci-fi", "space"].map((s, i) => [s, d3.schemeTableau10[i]]))
+```
+
+[Part 1](../embeddings-part-1-words-to-vectors/) followed text into a language model: cut into tokens, each token replaced by a row of an embedding table, position added, and the vectors passed up through the layers where context changes them. This part is about a different use of the same machinery. Suppose you have a question and a large collection of documents, and want the passages that answer it. If every passage could be turned into one vector, placed so that passages about the same thing sit close together, then search would be geometry: embed the question, and return its nearest neighbours.
+
+That is what a sentence embedding model does, and it is the first half of retrieval-augmented generation, the most common way language models are connected to documents they were not trained on. This post runs a real one, `all-MiniLM-L6-v2`, over every passage of this blog, and uses it to search the blog.
+
+## Keyword search first
+
+The baseline to beat is older than any of this. A keyword engine scores a passage by the query words it contains, weighted by how informative each word is. The informativeness comes from Karen Spärck Jones's 1972 observation that a term appearing in few documents is a better discriminator than one appearing in many, the *inverse document frequency*. The standard modern form, Okapi BM25 (Stephen Robertson and colleagues, through the 1990s), scores a document $D$ for a query $Q$ as
+
+$$
+\operatorname{BM25}(D, Q) = \sum_{w\in Q} \operatorname{idf}(w)\,\frac{f(w,D)\,(k_1+1)}{f(w,D) + k_1\left(1 - b + b\,\frac{|D|}{\overline{|D|}}\right)}, \qquad
+\operatorname{idf}(w) = \log\!\left(1 + \frac{N - n_w + \tfrac12}{n_w + \tfrac12}\right),
+$$
+
+where $f(w,D)$ is how often $w$ occurs in $D$, $n_w$ how many of the $N$ documents contain it, and $|D|/\overline{|D|}$ the document's length relative to the average. The fraction saturates: a word's tenth occurrence adds much less than its first, with $k_1$ (usually 1.2) setting how fast. The parameter $b$ (usually 0.75) discounts long documents, which contain more words by chance. The idf is the log-odds that a random document does not contain the word, which is where it comes from in Robertson and Spärck Jones's probabilistic model.
+
+BM25 is fast, needs no training and is very hard to beat when the query and the answer use the same words. It fails when they do not: *why did the lander miss its target* shares no informative word with a passage about *state vector error* and *uprange*. That gap, the vocabulary mismatch problem, is what embeddings are for.
+
+## One vector per passage
+
+### The encoder
+
+A sentence embedding model is a transformer like the ones in Part 1 with two differences. First, it is usually an **encoder**: each token's attention looks at every other token in the passage, before and after, rather than only at earlier ones, because it is reading and not predicting. BERT (Jacob Devlin and colleagues, 2018) is the model of this type, trained by hiding 15% of the tokens and predicting them from both sides. Second, its output is not a probability over the next token but one vector for the whole input, made by **pooling** the final token vectors: taking the vector of a special first token (`[CLS]`), taking the mean of all of them, or, for models built from decoders, the vector of the last token, the only one that has seen everything.
+
+The model used here is small. `all-MiniLM-L6-v2` has 6 layers, 12 attention heads and vectors of 384 dimensions, a WordPiece vocabulary of 30,522 tokens, and 22.7 million parameters, about a fifth of the smallest GPT-2. Its starting point, MiniLM (Wenhui Wang and colleagues, 2020), was made by distilling a larger BERT into a smaller network. For each layer, with input $X \in \mathbb R^{n\times 384}$ for $n$ tokens and twelve heads of size $d_h = 32$:
+
+$$
+\begin{aligned}
+A_h &= \operatorname{softmax}\!\left(\frac{(XW^Q_h)(XW^K_h)^\top}{\sqrt{d_h}}\right) X W^V_h, \\
+X' &= \operatorname{LayerNorm}\!\big(X + [A_1\,\cdots\,A_{12}]\,W^O\big), \\
+X'' &= \operatorname{LayerNorm}\!\big(X' + \operatorname{GELU}(X'W_1 + b_1)\,W_2 + b_2\big),
+\end{aligned}
+$$
+
+with the feed-forward layer widening to 1,536 and back. The input is the sum of three embedding tables, one for tokens, one for positions (512 learned rows, as in GPT-2) and one for which segment of a pair the token is in. The output vector for a passage is the mean of the 384-dimensional vectors of its tokens after layer 6, divided by its length so that it lies on the unit sphere. To make sure nothing is hidden in a library, I implemented that forward pass in about sixty lines of NumPy from the published weights; it reproduces the reference PyTorch implementation to within $10^{-7}$ (method notes at the end). The four sentences on the model's page come out with cosines of 0.94 between *That is a happy person* and *That is a very happy person*, 0.69 with *That is a happy dog*, and 0.26 with *Today is a sunny day*.
+
+### Why a pretrained encoder is not enough
+
+You might expect that averaging BERT's output vectors would already give good sentence embeddings. It does not. Nils Reimers and Iryna Gurevych found in 2019 that mean-pooled BERT vectors scored below simple averages of GloVe word vectors on standard sentence-similarity benchmarks, and the `[CLS]` vector was worse still. Nothing in masked-token prediction asks for passages with the same meaning to have nearby vectors, and the vectors share the anisotropy seen in Part 1, crowded into a narrow cone where every cosine is high. The fix is to train for the property you want directly.
+
+## Contrastive training
+
+The training data is pairs of texts that belong together: a question and its answer, a title and its abstract, two duplicate questions, a post and a reply. `all-MiniLM-L6-v2` was fine-tuned on 1.17 billion such pairs from 32 sources, the largest being 726 million Reddit comment–reply pairs, 116 million citation pairs from scientific papers and 77 million duplicate questions from WikiAnswers.
+
+Take a batch of $N$ pairs $(x_i, y_i)$ and embed them all, $\mathbf u_i = f(x_i)$, $\mathbf v_j = f(y_j)$, unit vectors. Score every combination, $s_{ij} = \mathbf u_i\cdot\mathbf v_j/\tau$. For anchor $i$, the true partner is $y_i$, and the other $N-1$ partners in the batch serve as negatives for free. The loss is a classification over the batch:
+
+$$
+\mathcal L = -\frac1N\sum_{i=1}^N \log\frac{e^{s_{ii}}}{\sum_{j=1}^N e^{s_{ij}}}.
+$$
+
+This is InfoNCE (Aaron van den Oord and colleagues, 2018), with in-batch negatives. It is exactly the softmax cross-entropy of Part 1, with the batch's partners standing in for the vocabulary, so the gradient has the same shape. Writing $p_{ij} = e^{s_{ij}}/\sum_k e^{s_{ik}}$,
+
+$$
+\frac{\partial\mathcal L}{\partial \mathbf u_i} = \frac{1}{N\tau}\left(\sum_j p_{ij}\,\mathbf v_j - \mathbf v_i\right):
+$$
+
+each anchor is pulled towards its partner and pushed away from the others, in proportion to how much probability the model wrongly gave them. Because the vectors are normalised, only the component of this gradient tangent to the sphere moves them.
+
+**Why it works: a bound on mutual information.** Van den Oord and colleagues showed that minimising $\mathcal L$ maximises a lower bound on the mutual information between the two halves of a pair:
+
+$$
+I(X;Y) \;\ge\; \log N - \mathcal L.
+$$
+
+A sketch: the optimal scoring function for the classification is $e^{s(x,y)} \propto p(y\mid x)/p(y)$, the density ratio. Substituting it, the loss for one anchor becomes $\mathbb E\log\!\big(1 + \frac{p(y_j)}{p(y_i\mid x_i)}\sum_{j\ne i}\frac{p(y_j\mid x_i)}{p(y_j)}\big)$; for large $N$ the sum concentrates at $N-1$, and the expectation is at least $\log(N-1) - I(X;Y)$. Two consequences matter in practice. The bound can never exceed $\log N$, so larger batches allow the model to capture more of the shared information: `all-MiniLM-L6-v2` was trained with a batch of 1,024 pairs. And the negatives that teach most are those the model finds hard, which is why training sets add *hard negatives*, passages that look relevant and are not, alongside each pair.
+
+**The temperature.** $\tau$ sets how sharply the softmax concentrates. With cosine scores between $-1$ and $1$ and $\tau = 1$, the softmax over a thousand candidates is almost uniform and the loss cannot fall far; dividing by a small $\tau$ stretches the scores. The training script for this model multiplies by 20, $\tau = 0.05$, and uses the symmetric loss (anchor-to-partner and partner-to-anchor) introduced for image–text pairs by CLIP.
+
+**Alignment and uniformity.** Tongzhou Wang and Phillip Isola (2020) showed the loss balances two properties, which can be measured directly. *Alignment*, $\mathbb E\,\|f(x) - f(y)\|^2$ over true pairs, should be small. *Uniformity*, $\log \mathbb E\, e^{-2\|f(x) - f(x')\|^2}$ over random pairs, should be low: the embeddings should spread over the sphere rather than crowd into a cone, so that unrelated things are far apart and the space has room for distinctions.
+
+```{ojs}
+geomText = {
+  const g = B.geometry;
+  return md`On this blog's ${fmt(B.chunks.length)} passages, the average cosine between two random passages is ${fmt(g.mean_cos, 3)}, against ${fmt(g.cos_adjacent, 3)} for consecutive passages of the same post (${fmt(g.n_adjacent)} such pairs, used here as stand-ins for related text). The uniformity is ${fmt(g.uniformity, 2)}; the lowest possible, for vectors spread perfectly evenly over a 384-dimensional sphere, is about ${fmt(-4, 1)}, reached when every pair is orthogonal. A blog about mathematics and physics is not a uniform sample of text, so its passages crowd together somewhat, but nothing like the cone of GPT-2's raw table in Part 1, where two random tokens had a cosine of 0.27.`;
+}
+```
+
+## Searching this blog
+
+Every passage of every post here, 860 of them, was embedded once, offline. Type a question and it is embedded in your browser by the same model (`all-MiniLM-L6-v2`, run with Transformers.js; the first search downloads it, about 23 MB, then it is cached), and the passages are ranked by cosine similarity. The same question is also run through BM25, and the two rankings combined by reciprocal rank fusion, which scores each result by $\sum_r 1/(60 + \text{rank}_r)$ over the rankings it appears in (Gordon Cormack and colleagues, 2009). Results are grouped by post, best passage first.
+
+```{ojs}
+//| output: false
+tfjs = {
+  try {
+    const mod = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/dist/transformers.min.js");
+    return {ok: true, pipe: mod.pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {dtype: "q8"})};
+  } catch (e) { return {ok: false, err: String(e)}; }
+}
+```
+
+```{ojs}
+viewof qText = Inputs.text({value: "why did the lander miss its target", label: "Question", submit: "Search", width: 520})
+```
+
+```{ojs}
+viewof qExample = Inputs.select([null, ...B.queries.map(d => d.q)], {label: "Or a test question (runs without the model)", format: d => d ?? "—"})
+```
+
+```{ojs}
+//| output: false
+// BM25 in the browser, same tokenisation and parameters as offline
+bm25 = {
+  const STOP = new Set("a an the of to in and or is are was were be been it its on for with as by at from that this which what how why where when who whose into than then there their they them can does do did not no".split(" "));
+  const toks = s => (s.toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !STOP.has(w));
+  const docs = B.chunks.map(c => toks(B.posts[c.post].title + ". " + c.heading + ". " + c.text));
+  const N = docs.length, avg = docs.reduce((a, d) => a + d.length, 0) / N;
+  const df = new Map(); docs.forEach(d => new Set(d).forEach(w => df.set(w, (df.get(w) || 0) + 1)));
+  const tf = docs.map(d => { const m = new Map(); d.forEach(w => m.set(w, (m.get(w) || 0) + 1)); return m; });
+  const k1 = B.bm25.k1, b = B.bm25.b;
+  return q => { const qs = toks(q); return tf.map((m, i) => qs.reduce((s, w) => { const f = m.get(w) || 0; if (!f) return s;
+    const n = df.get(w) || 0, idf = Math.log(1 + (N - n + .5) / (n + .5)); return s + idf * f * (k1 + 1) / (f + k1 * (1 - b + b * docs[i].length / avg)); }, 0)); };
+}
+```
+
+```{ojs}
+//| output: false
+qVec = {
+  if (qExample) return {vec: B.queries.find(d => d.q === qExample).vec, text: qExample, how: "precomputed"};
+  if (!tfjs.ok) return {vec: null, text: qText, how: "model unavailable"};
+  try {
+    const pipe = await tfjs.pipe;
+    const out = await pipe(qText, {pooling: "mean", normalize: true});
+    return {vec: Array.from(out.data), text: qText, how: "embedded in your browser"};
+  } catch (e) { return {vec: null, text: qText, how: "model unavailable"}; }
+}
+```
+
+```{ojs}
+results = {
+  const n = B.chunks.length, rankPosts = sc => {
+    const best = new Map();
+    sc.forEach((s, i) => { const p = B.chunks[i].post; if (!best.has(p) || s > best.get(p)[0]) best.set(p, [s, i]); });
+    return [...best.entries()].sort((a, b) => b[1][0] - a[1][0]).map(([p, [s, i]]) => ({p, s, i}));
+  };
+  const lex = rankPosts(bm25(qVec.text));
+  const dense = qVec.vec ? rankPosts(Array.from({length: n}, (_, i) => dot(i, qVec.vec))) : [];
+  const fused = new Map();
+  [lex, dense].forEach(r => r.forEach((d, k) => { const e = fused.get(d.p) || {p: d.p, s: 0, i: d.i}; e.s += 1 / (61 + k); fused.set(d.p, e); }));
+  return {lex, dense, hybrid: [...fused.values()].sort((a, b) => b.s - a.s), how: qVec.how, q: qVec.text};
+}
+```
+
+```{ojs}
+resultsView = {
+  const col = (title, r, dec) => htl.html`<div class="em-panel"><h4>${title}</h4>${r.slice(0, 5).map(d => {
+    const c = B.chunks[d.i], post = B.posts[d.p];
+    return htl.html`<div class="em-hit"><span class="s">${fmt(d.s, dec)}</span><div class="t"><a href="${post.url.replace(/^\//, "../../")}">${post.title}</a></div>
+      <div class="h">${c.heading}</div><div class="x">${c.text.slice(0, 180)}…</div></div>`; })}</div>`;
+  return htl.html`<div class="em-status">“${results.q}”: query vector ${results.how}.</div><div class="em-grid">
+    ${results.dense.length ? col("Embedding (cosine)", results.dense, 3) : htl.html`<div class="em-panel"><h4>Embedding</h4><p class="em-note">The model could not be loaded here; pick a test question to see precomputed results.</p></div>`}
+    ${col("BM25 keywords", results.lex, 1)}${col("Hybrid (reciprocal rank fusion)", results.hybrid, 4)}</div>`;
+}
+```
+
+To compare them fairly I wrote 30 test questions before running either method, each with the post or posts that answer it, phrased as a reader might ask rather than in the posts' own words where possible. A question counts as answered at rank $r$ when the first relevant post is $r$-th in the list:
+
+```{ojs}
+evalTable = {
+  const rows = [["BM25 keywords", B.eval.bm25], ["Embedding", B.eval.dense], ["Hybrid", B.eval.hybrid]];
+  return htl.html`<table class="table table-sm em-t"><thead><tr><th>Method</th><th class="num">First result relevant</th><th class="num">Relevant in top 3</th><th class="num">Mean reciprocal rank</th></tr></thead><tbody>
+  ${rows.map(([k, v]) => htl.html`<tr><td>${k}</td><td class="num">${fmt(100 * v.hit1)}%</td><td class="num">${fmt(100 * v.hit3)}%</td><td class="num">${fmt(v.mrr, 3)}</td></tr>`)}</tbody></table>`;
+}
+```
+
+```{ojs}
+evalDiff = {
+  const rows = B.queries.map((q, i) => ({q: q.q, bm: B.eval.bm25.firsts[i], de: B.eval.dense.firsts[i], hy: B.eval.hybrid.firsts[i]}))
+    .filter(d => d.bm !== d.de);
+  return htl.html`<details><summary>Questions where the two disagree (${rows.length})</summary><table class="table table-sm em-t"><thead><tr><th>Question</th><th class="num">BM25 rank</th><th class="num">Embedding rank</th><th class="num">Hybrid rank</th></tr></thead><tbody>
+  ${rows.map(d => htl.html`<tr><td>${d.q}</td><td class="num">${d.bm}</td><td class="num">${d.de}</td><td class="num">${d.hy}</td></tr>`)}</tbody></table></details>`;
+}
+```
+
+This is a small test on a small collection, written by someone who knows the posts, so the numbers are a sketch rather than a benchmark. On it the embedding model does clearly better than keywords, and fusing the two did not help: BM25's misses outnumbered the questions it rescued, and fusion averages them in. The embedding model also coped with names and codes here (try *J/109*, *Surveyor 3* or *mascons*), because its WordPiece vocabulary spells unknown words out of pieces as Part 1 described. The case for fusion is collections full of identifiers the embedding model has never seen used, part numbers, error codes, product names, where an exact match is the only signal; production systems usually run both and tune the mix on their own questions. The large public comparison of embedding models is MTEB, the Massive Text Embedding Benchmark (Niklas Muennighoff and colleagues, 2022), which tests retrieval, clustering, classification and similarity across dozens of datasets.
+
+## A map of the blog
+
+The 384 dimensions can be squeezed into two for a picture with t-SNE (Laurens van der Maaten and Geoffrey Hinton, 2008), which places points so that each one's near neighbours stay near. Distances between clusters in such a picture mean little; the clusters themselves are the point. Each dot is a passage, coloured by section of the blog:
+
+```{ojs}
+mapPlot = {
+  const d = B.tsne.map(([x, y], i) => ({x, y, sec: B.posts[B.chunks[i].post].section, title: B.posts[B.chunks[i].post].title, head: B.chunks[i].heading}));
+  return Plot.plot({
+    width: Math.min(width, 720), height: 520, x: {axis: null}, y: {axis: null},
+    color: {legend: true, domain: Object.keys(secColour), range: Object.values(secColour)},
+    marks: [Plot.dot(d, {x: "x", y: "y", fill: "sec", r: 3.2, fillOpacity: 0.8, tip: true, title: d => `${d.title}\n${d.head}`})]
+  });
+}
+```
+
+Posts cluster by subject rather than by section. Averaging each post's passage vectors and comparing the averages: the *Interstellar* post, filed under sci-fi, is closest to the Kerr black hole and black-hole ray-tracing explainers; the Apollo frames-of-reference explainer is closest to the Apollo series; the Martian tripod is closest to the walking, statics and kinematics explainers written for it; and the telescope post's nearest neighbour is the black-hole ray tracer, the other post that traces rays.
+
+## Searching millions of vectors
+
+Ranking 860 passages means 860 dot products of length 384, about 330,000 multiplications: nothing. A real collection might hold a hundred million passages, and an exact search then costs $4\times10^{10}$ multiplications per query. Two ideas make it practical: search approximately, and store less.
+
+### HNSW
+
+The standard approximate method is the hierarchical navigable small world graph (Yury Malkov and Dmitry Yashunin, 2016). Each vector is a node, linked to a few of its nearest neighbours. To search, start at an entry node and move greedily to whichever neighbour is closest to the query, until no neighbour is closer. On a graph that mixes short links with a few long ones (a *small world*, after Duncan Watts and Steven Strogatz), greedy routing reaches the right region in a few hops. HNSW gets the long links by building several layers: every node is in layer 0, a random fraction $1/M$ of them also in layer 1, a fraction $1/M^2$ in layer 2, and so on, like a skip list. A search starts at the sparse top layer, descends when it can get no closer, and finishes in layer 0 with a beam of the `ef` best candidates. Search cost grows roughly as $\log N$.
+
+The panel builds an HNSW index over this blog's passages in your browser and searches it for each of the test questions, counting how many vectors each search had to compare against the query:
+
+```{ojs}
+viewof hn = Inputs.form({
+  M: Inputs.range([2, 16], {value: 6, step: 1, label: "Links per node, M"}),
+  ef: Inputs.range([1, 64], {value: 8, step: 1, label: "Search beam, ef"})
+})
+```
+
+```{ojs}
+//| output: false
+hnsw = {
+  const {X, N, D} = idx, M = hn.M, M0 = 2 * M, efC = 40;
+  const sim = (a, b) => { let s = 0; const oa = a * D, ob = b * D; for (let j = 0; j < D; j++) s += X[oa + j] * X[ob + j]; return s; };
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const level = Array.from({length: N}, () => Math.floor(-Math.log(rnd() + 1e-12) / Math.log(M)));
+  const links = Array.from({length: N}, (_, i) => Array.from({length: level[i] + 1}, () => []));
+  let entry = 0, top = level[0];
+  const searchLayer = (simq, eps, ef, L, count) => {
+    const vis = new Set(eps); let C = eps.map(e => [simq(e), e]); count.n += eps.length;
+    let W = C.slice();
+    while (C.length) {
+      C.sort((a, b) => b[0] - a[0]); const [cs, c] = C.shift();
+      W.sort((a, b) => b[0] - a[0]); if (cs < W[W.length - 1][0] && W.length >= ef) break;
+      for (const e of links[c][L] || []) if (!vis.has(e)) {
+        vis.add(e); const s = simq(e); count.n++;
+        if (W.length < ef || s > W[W.length - 1][0]) { C.push([s, e]); W.push([s, e]); W.sort((a, b) => b[0] - a[0]); if (W.length > ef) W.pop(); }
+      }
+    }
+    return W;
+  };
+  for (let i = 1; i < N; i++) {
+    const simq = e => sim(i, e), cnt = {n: 0}; let ep = [entry];
+    for (let L = top; L > level[i]; L--) ep = [searchLayer(simq, ep, 1, L, cnt)[0][1]];
+    for (let L = Math.min(top, level[i]); L >= 0; L--) {
+      const W = searchLayer(simq, ep, efC, L, cnt), mx = L === 0 ? M0 : M;
+      links[i][L] = W.slice(0, M).map(d => d[1]);
+      for (const e of links[i][L]) { const l = links[e][L]; l.push(i); if (l.length > mx) { l.sort((a, b) => sim(e, b) - sim(e, a)); l.length = mx; } }
+      ep = W.map(d => d[1]);
+    }
+    if (level[i] > top) { top = level[i]; entry = i; }
+  }
+  const search = (q, ef) => {
+    const simq = e => { let s = 0; const o = e * D; for (let j = 0; j < D; j++) s += X[o + j] * q[j]; return s; };
+    const cnt = {n: 0}; let ep = [entry];
+    for (let L = top; L > 0; L--) ep = [searchLayer(simq, ep, 1, L, cnt)[0][1]];
+    const W = searchLayer(simq, ep, Math.max(ef, 10), 0, cnt);
+    return {top: W.slice(0, 10).map(d => d[1]), compared: cnt.n};
+  };
+  return {search, layers: top + 1, perLayer: Array.from({length: top + 1}, (_, L) => level.filter(l => l >= L).length)};
+}
+```
+
+```{ojs}
+hnswOut = {
+  let rec = 0, comp = 0;
+  for (const q of B.queries) {
+    const exact = Array.from({length: idx.N}, (_, i) => [dot(i, q.vec), i]).sort((a, b) => b[0] - a[0]).slice(0, 10).map(d => d[1]);
+    const r = hnsw.search(q.vec, hn.ef);
+    rec += r.top.filter(i => exact.includes(i)).length / 10; comp += r.compared;
+  }
+  const n = B.queries.length;
+  return htl.html`<div class="em-panel"><h4>Over the ${n} test questions</h4>
+  <p style="margin:0">Layers: ${hnsw.perLayer.map((c, L) => `${L}: ${c} nodes`).join(" · ")}<br>
+  Recall of the exact top 10: <b>${fmt(100 * rec / n)}%</b> · vectors compared per search: <b>${fmt(comp / n)}</b> of ${fmt(idx.N)}</p></div>`;
+}
+```
+
+On a collection this small the saving is modest, because the beam soon covers a good part of it; the logarithm pays off at millions of vectors, where a search touches a few thousand. The trade is between `ef` (and `M`) and recall: a narrow beam is fast and sometimes misses the true nearest neighbour.
+
+### Storing less
+
+A 384-dimensional vector in 32-bit floats is 1,536 bytes; a hundred million of them is 154 GB. Three ways to shrink it, measured on this blog: how many of each passage's exact ten nearest neighbours are still found, and the mean reciprocal rank on the test questions.
+
+```{ojs}
+compTable = htl.html`<table class="table table-sm em-t"><thead><tr><th>Storage</th><th class="num">Bytes per vector</th><th class="num">Top-10 neighbours kept</th><th class="num">Test MRR</th></tr></thead><tbody>
+  ${B.compression.map(c => htl.html`<tr><td>${c.name}</td><td class="num">${fmt(c.bytes)}</td><td class="num">${c.recall === null ? "—" : fmt(100 * c.recall) + "%"}</td><td class="num">${fmt(c.mrr, 3)}</td></tr>`)}</tbody></table>`
+```
+
+**Scalar quantisation** rounds each coordinate to 8 bits, a quarter of the space, and costs almost nothing. **Binary quantisation** keeps only the sign of each coordinate, 48 bytes, and compares vectors by Hamming distance, which a processor computes with one instruction per 64 bits. It loses more, but used as a first pass that picks 50 candidates for exact rescoring it recovers almost everything at a thirty-second of the memory. **Truncation**, keeping only the first few dimensions, costs steadily: by 48 dimensions a third of each passage's neighbours have changed, because nothing in this model's training put the important information first. (Thirty questions are too few for the reciprocal rank column to separate the milder options; it moves by a question or two either way.) Models trained with *Matryoshka representation learning* (Aditya Kusupati and colleagues, 2022) apply the contrastive loss to several prefixes at once (the first 48, 96, 192 dimensions and so on), so that each prefix is a usable embedding on its own and can be cut to fit the budget; several commercial models are trained this way. Product quantisation (Hervé Jégou and colleagues, 2011), which splits the vector into blocks and replaces each block with the index of its nearest codebook entry, sits between these and is the other workhorse of large indexes.
+
+## Retrieval-augmented generation
+
+A language model knows what was in its training data and nothing since, and nothing private. Retrieval-augmented generation, named by Patrick Lewis and colleagues in 2020, connects it to documents at query time:
+
+1. **Chunk** the documents into passages, as this post did (here by section, then into pieces of about 100 words, so that each fits the model's 256-token limit). Too short and a passage lacks context; too long and its one vector averages over several topics, the *bank* problem of Part 1 at a larger scale.
+2. **Embed** every passage once and store the vectors in an index.
+3. At question time, **retrieve**: embed the question and find its nearest passages, usually with keyword search alongside.
+4. **Rerank** the top few dozen with a **cross-encoder**, a model that reads the question and a passage together, with full attention between them, and outputs one relevance score (Rodrigo Nogueira and Kyunghyun Cho, 2019). It is far more accurate than comparing two separately computed vectors, and far too slow to run over a whole collection, which is why it comes second.
+5. **Generate**: put the best passages into the prompt with the question and an instruction to answer from them, with citations.
+
+Each step has its own failure. The answer may be split across chunks; the right passage may rank eleventh when ten were kept; the model may ignore what it was given. Nelson Liu and colleagues (2023) found that models used information at the start and end of a long prompt much better than in the middle, so the order of passages matters too. Retrieval quality sets a ceiling on the whole system: the language model cannot cite a passage it never saw.
+
+The vector that does all this is the one Part 1 built: a token's row in a table, refined by layers of attention into a representation of a whole passage, and trained, by a softmax over a batch, to sit near the questions it answers.
+
+## Terminology and where it comes from
+
+::: {.em-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Retrieval** | Finding the documents relevant to a query | Old French *retrouver*, to find again. *Information retrieval* was coined by Calvin Mooers in 1950. |
+| **Inverse document frequency** | Weight of a term by how few documents contain it | Karen Spärck Jones, "A statistical interpretation of term specificity", 1972. |
+| **BM25** | The standard keyword-ranking function | *Best Match* 25, the 25th of the weighting schemes tried in the Okapi system at City University London, by Stephen Robertson and colleagues, early 1990s. |
+| **Encoder / decoder** | A model that reads a whole input / one that generates left to right | From communication theory: encode a message into a signal, decode it back. Used for neural networks in sequence-to-sequence translation (2014). |
+| **Pooling** | Combining many token vectors into one | From the pooling layers of convolutional networks, which merge neighbouring values into one; *pool*, to combine resources. |
+| **Contrastive** | Learning by comparing positives with negatives | Latin *contra* + *stare*, to stand against. Raia Hadsell, Sumit Chopra and Yann LeCun's 2006 "contrastive loss" for learning invariant mappings. |
+| **Siamese network** | Two copies of one network with shared weights, comparing their outputs | Jane Bromley and colleagues, 1993, for signature verification, after the conjoined twins Chang and Eng Bunker, born in Siam. |
+| **InfoNCE** | The batch-softmax contrastive loss | *Info*rmation (it bounds mutual information) + *N*oise-*C*ontrastive *E*stimation (Michael Gutmann and Aapo Hyvärinen, 2010). |
+| **Temperature** | The divisor $\tau$ in the softmax | From the Boltzmann distribution, $e^{-E/kT}$: high temperature spreads probability evenly, low temperature concentrates it on the best state. |
+| **Small world** | A graph with short paths between any two nodes | Stanley Milgram's 1967 letter-forwarding experiment ("six degrees"), formalised by Watts and Strogatz in 1998. |
+| **Cosine similarity** | $\mathbf u\cdot\mathbf v/(\|\mathbf u\|\|\mathbf v\|)$ | Latin *cosinus*, from *complementi sinus*, the sine of the complementary angle; used as a similarity measure in Gerard Salton's vector-space retrieval model of the 1960s–70s. |
+| **RAG** | Retrieval-augmented generation | Lewis and colleagues, 2020. |
+:::
+
+## Method and sources
+
+**Passages.** Every post's source text, with code, equations, tables and HTML removed, split at second- and third-level headings, then into runs of paragraphs of at least 120 words, with any run longer than 140 words split at sentence boundaries into pieces of about 90 words: 860 passages from 40 posts, this post excluded (its test questions would have been found in it). Each passage is embedded with its post title and heading prefixed; mathematical text produces about one and a half WordPiece tokens per word, and one passage reaches the model's 256-token limit and is truncated.
+
+**Model.** `sentence-transformers/all-MiniLM-L6-v2` weights from Hugging Face. Offline embeddings use my NumPy implementation of the BERT forward pass (post-LayerNorm, exact GELU, mean pooling over tokens, L2 normalisation); its output matches the reference PyTorch `BertModel` from Hugging Face Transformers to within $10^{-7}$ in every coordinate on test sentences. One trap: the published `tokenizer.json` pads every input to 128 tokens, and mean pooling must exclude the padding. Stored in the page at 8 bits per coordinate. Queries typed into the page are embedded by Transformers.js 3.0.2 with the `Xenova/all-MiniLM-L6-v2` ONNX export, with its weights quantised to 8 bits, so live scores can differ from precomputed ones in the third decimal place.
+
+**Retrieval tests.** 30 questions written before evaluation, each with one or more relevant posts. Rankings are by post, each post scored by its best passage. BM25 with $k_1 = 1.2$, $b = 0.75$, lower-cased alphanumeric tokens and a short stop-word list, over the same prefixed passages. Fusion is reciprocal rank fusion with $k = 60$. Compression: neighbour recall is the overlap of each passage's top 10 under compression with its exact top 10, averaged; binary rescoring takes the 50 best by Hamming distance and reranks them by float cosine.
+
+**Geometry.** Mean cosine and uniformity from 20,000 random pairs of distinct passages; t-SNE with perplexity 25, cosine distance, PCA initialisation (scikit-learn).
+
+**HNSW.** Built in the page with $M$ links per node in the upper layers and $2M$ in layer 0, construction beam 40, levels drawn with probability $M^{-\ell}$, the simple neighbour-selection rule (keep the closest), fixed random seed.
+
+Sources:
+
+- K. Spärck Jones, "A statistical interpretation of term specificity and its application in retrieval", *Journal of Documentation* 28, 1972. S. Robertson, H. Zaragoza, [*The Probabilistic Relevance Framework: BM25 and Beyond*](https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf), 2009.
+- J. Devlin and colleagues, [*BERT*](https://arxiv.org/abs/1810.04805), 2018. W. Wang and colleagues, [*MiniLM*](https://arxiv.org/abs/2002.10957), 2020. N. Reimers, I. Gurevych, [*Sentence-BERT*](https://arxiv.org/abs/1908.10084), EMNLP 2019.
+- [`all-MiniLM-L6-v2` model card and training script](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2): training data, batch size, scale 20, symmetric loss.
+- A. van den Oord, Y. Li, O. Vinyals, [*Representation Learning with Contrastive Predictive Coding*](https://arxiv.org/abs/1807.03748), 2018. B. Poole and colleagues, [*On Variational Bounds of Mutual Information*](https://arxiv.org/abs/1905.06922), ICML 2019. T. Wang, P. Isola, [*Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere*](https://arxiv.org/abs/2005.10242), ICML 2020. A. Radford and colleagues, [*CLIP*](https://arxiv.org/abs/2103.00020), 2021.
+- G. Cormack, C. Clarke, S. Büttcher, "Reciprocal Rank Fusion outperforms Condorcet and individual rank learning methods", SIGIR 2009. N. Muennighoff and colleagues, [*MTEB: Massive Text Embedding Benchmark*](https://arxiv.org/abs/2210.07316), 2022.
+- Y. Malkov, D. Yashunin, [*Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs*](https://arxiv.org/abs/1603.09320), 2016. H. Jégou, M. Douze, C. Schmid, "Product Quantization for Nearest Neighbor Search", *IEEE TPAMI* 33, 2011. A. Kusupati and colleagues, [*Matryoshka Representation Learning*](https://arxiv.org/abs/2205.13147), NeurIPS 2022.
+- P. Lewis and colleagues, [*Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*](https://arxiv.org/abs/2005.11401), NeurIPS 2020. R. Nogueira, K. Cho, [*Passage Re-ranking with BERT*](https://arxiv.org/abs/1901.04085), 2019. N. Liu and colleagues, [*Lost in the Middle*](https://arxiv.org/abs/2307.03172), 2023.
+- L. van der Maaten, G. Hinton, "Visualizing Data using t-SNE", *JMLR* 9, 2008.
+- [Transformers.js](https://huggingface.co/docs/transformers.js) for the in-browser model.
+
+**Previous: [Part 1, from words to vectors](../embeddings-part-1-words-to-vectors/)**.

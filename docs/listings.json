@@ -37,7 +37,10 @@
   },
   {
     "listing": "/ai/index.html",
-    "items": []
+    "items": [
+      "/ai/embeddings-part-1-words-to-vectors/index.html",
+      "/ai/embeddings-part-2-search-and-retrieval/index.html"
+    ]
   },
   {
     "listing": "/astronomy/index.html",
