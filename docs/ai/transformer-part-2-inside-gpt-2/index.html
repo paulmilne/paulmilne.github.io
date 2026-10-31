@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="GPT-2 small, implemented from its published weights in NumPy and checked against the reference, run on example sentences. An explorer for all 144 attention heads, the previous-token and induction heads that let it copy, the heads that pick out the right name, the logit lens, and the growth of the residual stream.">
+
+<title>The Transformer, Part 2: Inside GPT-2 – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Transformer, Part 2: Inside GPT-2 – math-blog">
+<meta property="og:description" content="GPT-2 small, implemented from its published weights in NumPy and checked against the reference, run on example sentences. An explorer for all 144 attention heads, the previous-token and induction heads that let it copy, the heads that pick out the right name, the logit lens, and the growth of the residual stream.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/transformer-part-2-inside-gpt-2/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="The Transformer, Part 2: Inside GPT-2 – math-blog">
+<meta name="twitter:description" content="GPT-2 small, implemented from its published weights in NumPy and checked against the reference, run on example sentences. An explorer for all 144 attention heads, the previous-token and induction heads that let it copy, the heads that pick out the right name, the logit lens, and the growth of the residual stream.">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/transformer-part-2-inside-gpt-2/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Transformer, Part 2: Inside GPT-2</h1>
+            <p class="subtitle lead">A trained transformer run step by step in NumPy: what its attention heads look at, how it copies, how a prediction forms layer by layer, and what the residual stream carries</p>
+                  <div>
+        <div class="description">
+          GPT-2 small, implemented from its published weights in NumPy and checked against the reference, run on example sentences. An explorer for all 144 attention heads, the previous-token and induction heads that let it copy, the heads that pick out the right name, the logit lens, and the growth of the residual stream.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">transformers</div>
+                <div class="quarto-category">language-models</div>
+                <div class="quarto-category">interpretability</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#five-inputs" id="toc-five-inputs" class="nav-link active" data-scroll-target="#five-inputs">Five inputs</a></li>
+  <li><a href="#attention-head-by-head" id="toc-attention-head-by-head" class="nav-link" data-scroll-target="#attention-head-by-head">Attention, head by head</a></li>
+  <li><a href="#heads-with-jobs" id="toc-heads-with-jobs" class="nav-link" data-scroll-target="#heads-with-jobs">Heads with jobs</a>
+  <ul class="collapse">
+  <li><a href="#induction-how-a-transformer-copies" id="toc-induction-how-a-transformer-copies" class="nav-link" data-scroll-target="#induction-how-a-transformer-copies">Induction: how a transformer copies</a></li>
+  <li><a href="#who-gave-a-drink-to-whom" id="toc-who-gave-a-drink-to-whom" class="nav-link" data-scroll-target="#who-gave-a-drink-to-whom">Who gave a drink to whom</a></li>
+  </ul></li>
+  <li><a href="#the-prediction-forms-the-logit-lens" id="toc-the-prediction-forms-the-logit-lens" class="nav-link" data-scroll-target="#the-prediction-forms-the-logit-lens">The prediction forms: the logit lens</a></li>
+  <li><a href="#the-residual-stream" id="toc-the-residual-stream" class="nav-link" data-scroll-target="#the-residual-stream">The residual stream</a></li>
+  <li><a href="#what-this-shows-and-what-it-doesnt" id="toc-what-this-shows-and-what-it-doesnt" class="nav-link" data-scroll-target="#what-this-shows-and-what-it-doesnt">What this shows, and what it doesn’t</a></li>
+  <li><a href="#terminology-and-where-it-comes-from" id="toc-terminology-and-where-it-comes-from" class="nav-link" data-scroll-target="#terminology-and-where-it-comes-from">Terminology and where it comes from</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.tf-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.tf-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.tf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.tf-grid form { flex-wrap: wrap !important; }
+.tf-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.tf-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.tf-toks { display: flex; flex-wrap: wrap; gap: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; line-height: 1.9; }
+.tf-toks span { padding: 0 .2rem; border-radius: 3px; white-space: pre; cursor: pointer; border: 1px solid transparent; }
+.tf-toks span.q { border-color: #1d3557; }
+.tf-scroll { overflow-x: auto; }
+.tf-lens td { font-family: ui-monospace, monospace; font-size: .72rem; padding: .1rem .3rem; white-space: pre; text-align: center; border: 1px solid rgba(128,128,128,.2); }
+.tf-lens th { font-size: .7rem; font-weight: 500; padding: .1rem .3rem; white-space: pre; }
+table.tf-t td.num, table.tf-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tf-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+.tf-scroll table { min-width: 560px; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="40" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 39;"><span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/gpt2_viz.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>show <span class="op">=</span> t <span class="kw">=&gt;</span> t <span class="op">===</span> <span class="st">"&lt;|endoftext|&gt;"</span> <span class="op">?</span> <span class="st">"⟨start⟩"</span> <span class="op">:</span> t<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/ /g</span><span class="op">,</span> <span class="st">"␣"</span>)<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">\n</span><span class="ss">/g</span><span class="op">,</span> <span class="st">"↵"</span>)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>attnOf <span class="op">=</span> ex <span class="kw">=&gt;</span> { <span class="kw">const</span> b <span class="op">=</span> <span class="bu">Uint8Array</span><span class="op">.</span><span class="fu">from</span>(<span class="fu">atob</span>(ex<span class="op">.</span><span class="at">attn</span>)<span class="op">,</span> c <span class="kw">=&gt;</span> c<span class="op">.</span><span class="fu">charCodeAt</span>(<span class="dv">0</span>))<span class="op">;</span> <span class="cf">return</span> (l<span class="op">,</span> h<span class="op">,</span> q<span class="op">,</span> k) <span class="kw">=&gt;</span> b[((l <span class="op">*</span> <span class="dv">12</span> <span class="op">+</span> h) <span class="op">*</span> ex<span class="op">.</span><span class="at">T</span> <span class="op">+</span> q) <span class="op">*</span> ex<span class="op">.</span><span class="at">T</span> <span class="op">+</span> k] <span class="op">/</span> <span class="dv">255</span><span class="op">;</span> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p><a href="../transformer-part-1-operation-by-operation/">Part 1</a> took the transformer apart on paper. This part runs a trained one and looks inside. The model is GPT-2 small, released by OpenAI in 2019: 124 million parameters, 12 layers of 12 heads, width 768, a context of 1,024 tokens and the 50,257-token vocabulary described in the <a href="../embeddings-part-1-words-to-vectors/">embeddings post</a>. It was trained to predict the next token on WebText, about 40 GB of text from 8 million web pages linked from Reddit. By current standards it is small and often wrong, but it is the most studied language model there is, and the structures found in it have been found again in much larger models.</p>
+<p>So that nothing is hidden inside a library, the forward pass here is my own: about 70 lines of NumPy, following Part 1’s equations, reading the published weights. On the same input it reproduces the reference implementation’s output logits to within <span class="math inline">\(7\times10^{-5}\)</span>, where the logits themselves reach 120. Every number below comes from it.</p>
+<section id="five-inputs" class="level2">
+<h2 class="anchored" data-anchor-id="five-inputs">Five inputs</h2>
+<p>Four sentences and one deliberately strange input. Each begins with GPT-2’s <code>&lt;|endoftext|&gt;</code> token, shown as ⟨start⟩, which marks the start of a document. The model’s top predictions for the token after each:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="54" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 53;"><span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>nextTable <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table class="table table-sm tf-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Input&lt;/th&gt;&lt;th&gt;Most likely next tokens&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">map</span>(ex <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td style="font-size:.85rem"&gt;</span><span class="sc">${</span>ex<span class="op">.</span><span class="at">name</span> <span class="op">===</span> <span class="st">"Repeated random tokens"</span> <span class="op">?</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;i&gt;25 random tokens, then the same 25 again&lt;/i&gt;`</span> <span class="op">:</span> ex<span class="op">.</span><span class="at">tokens</span><span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span>)<span class="op">.</span><span class="fu">join</span>(<span class="st">""</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;td style="font-size:.82rem"&gt;</span><span class="sc">${</span>ex<span class="op">.</span><span class="at">next</span><span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">.</span><span class="fu">map</span>(([t<span class="op">,</span> p]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;code&gt;</span><span class="sc">${</span><span class="fu">show</span>(t)<span class="sc">}</span><span class="vs">&lt;/code&gt; </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> p)<span class="sc">}</span><span class="vs">%  `</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The first is a standard test of whether a model can track who is who: <em>John</em> gave a drink to someone, and the someone must be <em>Mary</em>. GPT-2 gets it. The second ends with <em>Bill</em>, and the model predicts <code>␣T</code>, the first piece of <em>Tindall</em>, which it can only know from earlier in the same input: a surname this obscure is not something a 124-million-parameter model remembers. The third shows its limits: given the Eiffel Tower, it rates London above Paris. The fifth is there to measure something specific, explained below.</p>
+</section>
+<section id="attention-head-by-head" class="level2">
+<h2 class="anchored" data-anchor-id="attention-head-by-head">Attention, head by head</h2>
+<p>Pick an input, a layer and a head; then click a token to see where it looks. The heatmap shows the head’s whole attention matrix: row <span class="math inline">\(i\)</span> is the distribution over earlier positions that token <span class="math inline">\(i\)</span> attends to, and the causal mask leaves the upper triangle empty.</p>
+<div class="tf-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="68" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 67;"><span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>viewof exName <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">map</span>(e <span class="kw">=&gt;</span> e<span class="op">.</span><span class="at">name</span>)<span class="op">,</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Input"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="72" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 71;"><span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>viewof lh <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>  <span class="dt">l</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">11</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Layer"</span>})<span class="op">,</span></span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>  <span class="dt">h</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">11</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Head"</span>})</span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="83" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 82;"><span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>ex <span class="op">=</span> G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">find</span>(e <span class="kw">=&gt;</span> e<span class="op">.</span><span class="at">name</span> <span class="op">===</span> exName)</span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> <span class="fu">attnOf</span>(ex)</span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>mutable qPos <span class="op">=</span> <span class="kw">null</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-5-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-5-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-5-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="88" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 87;"><span id="cb6-88"><a href="#cb6-88" aria-hidden="true" tabindex="-1"></a>tokRow <span class="op">=</span> {</span>
+<span id="cb6-89"><a href="#cb6-89" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> q <span class="op">=</span> qPos <span class="op">===</span> <span class="kw">null</span> <span class="op">||</span> qPos <span class="op">&gt;=</span> ex<span class="op">.</span><span class="at">T</span> <span class="op">?</span> ex<span class="op">.</span><span class="at">T</span> <span class="op">-</span> <span class="dv">1</span> <span class="op">:</span> qPos<span class="op">;</span></span>
+<span id="cb6-90"><a href="#cb6-90" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> el <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-panel"&gt;&lt;h4&gt;Layer </span><span class="sc">${</span>lh<span class="op">.</span><span class="at">l</span><span class="sc">}</span><span class="vs">, head </span><span class="sc">${</span>lh<span class="op">.</span><span class="at">h</span><span class="sc">}</span><span class="vs">: where “</span><span class="sc">${</span><span class="fu">show</span>(ex<span class="op">.</span><span class="at">tokens</span>[q])<span class="sc">}</span><span class="vs">” (position </span><span class="sc">${</span>q<span class="sc">}</span><span class="vs">) looks. Click any token.&lt;/h4&gt;&lt;div class="tf-toks"&gt;</span></span>
+<span id="cb6-91"><a href="#cb6-91" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>ex<span class="op">.</span><span class="at">tokens</span><span class="op">.</span><span class="fu">map</span>((t<span class="op">,</span> k) <span class="kw">=&gt;</span> { <span class="kw">const</span> w <span class="op">=</span> k <span class="op">&lt;=</span> q <span class="op">?</span> <span class="fu">A</span>(lh<span class="op">.</span><span class="at">l</span><span class="op">,</span> lh<span class="op">.</span><span class="at">h</span><span class="op">,</span> q<span class="op">,</span> k) <span class="op">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-92"><a href="#cb6-92" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;span data-k=</span><span class="sc">${</span>k<span class="sc">}</span><span class="vs"> class=</span><span class="sc">${</span>k <span class="op">===</span> q <span class="op">?</span> <span class="st">"q"</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs"> style="background:rgba(231,111,81,</span><span class="sc">${</span><span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(<span class="dv">1</span><span class="op">,</span> w <span class="op">*</span> <span class="fl">1.2</span>)<span class="sc">}</span><span class="vs">);color:</span><span class="sc">${</span>w <span class="op">&gt;</span> <span class="fl">0.6</span> <span class="op">?</span> <span class="st">"#fff"</span> <span class="op">:</span> <span class="st">"inherit"</span><span class="sc">}</span><span class="vs">" title="</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> w<span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">%"&gt;</span><span class="sc">${</span><span class="fu">show</span>(t)<span class="sc">}</span><span class="vs">&lt;/span&gt;`</span><span class="op">;</span> })<span class="sc">}</span></span>
+<span id="cb6-93"><a href="#cb6-93" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb6-94"><a href="#cb6-94" aria-hidden="true" tabindex="-1"></a>  el<span class="op">.</span><span class="at">onclick</span> <span class="op">=</span> e <span class="kw">=&gt;</span> { <span class="kw">const</span> s <span class="op">=</span> e<span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="fu">closest</span>(<span class="st">"span[data-k]"</span>)<span class="op">;</span> <span class="cf">if</span> (s) mutable qPos <span class="op">=</span> <span class="op">+</span>s<span class="op">.</span><span class="at">dataset</span><span class="op">.</span><span class="at">k</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb6-95"><a href="#cb6-95" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> el<span class="op">;</span></span>
+<span id="cb6-96"><a href="#cb6-96" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="100" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 99;"><span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a>heat <span class="op">=</span> {</span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> T <span class="op">=</span> ex<span class="op">.</span><span class="at">T</span><span class="op">,</span> cells <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> q <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> q <span class="op">&lt;</span> T<span class="op">;</span> q<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;=</span> q<span class="op">;</span> k<span class="op">++</span>) cells<span class="op">.</span><span class="fu">push</span>({q<span class="op">,</span> k<span class="op">,</span> <span class="dt">w</span><span class="op">:</span> <span class="fu">A</span>(lh<span class="op">.</span><span class="at">l</span><span class="op">,</span> lh<span class="op">.</span><span class="at">h</span><span class="op">,</span> q<span class="op">,</span> k)})<span class="op">;</span></span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> labs <span class="op">=</span> ex<span class="op">.</span><span class="at">tokens</span><span class="op">.</span><span class="fu">map</span>((t<span class="op">,</span> i) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>i<span class="sc">}</span><span class="vs"> </span><span class="sc">${</span><span class="fu">show</span>(t)<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> sz <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">640</span>)<span class="op">;</span></span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a>    <span class="dt">width</span><span class="op">:</span> sz<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> sz <span class="op">*</span> <span class="fl">0.9</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">110</span><span class="op">,</span> <span class="dt">marginBottom</span><span class="op">:</span> <span class="dv">110</span><span class="op">,</span> <span class="dt">padding</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">domain</span><span class="op">:</span> labs<span class="op">,</span> <span class="dt">tickRotate</span><span class="op">:</span> <span class="op">-</span><span class="dv">60</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Attends to (key)"</span><span class="op">,</span> <span class="dt">tickSize</span><span class="op">:</span> <span class="dv">0</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">domain</span><span class="op">:</span> labs<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Token (query)"</span><span class="op">,</span> <span class="dt">tickSize</span><span class="op">:</span> <span class="dv">0</span>}<span class="op">,</span></span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">scheme</span><span class="op">:</span> <span class="st">"Oranges"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>]}<span class="op">,</span></span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">cell</span>(cells<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> labs[d<span class="op">.</span><span class="at">k</span>]<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> d <span class="kw">=&gt;</span> labs[d<span class="op">.</span><span class="at">q</span>]<span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"w"</span><span class="op">,</span> <span class="dt">tip</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>labs[d<span class="op">.</span><span class="at">q</span>]<span class="sc">}</span><span class="vs"> → </span><span class="sc">${</span>labs[d<span class="op">.</span><span class="at">k</span>]<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> d<span class="op">.</span><span class="at">w</span><span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">%`</span>})]</span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Most heads, most of the time, put a large share of their attention on the first token. In the repeated-random-token input, the average over all 144 heads and all positions is <span><span id="ojs-element-id-1"></span>%.</span> The first token is visible from every position and carries little information, and a head that has nothing useful to do for a given token needs somewhere to put its attention, because softmax weights must sum to one. Guangxuan Xiao and colleagues (2023) called these <em>attention sinks</em> and showed that keeping the first few tokens in the cache is what lets models run on streams longer than their training context.</p>
+</section>
+<section id="heads-with-jobs" class="level2">
+<h2 class="anchored" data-anchor-id="heads-with-jobs">Heads with jobs</h2>
+<p>Some heads do one thing consistently. Two scores, computed on the fifth input (⟨start⟩, 25 random tokens, the same 25 repeated), find them. The <strong>previous-token score</strong> is a head’s average attention from each token to the one just before it. The <strong>induction score</strong> is its average attention, in the repeated half, from each token to the token that <em>followed</em> that token’s earlier occurrence: on the second sight of the sequence A B C …, from the second B to the first C. Click a cell to load that head into the explorer above.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="121" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 120;"><span id="cb8-121"><a href="#cb8-121" aria-hidden="true" tabindex="-1"></a>viewof scoreKind <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">radio</span>(<span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">"Previous-token score"</span><span class="op">,</span> <span class="st">"previous"</span>]<span class="op">,</span> [<span class="st">"Induction score"</span><span class="op">,</span> <span class="st">"induction"</span>]<span class="op">,</span> [<span class="st">"Attention to the first token"</span><span class="op">,</span> <span class="st">"first"</span>]])<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"induction"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Score"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="125" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 124;"><span id="cb9-125"><a href="#cb9-125" aria-hidden="true" tabindex="-1"></a>scoreGrid <span class="op">=</span> {</span>
+<span id="cb9-126"><a href="#cb9-126" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> S <span class="op">=</span> G<span class="op">.</span><span class="at">scores</span>[scoreKind]<span class="op">,</span> c <span class="op">=</span> <span class="dv">30</span><span class="op">,</span> m <span class="op">=</span> <span class="dv">34</span><span class="op">,</span> n <span class="op">=</span> <span class="dv">12</span><span class="op">,</span> W <span class="op">=</span> m <span class="op">+</span> n <span class="op">*</span> c <span class="op">+</span> <span class="dv">6</span><span class="op">,</span> H <span class="op">=</span> m <span class="op">+</span> n <span class="op">*</span> c <span class="op">+</span> <span class="dv">6</span><span class="op">;</span></span>
+<span id="cb9-127"><a href="#cb9-127" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> col <span class="op">=</span> d3<span class="op">.</span><span class="fu">scaleSequential</span>(d3<span class="op">.</span><span class="at">interpolateBlues</span>)<span class="op">.</span><span class="fu">domain</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb9-128"><a href="#cb9-128" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> svg <span class="op">=</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;svg viewBox="0 0 </span><span class="sc">${</span>W<span class="sc">}</span><span class="vs"> </span><span class="sc">${</span>H<span class="sc">}</span><span class="vs">" style="max-width:</span><span class="sc">${</span>W<span class="sc">}</span><span class="vs">px;width:100%;height:auto;cursor:pointer" font-family="system-ui, sans-serif" font-size="10"&gt;</span></span>
+<span id="cb9-129"><a href="#cb9-129" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>d3<span class="op">.</span><span class="fu">range</span>(n)<span class="op">.</span><span class="fu">map</span>(h <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;text x="</span><span class="sc">${</span>m <span class="op">+</span> h <span class="op">*</span> c <span class="op">+</span> c <span class="op">/</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">" y="</span><span class="sc">${</span>m <span class="op">-</span> <span class="dv">8</span><span class="sc">}</span><span class="vs">" text-anchor="middle" fill="currentColor"&gt;</span><span class="sc">${</span>h<span class="sc">}</span><span class="vs">&lt;/text&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb9-130"><a href="#cb9-130" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>d3<span class="op">.</span><span class="fu">range</span>(n)<span class="op">.</span><span class="fu">map</span>(l <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;text x="</span><span class="sc">${</span>m <span class="op">-</span> <span class="dv">8</span><span class="sc">}</span><span class="vs">" y="</span><span class="sc">${</span>m <span class="op">+</span> l <span class="op">*</span> c <span class="op">+</span> c <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">3</span><span class="sc">}</span><span class="vs">" text-anchor="end" fill="currentColor"&gt;</span><span class="sc">${</span>l<span class="sc">}</span><span class="vs">&lt;/text&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb9-131"><a href="#cb9-131" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;text x="</span><span class="sc">${</span>m <span class="op">+</span> n <span class="op">*</span> c <span class="op">/</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">" y="10" text-anchor="middle" fill="currentColor"&gt;Head&lt;/text&gt;</span></span>
+<span id="cb9-132"><a href="#cb9-132" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;text x="8" y="</span><span class="sc">${</span>m <span class="op">+</span> n <span class="op">*</span> c <span class="op">/</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">" text-anchor="middle" fill="currentColor" transform="rotate(-90 8 </span><span class="sc">${</span>m <span class="op">+</span> n <span class="op">*</span> c <span class="op">/</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">)"&gt;Layer&lt;/text&gt;</span></span>
+<span id="cb9-133"><a href="#cb9-133" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>d3<span class="op">.</span><span class="fu">range</span>(n)<span class="op">.</span><span class="fu">flatMap</span>(l <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">range</span>(n)<span class="op">.</span><span class="fu">map</span>(h <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;g data-l="</span><span class="sc">${</span>l<span class="sc">}</span><span class="vs">" data-h="</span><span class="sc">${</span>h<span class="sc">}</span><span class="vs">"&gt;&lt;title&gt;Layer </span><span class="sc">${</span>l<span class="sc">}</span><span class="vs">, head </span><span class="sc">${</span>h<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span><span class="fu">fmt</span>(S[l][h]<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">&lt;/title&gt;</span></span>
+<span id="cb9-134"><a href="#cb9-134" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;rect x="</span><span class="sc">${</span>m <span class="op">+</span> h <span class="op">*</span> c <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="vs">" y="</span><span class="sc">${</span>m <span class="op">+</span> l <span class="op">*</span> c <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="vs">" width="</span><span class="sc">${</span>c <span class="op">-</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">" height="</span><span class="sc">${</span>c <span class="op">-</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">" rx="3" fill="</span><span class="sc">${</span><span class="fu">col</span>(S[l][h])<span class="sc">}</span><span class="vs">"/&gt;</span></span>
+<span id="cb9-135"><a href="#cb9-135" aria-hidden="true" tabindex="-1"></a><span class="vs">      </span><span class="sc">${</span>S[l][h] <span class="op">&gt;</span> <span class="fl">0.5</span> <span class="op">?</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;text x="</span><span class="sc">${</span>m <span class="op">+</span> h <span class="op">*</span> c <span class="op">+</span> c <span class="op">/</span> <span class="dv">2</span><span class="sc">}</span><span class="vs">" y="</span><span class="sc">${</span>m <span class="op">+</span> l <span class="op">*</span> c <span class="op">+</span> c <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">3</span><span class="sc">}</span><span class="vs">" text-anchor="middle" fill="#fff" font-size="9"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(S[l][h]<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">&lt;/text&gt;`</span> <span class="op">:</span> <span class="kw">null</span><span class="sc">}</span><span class="vs">&lt;/g&gt;`</span>))<span class="sc">}</span></span>
+<span id="cb9-136"><a href="#cb9-136" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/svg&gt;`</span><span class="op">;</span></span>
+<span id="cb9-137"><a href="#cb9-137" aria-hidden="true" tabindex="-1"></a>  svg<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">"click"</span><span class="op">,</span> e <span class="kw">=&gt;</span> {</span>
+<span id="cb9-138"><a href="#cb9-138" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> g <span class="op">=</span> e<span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="fu">closest</span>(<span class="st">"g[data-l]"</span>)<span class="op">;</span> <span class="cf">if</span> (<span class="op">!</span>g) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb9-139"><a href="#cb9-139" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> l <span class="op">=</span> <span class="op">+</span>g<span class="op">.</span><span class="at">dataset</span><span class="op">.</span><span class="at">l</span><span class="op">,</span> h <span class="op">=</span> <span class="op">+</span>g<span class="op">.</span><span class="at">dataset</span><span class="op">.</span><span class="at">h</span><span class="op">,</span> f <span class="op">=</span> viewof lh<span class="op">;</span></span>
+<span id="cb9-140"><a href="#cb9-140" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> r <span class="op">=</span> f<span class="op">.</span><span class="fu">querySelectorAll</span>(<span class="st">"input[type=range]"</span>)<span class="op">,</span> nb <span class="op">=</span> f<span class="op">.</span><span class="fu">querySelectorAll</span>(<span class="st">"input[type=number]"</span>)<span class="op">;</span></span>
+<span id="cb9-141"><a href="#cb9-141" aria-hidden="true" tabindex="-1"></a>    r[<span class="dv">0</span>]<span class="op">.</span><span class="at">value</span> <span class="op">=</span> nb[<span class="dv">0</span>]<span class="op">.</span><span class="at">value</span> <span class="op">=</span> l<span class="op">;</span> r[<span class="dv">1</span>]<span class="op">.</span><span class="at">value</span> <span class="op">=</span> nb[<span class="dv">1</span>]<span class="op">.</span><span class="at">value</span> <span class="op">=</span> h<span class="op">;</span></span>
+<span id="cb9-142"><a href="#cb9-142" aria-hidden="true" tabindex="-1"></a>    r[<span class="dv">0</span>]<span class="op">.</span><span class="fu">dispatchEvent</span>(<span class="kw">new</span> <span class="bu">Event</span>(<span class="st">"input"</span><span class="op">,</span> {<span class="dt">bubbles</span><span class="op">:</span> <span class="kw">true</span>}))<span class="op">;</span> r[<span class="dv">1</span>]<span class="op">.</span><span class="fu">dispatchEvent</span>(<span class="kw">new</span> <span class="bu">Event</span>(<span class="st">"input"</span><span class="op">,</span> {<span class="dt">bubbles</span><span class="op">:</span> <span class="kw">true</span>}))<span class="op">;</span></span>
+<span id="cb9-143"><a href="#cb9-143" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb9-144"><a href="#cb9-144" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span>scoreKind <span class="op">===</span> <span class="st">"previous"</span> <span class="op">?</span> <span class="st">"Previous-token score"</span> <span class="op">:</span> scoreKind <span class="op">===</span> <span class="st">"induction"</span> <span class="op">?</span> <span class="st">"Induction score"</span> <span class="op">:</span> <span class="st">"Attention to the first token"</span><span class="sc">}</span><span class="vs">, all 144 heads (darker is higher)&lt;/h4&gt;</span><span class="sc">${</span>svg<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb9-145"><a href="#cb9-145" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="149" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 148;"><span id="cb10-149"><a href="#cb10-149" aria-hidden="true" tabindex="-1"></a>topHeads <span class="op">=</span> {</span>
+<span id="cb10-150"><a href="#cb10-150" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> top <span class="op">=</span> k <span class="kw">=&gt;</span> G<span class="op">.</span><span class="at">scores</span>[k]<span class="op">.</span><span class="fu">flatMap</span>((r<span class="op">,</span> l) <span class="kw">=&gt;</span> r<span class="op">.</span><span class="fu">map</span>((v<span class="op">,</span> h) <span class="kw">=&gt;</span> ({l<span class="op">,</span> h<span class="op">,</span> v})))<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> b<span class="op">.</span><span class="at">v</span> <span class="op">-</span> a<span class="op">.</span><span class="at">v</span>)<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></span>
+<span id="cb10-151"><a href="#cb10-151" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> fmtH <span class="op">=</span> arr <span class="kw">=&gt;</span> arr<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d<span class="op">.</span><span class="at">l</span><span class="sc">}</span><span class="vs">.</span><span class="sc">${</span>d<span class="op">.</span><span class="at">h</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span><span class="fu">fmt</span>(d<span class="op">.</span><span class="at">v</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">)`</span>)<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="op">;</span></span>
+<span id="cb10-152"><a href="#cb10-152" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">md</span><span class="vs">`Written as *layer.head*, the strongest previous-token heads are </span><span class="sc">${</span><span class="fu">fmtH</span>(<span class="fu">top</span>(<span class="st">"previous"</span>)<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">3</span>))<span class="sc">}</span><span class="vs">, and the strongest induction heads </span><span class="sc">${</span><span class="fu">fmtH</span>(<span class="fu">top</span>(<span class="st">"induction"</span>))<span class="sc">}</span><span class="vs">. Head 4.11 attends to the previous token almost without exception.`</span><span class="op">;</span></span>
+<span id="cb10-153"><a href="#cb10-153" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<section id="induction-how-a-transformer-copies" class="level3">
+<h3 class="anchored" data-anchor-id="induction-how-a-transformer-copies">Induction: how a transformer copies</h3>
+<p>The induction heads are the mechanism behind the <code>␣T</code> after <em>Bill</em>. Load head 5.5 with the second input and click the last token: it puts most of its attention on <code>␣T</code>, the token that followed <em>Bill</em> the first time. The model has learned a general rule, <em>if the current token appeared before, predict whatever came after it last time</em>, and it works for sequences it has never seen, including random ones. On the fifth input the model’s average loss on the first 25 random tokens is 12.5 nats, worse than a uniform guess over the whole vocabulary (10.8 nats); on the repeated 25 it is 0.47 nats, about 62% probability on each correct token.</p>
+<p>The rule needs two heads in different layers, which is why induction heads are never in the first layer. An earlier <strong>previous-token head</strong> (such as 4.11) copies information about each token into the next position: after it, the residual stream at <code>␣T</code> carries “the token before me was <em>Bill</em>”. The later <strong>induction head</strong> then forms its query from the current token, <em>Bill</em>, and its key at each position from that copied information, so its score is high exactly where the previous token was <em>Bill</em>. It attends there and copies the token forward into the prediction. Nelson Elhage and colleagues at Anthropic described this two-step circuit in 2021, a head’s keys built from another head’s output being <em>K-composition</em>, and Catherine Olsson and colleagues (2022) showed that induction heads appear suddenly during training, at the same point as a visible bump in the loss curve, and argued they underlie much of what is called in-context learning.</p>
+</section>
+<section id="who-gave-a-drink-to-whom" class="level3">
+<h3 class="anchored" data-anchor-id="who-gave-a-drink-to-whom">Who gave a drink to whom</h3>
+<p>The first input has its own known circuit. Kevin Wang and colleagues (2022) traced how GPT-2 small completes sentences like it, and found among other components a set of <strong>name mover heads</strong> in layers 9 and 10 that attend from the final token to the correct name and copy it to the output, steered by earlier heads that detect which name was repeated and suppress it. Load heads 9.9 and 9.6 with the first input and click the last token, <em>to</em>: they put more than half their attention on <em>Mary</em> and about a tenth on <em>John</em>. Head 10.0, another of the name movers in that paper, does the same less strongly.</p>
+</section>
+</section>
+<section id="the-prediction-forms-the-logit-lens" class="level2">
+<h2 class="anchored" data-anchor-id="the-prediction-forms-the-logit-lens">The prediction forms: the logit lens</h2>
+<p>The final layer turns the residual stream into a prediction by applying a last LayerNorm and the unembedding. Nothing stops us applying the same readout to the residual stream after <em>every</em> layer, to ask what the model would predict if it stopped there. This is the <strong>logit lens</strong>, proposed in 2020 by the pseudonymous researcher nostalgebraist. It is only an approximation, since the earlier layers were never trained to be read this way, but in GPT-2 it works well. Each cell shows the top token at that layer and position; the shading is the probability of the model’s <em>final</em> top prediction, so you can see where the answer arrives.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb11" data-startfrom="171" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 170;"><span id="cb11-171"><a href="#cb11-171" aria-hidden="true" tabindex="-1"></a>viewof lensEx <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">filter</span>(e <span class="kw">=&gt;</span> e<span class="op">.</span><span class="at">T</span> <span class="op">&lt;</span> <span class="dv">30</span>)<span class="op">.</span><span class="fu">map</span>(e <span class="kw">=&gt;</span> e<span class="op">.</span><span class="at">name</span>)<span class="op">,</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Input"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-11" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb12" data-startfrom="175" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 174;"><span id="cb12-175"><a href="#cb12-175" aria-hidden="true" tabindex="-1"></a>lensTable <span class="op">=</span> {</span>
+<span id="cb12-176"><a href="#cb12-176" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> e <span class="op">=</span> G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">find</span>(x <span class="kw">=&gt;</span> x<span class="op">.</span><span class="at">name</span> <span class="op">===</span> lensEx)<span class="op">;</span></span>
+<span id="cb12-177"><a href="#cb12-177" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-scroll"&gt;&lt;table class="tf-lens"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;after&lt;/th&gt;</span><span class="sc">${</span>e<span class="op">.</span><span class="at">tokens</span><span class="op">.</span><span class="fu">map</span>(t <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;th&gt;</span><span class="sc">${</span><span class="fu">show</span>(t)<span class="sc">}</span><span class="vs">&lt;/th&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb12-178"><a href="#cb12-178" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>e<span class="op">.</span><span class="at">lens</span><span class="op">.</span><span class="fu">map</span>((row<span class="op">,</span> l) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;th&gt;</span><span class="sc">${</span>l <span class="op">===</span> <span class="dv">0</span> <span class="op">?</span> <span class="st">"embed"</span> <span class="op">:</span> <span class="st">"layer "</span> <span class="op">+</span> (l <span class="op">-</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">&lt;/th&gt;</span><span class="sc">${</span>row<span class="op">.</span><span class="fu">map</span>(([t<span class="op">,</span> p<span class="op">,</span> pf]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;td style="background:rgba(42,157,143,</span><span class="sc">${</span>pf<span class="sc">}</span><span class="vs">)" title="top </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> p)<span class="sc">}</span><span class="vs">%, final answer </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> pf)<span class="sc">}</span><span class="vs">%"&gt;</span><span class="sc">${</span><span class="fu">show</span>(t)<span class="sc">}</span><span class="vs">&lt;/td&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tr&gt;`</span>)<span class="op">.</span><span class="fu">reverse</span>()<span class="sc">}</span></span>
+<span id="cb12-179"><a href="#cb12-179" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb12-180"><a href="#cb12-180" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-12" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Read from the bottom up. For the indirect-object sentence, the last position’s best guess passes through generic continuations (<em>get</em>, <em>fill</em>, <em>drink</em>, <em>the</em>, <em>them</em>) for ten layers; <em>Mary</em> appears only after layer 9, where the name mover heads live, at 99%, and the last two layers temper it to the final 65%. For the second input, <code>␣T</code> arrives after layer 9 too: the copying happens late, once the induction heads in layers 5 to 7 have found the right place and later layers have moved its contents into position. Early layers mostly work on the current token itself; the next-token prediction is assembled in the second half of the network.</p>
+</section>
+<section id="the-residual-stream" class="level2">
+<h2 class="anchored" data-anchor-id="the-residual-stream">The residual stream</h2>
+<p>Each layer adds to the stream; nothing subtracts. The length of each position’s vector grows steadily through the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb13" data-startfrom="190" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 189;"><span id="cb13-190"><a href="#cb13-190" aria-hidden="true" tabindex="-1"></a>viewof normEx <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">map</span>(e <span class="kw">=&gt;</span> e<span class="op">.</span><span class="at">name</span>)<span class="op">,</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Input"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-13" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb14" data-startfrom="194" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 193;"><span id="cb14-194"><a href="#cb14-194" aria-hidden="true" tabindex="-1"></a>normPlot <span class="op">=</span> {</span>
+<span id="cb14-195"><a href="#cb14-195" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> e <span class="op">=</span> G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">find</span>(x <span class="kw">=&gt;</span> x<span class="op">.</span><span class="at">name</span> <span class="op">===</span> normEx)<span class="op">,</span> pts <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb14-196"><a href="#cb14-196" aria-hidden="true" tabindex="-1"></a>  e<span class="op">.</span><span class="at">norms</span><span class="op">.</span><span class="fu">forEach</span>((r<span class="op">,</span> l) <span class="kw">=&gt;</span> r<span class="op">.</span><span class="fu">forEach</span>((v<span class="op">,</span> t) <span class="kw">=&gt;</span> { <span class="cf">if</span> (t <span class="op">&gt;</span> <span class="dv">0</span>) pts<span class="op">.</span><span class="fu">push</span>({l<span class="op">,</span> v<span class="op">,</span> <span class="dt">kind</span><span class="op">:</span> <span class="st">"Residual stream ‖x‖"</span>})<span class="op">;</span> }))<span class="op">;</span></span>
+<span id="cb14-197"><a href="#cb14-197" aria-hidden="true" tabindex="-1"></a>  e<span class="op">.</span><span class="at">attn_norm</span><span class="op">.</span><span class="fu">forEach</span>((r<span class="op">,</span> l) <span class="kw">=&gt;</span> r<span class="op">.</span><span class="fu">forEach</span>((v<span class="op">,</span> t) <span class="kw">=&gt;</span> { <span class="cf">if</span> (t <span class="op">&gt;</span> <span class="dv">0</span>) pts<span class="op">.</span><span class="fu">push</span>({<span class="dt">l</span><span class="op">:</span> l <span class="op">+</span> <span class="fl">0.5</span><span class="op">,</span> v<span class="op">,</span> <span class="dt">kind</span><span class="op">:</span> <span class="st">"Attention output"</span>})<span class="op">;</span> }))<span class="op">;</span></span>
+<span id="cb14-198"><a href="#cb14-198" aria-hidden="true" tabindex="-1"></a>  e<span class="op">.</span><span class="at">mlp_norm</span><span class="op">.</span><span class="fu">forEach</span>((r<span class="op">,</span> l) <span class="kw">=&gt;</span> r<span class="op">.</span><span class="fu">forEach</span>((v<span class="op">,</span> t) <span class="kw">=&gt;</span> { <span class="cf">if</span> (t <span class="op">&gt;</span> <span class="dv">0</span>) pts<span class="op">.</span><span class="fu">push</span>({<span class="dt">l</span><span class="op">:</span> l <span class="op">+</span> <span class="fl">0.75</span><span class="op">,</span> v<span class="op">,</span> <span class="dt">kind</span><span class="op">:</span> <span class="st">"Feed-forward output"</span>})<span class="op">;</span> }))<span class="op">;</span></span>
+<span id="cb14-199"><a href="#cb14-199" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> med <span class="op">=</span> d3<span class="op">.</span><span class="fu">rollups</span>(pts<span class="op">,</span> v <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">median</span>(v<span class="op">,</span> d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">v</span>)<span class="op">,</span> d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">kind</span><span class="op">,</span> d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">l</span>)<span class="op">.</span><span class="fu">flatMap</span>(([k<span class="op">,</span> a]) <span class="kw">=&gt;</span> a<span class="op">.</span><span class="fu">map</span>(([l<span class="op">,</span> v]) <span class="kw">=&gt;</span> ({k<span class="op">,</span> l<span class="op">,</span> v})))<span class="op">;</span></span>
+<span id="cb14-200"><a href="#cb14-200" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">680</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">300</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb14-201"><a href="#cb14-201" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Layer"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Length (median over positions)"</span>}<span class="op">,</span> <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span>}<span class="op">,</span></span>
+<span id="cb14-202"><a href="#cb14-202" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(med<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"l"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"v"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">dot</span>(med<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"l"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"v"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="fl">2.5</span>})]})<span class="op">;</span></span>
+<span id="cb14-203"><a href="#cb14-203" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-14" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb15" data-startfrom="207" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 206;"><span id="cb15-207"><a href="#cb15-207" aria-hidden="true" tabindex="-1"></a>normText <span class="op">=</span> {</span>
+<span id="cb15-208"><a href="#cb15-208" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> e <span class="op">=</span> G<span class="op">.</span><span class="at">examples</span><span class="op">.</span><span class="fu">find</span>(x <span class="kw">=&gt;</span> x<span class="op">.</span><span class="at">name</span> <span class="op">===</span> <span class="st">"Indirect object"</span>)<span class="op">;</span></span>
+<span id="cb15-209"><a href="#cb15-209" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> m <span class="op">=</span> l <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">median</span>(e<span class="op">.</span><span class="at">norms</span>[l]<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span>))<span class="op">;</span></span>
+<span id="cb15-210"><a href="#cb15-210" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">md</span><span class="vs">`For the indirect-object sentence the median length is </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="fu">m</span>(<span class="dv">0</span>)<span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs"> straight from the embedding, </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="fu">m</span>(<span class="dv">1</span>)<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> after the first block, and </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="fu">m</span>(<span class="dv">12</span>)<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> after the last. The jump in the first block is a known quirk of GPT-2: both its attention and its feed-forward layer write large vectors at every position (median lengths </span><span class="sc">${</span><span class="fu">fmt</span>(d3<span class="op">.</span><span class="fu">median</span>(e<span class="op">.</span><span class="at">attn_norm</span>[<span class="dv">0</span>]<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span>))<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> and </span><span class="sc">${</span><span class="fu">fmt</span>(d3<span class="op">.</span><span class="fu">median</span>(e<span class="op">.</span><span class="at">mlp_norm</span>[<span class="dv">0</span>]<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span>))<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">, against about 10 in the next block), and interpretability work treats that first feed-forward layer roughly as an extension of the embedding of the current token. The steady growth after that is why every sublayer reads the stream through a LayerNorm (Pre-LN): without it, a layer near the top would see inputs eight times larger than one near the bottom, and the final layer's input is a hundred times the size of the embedding.`</span><span class="op">;</span></span>
+<span id="cb15-211"><a href="#cb15-211" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-15" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="what-this-shows-and-what-it-doesnt" class="level2">
+<h2 class="anchored" data-anchor-id="what-this-shows-and-what-it-doesnt">What this shows, and what it doesn’t</h2>
+<p>The heads described here are a handful of the 144, chosen because earlier research had already found them; most heads in GPT-2 have no tidy description. Attention patterns show where information is read from, not what is done with it, and the feed-forward layers, which hold two-thirds of the parameters, are much harder to read. Finding and testing circuits like the induction and name-mover circuits takes interventions: removing a head or patching in its output from a different input, and measuring what changes. That is the field of <em>mechanistic interpretability</em>, and it is where the papers cited here come from.</p>
+<p>The architecture is still the one from Part 1. <a href="../transformer-part-3-advances/">Part 3</a> covers how it has changed since: what the large models of 2026 do differently, and why.</p>
+</section>
+<section id="terminology-and-where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="terminology-and-where-it-comes-from">Terminology and where it comes from</h2>
+<div class="tf-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Induction head</strong></td>
+<td>A head that attends to the token after the previous occurrence of the current token</td>
+<td>Elhage and colleagues, 2021, by analogy with induction in the logical sense: inferring a pattern from earlier instances (A was followed by B, so A will be followed by B).</td>
+</tr>
+<tr class="even">
+<td><strong>Circuit</strong></td>
+<td>A small set of heads and neurons that together implement a behaviour</td>
+<td>Borrowed from electronics by Chris Olah and colleagues’ 2020 work on vision models, <em>Zoom In: An Introduction to Circuits</em>.</td>
+</tr>
+<tr class="odd">
+<td><strong>Residual stream</strong></td>
+<td>The running sum of the embedding and every sublayer’s output at a position</td>
+<td>Elhage and colleagues, 2021, picturing the residual connections as a stream that layers read from and write to.</td>
+</tr>
+<tr class="even">
+<td><strong>Logit lens</strong></td>
+<td>Reading out a prediction from an intermediate layer with the final unembedding</td>
+<td>nostalgebraist, 2020: a lens to look at the hidden state in the vocabulary’s terms.</td>
+</tr>
+<tr class="odd">
+<td><strong>Attention sink</strong></td>
+<td>A token, usually the first, that absorbs attention that has nowhere better to go</td>
+<td>Xiao and colleagues, 2023.</td>
+</tr>
+<tr class="even">
+<td><strong>Ablation</strong></td>
+<td>Removing a component to see what it did</td>
+<td>From surgery and neuroscience: the removal of tissue.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>Model.</strong> <code>openai-community/gpt2</code> weights from Hugging Face. The NumPy forward pass uses the row-vector convention throughout (GPT-2 stores its linear layers as <span class="math inline">\(d_{\text{in}}\times d_{\text{out}}\)</span> matrices, so they are applied as <span class="math inline">\(XW\)</span>), Pre-LN with <span class="math inline">\(\epsilon = 10^{-5}\)</span>, the tanh approximation of GELU that GPT-2 was trained with, and tied unembedding. Checked against the Hugging Face Transformers <code>GPT2LMHeadModel</code> loaded with the same weights: largest difference in the logits <span class="math inline">\(6.9\times10^{-5}\)</span>.</p>
+<p><strong>Inputs.</strong> Tokenised with GPT-2’s tokeniser (the <code>r50k_base</code> encoding), each prefixed by <code>&lt;|endoftext|&gt;</code> (id 50256). The random sequence is 25 token ids drawn uniformly from 1,000 to 20,000 with a fixed seed, repeated once.</p>
+<p><strong>Scores.</strong> Previous-token: mean attention from position <span class="math inline">\(t\)</span> to <span class="math inline">\(t-1\)</span>, over positions 2 to 50. Induction: mean attention from each position <span class="math inline">\(t\)</span> in the second copy to position <span class="math inline">\(t - 25 + 1\)</span>, the token after the earlier occurrence. First token: mean attention to position 0 over all later positions. Attention is stored in the page at 8 bits.</p>
+<p><strong>Logit lens.</strong> The residual stream after the embedding and after each block, passed through the final LayerNorm and the unembedding, then a softmax.</p>
+<p>Sources:</p>
+<ul>
+<li>A. Radford and colleagues, <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"><em>Language Models are Unsupervised Multitask Learners</em></a> (GPT-2), 2019.</li>
+<li>N. Elhage and colleagues, <a href="https://transformer-circuits.pub/2021/framework/index.html"><em>A Mathematical Framework for Transformer Circuits</em></a>, Anthropic, 2021. C. Olsson and colleagues, <a href="https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html"><em>In-context Learning and Induction Heads</em></a>, 2022.</li>
+<li>K. Wang and colleagues, <a href="https://arxiv.org/abs/2211.00593"><em>Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small</em></a>, 2022.</li>
+<li>nostalgebraist, <a href="https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens"><em>interpreting GPT: the logit lens</em></a>, 2020.</li>
+<li>G. Xiao and colleagues, <a href="https://arxiv.org/abs/2309.17453"><em>Efficient Streaming Language Models with Attention Sinks</em></a>, 2023.</li>
+<li>C. Olah and colleagues, <a href="https://distill.pub/2020/circuits/zoom-in/"><em>Zoom In: An Introduction to Circuits</em></a>, <em>Distill</em>, 2020.</li>
+</ul>
+<p><strong>Previous: <a href="../transformer-part-1-operation-by-operation/">Part 1, operation by operation</a></strong> · <strong>Next: <a href="../transformer-part-3-advances/">Part 3, advances since 2017</a></strong>.</p>
+
+
+<div class="ojs-auto-generated hidden">
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6WyAgeyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiaW5saW5lIjoidHJ1ZSIsInNvdXJjZSI6Imh0bC5odG1sYDxzcGFuPiR7Zm10KDEwMCAqIGQzLm1lYW4oRy5zY29yZXMuZmlyc3QuZmxhdCgpKSl9PC9zcGFuPmAiLCAiY2VsbE5hbWUiOiJvanMtZWxlbWVudC1pZC0xIn1dfQ==
+</script>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG5HID0gRmlsZUF0dGFjaG1lbnQoXCJkYXRhL2dwdDJfdml6Lmpzb25cIikuanNvbigpXG5zaG93ID0gdCA9PiB0ID09PSBcIjx8ZW5kb2Z0ZXh0fD5cIiA/IFwi4p+oc3RhcnTin6lcIiA6IHQucmVwbGFjZSgvIC9nLCBcIuKQo1wiKS5yZXBsYWNlKC9cXG4vZywgXCLihrVcIilcbmF0dG5PZiA9IGV4ID0+IHsgY29uc3QgYiA9IFVpbnQ4QXJyYXkuZnJvbShhdG9iKGV4LmF0dG4pLCBjID0+IGMuY2hhckNvZGVBdCgwKSk7IHJldHVybiAobCwgaCwgcSwgaykgPT4gYlsoKGwgKiAxMiArIGgpICogZXguVCArIHEpICogZXguVCArIGtdIC8gMjU1OyB9XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJuZXh0VGFibGUgPSBodGwuaHRtbGA8dGFibGUgY2xhc3M9XCJ0YWJsZSB0YWJsZS1zbSB0Zi10XCI+PHRoZWFkPjx0cj48dGg+SW5wdXQ8L3RoPjx0aD5Nb3N0IGxpa2VseSBuZXh0IHRva2VuczwvdGg+PC90cj48L3RoZWFkPjx0Ym9keT5cbiAgJHtHLmV4YW1wbGVzLm1hcChleCA9PiBodGwuaHRtbGA8dHI+PHRkIHN0eWxlPVwiZm9udC1zaXplOi44NXJlbVwiPiR7ZXgubmFtZSA9PT0gXCJSZXBlYXRlZCByYW5kb20gdG9rZW5zXCIgPyBodGwuaHRtbGA8aT4yNSByYW5kb20gdG9rZW5zLCB0aGVuIHRoZSBzYW1lIDI1IGFnYWluPC9pPmAgOiBleC50b2tlbnMuc2xpY2UoMSkuam9pbihcIlwiKX08L3RkPlxuICA8dGQgc3R5bGU9XCJmb250LXNpemU6LjgycmVtXCI+JHtleC5uZXh0LnNsaWNlKDAsIDMpLm1hcCgoW3QsIHBdKSA9PiBodGwuaHRtbGA8Y29kZT4ke3Nob3codCl9PC9jb2RlPiAke2ZtdCgxMDAgKiBwKX0lICBgKX08L3RkPjwvdHI+YCl9PC90Ym9keT48L3RhYmxlPmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBleE5hbWUgPSBJbnB1dHMuc2VsZWN0KEcuZXhhbXBsZXMubWFwKGUgPT4gZS5uYW1lKSwge2xhYmVsOiBcIklucHV0XCJ9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGxoID0gSW5wdXRzLmZvcm0oe1xuICBsOiBJbnB1dHMucmFuZ2UoWzAsIDExXSwge3ZhbHVlOiA1LCBzdGVwOiAxLCBsYWJlbDogXCJMYXllclwifSksXG4gIGg6IElucHV0cy5yYW5nZShbMCwgMTFdLCB7dmFsdWU6IDUsIHN0ZXA6IDEsIGxhYmVsOiBcIkhlYWRcIn0pXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC01IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZXggPSBHLmV4YW1wbGVzLmZpbmQoZSA9PiBlLm5hbWUgPT09IGV4TmFtZSlcbkEgPSBhdHRuT2YoZXgpXG5tdXRhYmxlIHFQb3MgPSBudWxsXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ0b2tSb3cgPSB7XG4gIGNvbnN0IHEgPSBxUG9zID09PSBudWxsIHx8IHFQb3MgPj0gZXguVCA/IGV4LlQgLSAxIDogcVBvcztcbiAgY29uc3QgZWwgPSBodGwuaHRtbGA8ZGl2IGNsYXNzPVwidGYtcGFuZWxcIj48aDQ+TGF5ZXIgJHtsaC5sfSwgaGVhZCAke2xoLmh9OiB3aGVyZSDigJwke3Nob3coZXgudG9rZW5zW3FdKX3igJ0gKHBvc2l0aW9uICR7cX0pIGxvb2tzLiBDbGljayBhbnkgdG9rZW4uPC9oND48ZGl2IGNsYXNzPVwidGYtdG9rc1wiPlxuICAgICR7ZXgudG9rZW5zLm1hcCgodCwgaykgPT4geyBjb25zdCB3ID0gayA8PSBxID8gQShsaC5sLCBsaC5oLCBxLCBrKSA6IDA7XG4gICAgICByZXR1cm4gaHRsLmh0bWxgPHNwYW4gZGF0YS1rPSR7a30gY2xhc3M9JHtrID09PSBxID8gXCJxXCIgOiBcIlwifSBzdHlsZT1cImJhY2tncm91bmQ6cmdiYSgyMzEsMTExLDgxLCR7TWF0aC5taW4oMSwgdyAqIDEuMil9KTtjb2xvcjoke3cgPiAwLjYgPyBcIiNmZmZcIiA6IFwiaW5oZXJpdFwifVwiIHRpdGxlPVwiJHtmbXQoMTAwICogdywgMSl9JVwiPiR7c2hvdyh0KX08L3NwYW4+YDsgfSl9XG4gIDwvZGl2PjwvZGl2PmA7XG4gIGVsLm9uY2xpY2sgPSBlID0+IHsgY29uc3QgcyA9IGUudGFyZ2V0LmNsb3Nlc3QoXCJzcGFuW2RhdGEta11cIik7IGlmIChzKSBtdXRhYmxlIHFQb3MgPSArcy5kYXRhc2V0Lms7IH07XG4gIHJldHVybiBlbDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImhlYXQgPSB7XG4gIGNvbnN0IFQgPSBleC5ULCBjZWxscyA9IFtdO1xuICBmb3IgKGxldCBxID0gMDsgcSA8IFQ7IHErKykgZm9yIChsZXQgayA9IDA7IGsgPD0gcTsgaysrKSBjZWxscy5wdXNoKHtxLCBrLCB3OiBBKGxoLmwsIGxoLmgsIHEsIGspfSk7XG4gIGNvbnN0IGxhYnMgPSBleC50b2tlbnMubWFwKCh0LCBpKSA9PiBgJHtpfSAke3Nob3codCl9YCk7XG4gIGNvbnN0IHN6ID0gTWF0aC5taW4od2lkdGgsIDY0MCk7XG4gIHJldHVybiBQbG90LnBsb3Qoe1xuICAgIHdpZHRoOiBzeiwgaGVpZ2h0OiBzeiAqIDAuOSwgbWFyZ2luTGVmdDogMTEwLCBtYXJnaW5Cb3R0b206IDExMCwgcGFkZGluZzogMCxcbiAgICB4OiB7ZG9tYWluOiBsYWJzLCB0aWNrUm90YXRlOiAtNjAsIGxhYmVsOiBcIkF0dGVuZHMgdG8gKGtleSlcIiwgdGlja1NpemU6IDB9LCB5OiB7ZG9tYWluOiBsYWJzLCBsYWJlbDogXCJUb2tlbiAocXVlcnkpXCIsIHRpY2tTaXplOiAwfSxcbiAgICBjb2xvcjoge3NjaGVtZTogXCJPcmFuZ2VzXCIsIGRvbWFpbjogWzAsIDFdfSxcbiAgICBtYXJrczogW1Bsb3QuY2VsbChjZWxscywge3g6IGQgPT4gbGFic1tkLmtdLCB5OiBkID0+IGxhYnNbZC5xXSwgZmlsbDogXCJ3XCIsIHRpcDogdHJ1ZSwgdGl0bGU6IGQgPT4gYCR7bGFic1tkLnFdfSDihpIgJHtsYWJzW2Qua119OiAke2ZtdCgxMDAgKiBkLncsIDEpfSVgfSldXG4gIH0pO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC04IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIHNjb3JlS2luZCA9IElucHV0cy5yYWRpbyhuZXcgTWFwKFtbXCJQcmV2aW91cy10b2tlbiBzY29yZVwiLCBcInByZXZpb3VzXCJdLCBbXCJJbmR1Y3Rpb24gc2NvcmVcIiwgXCJpbmR1Y3Rpb25cIl0sIFtcIkF0dGVudGlvbiB0byB0aGUgZmlyc3QgdG9rZW5cIiwgXCJmaXJzdFwiXV0pLCB7dmFsdWU6IFwiaW5kdWN0aW9uXCIsIGxhYmVsOiBcIlNjb3JlXCJ9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC05IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoic2NvcmVHcmlkID0ge1xuICBjb25zdCBTID0gRy5zY29yZXNbc2NvcmVLaW5kXSwgYyA9IDMwLCBtID0gMzQsIG4gPSAxMiwgVyA9IG0gKyBuICogYyArIDYsIEggPSBtICsgbiAqIGMgKyA2O1xuICBjb25zdCBjb2wgPSBkMy5zY2FsZVNlcXVlbnRpYWwoZDMuaW50ZXJwb2xhdGVCbHVlcykuZG9tYWluKFswLCAxXSk7XG4gIGNvbnN0IHN2ZyA9IGh0bC5zdmdgPHN2ZyB2aWV3Qm94PVwiMCAwICR7V30gJHtIfVwiIHN0eWxlPVwibWF4LXdpZHRoOiR7V31weDt3aWR0aDoxMDAlO2hlaWdodDphdXRvO2N1cnNvcjpwb2ludGVyXCIgZm9udC1mYW1pbHk9XCJzeXN0ZW0tdWksIHNhbnMtc2VyaWZcIiBmb250LXNpemU9XCIxMFwiPlxuICAgICR7ZDMucmFuZ2UobikubWFwKGggPT4gaHRsLnN2Z2A8dGV4dCB4PVwiJHttICsgaCAqIGMgKyBjIC8gMn1cIiB5PVwiJHttIC0gOH1cIiB0ZXh0LWFuY2hvcj1cIm1pZGRsZVwiIGZpbGw9XCJjdXJyZW50Q29sb3JcIj4ke2h9PC90ZXh0PmApfVxuICAgICR7ZDMucmFuZ2UobikubWFwKGwgPT4gaHRsLnN2Z2A8dGV4dCB4PVwiJHttIC0gOH1cIiB5PVwiJHttICsgbCAqIGMgKyBjIC8gMiArIDN9XCIgdGV4dC1hbmNob3I9XCJlbmRcIiBmaWxsPVwiY3VycmVudENvbG9yXCI+JHtsfTwvdGV4dD5gKX1cbiAgICA8dGV4dCB4PVwiJHttICsgbiAqIGMgLyAyfVwiIHk9XCIxMFwiIHRleHQtYW5jaG9yPVwibWlkZGxlXCIgZmlsbD1cImN1cnJlbnRDb2xvclwiPkhlYWQ8L3RleHQ+XG4gICAgPHRleHQgeD1cIjhcIiB5PVwiJHttICsgbiAqIGMgLyAyfVwiIHRleHQtYW5jaG9yPVwibWlkZGxlXCIgZmlsbD1cImN1cnJlbnRDb2xvclwiIHRyYW5zZm9ybT1cInJvdGF0ZSgtOTAgOCAke20gKyBuICogYyAvIDJ9KVwiPkxheWVyPC90ZXh0PlxuICAgICR7ZDMucmFuZ2UobikuZmxhdE1hcChsID0+IGQzLnJhbmdlKG4pLm1hcChoID0+IGh0bC5zdmdgPGcgZGF0YS1sPVwiJHtsfVwiIGRhdGEtaD1cIiR7aH1cIj48dGl0bGU+TGF5ZXIgJHtsfSwgaGVhZCAke2h9OiAke2ZtdChTW2xdW2hdLCAyKX08L3RpdGxlPlxuICAgICAgPHJlY3QgeD1cIiR7bSArIGggKiBjICsgMX1cIiB5PVwiJHttICsgbCAqIGMgKyAxfVwiIHdpZHRoPVwiJHtjIC0gMn1cIiBoZWlnaHQ9XCIke2MgLSAyfVwiIHJ4PVwiM1wiIGZpbGw9XCIke2NvbChTW2xdW2hdKX1cIi8+XG4gICAgICAke1NbbF1baF0gPiAwLjUgPyBodGwuc3ZnYDx0ZXh0IHg9XCIke20gKyBoICogYyArIGMgLyAyfVwiIHk9XCIke20gKyBsICogYyArIGMgLyAyICsgM31cIiB0ZXh0LWFuY2hvcj1cIm1pZGRsZVwiIGZpbGw9XCIjZmZmXCIgZm9udC1zaXplPVwiOVwiPiR7Zm10KFNbbF1baF0sIDIpfTwvdGV4dD5gIDogbnVsbH08L2c+YCkpfVxuICA8L3N2Zz5gO1xuICBzdmcuYWRkRXZlbnRMaXN0ZW5lcihcImNsaWNrXCIsIGUgPT4ge1xuICAgIGNvbnN0IGcgPSBlLnRhcmdldC5jbG9zZXN0KFwiZ1tkYXRhLWxdXCIpOyBpZiAoIWcpIHJldHVybjtcbiAgICBjb25zdCBsID0gK2cuZGF0YXNldC5sLCBoID0gK2cuZGF0YXNldC5oLCBmID0gdmlld29mIGxoO1xuICAgIGNvbnN0IHIgPSBmLnF1ZXJ5U2VsZWN0b3JBbGwoXCJpbnB1dFt0eXBlPXJhbmdlXVwiKSwgbmIgPSBmLnF1ZXJ5U2VsZWN0b3JBbGwoXCJpbnB1dFt0eXBlPW51bWJlcl1cIik7XG4gICAgclswXS52YWx1ZSA9IG5iWzBdLnZhbHVlID0gbDsgclsxXS52YWx1ZSA9IG5iWzFdLnZhbHVlID0gaDtcbiAgICByWzBdLmRpc3BhdGNoRXZlbnQobmV3IEV2ZW50KFwiaW5wdXRcIiwge2J1YmJsZXM6IHRydWV9KSk7IHJbMV0uZGlzcGF0Y2hFdmVudChuZXcgRXZlbnQoXCJpbnB1dFwiLCB7YnViYmxlczogdHJ1ZX0pKTtcbiAgfSk7XG4gIHJldHVybiBodGwuaHRtbGA8ZGl2IGNsYXNzPVwidGYtcGFuZWxcIj48aDQ+JHtzY29yZUtpbmQgPT09IFwicHJldmlvdXNcIiA/IFwiUHJldmlvdXMtdG9rZW4gc2NvcmVcIiA6IHNjb3JlS2luZCA9PT0gXCJpbmR1Y3Rpb25cIiA/IFwiSW5kdWN0aW9uIHNjb3JlXCIgOiBcIkF0dGVudGlvbiB0byB0aGUgZmlyc3QgdG9rZW5cIn0sIGFsbCAxNDQgaGVhZHMgKGRhcmtlciBpcyBoaWdoZXIpPC9oND4ke3N2Z308L2Rpdj5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xMCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InRvcEhlYWRzID0ge1xuICBjb25zdCB0b3AgPSBrID0+IEcuc2NvcmVzW2tdLmZsYXRNYXAoKHIsIGwpID0+IHIubWFwKCh2LCBoKSA9PiAoe2wsIGgsIHZ9KSkpLnNvcnQoKGEsIGIpID0+IGIudiAtIGEudikuc2xpY2UoMCwgNSk7XG4gIGNvbnN0IGZtdEggPSBhcnIgPT4gYXJyLm1hcChkID0+IGAke2QubH0uJHtkLmh9ICgke2ZtdChkLnYsIDIpfSlgKS5qb2luKFwiLCBcIik7XG4gIHJldHVybiBtZGBXcml0dGVuIGFzICpsYXllci5oZWFkKiwgdGhlIHN0cm9uZ2VzdCBwcmV2aW91cy10b2tlbiBoZWFkcyBhcmUgJHtmbXRIKHRvcChcInByZXZpb3VzXCIpLnNsaWNlKDAsIDMpKX0sIGFuZCB0aGUgc3Ryb25nZXN0IGluZHVjdGlvbiBoZWFkcyAke2ZtdEgodG9wKFwiaW5kdWN0aW9uXCIpKX0uIEhlYWQgNC4xMSBhdHRlbmRzIHRvIHRoZSBwcmV2aW91cyB0b2tlbiBhbG1vc3Qgd2l0aG91dCBleGNlcHRpb24uYDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTEiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2YgbGVuc0V4ID0gSW5wdXRzLnNlbGVjdChHLmV4YW1wbGVzLmZpbHRlcihlID0+IGUuVCA8IDMwKS5tYXAoZSA9PiBlLm5hbWUpLCB7bGFiZWw6IFwiSW5wdXRcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEyIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibGVuc1RhYmxlID0ge1xuICBjb25zdCBlID0gRy5leGFtcGxlcy5maW5kKHggPT4geC5uYW1lID09PSBsZW5zRXgpO1xuICByZXR1cm4gaHRsLmh0bWxgPGRpdiBjbGFzcz1cInRmLXNjcm9sbFwiPjx0YWJsZSBjbGFzcz1cInRmLWxlbnNcIj48dGhlYWQ+PHRyPjx0aD5hZnRlcjwvdGg+JHtlLnRva2Vucy5tYXAodCA9PiBodGwuaHRtbGA8dGg+JHtzaG93KHQpfTwvdGg+YCl9PC90cj48L3RoZWFkPjx0Ym9keT5cbiAgICAke2UubGVucy5tYXAoKHJvdywgbCkgPT4gaHRsLmh0bWxgPHRyPjx0aD4ke2wgPT09IDAgPyBcImVtYmVkXCIgOiBcImxheWVyIFwiICsgKGwgLSAxKX08L3RoPiR7cm93Lm1hcCgoW3QsIHAsIHBmXSkgPT4gaHRsLmh0bWxgPHRkIHN0eWxlPVwiYmFja2dyb3VuZDpyZ2JhKDQyLDE1NywxNDMsJHtwZn0pXCIgdGl0bGU9XCJ0b3AgJHtmbXQoMTAwICogcCl9JSwgZmluYWwgYW5zd2VyICR7Zm10KDEwMCAqIHBmKX0lXCI+JHtzaG93KHQpfTwvdGQ+YCl9PC90cj5gKS5yZXZlcnNlKCl9XG4gIDwvdGJvZHk+PC90YWJsZT48L2Rpdj5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBub3JtRXggPSBJbnB1dHMuc2VsZWN0KEcuZXhhbXBsZXMubWFwKGUgPT4gZS5uYW1lKSwge2xhYmVsOiBcIklucHV0XCJ9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xNCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Im5vcm1QbG90ID0ge1xuICBjb25zdCBlID0gRy5leGFtcGxlcy5maW5kKHggPT4geC5uYW1lID09PSBub3JtRXgpLCBwdHMgPSBbXTtcbiAgZS5ub3Jtcy5mb3JFYWNoKChyLCBsKSA9PiByLmZvckVhY2goKHYsIHQpID0+IHsgaWYgKHQgPiAwKSBwdHMucHVzaCh7bCwgdiwga2luZDogXCJSZXNpZHVhbCBzdHJlYW0g4oCWeOKAllwifSk7IH0pKTtcbiAgZS5hdHRuX25vcm0uZm9yRWFjaCgociwgbCkgPT4gci5mb3JFYWNoKCh2LCB0KSA9PiB7IGlmICh0ID4gMCkgcHRzLnB1c2goe2w6IGwgKyAwLjUsIHYsIGtpbmQ6IFwiQXR0ZW50aW9uIG91dHB1dFwifSk7IH0pKTtcbiAgZS5tbHBfbm9ybS5mb3JFYWNoKChyLCBsKSA9PiByLmZvckVhY2goKHYsIHQpID0+IHsgaWYgKHQgPiAwKSBwdHMucHVzaCh7bDogbCArIDAuNzUsIHYsIGtpbmQ6IFwiRmVlZC1mb3J3YXJkIG91dHB1dFwifSk7IH0pKTtcbiAgY29uc3QgbWVkID0gZDMucm9sbHVwcyhwdHMsIHYgPT4gZDMubWVkaWFuKHYsIGQgPT4gZC52KSwgZCA9PiBkLmtpbmQsIGQgPT4gZC5sKS5mbGF0TWFwKChbaywgYV0pID0+IGEubWFwKChbbCwgdl0pID0+ICh7aywgbCwgdn0pKSk7XG4gIHJldHVybiBQbG90LnBsb3Qoe3dpZHRoOiBNYXRoLm1pbih3aWR0aCwgNjgwKSwgaGVpZ2h0OiAzMDAsIG1hcmdpbkxlZnQ6IDU1LCBncmlkOiB0cnVlLFxuICAgIHg6IHtsYWJlbDogXCJMYXllclwifSwgeToge3R5cGU6IFwibG9nXCIsIGxhYmVsOiBcIkxlbmd0aCAobWVkaWFuIG92ZXIgcG9zaXRpb25zKVwifSwgY29sb3I6IHtsZWdlbmQ6IHRydWV9LFxuICAgIG1hcmtzOiBbUGxvdC5saW5lKG1lZCwge3g6IFwibFwiLCB5OiBcInZcIiwgc3Ryb2tlOiBcImtcIiwgc3Ryb2tlV2lkdGg6IDJ9KSwgUGxvdC5kb3QobWVkLCB7eDogXCJsXCIsIHk6IFwidlwiLCBmaWxsOiBcImtcIiwgcjogMi41fSldfSk7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE1IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibm9ybVRleHQgPSB7XG4gIGNvbnN0IGUgPSBHLmV4YW1wbGVzLmZpbmQoeCA9PiB4Lm5hbWUgPT09IFwiSW5kaXJlY3Qgb2JqZWN0XCIpO1xuICBjb25zdCBtID0gbCA9PiBkMy5tZWRpYW4oZS5ub3Jtc1tsXS5zbGljZSgxKSk7XG4gIHJldHVybiBtZGBGb3IgdGhlIGluZGlyZWN0LW9iamVjdCBzZW50ZW5jZSB0aGUgbWVkaWFuIGxlbmd0aCBpcyAke2ZtdChtKDApLCAxKX0gc3RyYWlnaHQgZnJvbSB0aGUgZW1iZWRkaW5nLCAke2ZtdChtKDEpLCAwKX0gYWZ0ZXIgdGhlIGZpcnN0IGJsb2NrLCBhbmQgJHtmbXQobSgxMiksIDApfSBhZnRlciB0aGUgbGFzdC4gVGhlIGp1bXAgaW4gdGhlIGZpcnN0IGJsb2NrIGlzIGEga25vd24gcXVpcmsgb2YgR1BULTI6IGJvdGggaXRzIGF0dGVudGlvbiBhbmQgaXRzIGZlZWQtZm9yd2FyZCBsYXllciB3cml0ZSBsYXJnZSB2ZWN0b3JzIGF0IGV2ZXJ5IHBvc2l0aW9uIChtZWRpYW4gbGVuZ3RocyAke2ZtdChkMy5tZWRpYW4oZS5hdHRuX25vcm1bMF0uc2xpY2UoMSkpLCAwKX0gYW5kICR7Zm10KGQzLm1lZGlhbihlLm1scF9ub3JtWzBdLnNsaWNlKDEpKSwgMCl9LCBhZ2FpbnN0IGFib3V0IDEwIGluIHRoZSBuZXh0IGJsb2NrKSwgYW5kIGludGVycHJldGFiaWxpdHkgd29yayB0cmVhdHMgdGhhdCBmaXJzdCBmZWVkLWZvcndhcmQgbGF5ZXIgcm91Z2hseSBhcyBhbiBleHRlbnNpb24gb2YgdGhlIGVtYmVkZGluZyBvZiB0aGUgY3VycmVudCB0b2tlbi4gVGhlIHN0ZWFkeSBncm93dGggYWZ0ZXIgdGhhdCBpcyB3aHkgZXZlcnkgc3VibGF5ZXIgcmVhZHMgdGhlIHN0cmVhbSB0aHJvdWdoIGEgTGF5ZXJOb3JtIChQcmUtTE4pOiB3aXRob3V0IGl0LCBhIGxheWVyIG5lYXIgdGhlIHRvcCB3b3VsZCBzZWUgaW5wdXRzIGVpZ2h0IHRpbWVzIGxhcmdlciB0aGFuIG9uZSBuZWFyIHRoZSBib3R0b20sIGFuZCB0aGUgZmluYWwgbGF5ZXIncyBpbnB1dCBpcyBhIGh1bmRyZWQgdGltZXMgdGhlIHNpemUgb2YgdGhlIGVtYmVkZGluZy5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdleE5hbWUnKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnbGgnKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnc2NvcmVLaW5kJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2xlbnNFeCcpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdub3JtRXgnKSJ9XX0=
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../ai/transformer-part-2-inside-gpt-2";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

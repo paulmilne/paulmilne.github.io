@@ -1,0 +1,642 @@
+[
+{
+"name": "Transformer",
+"date": "2017-06",
+"group": "Model families",
+"what": "Encoder–decoder built only from attention and feed-forward layers.",
+"used": "Every model below",
+"arxiv": "1706.03762"
+},
+{
+"name": "GPT-1",
+"date": "2018-06",
+"group": "Model families",
+"what": "Decoder-only transformer pre-trained on books, then fine-tuned; 12 layers, d = 768.",
+"used": "GPT series",
+"arxiv": ""
+},
+{
+"name": "BERT",
+"date": "2018-10",
+"group": "Model families",
+"what": "Encoder-only, bidirectional, pre-trained by masked-token prediction.",
+"used": "Search, classification, embedding models",
+"arxiv": "1810.04805"
+},
+{
+"name": "GPT-2",
+"date": "2019-02",
+"group": "Model families",
+"what": "Decoder-only at 1.5B parameters; LayerNorm moved to the input of each sublayer (Pre-LN) plus a final LayerNorm.",
+"used": "Almost all later LLMs (Pre-LN)",
+"arxiv": ""
+},
+{
+"name": "T5",
+"date": "2019-10",
+"group": "Model families",
+"what": "Systematic comparison of encoder–decoder, decoder-only and prefix LM; encoder–decoder with denoising won at the time.",
+"used": "Translation, speech",
+"arxiv": "1910.10683"
+},
+{
+"name": "GPT-3",
+"date": "2020-05",
+"group": "Model families",
+"what": "175B parameters (96 layers, d = 12,288, 96 heads); alternates dense and banded sparse attention.",
+"used": "—",
+"arxiv": "2005.14165"
+},
+{
+"name": "Relative positions",
+"date": "2018-03",
+"group": "Position",
+"what": "Learned embeddings of clipped relative distance added to keys and values (Shaw, Uszkoreit, Vaswani).",
+"used": "Transformer-XL, T5 (variants)",
+"arxiv": "1803.02155"
+},
+{
+"name": "Transformer-XL",
+"date": "2019-01",
+"group": "Position",
+"what": "Segment-level recurrence with relative sinusoidal encoding.",
+"used": "—",
+"arxiv": "1901.02860"
+},
+{
+"name": "T5 relative bias",
+"date": "2019-10",
+"group": "Position",
+"what": "A learned scalar per head added to each score, by log-spaced distance bucket (32 buckets up to 128).",
+"used": "T5 family",
+"arxiv": "1910.10683"
+},
+{
+"name": "RoPE",
+"date": "2021-04",
+"group": "Position",
+"what": "Rotate query and key pairs by mθᵢ, θᵢ = 10000^(−2i/d); scores depend only on relative position.",
+"used": "PaLM, LLaMA and nearly every decoder LLM since",
+"arxiv": "2104.09864"
+},
+{
+"name": "ALiBi",
+"date": "2021-08",
+"group": "Position",
+"what": "No position embeddings; add −m·(i−j) to scores with fixed per-head slopes m = 2^(−8k/h).",
+"used": "BLOOM, MPT",
+"arxiv": "2108.12409"
+},
+{
+"name": "NoPE",
+"date": "2023-05",
+"group": "Position",
+"what": "Decoder-only models with no position encoding at all generalise to longer inputs better on some tasks.",
+"used": "Every 4th layer of Llama 4; Granite 4.0-H",
+"arxiv": "2305.19466"
+},
+{
+"name": "Position interpolation",
+"date": "2023-06",
+"group": "Position",
+"what": "Squeeze positions by L/L′ to extend RoPE context; LLaMA to 32k in ~1,000 steps.",
+"used": "Context extension",
+"arxiv": "2306.15595"
+},
+{
+"name": "YaRN",
+"date": "2023-08",
+"group": "Position",
+"what": "Interpolate only the low-frequency RoPE dimensions and add an attention temperature 0.1 ln s + 1.",
+"used": "DeepSeek-V3, gpt-oss",
+"arxiv": "2309.00071"
+},
+{
+"name": "LongRoPE",
+"date": "2024-02",
+"group": "Position",
+"what": "Search for non-uniform per-dimension RoPE rescaling; context beyond 2M tokens.",
+"used": "Phi-3 long-context models",
+"arxiv": "2402.13753"
+},
+{
+"name": "RMSNorm",
+"date": "2019-10",
+"group": "Normalisation and stability",
+"what": "LayerNorm without mean-centring: x / RMS(x) · g.",
+"used": "LLaMA, Llama 3, Mistral, DeepSeek-V3, Qwen3, gpt-oss, Gemma",
+"arxiv": "1910.07467"
+},
+{
+"name": "Pre-LN analysis",
+"date": "2020-02",
+"group": "Normalisation and stability",
+"what": "Shows Post-LN has large gradients near the output at initialisation, hence warm-up; Pre-LN does not.",
+"used": "Explains the GPT-2 change",
+"arxiv": "2002.04745"
+},
+{
+"name": "QK-norm",
+"date": "2020-10",
+"group": "Normalisation and stability",
+"what": "Normalise queries and keys before the dot product to bound attention logits.",
+"used": "ViT-22B, OLMo 2, Gemma 3 and 4, MiniMax-M2",
+"arxiv": "2010.04245"
+},
+{
+"name": "DeepNorm",
+"date": "2022-03",
+"group": "Normalisation and stability",
+"what": "Up-weight the residual (α·x) and down-scale initialisation to train 1,000-layer transformers.",
+"used": "—",
+"arxiv": "2203.00555"
+},
+{
+"name": "μP",
+"date": "2022-03",
+"group": "Normalisation and stability",
+"what": "A parametrisation under which the best hyperparameters transfer from small to large widths.",
+"used": "Hyperparameter transfer at scale",
+"arxiv": "2203.03466"
+},
+{
+"name": "z-loss",
+"date": "2022-04",
+"group": "Normalisation and stability",
+"what": "Penalty 10⁻⁴·log²Z keeps the softmax normaliser near 1 (PaLM).",
+"used": "PaLM, OLMo 2",
+"arxiv": "2204.02311"
+},
+{
+"name": "Peri-LN",
+"date": "2025-02",
+"group": "Normalisation and stability",
+"what": "Normalise both the input and the output of each sublayer; analyses the 'sandwich' norm open models had adopted.",
+"used": "Gemma 3 and 4, OLMo 2 (output norm)",
+"arxiv": "2502.02732"
+},
+{
+"name": "DyT",
+"date": "2025-03",
+"group": "Normalisation and stability",
+"what": "Replace normalisation layers with tanh(αx): transformers without normalisation.",
+"used": "Research",
+"arxiv": "2503.10622"
+},
+{
+"name": "QK-Clip / MuonClip",
+"date": "2025-07",
+"group": "Normalisation and stability",
+"what": "Rescale Wq and Wk when a head's maximum logit exceeds a threshold; trained Kimi K2 on 15.5T tokens with no loss spikes.",
+"used": "Kimi K2",
+"arxiv": "2507.20534"
+},
+{
+"name": "mHC",
+"date": "2025-12",
+"group": "Normalisation and stability",
+"what": "Widen the residual stream to n parallel copies mixed by a doubly stochastic matrix (Sinkhorn–Knopp), keeping the identity path.",
+"used": "DeepSeek-V4",
+"arxiv": "2512.24880"
+},
+{
+"name": "GELU",
+"date": "2016-06",
+"group": "Feed-forward",
+"what": "x·Φ(x): a smooth ReLU.",
+"used": "GPT-1, GPT-2, BERT",
+"arxiv": "1606.08415"
+},
+{
+"name": "SwiGLU",
+"date": "2020-02",
+"group": "Feed-forward",
+"what": "Gated feed-forward (Swish(xW) ⊙ xV)W₂ with d_ff cut by ⅔ to keep parameters equal.",
+"used": "PaLM, LLaMA and nearly every LLM since",
+"arxiv": "2002.05202"
+},
+{
+"name": "Sparse Transformer",
+"date": "2019-04",
+"group": "Efficient attention",
+"what": "Factorised strided and fixed sparse attention patterns.",
+"used": "GPT-3's banded layers",
+"arxiv": "1904.10509"
+},
+{
+"name": "Reformer",
+"date": "2020-01",
+"group": "Efficient attention",
+"what": "Locality-sensitive hashing to attend only within hash buckets; reversible layers.",
+"used": "—",
+"arxiv": "2001.04451"
+},
+{
+"name": "Longformer",
+"date": "2020-04",
+"group": "Efficient attention",
+"what": "Sliding window plus a few global tokens.",
+"used": "Long-document encoders",
+"arxiv": "2004.05150"
+},
+{
+"name": "Linformer",
+"date": "2020-06",
+"group": "Efficient attention",
+"what": "Project keys and values to a fixed length k along the sequence: O(Tk).",
+"used": "—",
+"arxiv": "2006.04768"
+},
+{
+"name": "Linear attention",
+"date": "2020-06",
+"group": "Efficient attention",
+"what": "Replace softmax with φ(q)·φ(k); causal attention becomes an RNN with a d×d state.",
+"used": "Basis of DeltaNet, KDA",
+"arxiv": "2006.16236"
+},
+{
+"name": "BigBird",
+"date": "2020-07",
+"group": "Efficient attention",
+"what": "Window, global and random attention; provably universal.",
+"used": "—",
+"arxiv": "2007.14062"
+},
+{
+"name": "Performer",
+"date": "2020-09",
+"group": "Efficient attention",
+"what": "Random features that approximate the softmax kernel (FAVOR+).",
+"used": "—",
+"arxiv": "2009.14794"
+},
+{
+"name": "FlashAttention",
+"date": "2022-05",
+"group": "Efficient attention",
+"what": "Exact attention computed in tiles in fast on-chip memory; never stores the T×T matrix.",
+"used": "Universal; v2 2023, v3 2024 (Hopper), v4 2026 (Blackwell)",
+"arxiv": "2205.14135"
+},
+{
+"name": "Sliding window (Mistral 7B)",
+"date": "2023-10",
+"group": "Efficient attention",
+"what": "Window W = 4,096 per layer; stacked layers reach far further; rolling KV buffer.",
+"used": "Mistral; local layers of Gemma 3/4 and gpt-oss",
+"arxiv": "2310.06825"
+},
+{
+"name": "Gated DeltaNet",
+"date": "2024-12",
+"group": "Efficient attention",
+"what": "Linear attention whose state is updated by a gated delta rule.",
+"used": "Qwen3-Next, Qwen3.5 (3 of every 4 layers)",
+"arxiv": "2412.06464"
+},
+{
+"name": "Native Sparse Attention",
+"date": "2025-02",
+"group": "Efficient attention",
+"what": "Trainable sparse attention: compressed, selected and sliding branches, built for GPU kernels.",
+"used": "DeepSeek research",
+"arxiv": "2502.11089"
+},
+{
+"name": "MoBA",
+"date": "2025-02",
+"group": "Efficient attention",
+"what": "Mixture-of-experts-style routing of each query to the top-k blocks of keys.",
+"used": "Kimi",
+"arxiv": "2502.13189"
+},
+{
+"name": "DeepSeek Sparse Attention",
+"date": "2025-09",
+"group": "Efficient attention",
+"what": "A cheap FP8 'lightning indexer' scores past tokens; each query attends to only the top 2,048.",
+"used": "DeepSeek-V3.2",
+"arxiv": "2512.02556"
+},
+{
+"name": "Kimi Linear",
+"date": "2025-10",
+"group": "Efficient attention",
+"what": "Kimi Delta Attention layers with one MLA layer in four; up to 75% less KV cache at 1M tokens.",
+"used": "Kimi Linear 48B",
+"arxiv": "2510.26692"
+},
+{
+"name": "MQA",
+"date": "2019-11",
+"group": "KV cache and memory",
+"what": "All query heads share one key and one value head.",
+"used": "PaLM",
+"arxiv": "1911.02150"
+},
+{
+"name": "PagedAttention",
+"date": "2023-09",
+"group": "KV cache and memory",
+"what": "Store the KV cache in fixed-size pages, like virtual memory, so batches share memory without fragmentation.",
+"used": "vLLM and most serving systems",
+"arxiv": "2309.06180"
+},
+{
+"name": "Attention sinks",
+"date": "2023-09",
+"group": "KV cache and memory",
+"what": "Keeping the first tokens' keys and values lets window attention run on endless streams.",
+"used": "Streaming inference; learned sinks in gpt-oss",
+"arxiv": "2309.17453"
+},
+{
+"name": "Ring attention",
+"date": "2023-10",
+"group": "KV cache and memory",
+"what": "Split the sequence across devices in a ring, passing key–value blocks round while computing.",
+"used": "Million-token training",
+"arxiv": "2310.01889"
+},
+{
+"name": "GQA",
+"date": "2023-05",
+"group": "KV cache and memory",
+"what": "Groups of query heads share a key–value head: between MHA and MQA.",
+"used": "Llama 2 70B, Llama 3, Mistral, Qwen3, gpt-oss, Gemma",
+"arxiv": "2305.13245"
+},
+{
+"name": "MLA",
+"date": "2024-05",
+"group": "KV cache and memory",
+"what": "Cache one 512-dim latent (plus a 64-dim RoPE key) per token instead of per-head keys and values.",
+"used": "DeepSeek-V2/V3, Kimi K2",
+"arxiv": "2405.04434"
+},
+{
+"name": "KV quantisation (KIVI)",
+"date": "2024-02",
+"group": "KV cache and memory",
+"what": "Store keys and values in 2 bits.",
+"used": "FP4 KV cache in DeepSeek-V4.1-Flash",
+"arxiv": "2402.02750"
+},
+{
+"name": "Sparsely-gated MoE",
+"date": "2017-01",
+"group": "Mixture of experts",
+"what": "Noisy top-k gating over many expert networks between LSTM layers.",
+"used": "Origin of LLM MoE",
+"arxiv": "1701.06538"
+},
+{
+"name": "GShard",
+"date": "2020-06",
+"group": "Mixture of experts",
+"what": "Mixture-of-experts transformer layers sharded across thousands of devices.",
+"used": "—",
+"arxiv": "2006.16668"
+},
+{
+"name": "Switch Transformer",
+"date": "2021-01",
+"group": "Mixture of experts",
+"what": "Top-1 routing, a capacity factor and a load-balancing loss α·N·Σ fᵢPᵢ.",
+"used": "—",
+"arxiv": "2101.03961"
+},
+{
+"name": "Mixtral 8x7B",
+"date": "2023-12",
+"group": "Mixture of experts",
+"what": "8 SwiGLU experts, top-2 routing: 47B parameters, 13B active per token.",
+"used": "—",
+"arxiv": "2401.04088"
+},
+{
+"name": "DeepSeekMoE",
+"date": "2024-01",
+"group": "Mixture of experts",
+"what": "Many fine-grained experts plus always-on shared experts.",
+"used": "DeepSeek-V2/V3/V4, Kimi K2, Qwen3-Next",
+"arxiv": "2401.06066"
+},
+{
+"name": "Aux-loss-free balancing",
+"date": "2024-08",
+"group": "Mixture of experts",
+"what": "A per-expert bias added to routing scores before top-k, adjusted by load: balance without a loss term.",
+"used": "DeepSeek-V3",
+"arxiv": "2408.15664"
+},
+{
+"name": "Engram",
+"date": "2026-01",
+"group": "Mixture of experts",
+"what": "Hashed n-gram memory lookup as a second axis of sparsity alongside experts.",
+"used": "DeepSeek research",
+"arxiv": "2601.07372"
+},
+{
+"name": "Kaplan scaling laws",
+"date": "2020-01",
+"group": "Scaling",
+"what": "Loss falls as a power law in parameters, data and compute.",
+"used": "—",
+"arxiv": "2001.08361"
+},
+{
+"name": "Chinchilla",
+"date": "2022-03",
+"group": "Scaling",
+"what": "Scale parameters and data equally; about 20 tokens per parameter at the optimum.",
+"used": "—",
+"arxiv": "2203.15556"
+},
+{
+"name": "Beyond Chinchilla",
+"date": "2023-12",
+"group": "Scaling",
+"what": "Counting inference cost, train smaller models on far more tokens.",
+"used": "Llama 3 (15.6T tokens)",
+"arxiv": "2401.00448"
+},
+{
+"name": "Speculative decoding",
+"date": "2022-11",
+"group": "Decoding",
+"what": "A small model drafts several tokens; the large model checks them in one pass; rejection sampling keeps the output exact.",
+"used": "Most serving stacks",
+"arxiv": "2211.17192"
+},
+{
+"name": "Medusa",
+"date": "2024-01",
+"group": "Decoding",
+"what": "Extra prediction heads on the model itself draft the next few tokens.",
+"used": "—",
+"arxiv": "2401.10774"
+},
+{
+"name": "EAGLE",
+"date": "2024-01",
+"group": "Decoding",
+"what": "Draft at the level of hidden features rather than tokens.",
+"used": "—",
+"arxiv": "2401.15077"
+},
+{
+"name": "Multi-token prediction",
+"date": "2024-04",
+"group": "Decoding",
+"what": "Train extra heads to predict several future tokens; better code models and self-speculation.",
+"used": "DeepSeek-V3/V4, Qwen3-Next, Gemma 4",
+"arxiv": "2404.19737"
+},
+{
+"name": "S4",
+"date": "2021-10",
+"group": "Alternatives and hybrids",
+"what": "Structured state-space model for long sequences.",
+"used": "—",
+"arxiv": "2111.00396"
+},
+{
+"name": "RWKV",
+"date": "2023-05",
+"group": "Alternatives and hybrids",
+"what": "An RNN with transformer-style parallel training.",
+"used": "—",
+"arxiv": "2305.13048"
+},
+{
+"name": "RetNet",
+"date": "2023-07",
+"group": "Alternatives and hybrids",
+"what": "Retention: parallel, recurrent and chunked forms of one decaying attention.",
+"used": "—",
+"arxiv": "2307.08621"
+},
+{
+"name": "Mamba",
+"date": "2023-12",
+"group": "Alternatives and hybrids",
+"what": "Selective state-space model: input-dependent state transitions, linear time.",
+"used": "Jamba, Nemotron-H, Granite 4.0-H",
+"arxiv": "2312.00752"
+},
+{
+"name": "Griffin",
+"date": "2024-02",
+"group": "Alternatives and hybrids",
+"what": "Gated linear recurrence mixed with local attention.",
+"used": "RecurrentGemma",
+"arxiv": "2402.19427"
+},
+{
+"name": "Jamba",
+"date": "2024-03",
+"group": "Alternatives and hybrids",
+"what": "One attention layer in eight, the rest Mamba, with mixture of experts.",
+"used": "—",
+"arxiv": "2403.19887"
+},
+{
+"name": "Mamba-2 / SSD",
+"date": "2024-05",
+"group": "Alternatives and hybrids",
+"what": "State-space duality: selective SSMs as a form of masked linear attention.",
+"used": "Nemotron-H, Granite 4.0-H",
+"arxiv": "2405.21060"
+},
+{
+"name": "Granite 4.0-H",
+"date": "2025-10",
+"group": "Alternatives and hybrids",
+"what": "Nine Mamba-2 layers to one attention layer, no position encoding.",
+"used": "IBM Granite 4.0",
+"arxiv": ""
+},
+{
+"name": "ViT",
+"date": "2020-10",
+"group": "Beyond text",
+"what": "Images as sequences of 16×16 patches through a plain transformer encoder.",
+"used": "Vision encoders",
+"arxiv": "2010.11929"
+},
+{
+"name": "CLIP",
+"date": "2021-02",
+"group": "Beyond text",
+"what": "Contrastive image–text pre-training of two encoders.",
+"used": "Multimodal models",
+"arxiv": "2103.00020"
+},
+{
+"name": "Flamingo",
+"date": "2022-04",
+"group": "Beyond text",
+"what": "Perceiver resampler and gated cross-attention feed images into a frozen language model.",
+"used": "—",
+"arxiv": "2204.14198"
+},
+{
+"name": "LLaDA",
+"date": "2025-02",
+"group": "Beyond text",
+"what": "A masked-diffusion language model trained from scratch.",
+"used": "—",
+"arxiv": "2502.09992"
+},
+{
+"name": "Universal Transformer",
+"date": "2018-07",
+"group": "Other",
+"what": "One layer applied repeatedly, with adaptive depth.",
+"used": "—",
+"arxiv": "1807.03819"
+},
+{
+"name": "Parallel attention and FFN",
+"date": "2022-04",
+"group": "Other",
+"what": "x + Attn(LN(x)) + MLP(LN(x)): about 15% faster training (PaLM).",
+"used": "PaLM, GPT-J",
+"arxiv": "2204.02311"
+},
+{
+"name": "Mixture-of-Depths",
+"date": "2024-04",
+"group": "Other",
+"what": "Route only the top-k tokens through each block.",
+"used": "—",
+"arxiv": "2404.02258"
+},
+{
+"name": "Differential Transformer",
+"date": "2024-10",
+"group": "Other",
+"what": "Attention as the difference of two softmax maps, cancelling noise.",
+"used": "—",
+"arxiv": "2410.05258"
+},
+{
+"name": "Byte Latent Transformer",
+"date": "2024-12",
+"group": "Other",
+"what": "No tokeniser: bytes grouped into patches by the entropy of the next byte.",
+"used": "—",
+"arxiv": "2412.09871"
+},
+{
+"name": "Gated attention",
+"date": "2025-05",
+"group": "Other",
+"what": "A sigmoid gate on each head's output; removes attention sinks.",
+"used": "Qwen3-Next, Qwen3.5",
+"arxiv": "2505.06708"
+}
+]

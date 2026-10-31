@@ -39,7 +39,10 @@
     "listing": "/ai/index.html",
     "items": [
       "/ai/embeddings-part-1-words-to-vectors/index.html",
-      "/ai/embeddings-part-2-search-and-retrieval/index.html"
+      "/ai/embeddings-part-2-search-and-retrieval/index.html",
+      "/ai/transformer-part-1-operation-by-operation/index.html",
+      "/ai/transformer-part-2-inside-gpt-2/index.html",
+      "/ai/transformer-part-3-advances/index.html"
     ]
   },
   {

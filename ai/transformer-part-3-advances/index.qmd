@@ -1,0 +1,347 @@
+---
+title: "The Transformer, Part 3: Since Attention Is All You Need"
+subtitle: "Nine years of changes to the architecture, grouped by the problem each one solves, with the mathematics of the important ones and what a 2026 model looks like"
+description: "The architectural advances since 2017: model families, Pre-LN, RMSNorm and QK-norm; SwiGLU; RoPE, ALiBi and context extension; sparse, linear and hybrid attention; MQA, GQA, MLA and the KV cache; FlashAttention; mixture of experts; scaling laws; speculative decoding and multi-token prediction; state-space models; and the 2025–26 designs. Interactive timeline and cost charts."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, transformers, language-models, history]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.tf-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.tf-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.tf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.tf-grid form { flex-wrap: wrap !important; }
+.tf-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.tf-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.tf-card { border-left: 4px solid var(--c, #888); padding: .4rem .7rem; margin: .4rem 0; background: rgba(128,128,128,.06); border-radius: 4px; }
+.tf-card .n { font-weight: 650; } .tf-card .d { font-size: .8rem; opacity: .7; }
+.tf-tl svg { width: 100%; height: auto; display: block; }
+.tf-tl circle { cursor: pointer; }
+table.tf-t td.num, table.tf-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tf-scroll { overflow-x: auto; max-width: 100%; }
+.tf-panel .tf-scroll { width: 100%; }
+.cell-output-display, div.observablehq { max-width: 100%; min-width: 0; overflow-x: auto; }
+.tf-scroll table { min-width: 620px; }
+.tf-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+bytesH = (x) => { const a = Math.abs(x); return a >= 2 ** 40 ? fmt(x / 2 ** 40, 2) + " TiB" : a >= 2 ** 30 ? fmt(x / 2 ** 30, 1) + " GiB" : a >= 2 ** 20 ? fmt(x / 2 ** 20, 1) + " MiB" : a >= 2 ** 10 ? fmt(x / 2 ** 10, 1) + " KiB" : fmt(x) + " B"; }
+TL = FileAttachment("data/timeline.json").json()
+groups = ["Model families", "Normalisation and stability", "Feed-forward", "Position", "Efficient attention", "KV cache and memory", "Mixture of experts", "Scaling", "Decoding", "Alternatives and hybrids", "Beyond text", "Other"]
+gcol = Object.fromEntries(groups.map((g, i) => [g, d3.schemeTableau10.concat(["#6b7280", "#b45309"])[i]]))
+```
+
+[Part 1](../transformer-part-1-operation-by-operation/) took apart the 2017 transformer and [Part 2](../transformer-part-2-inside-gpt-2/) looked inside a trained one. This part covers what has changed since. The surprising answer is: less than you might think. A 2026 language model is still a stack of layers, each with attention and a feed-forward network, joined by residual connections, predicting the next token. But almost every component has been replaced by a better-behaved or cheaper version, and the changes compound: a model built entirely from 2017 parts would be slower to train, less stable, far more expensive to serve and limited to short inputs.
+
+The changes are grouped by the problem each one addresses. The timeline shows them all; click any point for a summary and the paper. The sections below explain the important ones with their mathematics.
+
+## Timeline
+
+```{ojs}
+viewof tlPick = {
+  const W = 760, left = 175, right = 16, top = 26, rowH = 30, H = top + groups.length * rowH + 30;
+  const x = d3.scaleTime().domain([new Date(2016, 0, 1), new Date(2026, 11, 31)]).range([left, W - right]);
+  const y = g => top + groups.indexOf(g) * rowH + rowH / 2;
+  const items = TL.map((d, i) => ({...d, i, t: new Date(d.date + "-15")}));
+  // jitter points that share a month and row
+  const seen = {}; items.forEach(d => { const k = d.group + d.date; seen[k] = (seen[k] || 0) + 1; d.j = (seen[k] - 1) * 6; });
+  const years = d3.range(2016, 2027);
+  const svg = htl.svg`<svg viewBox="0 0 ${W} ${H}" font-family="system-ui, sans-serif" font-size="11">
+    ${years.map(yr => htl.svg`<line x1="${x(new Date(yr, 0, 1))}" x2="${x(new Date(yr, 0, 1))}" y1="${top - 6}" y2="${H - 24}" stroke="rgba(128,128,128,.25)"/>
+      <text x="${x(new Date(yr, 6, 1))}" y="${H - 8}" text-anchor="middle" fill="currentColor" opacity=".7">${yr}</text>`)}
+    ${groups.map(g => htl.svg`<text x="${left - 8}" y="${y(g) + 4}" text-anchor="end" fill="${gcol[g]}" font-weight="600">${g}</text>
+      <line x1="${left}" x2="${W - right}" y1="${y(g)}" y2="${y(g)}" stroke="rgba(128,128,128,.12)"/>`)}
+    ${items.map(d => htl.svg`<circle data-i="${d.i}" cx="${x(d.t)}" cy="${y(d.group) + d.j - 3}" r="6" fill="${gcol[d.group]}" fill-opacity=".85" stroke="#fff"><title>${d.name} (${d.date})</title></circle>`)}
+  </svg>`;
+  const wrap = htl.html`<div class="tf-panel tf-tl"><h4>${TL.length} architectural changes, June 2016 to October 2026: click a point</h4>${svg}</div>`;
+  wrap.value = items.find(d => d.name === "RoPE");
+  svg.addEventListener("click", e => { const c = e.target.closest("circle[data-i]"); if (!c) return; wrap.value = items[+c.dataset.i]; wrap.dispatchEvent(new Event("input", {bubbles: true})); });
+  return wrap;
+}
+```
+
+```{ojs}
+tlCard = htl.html`<div class="tf-card" style="--c:${gcol[tlPick.group]}"><div class="n">${tlPick.name} <span class="d">· ${new Date(tlPick.date + "-15").toLocaleDateString("en-GB", {month: "long", year: "numeric"})} · ${tlPick.group}</span></div>
+  <div>${tlPick.what}</div><div class="d">Used in: ${tlPick.used}${tlPick.arxiv ? htl.html` · <a href="https://arxiv.org/abs/${tlPick.arxiv}">arXiv ${tlPick.arxiv}</a>` : ""}</div></div>`
+```
+
+## One stack, three shapes
+
+The 2017 model had an encoder for the source sentence and a decoder for the translation. Within two years the two halves had gone separate ways. **GPT** (Alec Radford and colleagues at OpenAI, 2018) kept only the decoder, with its causal mask, and trained it to predict the next token of ordinary text. **BERT** (Jacob Devlin and colleagues at Google, 2018) kept only the encoder, with no mask, and trained it to fill in hidden words; it became the standard for reading tasks, and its descendants are the embedding models of the [embeddings series](../embeddings-part-2-search-and-retrieval/). **T5** (Colin Raffel and colleagues, 2019) compared the shapes systematically and found the encoder–decoder best at the time.
+
+Scale settled the question differently. Decoder-only models are simpler, use every token of training text as a prediction target, and treat any task as continuing a prompt; GPT-3's 175 billion parameters in 2020 showed what that bought. By 2023 essentially every frontier language model was decoder-only, and everything below is about decoders unless stated.
+
+## Stability: normalisation and initialisation
+
+Training a transformer with hundreds of layers on trillions of tokens fails in ways a 6-layer model never shows: loss spikes, divergence, attention logits growing without limit. Most of the fixes are about normalisation.
+
+**Pre-LN.** GPT-2 moved the LayerNorm from after the residual addition to the start of each branch, $X \leftarrow X + F(\operatorname{LN}(X))$. Part 1 derived why this matters: the residual stream becomes an identity path from the loss to every layer. Ruibin Xiong and colleagues proved in 2020 that the original Post-LN has large gradients near the output at initialisation, which is why it needed a learning-rate warm-up; Pre-LN does not.
+
+**RMSNorm.** Biao Zhang and Rico Sennrich (2019) dropped LayerNorm's mean-centring and kept only the rescaling:
+
+$$
+\operatorname{RMSNorm}(\mathbf x) = \frac{\mathbf x}{\sqrt{\tfrac1d\sum_i x_i^2 + \epsilon}} \odot \mathbf g.
+$$
+
+It works as well and is cheaper; LLaMA, Mistral, DeepSeek, Qwen, gpt-oss and Gemma all use it.
+
+**Normalising the attention logits.** A softmax over scores $\mathbf q\cdot\mathbf k/\sqrt{d_h}$ saturates if the scores grow, and in large models they do. **QK-norm** (Alex Henry and colleagues, 2020; scaled up in Google's ViT-22B in 2023) normalises $\mathbf q$ and $\mathbf k$ before the dot product, bounding every score; Gemma 3 adopted it in place of Gemma 2's soft-capping. PaLM's **z-loss** adds $10^{-4}\log^2 Z$ to the loss, $Z$ being the softmax normaliser of the output, to stop the output logits drifting. Kimi K2's **QK-Clip** (2025) rescales $W^Q$ and $W^K$ whenever a head's largest logit passes a threshold of 100, and the team reports training on 15.5 trillion tokens with no loss spikes.
+
+**Normalising both sides.** Several 2024–25 open models normalise a sublayer's output as well as its input, $X \leftarrow X + \operatorname{Norm}(F(\operatorname{Norm}(X)))$, which keeps the residual stream from growing as it did in Part 2's GPT-2 plot; Kim and colleagues analysed this "Peri-LN" in 2025. Gemma 3 and 4 use it; OLMo 2 normalises the output only.
+
+**The residual stream itself.** DeepSeek's **manifold-constrained hyper-connections** (mHC, December 2025) widen the residual stream into $n = 4$ parallel copies, mixed between layers by a learned matrix constrained to be doubly stochastic (projected onto the Birkhoff polytope with the Sinkhorn–Knopp algorithm). A doubly stochastic mixing preserves the mean of the streams, so the identity path of Pre-LN survives. It is in DeepSeek-V4.
+
+**Hyperparameters that transfer.** Greg Yang and colleagues' μP (2022) chooses how initialisation and learning rates scale with width so that the best values found on a small model remain best on a large one: tune a 40-million-parameter proxy, train the big one once.
+
+## The feed-forward layer: gating
+
+The 2017 feed-forward layer was $\operatorname{ReLU}(XW_1)W_2$; GPT used the smoother GELU, $x\,\Phi(x)$. Noam Shazeer's *GLU Variants Improve Transformer* (2020) replaced it with a **gated** layer, two up-projections multiplied element by element:
+
+$$
+\operatorname{FFN}_{\text{SwiGLU}}(X) = \big(\operatorname{Swish}(XW) \odot XV\big)\,W_2, \qquad \operatorname{Swish}(x) = x\,\sigma(x).
+$$
+
+With three matrices instead of two, $d_{\text{ff}}$ is cut to about $\tfrac23 \cdot 4d$ to keep the parameter count unchanged. It improved every benchmark in the paper; Shazeer declined to explain why, attributing the success "as all else, to divine benevolence". PaLM and LLaMA adopted it, and almost every model since has.
+
+## Position, and making context longer
+
+**Relative over absolute.** Peter Shaw, Jakob Uszkoreit and Ashish Vaswani (2018) argued that what matters is the distance between tokens, not their absolute positions, and added learned embeddings of relative distance. T5 reduced this to one learned scalar per head per distance bucket, added to the score.
+
+**RoPE** (Jianlin Su and colleagues, 2021) won: rotate each pair of query and key coordinates by an angle proportional to position, $m\theta_i$ with $\theta_i = b^{-2i/d}$, so that the score $\mathbf q_m \cdot \mathbf k_n$ depends only on $m - n$. The derivation is in the [embeddings post](../embeddings-part-1-words-to-vectors/#where-am-i-in-the-sentence). The base $b$ was 10,000; Llama 3 raised it to 500,000 and Qwen3-Next to 10 million, to slow the rotations for long contexts.
+
+**ALiBi** (Ofir Press, Noah Smith and Mike Lewis, 2021) adds no position information to the vectors at all. It subtracts a penalty proportional to distance from each score, $s_{ij} - m_h\,(i-j)$, with a fixed slope per head from a geometric sequence ($\tfrac12, \tfrac14, \dots, \tfrac1{256}$ for eight heads), so each head has its own horizon. Trained on 1,024 tokens, a 1.3B model matched a sinusoidal model trained on 2,048 when both were tested at 2,048.
+
+**No position at all.** A causal mask already breaks the symmetry between positions (a token can count how many tokens it can see), and Amirhossein Kazemnejad and colleagues (2023) found decoder-only models with no position encoding (**NoPE**) generalised to longer inputs better than any scheme on some reasoning tasks. Llama 4 leaves RoPE out of every fourth layer; IBM's Granite 4.0-H uses none.
+
+**Extending a trained model's context.** A model trained on 4,096 tokens has never seen RoPE angles beyond $4096\,\theta_i$. **Position interpolation** (Shouyuan Chen and colleagues at Meta, 2023) rescales positions by $L/L'$ so that a longer input falls inside the trained range; LLaMA reached 32,768 tokens in about 1,000 fine-tuning steps. But squeezing positions blurs the fast-rotating dimensions that tell neighbouring tokens apart. The **NTK-aware** rule changes the base instead, $b' = b\,s^{d/(d-2)}$ for a stretch factor $s$, which leaves the fastest rotations almost untouched and stretches the slow ones. **YaRN** (Bowen Peng and colleagues, 2023) interpolates only the dimensions whose wavelength exceeds the training length, leaves the fast ones alone, ramps between them, and multiplies the logits by a temperature $\sqrt{1/t} = 0.1\ln s + 1$; it needed ten times fewer tokens than earlier methods. DeepSeek-V3 and gpt-oss ship with YaRN in their configurations: gpt-oss stretches 4,096 trained positions by 32 to 131,072.
+
+## Cheaper attention
+
+Attention costs $O(T^2)$, and every year someone proposes to cut it. Four families:
+
+**Sparse patterns.** Attend only to some pairs: fixed strided patterns (Sparse Transformer, 2019, used in GPT-3's alternate layers), a local window plus a few global tokens (Longformer, BigBird, 2020), or hashing similar tokens into buckets (Reformer, 2020). The one that lasted is the plainest, the **sliding window**: each token attends to the previous $W$. Mistral 7B (2023) used $W = 4{,}096$; since each layer can reach $W$ further back through the previous layer's outputs, 32 layers reach about 131,000 tokens. Production models now interleave window layers with full ones: Gemma 3 and 4 have five local layers (window 1,024) to one global, gpt-oss alternates a 128-token window with full attention.
+
+**Linear attention.** Angelos Katharopoulos and colleagues (2020) replaced the softmax kernel $e^{\mathbf q\cdot\mathbf k}$ with a feature map, $\phi(\mathbf q)\cdot\phi(\mathbf k)$. Then the causal output for token $t$ is
+
+$$
+\mathbf z_t = \frac{\sum_{s\le t} \big(\phi(\mathbf q_t)\cdot\phi(\mathbf k_s)\big)\,\mathbf v_s}{\sum_{s\le t}\phi(\mathbf q_t)\cdot\phi(\mathbf k_s)}
+= \frac{\phi(\mathbf q_t)\,S_t}{\phi(\mathbf q_t)\cdot\mathbf u_t}, \qquad S_t = S_{t-1} + \phi(\mathbf k_t)^\top \mathbf v_t,\;\; \mathbf u_t = \mathbf u_{t-1} + \phi(\mathbf k_t),
+$$
+
+because matrix multiplication is associative: $(\phi(Q)\phi(K)^\top)V = \phi(Q)(\phi(K)^\top V)$. The state $S_t$ is a fixed $d\times d$ matrix, so the transformer becomes a recurrent network with constant memory per step and linear total cost. Plain linear attention is weaker than softmax, because a fixed-size state that only accumulates cannot forget. The **delta rule** fixes that: instead of adding $\mathbf k_t^\top\mathbf v_t$, the update first removes what the state currently returns for key $\mathbf k_t$,
+
+$$
+S_t = S_{t-1} + \beta_t\,\mathbf k_t^\top\big(\mathbf v_t - \mathbf k_t S_{t-1}\big),
+$$
+
+one step of gradient descent on $\|\mathbf k_t S - \mathbf v_t\|^2$, and **Gated DeltaNet** (Songlin Yang, Jan Kautz and Ali Hatamizadeh, 2024) adds a learned decay gate in front of $S_{t-1}$. That is what the 2025–26 hybrids use: Qwen3-Next and Qwen3.5 make three of every four layers Gated DeltaNet and the fourth full (gated) attention, and Kimi Linear uses its own delta-rule variant with one MLA layer in four.
+
+**Learned sparsity.** Rather than fixing the pattern, let the model choose which past tokens matter. DeepSeek's **sparse attention** (DSA, in V3.2, 2025) runs a small, low-precision *lightning indexer* over all past tokens, $I_{t,s} = \sum_j w_{t,j}\operatorname{ReLU}(\mathbf q_{t,j}\cdot\mathbf k_s)$, and the real attention then covers only the 2,048 highest-scoring tokens. The indexer is still quadratic but very cheap; the expensive attention becomes $O(Tk)$. DeepSeek-V4 compresses the cache along the sequence before applying this, and reports needing a tenth of V3.2's KV cache at a million tokens.
+
+**Exact, but faster.** FlashAttention (Tri Dao and colleagues, 2022) changed nothing in the mathematics and nearly everything in practice. A GPU's arithmetic is far faster than its main memory; standard attention writes the $T\times T$ score matrix out to memory and reads it back. FlashAttention computes attention in tiles that fit in on-chip memory, using the *online softmax*: process the keys in blocks, keeping for each query a running maximum $m$ and running sum $\ell$, and rescale the partial output whenever the maximum changes,
+
+$$
+m' = \max(m, \max_j s_j),\qquad \ell' = e^{m - m'}\ell + \sum_j e^{s_j - m'},\qquad \mathbf o' = e^{m - m'}\mathbf o + \sum_j e^{s_j - m'}\mathbf v_j,
+$$
+
+dividing by $\ell$ at the end. The $T\times T$ matrix is never stored, memory becomes linear in $T$, and long sequences run several times faster. Versions 2, 3 and 4 (2023, 2024, 2026) retuned it for each new GPU generation; the fourth reaches 71% of a Blackwell B200's peak.
+
+The chart compares the cost of one layer's attention as the context grows, for a model with 32 heads of width 128:
+
+```{ojs}
+viewof costKind = Inputs.radio(new Map([["Arithmetic per new token (decode)", "flops"], ["Memory for the score matrix (naive)", "mem"]]), {value: "flops", label: "Measure"})
+```
+
+```{ojs}
+costPlot = {
+  const h = 32, dh = 128, d = h * dh, W = 4096, k = 2048, pts = [];
+  for (let e = 10; e <= 20; e += 0.25) {
+    const T = Math.round(2 ** e);
+    const f = costKind === "flops" ? {
+      "Full attention": 4 * T * d,
+      "Sliding window (W = 4,096)": 4 * Math.min(T, W) * d,
+      "Top-k sparse (k = 2,048) + indexer": 4 * Math.min(T, k) * d + 2 * T * 64 * 4,
+      "Linear / delta-rule (state d_h × d_h per head)": 4 * h * dh * dh
+    } : {
+      "Full attention": h * T * T * 2,
+      "Sliding window (W = 4,096)": h * T * Math.min(T, W) * 2,
+      "FlashAttention (tiles, not stored)": h * 128 * 128 * 2 * 4
+    };
+    for (const [kind, v] of Object.entries(f)) pts.push({T, v, kind});
+  }
+  return Plot.plot({width: Math.min(width, 700), height: 300, marginLeft: 60, grid: true,
+    x: {type: "log", label: "Context length T (tokens)", tickFormat: "~s"},
+    y: {type: "log", label: costKind === "flops" ? "FLOPs per new token, one layer" : "Bytes, one layer, 16-bit", tickFormat: "~s"},
+    color: {legend: true}, marks: [Plot.line(pts, {x: "T", y: "v", stroke: "kind", strokeWidth: 2})]});
+}
+```
+
+## The key–value cache
+
+Part 1 showed that the cache, $2 \times L \times T \times d$ numbers per sequence, limits how many users a model can serve and how long their inputs can be. Most of the changes since 2019 that affect serving cost attack it directly.
+
+**MQA and GQA.** Noam Shazeer's *One Write-Head is All You Need* (2019) let all query heads share one key head and one value head: multi-query attention, an $h$-fold smaller cache. It cost some quality. **Grouped-query attention** (Joshua Ainslie and colleagues, 2023) is the compromise: $h$ query heads in $g$ groups, each group sharing a key–value head, cache $2Lgd_h$ per token. Llama 3 uses 8 key–value heads for every size from 8B to 405B parameters; Qwen3-235B uses 4 for 64 query heads.
+
+**MLA.** DeepSeek-V2's **multi-head latent attention** (2024) caches a compressed latent instead of keys and values. Each token's hidden state $\mathbf h_t$ is projected down to $\mathbf c_t = \mathbf h_t W^{DKV}$ with $d_c = 512$, and that is all that is stored (with one shared 64-dimensional key carrying the RoPE rotation, which cannot pass through the compression). Keys and values for all 128 heads are reconstructed by up-projections, $K = CW^{UK}$, $V = CW^{UV}$. At inference the up-projections need never be applied: since $\mathbf q\cdot\mathbf k = \mathbf q (\mathbf c W^{UK})^\top = (\mathbf q W^{UK\top})\cdot\mathbf c$, the matrix $W^{UK}$ can be absorbed into the query projection, and $W^{UV}$ likewise into the output projection, so attention runs directly against the cached latents. The cache is $(d_c + d^R_h)L = 576L$ numbers per token, which the paper notes equals GQA with only 2.25 groups, while its quality matched or beat full multi-head attention. DeepSeek-V3 and Kimi K2 use it.
+
+```{ojs}
+viewof kvSet = Inputs.form({
+  T: Inputs.range([1024, 1048576], {value: 131072, step: 1024, label: "Context length (tokens)"}),
+  L: Inputs.range([8, 128], {value: 64, step: 1, label: "Layers"})
+})
+```
+
+```{ojs}
+kvTable = {
+  const {T, L} = kvSet, h = 64, dh = 128, by = 2;
+  const rows = [
+    ["Multi-head attention (64 heads × 128)", 2 * h * dh],
+    ["Grouped-query, 8 key–value heads", 2 * 8 * dh],
+    ["Multi-query, 1 key–value head", 2 * dh],
+    ["Multi-head latent (512 + 64)", 512 + 64]
+  ];
+  return htl.html`<div class="tf-panel"><h4>KV cache for one sequence of ${fmt(T)} tokens, ${L} layers, 16-bit</h4><div class="tf-scroll"><table class="table table-sm tf-t" style="margin:0"><thead><tr><th>Attention</th><th class="num">Numbers per token per layer</th><th class="num">Per token</th><th class="num">Whole sequence</th></tr></thead><tbody>
+    ${rows.map(([n, c]) => htl.html`<tr><td>${n}</td><td class="num">${fmt(c)}</td><td class="num">${bytesH(c * L * by)}</td><td class="num">${bytesH(c * L * by * T)}</td></tr>`)}
+    <tr><td>Grouped-query, window 4,096 in 5 of 6 layers</td><td class="num">${fmt(2 * 8 * dh)}</td><td class="num">—</td><td class="num">${bytesH(2 * 8 * dh * by * (L / 6 * T + 5 * L / 6 * Math.min(T, 4096)))}</td></tr>
+  </tbody></table></div></div>`;
+}
+```
+
+The last row is the other lever: if most layers attend only within a window, only the global layers' caches grow with the context. Further savings come from sharing caches between layers, reusing keys as values (Gemma 4) and storing the cache in 4 or 2 bits.
+
+**Serving.** **PagedAttention** (Woosuk Kwon and colleagues, 2023, the basis of vLLM) stores the cache in fixed-size pages, like an operating system's virtual memory, so requests of unpredictable length share memory without fragmentation. **Attention sinks** (Guangxuan Xiao and colleagues, 2023), met in Part 2 as the first token's habit of absorbing attention, turned out to be necessary for window attention to work on endless streams: keep the first few tokens' keys and values and the model stays stable. gpt-oss, according to its model card, builds a learned sink into each head; Qwen's gated attention (2025) removes the need for one by letting each head scale its output towards zero.
+
+## Mixture of experts
+
+A dense model applies every parameter to every token. A **mixture of experts** (MoE) replaces the feed-forward layer with $E$ separate feed-forward networks, the experts, and a router that sends each token to a few of them. The parameter count grows with $E$; the arithmetic per token grows only with the number chosen. For router weights $W_g$ and a token $\mathbf x$,
+
+$$
+\mathbf g = \operatorname{softmax}\big(\operatorname{TopK}(\mathbf x W_g)\big), \qquad \operatorname{MoE}(\mathbf x) = \sum_{i\in\operatorname{TopK}} g_i\,\operatorname{FFN}_i(\mathbf x).
+$$
+
+Shazeer and colleagues introduced sparsely gated experts between LSTM layers in January 2017, before the transformer; GShard (2020) and the **Switch Transformer** (William Fedus, Barret Zoph and Shazeer, 2021, routing each token to one expert) brought them to transformers. The persistent difficulty is balance: a router left alone sends most tokens to a few experts, which then get better and attract more. Switch adds a loss $\alpha N\sum_i f_i P_i$, where $f_i$ is the fraction of tokens sent to expert $i$ and $P_i$ the average router probability for it; it is minimised when both are uniform. DeepSeek's **auxiliary-loss-free** balancing (2024) instead adds a bias $b_i$ to each expert's score *for the top-k choice only*, raising it when the expert is under-used and lowering it when over-used, so balance is enforced without a gradient that pulls against the language-modelling loss.
+
+**DeepSeekMoE** (2024) changed the shape: many small experts rather than a few large ones, with more of them chosen per token, plus one or two **shared experts** that every token uses, which learn the common knowledge so the routed experts can specialise.
+
+```{ojs}
+moeTable = htl.html`<div class="tf-scroll"><table class="table table-sm tf-t"><thead><tr><th>Model</th><th>Released</th><th class="num">Total parameters</th><th class="num">Active per token</th><th>Experts</th></tr></thead><tbody>
+  ${[["Mixtral 8x7B", "Dec 2023", "47B", "13B", "8, top-2"],
+     ["DeepSeek-V2", "May 2024", "236B", "21B", "160 routed + 2 shared, top-6"],
+     ["DeepSeek-V3", "Dec 2024", "671B", "37B", "256 routed + 1 shared, top-8"],
+     ["Llama 4 Maverick", "Apr 2025", "400B", "17B", "128, top-1, every other layer"],
+     ["Qwen3-235B-A22B", "May 2025", "235B", "22B", "128, top-8"],
+     ["Kimi K2", "Jul 2025", "1.04T", "32B", "384 routed + 1 shared, top-8"],
+     ["gpt-oss-120b", "Aug 2025", "117B", "5.1B", "128, top-4"],
+     ["Qwen3-Next-80B-A3B", "Sep 2025", "80B", "3B", "512 routed + 1 shared, top-10"],
+     ["DeepSeek-V4-Pro", "2026", "1.6T", "49B", "DeepSeekMoE"]].map(r => htl.html`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td>${r[4]}</td></tr>`)}
+</tbody></table></div>`
+```
+
+The trend is plain: ever more, ever smaller experts, and a falling fraction active. Qwen3-Next applies about 4% of its parameters to each token.
+
+## How big, on how much data
+
+Jared Kaplan and colleagues (2020) found that a language model's loss falls as a power law in its parameters $N$, its training tokens $D$ and its compute $C \approx 6ND$, over many orders of magnitude, and concluded that most extra compute should go into bigger models. Jordan Hoffmann and colleagues at DeepMind (*Chinchilla*, 2022) fitted
+
+$$
+L(N, D) = E + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}}, \qquad E = 1.69,\; A = 406.4,\; B = 410.7,\; \alpha = 0.34,\; \beta = 0.28,
+$$
+
+and minimising it at fixed $C$ gave the opposite advice: scale parameters and data roughly equally, about 20 tokens per parameter. Their 70B Chinchilla, trained on 1.4 trillion tokens, beat the 280B Gopher trained with the same compute. (A 2024 replication by Epoch AI found problems with one of the paper's three fits but agreed with the other two.)
+
+Then practice moved past the optimum on purpose. Chinchilla minimises training compute, but a model is trained once and run billions of times; a smaller model trained on far more data costs more to train and less to use. Llama 3's 8B model saw 15 trillion tokens, nearly 2,000 per parameter.
+
+## Faster generation
+
+Generating one token at a time is limited by memory bandwidth, not arithmetic: every step reads all the weights to produce one token. **Speculative decoding** (Yaniv Leviathan, Matan Kalman and Yossi Matias, 2022; Charlie Chen and colleagues at DeepMind, 2023) uses that spare arithmetic. A small draft model proposes $\gamma$ tokens; the large model scores all of them in one parallel pass; each drafted token $x$ is accepted with probability $\min\big(1, p(x)/q(x)\big)$, where $p$ and $q$ are the large and draft models' probabilities, and at the first rejection a replacement is drawn from the normalised residual $\max(0, p - q)$. The output distribution is provably identical to sampling from the large model alone. If each token is accepted with probability $a$, a step yields on average $(1 - a^{\gamma+1})/(1-a)$ tokens.
+
+The draft need not be a separate model. **Medusa** (2024) adds extra heads that predict tokens two, three and four ahead; **EAGLE** (2024) drafts at the level of hidden features. **Multi-token prediction** (Fabian Gloeckle and colleagues at Meta, 2024) trains the model itself to predict several future tokens from each position, which improved its coding scores and gives it a built-in drafter; DeepSeek-V3, Qwen3-Next, MiniMax-M2 and Gemma 4 all train with an extra prediction module.
+
+## Beyond attention
+
+A different line of work asked whether attention is needed at all. **State-space models** describe a sequence by a linear recurrence on a hidden state, $\mathbf s_t = A\mathbf s_{t-1} + B\mathbf x_t$, $\mathbf y_t = C\mathbf s_t$, discretised from a continuous system; S4 (Albert Gu, Karan Goel and Christopher Ré, 2021) made them trainable on long sequences. **Mamba** (Gu and Tri Dao, 2023) made $B$, $C$ and the step size depend on the input, so the model can choose what to remember, and matched transformers of the same size on language at linear cost. **Mamba-2** (Dao and Gu, 2024) showed through *state-space duality* that a selective state-space model with scalar decay is a form of masked linear attention, $Y = (L \odot QK^\top)V$ with $L$ a lower-triangular matrix of cumulative decays, joining the two lines of work. RWKV, RetNet and xLSTM are relatives.
+
+Pure recurrent models struggle with one thing attention does trivially: recalling an exact detail from far back, because a fixed-size state must compress everything. The 2024–26 answer is **hybrids**: mostly recurrent layers, with a few attention layers for exact recall. AI21's Jamba (2024) used one attention layer in eight; NVIDIA's Nemotron-H and IBM's Granite 4.0-H (nine Mamba-2 layers to one attention layer) followed in 2025, as did the linear-attention hybrids above. Not everyone agrees: MiniMax built its 2025 MiniMax-01 on linear attention and then went back to full attention for MiniMax-M2, citing weaknesses in multi-step reasoning at scale and practical difficulties with caching and speculative decoding.
+
+## Beyond text
+
+The same architecture reads images when they are cut into patches and each patch is treated as a token: the **Vision Transformer** (Alexey Dosovitskiy and colleagues, 2020). **CLIP** (Alec Radford and colleagues, 2021) trained an image encoder and a text encoder together with the contrastive loss of the [embeddings series](../embeddings-part-2-search-and-retrieval/#contrastive-training), and **Flamingo** (2022) fed image features into a frozen language model through cross-attention, the 2017 decoder's third sublayer, reused. Current models are increasingly trained on mixed modalities from the start; Gemma 4's 12B model projects image patches and short audio chunks directly into the language model with no separate encoder.
+
+The one challenge to next-token prediction itself comes from **diffusion language models**, which start from a fully masked sequence and fill in many tokens in parallel over several refinement steps, in the manner of image diffusion: LLaDA (2025) trained one from scratch, Google announced Gemini Diffusion the same year, and DiffusionGemma (2026), adapted from Gemma 4, reported about 1,500 tokens a second on a single H100 by refining blocks of 256 tokens in parallel. The network inside is still a transformer, without the causal mask.
+
+## What a 2026 model looks like
+
+Put the pieces together and compare with 2017:
+
+::: {.tf-scroll}
+| Component | 2017 Transformer | GPT-2 (2019) | Typical large open model, 2025–26 |
+|---|---|---|---|
+| Shape | Encoder–decoder | Decoder-only | Decoder-only |
+| Normalisation | LayerNorm after each sublayer (Post-LN) | LayerNorm before (Pre-LN) | RMSNorm before, often after too; QK-norm |
+| Feed-forward | ReLU, $d_{\text{ff}} = 4d$ | GELU | SwiGLU; mixture of many small experts plus shared experts |
+| Position | Fixed sinusoids added to input | Learned table | RoPE with a large base, YaRN for long context; some layers without |
+| Attention | Full, multi-head | Full, multi-head | GQA or MLA; mixed with sliding-window, sparse or linear (delta-rule) layers |
+| Context | Hundreds of tokens | 1,024 | 128k to 1M |
+| Kernels | Standard | Standard | FlashAttention; paged, quantised KV cache |
+| Output | Tied embedding | Tied embedding | Usually untied; multi-token prediction head |
+| Decoding | Beam search | Sampling | Sampling with speculative decoding |
+:::
+
+Every row has changed, and yet Part 1's diagram still describes every one of these models: tokens become vectors, layers of attention and feed-forward networks add to a residual stream, and a softmax over the vocabulary predicts the next token.
+
+## Terminology and where it comes from
+
+::: {.tf-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Mixture of experts** | Several sub-networks with a learned router | Robert Jacobs, Michael Jordan, Steven Nowlan and Geoffrey Hinton, "Adaptive Mixtures of Local Experts", 1991. |
+| **GLU** | Gated linear unit: one projection multiplied by a gated second | Yann Dauphin and colleagues, 2016, for convolutional language models; the gate idea goes back to the LSTM (Sepp Hochreiter and Jürgen Schmidhuber, 1997). |
+| **Swish / SiLU** | $x\,\sigma(x)$ | *Sigmoid-weighted linear unit* (Stefan Elfwing and colleagues, 2017); renamed Swish by Prajit Ramachandran and colleagues the same year after an automated search for activation functions. |
+| **RoPE** | Rotary position embedding | Su and colleagues, 2021: positions as rotations. |
+| **ALiBi** | Attention with linear biases | Press, Smith and Lewis, 2021. |
+| **NTK-aware** | A RoPE scaling rule | From *neural tangent kernel* theory, which predicts networks learn high frequencies poorly, so the rule avoids squeezing them; named in a 2023 online post. |
+| **Speculative decoding** | Draft cheaply, verify in parallel | By analogy with speculative execution in processors, which compute ahead on a guess and discard the work if the guess was wrong. |
+| **State space** | A system described by a hidden state and linear dynamics | Control theory: Rudolf Kálmán's state-space formulation of 1960. |
+| **Scaling law** | Loss as a power law of size, data and compute | From physics, where scaling laws describe power-law relations near critical points. |
+| **Birkhoff polytope** | The set of doubly stochastic matrices | Garrett Birkhoff, 1946, who showed its vertices are the permutation matrices. |
+:::
+
+## Method and sources
+
+**Timeline.** 80 entries, each dated by its first public paper (arXiv version 1) or release; checked against the arXiv listing, the paper, or the model's published configuration. For models without a paper (Llama 4, Granite 4.0) the date is the release announcement. "Used in" lists models whose published configuration or report confirms the feature, and is not exhaustive.
+
+**Cost chart.** One attention layer with 32 heads of width 128 ($d = 4{,}096$), counting $4Td$ FLOPs per new token for the score and value products over $T$ cached tokens, the window or top-$k$ count in place of $T$ where they apply, a 64-dimensional, 4-head indexer for the sparse variant, and $4hd_h^2$ for a recurrent state update. Memory: the $h\times T\times T$ score matrix in 16 bits, against FlashAttention's on-chip tiles.
+
+**KV cache table.** 64 query heads of width 128; 16-bit numbers; GQA with 8 key–value heads; MLA with DeepSeek-V2's $d_c = 512$ and $d^R_h = 64$. Real models differ in head counts and layers; the table compares the schemes on one shape.
+
+**Model table.** Parameters as published; Mixtral's report gives 47B and 13B, its launch blog 46.7B and 12.9B.
+
+Sources (arXiv identifiers in the timeline):
+
+- Model families: Radford and colleagues, GPT-1 (2018) and GPT-2 (2019); Devlin and colleagues, [BERT](https://arxiv.org/abs/1810.04805); Raffel and colleagues, [T5](https://arxiv.org/abs/1910.10683); Brown and colleagues, [GPT-3](https://arxiv.org/abs/2005.14165).
+- Stability: [Xiong and colleagues 2020](https://arxiv.org/abs/2002.04745); [RMSNorm](https://arxiv.org/abs/1910.07467); [QK-norm](https://arxiv.org/abs/2010.04245); [PaLM](https://arxiv.org/abs/2204.02311) (z-loss, parallel blocks, SwiGLU); [Peri-LN](https://arxiv.org/abs/2502.02732); [μP](https://arxiv.org/abs/2203.03466); [Kimi K2](https://arxiv.org/abs/2507.20534); [mHC](https://arxiv.org/abs/2512.24880); [Gemma 3](https://arxiv.org/abs/2503.19786); [OLMo 2](https://arxiv.org/abs/2501.00656).
+- Feed-forward: [Shazeer, GLU variants](https://arxiv.org/abs/2002.05202).
+- Position: [Shaw and colleagues](https://arxiv.org/abs/1803.02155); [RoFormer](https://arxiv.org/abs/2104.09864); [ALiBi](https://arxiv.org/abs/2108.12409); [NoPE](https://arxiv.org/abs/2305.19466); [position interpolation](https://arxiv.org/abs/2306.15595); [YaRN](https://arxiv.org/abs/2309.00071); [Llama 3](https://arxiv.org/abs/2407.21783).
+- Attention: [Sparse Transformer](https://arxiv.org/abs/1904.10509); [Longformer](https://arxiv.org/abs/2004.05150); [linear attention](https://arxiv.org/abs/2006.16236); [Mistral 7B](https://arxiv.org/abs/2310.06825); [Gated DeltaNet](https://arxiv.org/abs/2412.06464); [Kimi Linear](https://arxiv.org/abs/2510.26692); [DeepSeek-V3.2](https://arxiv.org/abs/2512.02556); [DeepSeek-V4](https://arxiv.org/abs/2606.19348); [FlashAttention](https://arxiv.org/abs/2205.14135) and [FlashAttention-4](https://arxiv.org/abs/2603.05451).
+- KV cache: [MQA](https://arxiv.org/abs/1911.02150); [GQA](https://arxiv.org/abs/2305.13245); [DeepSeek-V2 (MLA)](https://arxiv.org/abs/2405.04434); [PagedAttention](https://arxiv.org/abs/2309.06180); [attention sinks](https://arxiv.org/abs/2309.17453); [gated attention](https://arxiv.org/abs/2505.06708).
+- Mixture of experts: [Shazeer and colleagues 2017](https://arxiv.org/abs/1701.06538); [Switch Transformer](https://arxiv.org/abs/2101.03961); [Mixtral](https://arxiv.org/abs/2401.04088); [DeepSeekMoE](https://arxiv.org/abs/2401.06066); [auxiliary-loss-free balancing](https://arxiv.org/abs/2408.15664); [DeepSeek-V3](https://arxiv.org/abs/2412.19437); [Qwen3](https://arxiv.org/abs/2505.09388); [gpt-oss](https://arxiv.org/abs/2508.10925); model configurations on Hugging Face.
+- Scaling: [Kaplan and colleagues](https://arxiv.org/abs/2001.08361); [Chinchilla](https://arxiv.org/abs/2203.15556); [Epoch AI replication](https://arxiv.org/abs/2404.10102); [Sardana and colleagues](https://arxiv.org/abs/2401.00448).
+- Decoding: [Leviathan and colleagues](https://arxiv.org/abs/2211.17192); [Chen and colleagues](https://arxiv.org/abs/2302.01318); [Medusa](https://arxiv.org/abs/2401.10774); [EAGLE](https://arxiv.org/abs/2401.15077); [multi-token prediction](https://arxiv.org/abs/2404.19737).
+- Alternatives: [S4](https://arxiv.org/abs/2111.00396); [Mamba](https://arxiv.org/abs/2312.00752); [Mamba-2](https://arxiv.org/abs/2405.21060); [Jamba](https://arxiv.org/abs/2403.19887); [Nemotron-H](https://arxiv.org/abs/2504.03624); IBM, [Granite 4.0](https://www.ibm.com/new/announcements/ibm-granite-4-0-hyper-efficient-high-performance-hybrid-models); MiniMax, [*Why did M2 end up as a full attention model?*](https://www.minimax.io/news/why-did-m2-end-up-as-a-full-attention-model).
+- Beyond text: [ViT](https://arxiv.org/abs/2010.11929); [CLIP](https://arxiv.org/abs/2103.00020); [Flamingo](https://arxiv.org/abs/2204.14198); [LLaDA](https://arxiv.org/abs/2502.09992); [Gemini Diffusion](https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-diffusion/); [DiffusionGemma](https://arxiv.org/abs/2608.00146); [Gemma 4](https://arxiv.org/abs/2607.02770).
+
+**Previous: [Part 2, inside GPT-2](../transformer-part-2-inside-gpt-2/)** · **Start: [Part 1, operation by operation](../transformer-part-1-operation-by-operation/)**.

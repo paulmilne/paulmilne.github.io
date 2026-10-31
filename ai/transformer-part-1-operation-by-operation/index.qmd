@@ -1,0 +1,562 @@
+---
+title: "The Transformer, Part 1: Operation by Operation"
+subtitle: "Every tensor, every shape and every equation in the 2017 architecture and its decoder-only descendants, with the reasons behind each design choice"
+description: "A complete walk through the transformer: embeddings, scaled dot-product attention and why it is scaled, multi-head attention as tensor reshapes, masks and cross-attention, the feed-forward layer, residuals and layer normalisation, the output softmax, training, parameter and FLOP counts, and the key-value cache. Interactive shape tracer, a worked attention example and 3D tensor views."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, transformers, language-models, linear-algebra]
+image: thumbnail.png
+resources:
+  - tensor3d.js
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.tf-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.tf-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.tf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.tf-grid form { flex-wrap: wrap !important; }
+.tf-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.tf-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.tf-diagram svg { width: 100%; height: auto; display: block; }
+.tf-diagram .blk { cursor: pointer; }
+.tf-diagram .blk:hover rect { stroke-width: 2.4; }
+.tf-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.tf-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.tf-kpis .v { font-size: 1.05rem; font-weight: 650; }
+.tf-mats { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; align-items: flex-start; }
+.tf-mat { font-variant-numeric: tabular-nums; font-size: .72rem; }
+.tf-mat .cap { font-size: .78rem; font-weight: 600; margin-bottom: .15rem; }
+.tf-mat table { border-collapse: collapse; }
+.tf-mat td { width: 2.6rem; height: 1.35rem; text-align: center; border: 1px solid rgba(128,128,128,.25); padding: 0; }
+.tf-mat th { font-weight: 500; opacity: .7; padding: 0 .3rem; font-size: .7rem; }
+.tf-detail .eq { overflow-x: auto; }
+.tf-detail code { font-size: .8rem; }
+table.tf-t td.num, table.tf-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tf-scroll { overflow-x: auto; }
+.tf-scroll table { min-width: 560px; }
+.tf-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+human = (x) => { const a = Math.abs(x); return a >= 1e12 ? fmt(x / 1e12, 2) + " T" : a >= 1e9 ? fmt(x / 1e9, 2) + " G" : a >= 1e6 ? fmt(x / 1e6, 2) + " M" : a >= 1e3 ? fmt(x / 1e3, 1) + " k" : fmt(x); }
+bytesH = (x) => { const a = Math.abs(x); return a >= 2 ** 30 ? fmt(x / 2 ** 30, 2) + " GiB" : a >= 2 ** 20 ? fmt(x / 2 ** 20, 1) + " MiB" : a >= 2 ** 10 ? fmt(x / 2 ** 10, 1) + " KiB" : fmt(x) + " B"; }
+```
+
+In 2017 eight researchers at Google published *Attention Is All You Need*. It proposed a model for translation built from one repeated operation, attention, with no recurrence and no convolution, and it trained faster and translated better than anything before it. Almost every large language model since is a transformer, most of them a stripped-down version of the one in that paper.
+
+This is the first of three posts. This one takes the architecture apart operation by operation: what every tensor is, what shape it has, what each equation computes and why it was chosen. [Part 2](../transformer-part-2-inside-gpt-2/) runs a real trained transformer, GPT-2, and looks inside it. [Part 3](../transformer-part-3-advances/) covers what has changed since 2017. The two [embedding posts](../embeddings-part-1-words-to-vectors/) cover the first and last steps, turning text into vectors and back, in more depth.
+
+## Notation
+
+Everything here uses the **row-vector convention**, the one in the original paper and in essentially all code: a token's vector is a row, and a linear layer is $\mathbf x W + \mathbf b$ with $W \in \mathbb R^{d_{\text{in}}\times d_{\text{out}}}$. Stacking the $T$ token vectors of a sequence as the rows of a matrix gives $X \in \mathbb R^{T\times d}$, and a layer applied to every token at once is just $XW$. With a batch of $B$ sequences, the activations are a three-way tensor of shape $(B, T, d)$.
+
+::: {.tf-scroll}
+| Symbol | Meaning | 2017 base model | GPT-2 small |
+|---|---|---|---|
+| $B$ | sequences in a batch | | |
+| $T$ | tokens in a sequence (context length) | | up to 1,024 |
+| $d$ | model width, $d_{\text{model}}$ | 512 | 768 |
+| $h$ | attention heads | 8 | 12 |
+| $d_h = d/h$ | width of one head ($d_k = d_v$ in the paper) | 64 | 64 |
+| $d_{\text{ff}}$ | feed-forward width | 2,048 | 3,072 |
+| $N$ | layers | 6 + 6 | 12 |
+| $V$ | vocabulary | 37,000 | 50,257 |
+:::
+
+Tensor contractions are also given in Einstein summation notation, as NumPy's and PyTorch's `einsum` write them: `"btd,de->bte"` means $Y_{bte} = \sum_d X_{btd}W_{de}$, indices repeated on the left and missing on the right are summed.
+
+## The whole data path
+
+The tracer below is the spine of this post. It follows one batch through the model. Choose a preset or set the dimensions yourself; every shape, parameter count and operation count updates. Click any block for its equation.
+
+```{ojs}
+viewof preset = Inputs.select(new Map([
+  ["GPT-2 small (2019)", {arch: "dec", d: 768, h: 12, ff: 3072, N: 12, V: 50257, T: 1024}],
+  ["Transformer base (2017)", {arch: "encdec", d: 512, h: 8, ff: 2048, N: 6, V: 37000, T: 128}],
+  ["Transformer big (2017)", {arch: "encdec", d: 1024, h: 16, ff: 4096, N: 6, V: 37000, T: 128}],
+  ["GPT-2 XL (2019)", {arch: "dec", d: 1600, h: 25, ff: 6400, N: 48, V: 50257, T: 1024}],
+  ["GPT-3 175B (2020)", {arch: "dec", d: 12288, h: 96, ff: 49152, N: 96, V: 50257, T: 2048}]
+]), {label: "Preset"})
+```
+
+::: {.tf-grid}
+
+```{ojs}
+viewof dims = Inputs.form({
+  B: Inputs.range([1, 64], {value: 1, step: 1, label: "Batch B"}),
+  T: Inputs.range([1, 8192], {value: preset.T, step: 1, label: "Tokens T"}),
+  d: Inputs.range([64, 16384], {value: preset.d, step: 64, label: "Width d"})
+})
+```
+
+```{ojs}
+viewof dims2 = Inputs.form({
+  h: Inputs.range([1, 128], {value: preset.h, step: 1, label: "Heads h"}),
+  ff: Inputs.range([64, 65536], {value: preset.ff, step: 64, label: "Feed-forward width d_ff"}),
+  N: Inputs.range([1, 128], {value: preset.N, step: 1, label: "Layers N"})
+})
+```
+
+```{ojs}
+viewof dims3 = Inputs.form({
+  V: Inputs.range([256, 262144], {value: preset.V, step: 1, label: "Vocabulary V"}),
+  arch: Inputs.radio(new Map([["Decoder-only (GPT)", "dec"], ["Encoder–decoder (2017)", "encdec"]]), {value: preset.arch, label: "Architecture"}),
+  bytes: Inputs.radio(new Map([["32-bit", 4], ["16-bit", 2]]), {value: 2, label: "Number format"})
+})
+```
+
+:::
+
+```{ojs}
+//| output: false
+cfg = {
+  const c = {...dims, ...dims2, ...dims3};
+  c.dh = c.d / c.h; c.ok = Number.isInteger(c.dh);
+  return c;
+}
+ops = {
+  const {B, T, d, h, ff, N, V, dh, arch} = cfg;
+  const s = (...a) => "(" + a.map(x => typeof x === "number" ? fmt(x) : x).join(", ") + ")";
+  const BT = B * T;
+  const attn = (pre, kind) => {
+    const cross = kind === "cross", masked = kind === "masked";
+    const Tk = T;
+    return [
+      {id: pre + "qkv", name: cross ? "Query projection; keys and values from the encoder" : "Q, K, V projections", shape: cross ? s(B, T, d) + " → Q " + s(B, T, d) : s(B, T, d) + " → " + s(B, T, 3 * d),
+       tex: cross ? String.raw`Q = X W^Q,\quad K = H_{\text{enc}} W^K,\quad V = H_{\text{enc}} W^V` : String.raw`[\,Q\;K\;V\,] = X\,[\,W^Q\;W^K\;W^V\,] + \mathbf b,\qquad W^{Q,K,V}\in\mathbb R^{d\times d}`,
+       ein: "btd,de->bte", params: 3 * d * d + 3 * d, flops: 2 * BT * d * 3 * d,
+       note: "One matrix multiply gives every token its query, key and value. In code the three weight matrices are usually one d × 3d matrix."},
+      {id: pre + "split", name: "Split into heads", shape: s(B, T, d) + " → " + s(B, h, T, dh),
+       tex: String.raw`Q_{b,t,(j\,d_h + i)} \;\to\; Q_{b,j,t,i},\qquad j = 1..h,\; i = 1..d_h`, ein: "reshape (B,T,h,d_h), transpose to (B,h,T,d_h)", params: 0, flops: 0,
+       note: "No arithmetic: the d columns are cut into h groups of d_h, and the head index is moved forward so each head becomes its own batch of matrices."},
+      {id: pre + "scores", name: "Scores", shape: s(B, h, T, dh) + " × " + s(B, h, Tk, dh) + " → " + s(B, h, T, Tk),
+       tex: String.raw`S = \frac{Q K^{\top}}{\sqrt{d_h}}`, ein: "bhqi,bhki->bhqk", params: 0, flops: 2 * B * h * T * Tk * dh,
+       note: "Every query is compared with every key: a T × T matrix per head. This is the quadratic cost of attention."},
+      {id: pre + "soft", name: masked ? "Causal mask and softmax" : "Softmax", shape: s(B, h, T, Tk),
+       tex: masked ? String.raw`A = \operatorname{softmax}(S + M),\quad M_{qk} = \begin{cases}0 & k \le q\\ -\infty & k > q\end{cases}` : String.raw`A_{qk} = \frac{e^{S_{qk}}}{\sum_{k'} e^{S_{qk'}}}`,
+       ein: "softmax over the last axis", params: 0, flops: 5 * B * h * T * Tk,
+       note: masked ? "Each row becomes a probability distribution over earlier positions only, so a token cannot see the future." : "Each row becomes a probability distribution over the positions attended to."},
+      {id: pre + "mix", name: "Weighted sum of values", shape: s(B, h, T, Tk) + " × " + s(B, h, Tk, dh) + " → " + s(B, h, T, dh),
+       tex: String.raw`Z = A\,V`, ein: "bhqk,bhki->bhqi", params: 0, flops: 2 * B * h * T * Tk * dh,
+       note: "Each token's output from each head is an average of value vectors, weighted by attention."},
+      {id: pre + "merge", name: "Merge heads", shape: s(B, h, T, dh) + " → " + s(B, T, d), tex: String.raw`Z = [\,Z_1\;Z_2\;\cdots\;Z_h\,]`, ein: "transpose to (B,T,h,d_h), reshape (B,T,d)", params: 0, flops: 0,
+       note: "The inverse of the split: the heads' outputs are laid side by side again."},
+      {id: pre + "out", name: "Output projection", shape: s(B, T, d) + " → " + s(B, T, d), tex: String.raw`\operatorname{MHA}(X) = Z\,W^O + \mathbf b^O,\qquad W^O\in\mathbb R^{d\times d}`, ein: "btd,de->bte", params: d * d + d, flops: 2 * BT * d * d,
+       note: "Mixes information between heads and maps back to the residual stream."}
+    ];
+  };
+  const norm = (id, label) => ({id, name: label, shape: s(B, T, d), tex: String.raw`\operatorname{LN}(\mathbf x) = \boldsymbol\gamma \odot \frac{\mathbf x - \mu}{\sqrt{\sigma^2 + \epsilon}} + \boldsymbol\beta`, ein: "mean and variance over d, per token", params: 2 * d, flops: 7 * BT * d,
+    note: "Rescales each token's vector to zero mean and unit variance across its d features, then applies a learned scale and shift."});
+  const add = (id) => ({id, name: "Residual add", shape: s(B, T, d), tex: String.raw`X \leftarrow X + F(X)`, ein: "elementwise", params: 0, flops: BT * d, note: "The sublayer's output is added to its input: the residual stream."});
+  const ffn = (pre) => [
+    {id: pre + "up", name: "Feed-forward, up", shape: s(B, T, d) + " → " + s(B, T, ff), tex: String.raw`H = \phi(X W_1 + \mathbf b_1),\qquad W_1\in\mathbb R^{d\times d_{\text{ff}}}`, ein: "btd,df->btf", params: d * ff + ff, flops: 2 * BT * d * ff,
+     note: "Each token independently is lifted to a wider space and passed through a nonlinearity φ: ReLU in 2017, GELU in GPT-2."},
+    {id: pre + "down", name: "Feed-forward, down", shape: s(B, T, ff) + " → " + s(B, T, d), tex: String.raw`F(X) = H W_2 + \mathbf b_2,\qquad W_2\in\mathbb R^{d_{\text{ff}}\times d}`, ein: "btf,fd->btd", params: ff * d + d, flops: 2 * BT * ff * d,
+     note: "And projected back to the model width."}
+  ];
+  const embed = [
+    {id: "ids", name: "Token ids", shape: s(B, T) + " integers", tex: String.raw`t_{b,1}, \dots, t_{b,T} \in \{1,\dots,V\}`, ein: "", params: 0, flops: 0, note: "The tokeniser's output: one integer per token."},
+    {id: "emb", name: "Token embedding", shape: s(B, T) + " → " + s(B, T, d), tex: String.raw`X_{b,t} = E_{t_{b,t}},\qquad E\in\mathbb R^{V\times d}`, ein: "lookup (one-hot × E)", params: V * d, flops: 0, note: "A table lookup. The 2017 model also multiplies by √d."},
+    {id: "pos", name: "Add positions", shape: s(B, T, d), tex: String.raw`X \leftarrow X + P_{1:T},\qquad P\in\mathbb R^{T_{\max}\times d}`, ein: "broadcast over b", params: arch === "dec" ? Math.max(T, preset.T) * d : 0, flops: BT * d,
+     note: arch === "dec" ? "GPT-2 learns a table of position vectors." : "The 2017 model adds fixed sinusoids, so this has no parameters."}
+  ];
+  const head = [
+    ...(arch === "dec" ? [norm("lnf", "Final LayerNorm")] : []),
+    {id: "unemb", name: "Unembedding (logits)", shape: s(B, T, d) + " → " + s(B, T, V), tex: String.raw`L = X\,E^{\top}\quad(\text{tied weights})`, ein: "btd,vd->btv", params: 0, flops: 2 * BT * d * V,
+     note: "Every position gets a score for every token in the vocabulary. With tied weights the output matrix is the embedding table transposed."},
+    {id: "sm", name: "Softmax and loss", shape: s(B, T, V), tex: String.raw`p_{t,v} = \frac{e^{L_{t,v}}}{\sum_u e^{L_{t,u}}},\qquad \mathcal L = -\frac1{BT}\sum_{b,t}\log p_{t,\,y_{b,t}}`, ein: "softmax over v", params: 0, flops: 5 * BT * V,
+     note: "In training, the loss is the average negative log-probability of the true next token at every position."}
+  ];
+  if (arch === "dec") {
+    const layer = [norm("ln1", "LayerNorm 1"), ...attn("sa_", "masked"), add("add1"), norm("ln2", "LayerNorm 2"), ...ffn("ff_"), add("add2")];
+    return {pre: embed, stacks: [{name: "Decoder block", N, ops: layer}], post: head};
+  }
+  const enc = [...attn("e_", "self"), add("e_add1"), norm("e_ln1", "LayerNorm"), ...ffn("e_ff_"), add("e_add2"), norm("e_ln2", "LayerNorm")];
+  const dec = [...attn("d_", "masked"), add("d_add1"), norm("d_ln1", "LayerNorm"), ...attn("c_", "cross"), add("d_add2"), norm("d_ln2", "LayerNorm"),
+               ...ffn("d_ff_"), add("d_add3"), norm("d_ln3", "LayerNorm")];
+  return {pre: embed, stacks: [{name: "Encoder block (source sentence)", N, ops: enc}, {name: "Decoder block (target sentence)", N, ops: dec}], post: head};
+}
+totals = {
+  const {N, B, T, d, bytes} = cfg;
+  let params = 0, flops = 0;
+  for (const o of [...ops.pre, ...ops.post]) { params += o.params; flops += o.flops; }
+  for (const st of ops.stacks) for (const o of st.ops) { params += st.N * o.params; flops += st.N * o.flops; }
+  const decN = ops.stacks[ops.stacks.length - 1].N;
+  const kv = 2 * decN * B * T * d * bytes;
+  const scores = B * cfg.h * T * T * bytes;
+  return {params, flops, perTok: flops / (B * T), kv, scores};
+}
+```
+
+```{ojs}
+viewof sel = {
+  const W = 640, rowH = 34, gap = 22;
+  const rows = [];
+  let y = 10;
+  const pushOp = (o, x, w, col) => { rows.push({...o, x, y, w, col}); y += rowH + gap; };
+  for (const o of ops.pre) pushOp(o, 70, 500, "#6c757d");
+  for (const st of ops.stacks) {
+    const y0 = y; y += 22;
+    for (const o of st.ops) pushOp(o, 90, 460, o.id.includes("ln") ? "#8d99ae" : o.id.includes("add") ? "#adb5bd" : o.id.includes("ff") || o.id.includes("up") || o.id.includes("down") ? "#2a9d8f" : "#e76f51");
+    rows.push({frame: true, name: `${st.name} × ${st.N}`, y0, y1: y - gap + 22});
+    y += 26;
+  }
+  for (const o of ops.post) pushOp(o, 70, 500, "#6c757d");
+  const H = y;
+  const el = htl.svg`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+    ${rows.filter(r => r.frame).map(r => htl.svg`<rect x="60" y="${r.y0}" width="520" height="${r.y1 - r.y0}" rx="10" fill="rgba(110,130,160,.07)" stroke="#99a" stroke-dasharray="4 3"/>
+      <text x="72" y="${r.y0 + 15}" font-size="12" fill="#556">${r.name}</text>`)}
+    ${rows.filter(r => !r.frame).map((r, i, a) => htl.svg`<g class="blk" data-id="${r.id}">
+      <rect x="${r.x}" y="${r.y}" width="${r.w}" height="${rowH}" rx="7" fill="${r.col}" fill-opacity="0.16" stroke="${r.col}" stroke-width="1.3"/>
+      <text x="${r.x + 12}" y="${r.y + 21}" font-size="13" fill="currentColor">${r.name}</text>
+      ${i < a.length - 1 ? htl.svg`<line x1="${W / 2 - 10}" y1="${r.y + rowH}" x2="${W / 2 - 10}" y2="${a[i + 1].y}" stroke="#999" marker-end="url(#ah)"/>
+        <text x="${W / 2}" y="${r.y + rowH + gap / 2 + 4}" font-size="11" fill="#666" font-family="ui-monospace, monospace">${(r.shape.split("→").pop() || "").trim().replace(/^Q /, "").replace(" integers", "")}</text>` : null}
+    </g>`)}
+    <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#999"/></marker></defs>
+  </svg>`;
+  const wrap = htl.html`<div class="tf-panel tf-diagram"><h4>Click a block</h4>${el}</div>`;
+  const all = rows.filter(r => !r.frame);
+  wrap.value = all.find(r => r.id.includes("scores")) || all[0];
+  el.addEventListener("click", e => { const g = e.target.closest(".blk"); if (!g) return; wrap.value = all.find(r => r.id === g.dataset.id); wrap.dispatchEvent(new Event("input", {bubbles: true})); });
+  return wrap;
+}
+```
+
+```{ojs}
+detail = {
+  const o = sel;
+  const stack = ops.stacks.find(st => st.ops.some(x => x.id === o.id));
+  const mult = stack ? stack.N : 1;
+  return htl.html`<div class="tf-panel tf-detail"><h4>${o.name}${stack ? ` (in each of ${mult} layers)` : ""}</h4>
+    <div class="eq">${tex.block`${o.tex}`}</div>
+    <p style="margin:.3rem 0">${o.note}</p>
+    <div class="tf-kpis">
+      <div><div class="k">Shape</div><div class="v" style="font-size:.9rem">${o.shape}</div></div>
+      <div><div class="k">einsum / operation</div><div class="v" style="font-size:.85rem"><code>${o.ein || "—"}</code></div></div>
+      <div><div class="k">Parameters</div><div class="v">${human(o.params)}${mult > 1 ? htl.html` <span style="font-size:.75rem;opacity:.7">× ${mult}</span>` : ""}</div></div>
+      <div><div class="k">Arithmetic (FLOPs)</div><div class="v">${human(o.flops)}${mult > 1 ? htl.html` <span style="font-size:.75rem;opacity:.7">× ${mult}</span>` : ""}</div></div>
+    </div></div>`;
+}
+```
+
+```{ojs}
+totalsView = htl.html`<div class="tf-panel"><h4>Whole model, one forward pass ${cfg.ok ? "" : "(d is not divisible by h)"}</h4><div class="tf-kpis">
+  <div><div class="k">Parameters</div><div class="v">${human(totals.params)}</div></div>
+  <div><div class="k">FLOPs per token, forward</div><div class="v">${human(totals.perTok)}</div><div class="tf-note">≈ 2 × parameters + attention</div></div>
+  <div><div class="k">FLOPs for the batch</div><div class="v">${human(totals.flops)}</div></div>
+  <div><div class="k">Attention scores, one layer</div><div class="v">${bytesH(totals.scores)}</div><div class="tf-note">B·h·T² numbers</div></div>
+  <div><div class="k">KV cache at T tokens</div><div class="v">${bytesH(totals.kv)}</div><div class="tf-note">2·N·B·T·d numbers</div></div>
+</div></div>`
+```
+
+Set the GPT-2 small preset and the total is 124.4 million parameters, the published figure; the GPT-3 preset gives 175 billion. The sections below go through the blocks in order.
+
+## Embedding and position
+
+The token ids are looked up in the embedding table $E \in \mathbb R^{V\times d}$, giving $X \in \mathbb R^{T\times d}$; [Part 1 of the embeddings series](../embeddings-part-1-words-to-vectors/) covers how that table is learned and what its geometry means. The 2017 model multiplies the result by $\sqrt d$. The paper does not say why; the usual reading is that its embedding table is shared with the output layer and so has small entries, while the sinusoidal position signal added next has entries of size 1, and the scaling stops position from drowning out the token.
+
+Attention, as the next section shows, treats its input as a set: permute the rows of $X$ and the output rows are permuted the same way. Order has to be put into the vectors themselves. The 2017 model adds fixed sinusoids, $P_{p,2i} = \sin(p/10000^{2i/d})$ and $P_{p,2i+1} = \cos(p/10000^{2i/d})$, chosen so that a shift by $k$ positions is a fixed rotation of each pair of coordinates; GPT-2 learns a $1{,}024\times d$ table instead, and most current models rotate the queries and keys (RoPE). The derivations are in the [embeddings post](../embeddings-part-1-words-to-vectors/#where-am-i-in-the-sentence); Part 3 covers what came after.
+
+## Attention
+
+### A soft lookup table
+
+A dictionary maps keys to values: present a query, find the key that matches, return its value. Attention makes every step soft. Each token emits three vectors: a **query** (what it is looking for), a **key** (what it offers to be found by) and a **value** (what it passes on if found). Token $i$ scores every token $j$ by the dot product of its query with their key, turns the scores into weights with a softmax, and receives the weighted average of the values:
+
+$$
+\mathbf z_i = \sum_{j} \alpha_{ij}\,\mathbf v_j, \qquad \alpha_{ij} = \frac{\exp(\mathbf q_i\cdot\mathbf k_j/\sqrt{d_h})}{\sum_{j'}\exp(\mathbf q_i\cdot\mathbf k_{j'}/\sqrt{d_h})}.
+$$
+
+In matrix form, with $Q = XW^Q$, $K = XW^K$, $V = XW^V$,
+
+$$
+\operatorname{Attention}(Q,K,V) = \operatorname{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}}\right)V,
+$$
+
+the softmax taken along each row. Statisticians will recognise the form: it is Nadaraya–Watson kernel regression, an estimate at a query point formed as a kernel-weighted average of observed values, with the exponential of a dot product as the kernel. What makes it powerful is that the queries, keys and values are all learned projections of the same input, so the model learns what to look for as well as what to return.
+
+The important property is that the weights depend on the content. A convolution mixes neighbours with fixed weights; attention computes new weights for every input. And every token can reach every other in one step, where a recurrent network has to pass information along the sequence one position at a time.
+
+### Worked example
+
+Five tokens, $d = 4$, one head: the panel computes each matrix with random but fixed weights. The colours run from blue (negative) through white to red (positive); the attention matrix $A$ runs from white to dark. Turn off the scaling and raise the sharpness to see the softmax saturate into a hard lookup.
+
+```{ojs}
+viewof wk = Inputs.form({
+  seed: Inputs.range([1, 50], {value: 7, step: 1, label: "Random weights"}),
+  scale: Inputs.toggle({value: true, label: "Divide by √d_h"}),
+  temp: Inputs.range([0.25, 6], {value: 1, step: 0.25, label: "Sharpness (multiply scores)"}),
+  mask: Inputs.toggle({value: true, label: "Causal mask"})
+})
+```
+
+```{ojs}
+//| output: false
+worked = {
+  const toks = ["the", "cat", "sat", "on", "mat"], T = 5, d = 4;
+  let s = wk.seed * 7919 + 13; const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  const g = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
+  const M = (r, c, sd = 1) => Array.from({length: r}, () => Array.from({length: c}, () => g() * sd));
+  const mul = (A, B) => A.map(r => B[0].map((_, j) => r.reduce((a, x, k) => a + x * B[k][j], 0)));
+  const X = M(T, d), WQ = M(d, d, 0.45), WK = M(d, d, 0.45), WV = M(d, d, 0.8);
+  const Q = mul(X, WQ), K = mul(X, WK), Vv = mul(X, WV);
+  const KT = K[0].map((_, j) => K.map(r => r[j]));
+  const S = mul(Q, KT).map(r => r.map(x => x * wk.temp / (wk.scale ? Math.sqrt(d) : 1)));
+  const A = S.map((r, i) => { const m = r.map((x, j) => (wk.mask && j > i) ? -Infinity : x); const mx = Math.max(...m);
+    const e = m.map(x => Math.exp(x - mx)); const z = e.reduce((a, b) => a + b, 0); return e.map(x => x / z); });
+  const Z = mul(A, Vv);
+  return {toks, X, Q, K, V: Vv, S, A, Z};
+}
+matView = (name, M, rows, cols, kind = "div") => {
+  const mx = Math.max(1e-9, ...M.flat().filter(Number.isFinite).map(Math.abs));
+  const col = v => !Number.isFinite(v) ? "rgba(128,128,128,.15)" : kind === "prob" ? `rgba(29,53,87,${v})` :
+    v >= 0 ? `rgba(231,111,81,${v / mx})` : `rgba(69,123,157,${-v / mx})`;
+  const txt = v => !Number.isFinite(v) ? "−∞" : fmt(v, 2);
+  return htl.html`<div class="tf-mat"><div class="cap">${name}</div><table>
+    <tr><th></th>${cols.map(c => htl.html`<th>${c}</th>`)}</tr>
+    ${M.map((r, i) => htl.html`<tr><th>${rows[i]}</th>${r.map(v => htl.html`<td style="background:${col(v)};color:${kind === "prob" && v > 0.55 ? "#fff" : "inherit"}">${txt(v)}</td>`)}</tr>`)}</table></div>`;
+}
+```
+
+```{ojs}
+workedView = {
+  const w = worked, ix = ["1", "2", "3", "4"];
+  const Sm = w.S.map((r, i) => r.map((x, j) => (wk.mask && j > i) ? -Infinity : x));
+  return htl.html`<div class="tf-panel"><div class="tf-mats">
+    ${matView("X (tokens × d)", w.X, w.toks, ix)}${matView("Q = X·W_Q", w.Q, w.toks, ix)}${matView("K = X·W_K", w.K, w.toks, ix)}${matView("V = X·W_V", w.V, w.toks, ix)}
+    ${matView(`S = QKᵀ${wk.scale ? "/√4" : ""}${wk.temp !== 1 ? " × " + wk.temp : ""}${wk.mask ? " + mask" : ""}`, Sm, w.toks, w.toks)}
+    ${matView("A = softmax(S), rows sum to 1", w.A, w.toks, w.toks, "prob")}${matView("Z = AV", w.Z, w.toks, ix)}
+  </div></div>`;
+}
+```
+
+With the mask on, *the* can attend only to itself, so its output is exactly its own value vector; *mat* averages over all five.
+
+### Why divide by $\sqrt{d_h}$
+
+Suppose the components of $\mathbf q$ and $\mathbf k$ are independent with mean 0 and variance 1, roughly what initialisation and normalisation produce. Then
+
+$$
+\mathbb E[\mathbf q\cdot\mathbf k] = 0, \qquad \operatorname{Var}(\mathbf q\cdot\mathbf k) = \sum_{i=1}^{d_h}\operatorname{Var}(q_i k_i) = \sum_{i=1}^{d_h}\mathbb E[q_i^2]\,\mathbb E[k_i^2] = d_h.
+$$
+
+The scores grow like $\sqrt{d_h}$. With $d_h = 64$ their standard deviation is 8, and a softmax over numbers that spread puts almost all its weight on the largest. That matters for learning, through the softmax's derivative. Writing $\mathbf p = \operatorname{softmax}(\mathbf s)$,
+
+$$
+\frac{\partial p_i}{\partial s_j} = p_i\,([i=j] - p_j), \qquad J = \operatorname{diag}(\mathbf p) - \mathbf p\mathbf p^\top.
+$$
+
+When one $p_i$ is close to 1 and the rest close to 0, every entry of $J$ is close to zero, and almost no gradient flows back to the queries and keys: the model cannot learn to change where it looks. Dividing by $\sqrt{d_h}$ restores unit variance whatever the head width. The chart samples random unit-variance queries and keys and shows the largest attention weight in a row of 64 keys, averaged over many rows, with and without the scaling:
+
+```{ojs}
+satPlot = {
+  let s = 12345; const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  const g = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
+  const pts = [];
+  for (const dk of [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]) for (const scaled of [true, false]) {
+    let tot = 0; const R = 60, K = 64;
+    for (let r = 0; r < R; r++) {
+      const q = Array.from({length: dk}, g);
+      const sc = Array.from({length: K}, () => { let t = 0; for (let i = 0; i < dk; i++) t += q[i] * g(); return scaled ? t / Math.sqrt(dk) : t; });
+      const mx = Math.max(...sc), e = sc.map(x => Math.exp(x - mx)), z = e.reduce((a, b) => a + b, 0);
+      tot += Math.max(...e) / z;
+    }
+    pts.push({dk, w: tot / R, k: scaled ? "scaled by 1/√d_h" : "not scaled"});
+  }
+  return Plot.plot({width: Math.min(width, 640), height: 260, marginLeft: 50, grid: true,
+    x: {type: "log", label: "Head width d_h", base: 2}, y: {label: "Largest attention weight in a row", domain: [0, 1]},
+    color: {legend: true}, marks: [Plot.line(pts, {x: "dk", y: "w", stroke: "k", strokeWidth: 2}), Plot.dot(pts, {x: "dk", y: "w", fill: "k", r: 3})]});
+}
+```
+
+Unscaled, the largest weight in a typical row is about 0.8 at $d_h = 64$ and close to 1 beyond: before any learning has happened, attention has all but collapsed onto one key. Scaled, it stays at about 0.1 at every width, and gradients can flow.
+
+## Many heads
+
+One attention pattern per layer is restrictive: a token may need to look at the previous word for grammar and at a name twenty tokens back for meaning. **Multi-head attention** runs $h$ attentions in parallel, each on its own $d_h = d/h$-dimensional projection, and joins the results:
+
+$$
+\operatorname{MHA}(X) = [\,Z_1\;Z_2\;\cdots\;Z_h\,]\,W^O, \qquad Z_j = \operatorname{softmax}\!\left(\frac{XW^Q_j (XW^K_j)^\top}{\sqrt{d_h}}\right) XW^V_j.
+$$
+
+In code nothing is looped. The $d\times d$ projections compute all heads at once, and the heads are separated by a reshape: the last axis of $Q \in \mathbb R^{B\times T\times d}$ is cut into $h$ blocks of $d_h$, giving $(B,T,h,d_h)$, and transposed to $(B,h,T,d_h)$ so that the head index behaves like another batch index. The 3D view shows that split for a toy $T = 6$, $d = 12$, $h = 3$:
+
+```{ojs}
+//| output: false
+THREE = require("three@0.128.0/build/three.min.js")
+t3d = import(new URL("tensor3d.js", document.baseURI).href)
+```
+
+```{ojs}
+viewof split = Inputs.range([0, 1], {value: 0, step: 0.01, label: "Split into heads"})
+```
+
+```{ojs}
+headsView = {
+  const api = t3d.createTensorScene(THREE, {width: 720, height: 380});
+  invalidation.then(() => api.dispose());
+  const el = htl.html`<div class="tf-panel"><h4>Q for one sequence: (T, d) = (6, 12) → (h, T, d_h) = (3, 6, 4). Drag to rotate.</h4>${api.canvas}</div>`;
+  el.api = api; return el;
+}
+```
+
+```{ojs}
+headsUpdate = headsView.api.heads({T: 6, d: 12, h: 3, s: split})
+```
+
+Two facts about heads are worth stating precisely. First, each head's scores are a bilinear form $\mathbf x_i W^Q_j (W^K_j)^\top \mathbf x_k^\top$ whose matrix $W^Q_j (W^K_j)^\top \in \mathbb R^{d\times d}$ has rank at most $d_h$: each head can only compare tokens along a $d_h$-dimensional subspace. More heads mean more, narrower comparisons for the same cost. Second, splitting $W^O$ into $h$ blocks of $d_h$ rows shows that concatenating and projecting is the same as projecting each head separately and adding:
+
+$$
+[\,Z_1\;\cdots\;Z_h\,]\,W^O = \sum_{j=1}^h Z_j\,W^O_j,
+$$
+
+so each head writes its own contribution into the residual stream. That additive view is the basis of the interpretability work in Part 2.
+
+## Masks and cross-attention
+
+A mask is added to the scores before the softmax, with $-\infty$ where attention is forbidden, so those weights become exactly zero. The **causal mask** forbids attending to later positions. It is what lets a decoder be trained on a whole sequence at once: position $t$ predicts token $t+1$ having seen only tokens $1..t$, so one forward pass yields $T$ training examples without any leak of the answers. A **padding mask** stops real tokens from attending to the filler added to make sequences in a batch the same length.
+
+The 2017 model translates, so it has two stacks. The **encoder** reads the source sentence with unmasked self-attention, every word seeing every other. The **decoder** generates the translation with masked self-attention and, in each layer, a third sublayer of **cross-attention**: its queries come from the decoder, its keys and values from the encoder's final output. For a source of $T_s$ tokens and a target of $T_t$, the score matrix is $T_t \times T_s$: each target position looks across the whole source sentence. This is the attention of Dzmitry Bahdanau, Kyunghyun Cho and Yoshua Bengio's 2014 translation model, which the transformer kept while removing the recurrent network around it.
+
+GPT and most later language models dropped the encoder. A **decoder-only** model treats the prompt and the answer as one sequence and uses only masked self-attention; BERT kept only the encoder, for reading. Switch the tracer between the two to compare.
+
+## The feed-forward layer
+
+After attention mixes information between positions, each position is processed on its own by a two-layer network:
+
+$$
+F(X) = \phi(XW_1 + \mathbf b_1)\,W_2 + \mathbf b_2, \qquad W_1 \in \mathbb R^{d\times d_{\text{ff}}},\; W_2\in\mathbb R^{d_{\text{ff}}\times d},
+$$
+
+with $d_{\text{ff}} = 4d$ and $\phi$ the ReLU in 2017 and GELU in GPT-2. It holds two-thirds of each layer's parameters: $2d\,d_{\text{ff}} = 8d^2$ against attention's $4d^2$. Mor Geva and colleagues (2021) gave it a reading that has stuck: the rows of $W_1$ are *keys* that detect patterns in the token's vector, and the matching rows of $W_2$ are *values* added to the residual stream when they fire, so the layer works as a large key–value memory. Much of what a model knows about the world appears to be stored here.
+
+## Residuals and normalisation
+
+Every sublayer is wrapped in a residual connection (Kaiming He and colleagues, 2015) and a layer normalisation (Jimmy Ba, Jamie Kiros and Geoffrey Hinton, 2016). Layer normalisation rescales each token's vector across its $d$ features:
+
+$$
+\operatorname{LN}(\mathbf x) = \boldsymbol\gamma \odot \frac{\mathbf x - \mu(\mathbf x)}{\sqrt{\sigma^2(\mathbf x) + \epsilon}} + \boldsymbol\beta, \qquad \mu = \frac1d\sum_i x_i,\;\; \sigma^2 = \frac1d\sum_i (x_i - \mu)^2.
+$$
+
+The 2017 paper placed it after the residual addition, **Post-LN**: $X \leftarrow \operatorname{LN}(X + F(X))$. GPT-2 moved it inside the branch, **Pre-LN**: $X \leftarrow X + F(\operatorname{LN}(X))$, with a final normalisation before the output. The difference shows in the gradient. With Pre-LN, unrolling the layers gives
+
+$$
+X_L = X_0 + \sum_{l=0}^{L-1} F_l\big(\operatorname{LN}(X_l)\big), \qquad \frac{\partial X_L}{\partial X_l} = I + \sum_{m=l}^{L-1}\frac{\partial F_m(\operatorname{LN}(X_m))}{\partial X_l}:
+$$
+
+there is an identity path from the loss to every layer, and gradients reach the early layers undiminished. With Post-LN the identity path passes through a normalisation at every layer, and Ruibin Xiong and colleagues (2020) showed that the gradients near the output are then large at initialisation, which is why the 2017 model needed a learning-rate warm-up to train at all. Pre-LN trains without one, and nearly every large model since uses it.
+
+This also gives the cleanest picture of what a transformer is. The vector for each position is a **residual stream** running from the embedding at the bottom to the unembedding at the top. Every attention head and every feed-forward layer reads from the stream (through a normalisation) and adds its result back. Nothing overwrites; everything accumulates.
+
+## The output and the loss
+
+After the last layer, each position's vector is multiplied by the unembedding matrix to give a score, a **logit**, for every token in the vocabulary, $L = XE^\top$ when the weights are tied as in GPT-2 and the 2017 model; a softmax turns the logits into a distribution over the next token. Training minimises the cross-entropy, the average of $-\log p_{t,y_t}$ over all positions. Its gradient with respect to the logits is $\mathbf p - \mathbf e_{y}$, derived in the [embeddings post](../embeddings-part-1-words-to-vectors/#inside-a-transformer).
+
+The 2017 model softened the targets with **label smoothing**: instead of probability 1 on the true token, the target puts $1-\varepsilon$ there and spreads $\varepsilon = 0.1$ evenly over the vocabulary,
+
+$$
+\mathcal L_{\text{ls}} = -(1-\varepsilon)\log p_y - \frac{\varepsilon}{V}\sum_{v}\log p_v.
+$$
+
+The model can never reach zero loss and is discouraged from becoming over-confident. The paper reports that this made perplexity worse but translation accuracy (BLEU) better.
+
+## Training the 2017 model
+
+The base model was trained on about 4.5 million English–German sentence pairs, with batches of about 25,000 source and 25,000 target tokens, for 100,000 steps: twelve hours on eight NVIDIA P100 GPUs. The big model took 300,000 steps, three and a half days. Both used Adam with $\beta_1 = 0.9$, $\beta_2 = 0.98$, $\epsilon = 10^{-9}$, dropout of 0.1 on each sublayer's output and on the embeddings, and a learning rate that rose linearly for 4,000 steps and then fell as the inverse square root of the step:
+
+$$
+\eta(s) = d^{-1/2}\,\min\!\left(s^{-1/2},\; s\cdot s_{\text{warm}}^{-3/2}\right).
+$$
+
+```{ojs}
+lrPlot = {
+  const pts = [];
+  for (const [d, name] of [[512, "base, d = 512"], [1024, "big, d = 1,024"]]) for (let s = 1; s <= 100000; s += s < 8000 ? 50 : 500)
+    pts.push({s, lr: Math.pow(d, -0.5) * Math.min(Math.pow(s, -0.5), s * Math.pow(4000, -1.5)), k: name});
+  return Plot.plot({width: Math.min(width, 640), height: 240, marginLeft: 55, grid: true,
+    x: {label: "Training step"}, y: {label: "Learning rate", tickFormat: ".1e"}, color: {legend: true},
+    marks: [Plot.line(pts, {x: "s", y: "lr", stroke: "k", strokeWidth: 2})]});
+}
+```
+
+The big model reached a BLEU score of 28.4 on the WMT 2014 English-to-German test, more than two points above the best previous result including ensembles, and 41.8 on English-to-French (the figure in the abstract and results table; one section of the paper says 41.0), at a fraction of the training cost of the models it beat.
+
+## Counting parameters and arithmetic
+
+Ignoring biases and normalisation, a decoder layer has $4d^2$ attention parameters ($W^Q, W^K, W^V, W^O$) and $2d\,d_{\text{ff}} = 8d^2$ feed-forward parameters: $12d^2$ per layer, so $N_{\text{params}} \approx 12Nd^2$ plus the embeddings. For GPT-2 small, $12\times12\times768^2 = 84.9$ million in the layers, 38.6 million in the token table and 0.8 million in the position table, plus biases and normalisation parameters: 124.4 million, which is what the tracer and the published weights both give.
+
+The arithmetic follows from the parameters. A matrix multiply costs two operations (a multiply and an add) per weight per token, so a forward pass costs about $2N_{\text{params}}$ operations per token, plus the attention terms $QK^\top$ and $AV$, $4NTd$ per token, which only dominate when $T$ is several times $d$. Training costs about three times the forward pass, the backward pass computing gradients with respect to both activations and weights: the widely used estimate of $6N_{\text{params}}$ operations per training token (Jared Kaplan and colleagues, 2020).
+
+## Generating text, and the key–value cache
+
+To generate, a decoder-only model runs on the prompt, samples a token from the last position's distribution, appends it, and runs again. Done naively, step $t$ recomputes all $t$ positions. But with the causal mask, earlier positions never change when a token is added: their keys and values in every layer are the same as last time. So they are kept. The **key–value cache** stores $K$ and $V$ for every layer and position; each new step computes the query, key and value for the one new token, appends the key and value to the cache, and attends over it. The work per step falls from quadratic in $t$ to linear.
+
+```{ojs}
+viewof kvt = Inputs.range([0, 8], {value: 3, step: 1, label: "Tokens generated so far"})
+```
+
+```{ojs}
+kvView = {
+  const api = t3d.createTensorScene(THREE, {width: 720, height: 380});
+  invalidation.then(() => api.dispose());
+  const el = htl.html`<div class="tf-panel"><h4>Key–value cache: K (dark) and V (green) for 4 layers; newest row orange. Drag to rotate.</h4>${api.canvas}</div>`;
+  el.api = api; return el;
+}
+```
+
+```{ojs}
+kvUpdate = kvView.api.kv({L: 4, d: 8, t: kvt, Tmax: 8})
+```
+
+The cache trades arithmetic for memory: $2 \times N \times T \times d$ numbers per sequence. For GPT-2 small at 1,024 tokens in 16-bit numbers that is 36 MiB; for GPT-3 at 2,048 tokens, 9 GiB per sequence, which is why serving many users at once is limited by memory rather than arithmetic, and why so many of the changes in Part 3 shrink the cache. Generation therefore has two phases with different bottlenecks: **prefill**, processing the prompt in parallel, limited by arithmetic; and **decode**, one token at a time, limited by how fast the weights and the cache can be read from memory.
+
+## What it costs, and what came next
+
+Attention's strength is also its cost: every token compared with every other, $O(T^2 d)$ arithmetic and, done directly, $O(T^2)$ memory for the score matrix of each head in each layer. At 1,024 tokens this is small; at a million it is impossible. The other costs are the cache, the feed-forward layers that hold most of the parameters, and the number of sequential steps in generation. Nearly every architectural change since 2017 targets one of these, or the stability of training at scale; [Part 3](../transformer-part-3-advances/) goes through them. First, [Part 2](../transformer-part-2-inside-gpt-2/) opens up a trained model to see what all this machinery actually learns to do.
+
+## Terminology and where it comes from
+
+::: {.tf-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Attention** | Content-dependent weighted averaging over positions | Bahdanau, Cho and Bengio's 2014 translation model learned to "align and translate", weighting source words for each target word; the word comes from cognitive psychology, where attention is the selection of some inputs over others. |
+| **Transformer** | The architecture | Named by Vaswani and colleagues, 2017: the model transforms one sequence of vectors into another, layer by layer. |
+| **Query, key, value** | The three projections | From databases and information retrieval: a query is matched against keys to retrieve values. |
+| **Head** | One of the parallel attentions | The 2017 paper's term (*multi-head attention*): each head is an independent reader of the sequence. |
+| **Residual connection** | Adding a layer's input to its output | He and colleagues' 2015 ResNets, which learn the *residual* $F(x) = H(x) - x$ rather than $H(x)$. |
+| **Layer normalisation** | Per-token normalisation across features | Ba, Kiros and Hinton, 2016, normalising over a *layer*'s units rather than over the batch as in batch normalisation (Ioffe and Szegedy, 2015). |
+| **Dropout** | Randomly zeroing activations in training | Geoffrey Hinton's group, 2012–14: units *drop out* of the network for a step. |
+| **Teacher forcing** | Training on the true previous tokens, not the model's own outputs | Ronald Williams and David Zipser, 1989, for recurrent networks: the teacher's signal is forced in as input. |
+| **Logit** | An unnormalised log-score | Joseph Berkson, 1944: the *log*istic counterpart of the prob*it*. |
+| **BLEU** | Translation quality measure | *Bilingual Evaluation Understudy*, Kishore Papineni and colleagues at IBM, 2002: an automatic stand-in (understudy) for human judges. |
+| **Encoder, decoder** | The stack that reads, the stack that writes | Communication theory: encode a message into a signal, decode it at the other end. |
+:::
+
+## Method and sources
+
+**Shape tracer.** Parameter counts include biases and LayerNorm parameters and assume tied input and output embeddings. FLOP counts are $2mnk$ for a product of an $m\times k$ and a $k\times n$ matrix, plus rough counts for softmax (5 per entry), LayerNorm (7 per entry) and additions; the totals are dominated by the matrix multiplies, so the rough terms do not matter. The encoder–decoder option uses the same $T$ for source and target, sinusoidal positions and Post-LN; the decoder-only option follows GPT-2 (learned positions, Pre-LN, a final LayerNorm). The 2017 vocabulary of 37,000 is the shared English–German byte-pair vocabulary; with it the tracer gives 63 million parameters for the base model against the paper's 65 million, which does not say exactly how it counted.
+
+**Worked example and saturation chart.** Computed in your browser from seeded Gaussian random numbers. The saturation chart averages the largest softmax weight over 60 rows of 64 keys for each head width.
+
+Sources:
+
+- A. Vaswani and colleagues, [*Attention Is All You Need*](https://arxiv.org/abs/1706.03762), NeurIPS 2017: architecture, hyperparameters, training schedule, results.
+- D. Bahdanau, K. Cho, Y. Bengio, [*Neural Machine Translation by Jointly Learning to Align and Translate*](https://arxiv.org/abs/1409.0473), 2014.
+- A. Radford and colleagues, [*Language Models are Unsupervised Multitask Learners*](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf) (GPT-2), 2019. T. Brown and colleagues, [*Language Models are Few-Shot Learners*](https://arxiv.org/abs/2005.14165) (GPT-3), 2020.
+- K. He and colleagues, [*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385), 2015. J. Ba, J. Kiros, G. Hinton, [*Layer Normalization*](https://arxiv.org/abs/1607.06450), 2016. R. Xiong and colleagues, [*On Layer Normalization in the Transformer Architecture*](https://arxiv.org/abs/2002.04745), ICML 2020.
+- M. Geva and colleagues, [*Transformer Feed-Forward Layers Are Key-Value Memories*](https://arxiv.org/abs/2012.14913), EMNLP 2021.
+- J. Kaplan and colleagues, [*Scaling Laws for Neural Language Models*](https://arxiv.org/abs/2001.08361), 2020: the $2N$ and $6N$ operation counts.
+- R. Williams, D. Zipser, "A Learning Algorithm for Continually Running Fully Recurrent Neural Networks", *Neural Computation* 1, 1989. K. Papineni and colleagues, "BLEU", ACL 2002.
+
+**Next: [Part 2, inside GPT-2](../transformer-part-2-inside-gpt-2/)**.

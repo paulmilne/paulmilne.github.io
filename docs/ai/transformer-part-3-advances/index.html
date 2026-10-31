@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="The architectural advances since 2017: model families, Pre-LN, RMSNorm and QK-norm; SwiGLU; RoPE, ALiBi and context extension; sparse, linear and hybrid attention; MQA, GQA, MLA and the KV cache; FlashAttention; mixture of experts; scaling laws; speculative decoding and multi-token prediction; state-space models; and the 2025–26 designs. Interactive timeline and cost charts.">
+
+<title>The Transformer, Part 3: Since Attention Is All You Need – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Transformer, Part 3: Since Attention Is All You Need – math-blog">
+<meta property="og:description" content="The architectural advances since 2017: model families, Pre-LN, RMSNorm and QK-norm; SwiGLU; RoPE, ALiBi and context extension; sparse, linear and hybrid attention; MQA, GQA, MLA and the KV cache; FlashAttention; mixture of experts; scaling laws; speculative decoding and multi-token prediction; state-space models; and the 2025–26 designs. Interactive timeline and cost charts.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/transformer-part-3-advances/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="The Transformer, Part 3: Since Attention Is All You Need – math-blog">
+<meta name="twitter:description" content="The architectural advances since 2017: model families, Pre-LN, RMSNorm and QK-norm; SwiGLU; RoPE, ALiBi and context extension; sparse, linear and hybrid attention; MQA, GQA, MLA and the KV cache; FlashAttention; mixture of experts; scaling laws; speculative decoding and multi-token prediction; state-space models; and the 2025–26 designs. Interactive timeline and cost charts.">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/transformer-part-3-advances/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Transformer, Part 3: Since Attention Is All You Need</h1>
+            <p class="subtitle lead">Nine years of changes to the architecture, grouped by the problem each one solves, with the mathematics of the important ones and what a 2026 model looks like</p>
+                  <div>
+        <div class="description">
+          The architectural advances since 2017: model families, Pre-LN, RMSNorm and QK-norm; SwiGLU; RoPE, ALiBi and context extension; sparse, linear and hybrid attention; MQA, GQA, MLA and the KV cache; FlashAttention; mixture of experts; scaling laws; speculative decoding and multi-token prediction; state-space models; and the 2025–26 designs. Interactive timeline and cost charts.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">transformers</div>
+                <div class="quarto-category">language-models</div>
+                <div class="quarto-category">history</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#timeline" id="toc-timeline" class="nav-link active" data-scroll-target="#timeline">Timeline</a></li>
+  <li><a href="#one-stack-three-shapes" id="toc-one-stack-three-shapes" class="nav-link" data-scroll-target="#one-stack-three-shapes">One stack, three shapes</a></li>
+  <li><a href="#stability-normalisation-and-initialisation" id="toc-stability-normalisation-and-initialisation" class="nav-link" data-scroll-target="#stability-normalisation-and-initialisation">Stability: normalisation and initialisation</a></li>
+  <li><a href="#the-feed-forward-layer-gating" id="toc-the-feed-forward-layer-gating" class="nav-link" data-scroll-target="#the-feed-forward-layer-gating">The feed-forward layer: gating</a></li>
+  <li><a href="#position-and-making-context-longer" id="toc-position-and-making-context-longer" class="nav-link" data-scroll-target="#position-and-making-context-longer">Position, and making context longer</a></li>
+  <li><a href="#cheaper-attention" id="toc-cheaper-attention" class="nav-link" data-scroll-target="#cheaper-attention">Cheaper attention</a></li>
+  <li><a href="#the-keyvalue-cache" id="toc-the-keyvalue-cache" class="nav-link" data-scroll-target="#the-keyvalue-cache">The key–value cache</a></li>
+  <li><a href="#mixture-of-experts" id="toc-mixture-of-experts" class="nav-link" data-scroll-target="#mixture-of-experts">Mixture of experts</a></li>
+  <li><a href="#how-big-on-how-much-data" id="toc-how-big-on-how-much-data" class="nav-link" data-scroll-target="#how-big-on-how-much-data">How big, on how much data</a></li>
+  <li><a href="#faster-generation" id="toc-faster-generation" class="nav-link" data-scroll-target="#faster-generation">Faster generation</a></li>
+  <li><a href="#beyond-attention" id="toc-beyond-attention" class="nav-link" data-scroll-target="#beyond-attention">Beyond attention</a></li>
+  <li><a href="#beyond-text" id="toc-beyond-text" class="nav-link" data-scroll-target="#beyond-text">Beyond text</a></li>
+  <li><a href="#what-a-2026-model-looks-like" id="toc-what-a-2026-model-looks-like" class="nav-link" data-scroll-target="#what-a-2026-model-looks-like">What a 2026 model looks like</a></li>
+  <li><a href="#terminology-and-where-it-comes-from" id="toc-terminology-and-where-it-comes-from" class="nav-link" data-scroll-target="#terminology-and-where-it-comes-from">Terminology and where it comes from</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.tf-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.tf-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.tf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.tf-grid form { flex-wrap: wrap !important; }
+.tf-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.tf-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.tf-card { border-left: 4px solid var(--c, #888); padding: .4rem .7rem; margin: .4rem 0; background: rgba(128,128,128,.06); border-radius: 4px; }
+.tf-card .n { font-weight: 650; } .tf-card .d { font-size: .8rem; opacity: .7; }
+.tf-tl svg { width: 100%; height: auto; display: block; }
+.tf-tl circle { cursor: pointer; }
+table.tf-t td.num, table.tf-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tf-scroll { overflow-x: auto; max-width: 100%; }
+.tf-panel .tf-scroll { width: 100%; }
+.cell-output-display, div.observablehq { max-width: 100%; min-width: 0; overflow-x: auto; }
+.tf-scroll table { min-width: 620px; }
+.tf-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="41" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 40;"><span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>bytesH <span class="op">=</span> (x) <span class="kw">=&gt;</span> { <span class="kw">const</span> a <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(x)<span class="op">;</span> <span class="cf">return</span> a <span class="op">&gt;=</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">40</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">2</span>) <span class="op">+</span> <span class="st">" TiB"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">30</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" GiB"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">20</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" MiB"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">10</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="dv">2</span> <span class="op">**</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" KiB"</span> <span class="op">:</span> <span class="fu">fmt</span>(x) <span class="op">+</span> <span class="st">" B"</span><span class="op">;</span> }</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>TL <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/timeline.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>groups <span class="op">=</span> [<span class="st">"Model families"</span><span class="op">,</span> <span class="st">"Normalisation and stability"</span><span class="op">,</span> <span class="st">"Feed-forward"</span><span class="op">,</span> <span class="st">"Position"</span><span class="op">,</span> <span class="st">"Efficient attention"</span><span class="op">,</span> <span class="st">"KV cache and memory"</span><span class="op">,</span> <span class="st">"Mixture of experts"</span><span class="op">,</span> <span class="st">"Scaling"</span><span class="op">,</span> <span class="st">"Decoding"</span><span class="op">,</span> <span class="st">"Alternatives and hybrids"</span><span class="op">,</span> <span class="st">"Beyond text"</span><span class="op">,</span> <span class="st">"Other"</span>]</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>gcol <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">fromEntries</span>(groups<span class="op">.</span><span class="fu">map</span>((g<span class="op">,</span> i) <span class="kw">=&gt;</span> [g<span class="op">,</span> d3<span class="op">.</span><span class="at">schemeTableau10</span><span class="op">.</span><span class="fu">concat</span>([<span class="st">"#6b7280"</span><span class="op">,</span> <span class="st">"#b45309"</span>])[i]]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p><a href="../transformer-part-1-operation-by-operation/">Part 1</a> took apart the 2017 transformer and <a href="../transformer-part-2-inside-gpt-2/">Part 2</a> looked inside a trained one. This part covers what has changed since. The surprising answer is: less than you might think. A 2026 language model is still a stack of layers, each with attention and a feed-forward network, joined by residual connections, predicting the next token. But almost every component has been replaced by a better-behaved or cheaper version, and the changes compound: a model built entirely from 2017 parts would be slower to train, less stable, far more expensive to serve and limited to short inputs.</p>
+<p>The changes are grouped by the problem each one addresses. The timeline shows them all; click any point for a summary and the paper. The sections below explain the important ones with their mathematics.</p>
+<section id="timeline" class="level2">
+<h2 class="anchored" data-anchor-id="timeline">Timeline</h2>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="54" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 53;"><span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>viewof tlPick <span class="op">=</span> {</span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> W <span class="op">=</span> <span class="dv">760</span><span class="op">,</span> left <span class="op">=</span> <span class="dv">175</span><span class="op">,</span> right <span class="op">=</span> <span class="dv">16</span><span class="op">,</span> top <span class="op">=</span> <span class="dv">26</span><span class="op">,</span> rowH <span class="op">=</span> <span class="dv">30</span><span class="op">,</span> H <span class="op">=</span> top <span class="op">+</span> groups<span class="op">.</span><span class="at">length</span> <span class="op">*</span> rowH <span class="op">+</span> <span class="dv">30</span><span class="op">;</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> x <span class="op">=</span> d3<span class="op">.</span><span class="fu">scaleTime</span>()<span class="op">.</span><span class="fu">domain</span>([<span class="kw">new</span> <span class="bu">Date</span>(<span class="dv">2016</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">,</span> <span class="kw">new</span> <span class="bu">Date</span>(<span class="dv">2026</span><span class="op">,</span> <span class="dv">11</span><span class="op">,</span> <span class="dv">31</span>)])<span class="op">.</span><span class="fu">range</span>([left<span class="op">,</span> W <span class="op">-</span> right])<span class="op">;</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> y <span class="op">=</span> g <span class="kw">=&gt;</span> top <span class="op">+</span> groups<span class="op">.</span><span class="fu">indexOf</span>(g) <span class="op">*</span> rowH <span class="op">+</span> rowH <span class="op">/</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> items <span class="op">=</span> TL<span class="op">.</span><span class="fu">map</span>((d<span class="op">,</span> i) <span class="kw">=&gt;</span> ({<span class="op">...</span>d<span class="op">,</span> i<span class="op">,</span> <span class="dt">t</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Date</span>(d<span class="op">.</span><span class="at">date</span> <span class="op">+</span> <span class="st">"-15"</span>)}))<span class="op">;</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>  <span class="co">// jitter points that share a month and row</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> seen <span class="op">=</span> {}<span class="op">;</span> items<span class="op">.</span><span class="fu">forEach</span>(d <span class="kw">=&gt;</span> { <span class="kw">const</span> k <span class="op">=</span> d<span class="op">.</span><span class="at">group</span> <span class="op">+</span> d<span class="op">.</span><span class="at">date</span><span class="op">;</span> seen[k] <span class="op">=</span> (seen[k] <span class="op">||</span> <span class="dv">0</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">;</span> d<span class="op">.</span><span class="at">j</span> <span class="op">=</span> (seen[k] <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> <span class="dv">6</span><span class="op">;</span> })<span class="op">;</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> years <span class="op">=</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="dv">2016</span><span class="op">,</span> <span class="dv">2027</span>)<span class="op">;</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> svg <span class="op">=</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;svg viewBox="0 0 </span><span class="sc">${</span>W<span class="sc">}</span><span class="vs"> </span><span class="sc">${</span>H<span class="sc">}</span><span class="vs">" font-family="system-ui, sans-serif" font-size="11"&gt;</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>years<span class="op">.</span><span class="fu">map</span>(yr <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;line x1="</span><span class="sc">${</span><span class="fu">x</span>(<span class="kw">new</span> <span class="bu">Date</span>(yr<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>))<span class="sc">}</span><span class="vs">" x2="</span><span class="sc">${</span><span class="fu">x</span>(<span class="kw">new</span> <span class="bu">Date</span>(yr<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>))<span class="sc">}</span><span class="vs">" y1="</span><span class="sc">${</span>top <span class="op">-</span> <span class="dv">6</span><span class="sc">}</span><span class="vs">" y2="</span><span class="sc">${</span>H <span class="op">-</span> <span class="dv">24</span><span class="sc">}</span><span class="vs">" stroke="rgba(128,128,128,.25)"/&gt;</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;text x="</span><span class="sc">${</span><span class="fu">x</span>(<span class="kw">new</span> <span class="bu">Date</span>(yr<span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">1</span>))<span class="sc">}</span><span class="vs">" y="</span><span class="sc">${</span>H <span class="op">-</span> <span class="dv">8</span><span class="sc">}</span><span class="vs">" text-anchor="middle" fill="currentColor" opacity=".7"&gt;</span><span class="sc">${</span>yr<span class="sc">}</span><span class="vs">&lt;/text&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>groups<span class="op">.</span><span class="fu">map</span>(g <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;text x="</span><span class="sc">${</span>left <span class="op">-</span> <span class="dv">8</span><span class="sc">}</span><span class="vs">" y="</span><span class="sc">${</span><span class="fu">y</span>(g) <span class="op">+</span> <span class="dv">4</span><span class="sc">}</span><span class="vs">" text-anchor="end" fill="</span><span class="sc">${</span>gcol[g]<span class="sc">}</span><span class="vs">" font-weight="600"&gt;</span><span class="sc">${</span>g<span class="sc">}</span><span class="vs">&lt;/text&gt;</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;line x1="</span><span class="sc">${</span>left<span class="sc">}</span><span class="vs">" x2="</span><span class="sc">${</span>W <span class="op">-</span> right<span class="sc">}</span><span class="vs">" y1="</span><span class="sc">${</span><span class="fu">y</span>(g)<span class="sc">}</span><span class="vs">" y2="</span><span class="sc">${</span><span class="fu">y</span>(g)<span class="sc">}</span><span class="vs">" stroke="rgba(128,128,128,.12)"/&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>items<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">svg</span><span class="vs">`&lt;circle data-i="</span><span class="sc">${</span>d<span class="op">.</span><span class="at">i</span><span class="sc">}</span><span class="vs">" cx="</span><span class="sc">${</span><span class="fu">x</span>(d<span class="op">.</span><span class="at">t</span>)<span class="sc">}</span><span class="vs">" cy="</span><span class="sc">${</span><span class="fu">y</span>(d<span class="op">.</span><span class="at">group</span>) <span class="op">+</span> d<span class="op">.</span><span class="at">j</span> <span class="op">-</span> <span class="dv">3</span><span class="sc">}</span><span class="vs">" r="6" fill="</span><span class="sc">${</span>gcol[d<span class="op">.</span><span class="at">group</span>]<span class="sc">}</span><span class="vs">" fill-opacity=".85" stroke="#fff"&gt;&lt;title&gt;</span><span class="sc">${</span>d<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>d<span class="op">.</span><span class="at">date</span><span class="sc">}</span><span class="vs">)&lt;/title&gt;&lt;/circle&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/svg&gt;`</span><span class="op">;</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> wrap <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-panel tf-tl"&gt;&lt;h4&gt;</span><span class="sc">${</span>TL<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs"> architectural changes, June 2016 to October 2026: click a point&lt;/h4&gt;</span><span class="sc">${</span>svg<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>  wrap<span class="op">.</span><span class="at">value</span> <span class="op">=</span> items<span class="op">.</span><span class="fu">find</span>(d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">name</span> <span class="op">===</span> <span class="st">"RoPE"</span>)<span class="op">;</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>  svg<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">"click"</span><span class="op">,</span> e <span class="kw">=&gt;</span> { <span class="kw">const</span> c <span class="op">=</span> e<span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="fu">closest</span>(<span class="st">"circle[data-i]"</span>)<span class="op">;</span> <span class="cf">if</span> (<span class="op">!</span>c) <span class="cf">return</span><span class="op">;</span> wrap<span class="op">.</span><span class="at">value</span> <span class="op">=</span> items[<span class="op">+</span>c<span class="op">.</span><span class="at">dataset</span><span class="op">.</span><span class="at">i</span>]<span class="op">;</span> wrap<span class="op">.</span><span class="fu">dispatchEvent</span>(<span class="kw">new</span> <span class="bu">Event</span>(<span class="st">"input"</span><span class="op">,</span> {<span class="dt">bubbles</span><span class="op">:</span> <span class="kw">true</span>}))<span class="op">;</span> })<span class="op">;</span></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> wrap<span class="op">;</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="77" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 76;"><span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>tlCard <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-card" style="--c:</span><span class="sc">${</span>gcol[tlPick<span class="op">.</span><span class="at">group</span>]<span class="sc">}</span><span class="vs">"&gt;&lt;div class="n"&gt;</span><span class="sc">${</span>tlPick<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs"> &lt;span class="d"&gt;· </span><span class="sc">${</span><span class="kw">new</span> <span class="bu">Date</span>(tlPick<span class="op">.</span><span class="at">date</span> <span class="op">+</span> <span class="st">"-15"</span>)<span class="op">.</span><span class="fu">toLocaleDateString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">month</span><span class="op">:</span> <span class="st">"long"</span><span class="op">,</span> <span class="dt">year</span><span class="op">:</span> <span class="st">"numeric"</span>})<span class="sc">}</span><span class="vs"> · </span><span class="sc">${</span>tlPick<span class="op">.</span><span class="at">group</span><span class="sc">}</span><span class="vs">&lt;/span&gt;&lt;/div&gt;</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;</span><span class="sc">${</span>tlPick<span class="op">.</span><span class="at">what</span><span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="d"&gt;Used in: </span><span class="sc">${</span>tlPick<span class="op">.</span><span class="at">used</span><span class="sc">}${</span>tlPick<span class="op">.</span><span class="at">arxiv</span> <span class="op">?</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">` · &lt;a href="https://arxiv.org/abs/</span><span class="sc">${</span>tlPick<span class="op">.</span><span class="at">arxiv</span><span class="sc">}</span><span class="vs">"&gt;arXiv </span><span class="sc">${</span>tlPick<span class="op">.</span><span class="at">arxiv</span><span class="sc">}</span><span class="vs">&lt;/a&gt;`</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="one-stack-three-shapes" class="level2">
+<h2 class="anchored" data-anchor-id="one-stack-three-shapes">One stack, three shapes</h2>
+<p>The 2017 model had an encoder for the source sentence and a decoder for the translation. Within two years the two halves had gone separate ways. <strong>GPT</strong> (Alec Radford and colleagues at OpenAI, 2018) kept only the decoder, with its causal mask, and trained it to predict the next token of ordinary text. <strong>BERT</strong> (Jacob Devlin and colleagues at Google, 2018) kept only the encoder, with no mask, and trained it to fill in hidden words; it became the standard for reading tasks, and its descendants are the embedding models of the <a href="../embeddings-part-2-search-and-retrieval/">embeddings series</a>. <strong>T5</strong> (Colin Raffel and colleagues, 2019) compared the shapes systematically and found the encoder–decoder best at the time.</p>
+<p>Scale settled the question differently. Decoder-only models are simpler, use every token of training text as a prediction target, and treat any task as continuing a prompt; GPT-3’s 175 billion parameters in 2020 showed what that bought. By 2023 essentially every frontier language model was decoder-only, and everything below is about decoders unless stated.</p>
+</section>
+<section id="stability-normalisation-and-initialisation" class="level2">
+<h2 class="anchored" data-anchor-id="stability-normalisation-and-initialisation">Stability: normalisation and initialisation</h2>
+<p>Training a transformer with hundreds of layers on trillions of tokens fails in ways a 6-layer model never shows: loss spikes, divergence, attention logits growing without limit. Most of the fixes are about normalisation.</p>
+<p><strong>Pre-LN.</strong> GPT-2 moved the LayerNorm from after the residual addition to the start of each branch, <span class="math inline">\(X \leftarrow X + F(\operatorname{LN}(X))\)</span>. Part 1 derived why this matters: the residual stream becomes an identity path from the loss to every layer. Ruibin Xiong and colleagues proved in 2020 that the original Post-LN has large gradients near the output at initialisation, which is why it needed a learning-rate warm-up; Pre-LN does not.</p>
+<p><strong>RMSNorm.</strong> Biao Zhang and Rico Sennrich (2019) dropped LayerNorm’s mean-centring and kept only the rescaling:</p>
+<p><span class="math display">\[
+\operatorname{RMSNorm}(\mathbf x) = \frac{\mathbf x}{\sqrt{\tfrac1d\sum_i x_i^2 + \epsilon}} \odot \mathbf g.
+\]</span></p>
+<p>It works as well and is cheaper; LLaMA, Mistral, DeepSeek, Qwen, gpt-oss and Gemma all use it.</p>
+<p><strong>Normalising the attention logits.</strong> A softmax over scores <span class="math inline">\(\mathbf q\cdot\mathbf k/\sqrt{d_h}\)</span> saturates if the scores grow, and in large models they do. <strong>QK-norm</strong> (Alex Henry and colleagues, 2020; scaled up in Google’s ViT-22B in 2023) normalises <span class="math inline">\(\mathbf q\)</span> and <span class="math inline">\(\mathbf k\)</span> before the dot product, bounding every score; Gemma 3 adopted it in place of Gemma 2’s soft-capping. PaLM’s <strong>z-loss</strong> adds <span class="math inline">\(10^{-4}\log^2 Z\)</span> to the loss, <span class="math inline">\(Z\)</span> being the softmax normaliser of the output, to stop the output logits drifting. Kimi K2’s <strong>QK-Clip</strong> (2025) rescales <span class="math inline">\(W^Q\)</span> and <span class="math inline">\(W^K\)</span> whenever a head’s largest logit passes a threshold of 100, and the team reports training on 15.5 trillion tokens with no loss spikes.</p>
+<p><strong>Normalising both sides.</strong> Several 2024–25 open models normalise a sublayer’s output as well as its input, <span class="math inline">\(X \leftarrow X + \operatorname{Norm}(F(\operatorname{Norm}(X)))\)</span>, which keeps the residual stream from growing as it did in Part 2’s GPT-2 plot; Kim and colleagues analysed this “Peri-LN” in 2025. Gemma 3 and 4 use it; OLMo 2 normalises the output only.</p>
+<p><strong>The residual stream itself.</strong> DeepSeek’s <strong>manifold-constrained hyper-connections</strong> (mHC, December 2025) widen the residual stream into <span class="math inline">\(n = 4\)</span> parallel copies, mixed between layers by a learned matrix constrained to be doubly stochastic (projected onto the Birkhoff polytope with the Sinkhorn–Knopp algorithm). A doubly stochastic mixing preserves the mean of the streams, so the identity path of Pre-LN survives. It is in DeepSeek-V4.</p>
+<p><strong>Hyperparameters that transfer.</strong> Greg Yang and colleagues’ μP (2022) chooses how initialisation and learning rates scale with width so that the best values found on a small model remain best on a large one: tune a 40-million-parameter proxy, train the big one once.</p>
+</section>
+<section id="the-feed-forward-layer-gating" class="level2">
+<h2 class="anchored" data-anchor-id="the-feed-forward-layer-gating">The feed-forward layer: gating</h2>
+<p>The 2017 feed-forward layer was <span class="math inline">\(\operatorname{ReLU}(XW_1)W_2\)</span>; GPT used the smoother GELU, <span class="math inline">\(x\,\Phi(x)\)</span>. Noam Shazeer’s <em>GLU Variants Improve Transformer</em> (2020) replaced it with a <strong>gated</strong> layer, two up-projections multiplied element by element:</p>
+<p><span class="math display">\[
+\operatorname{FFN}_{\text{SwiGLU}}(X) = \big(\operatorname{Swish}(XW) \odot XV\big)\,W_2, \qquad \operatorname{Swish}(x) = x\,\sigma(x).
+\]</span></p>
+<p>With three matrices instead of two, <span class="math inline">\(d_{\text{ff}}\)</span> is cut to about <span class="math inline">\(\tfrac23 \cdot 4d\)</span> to keep the parameter count unchanged. It improved every benchmark in the paper; Shazeer declined to explain why, attributing the success “as all else, to divine benevolence”. PaLM and LLaMA adopted it, and almost every model since has.</p>
+</section>
+<section id="position-and-making-context-longer" class="level2">
+<h2 class="anchored" data-anchor-id="position-and-making-context-longer">Position, and making context longer</h2>
+<p><strong>Relative over absolute.</strong> Peter Shaw, Jakob Uszkoreit and Ashish Vaswani (2018) argued that what matters is the distance between tokens, not their absolute positions, and added learned embeddings of relative distance. T5 reduced this to one learned scalar per head per distance bucket, added to the score.</p>
+<p><strong>RoPE</strong> (Jianlin Su and colleagues, 2021) won: rotate each pair of query and key coordinates by an angle proportional to position, <span class="math inline">\(m\theta_i\)</span> with <span class="math inline">\(\theta_i = b^{-2i/d}\)</span>, so that the score <span class="math inline">\(\mathbf q_m \cdot \mathbf k_n\)</span> depends only on <span class="math inline">\(m - n\)</span>. The derivation is in the <a href="../embeddings-part-1-words-to-vectors/#where-am-i-in-the-sentence">embeddings post</a>. The base <span class="math inline">\(b\)</span> was 10,000; Llama 3 raised it to 500,000 and Qwen3-Next to 10 million, to slow the rotations for long contexts.</p>
+<p><strong>ALiBi</strong> (Ofir Press, Noah Smith and Mike Lewis, 2021) adds no position information to the vectors at all. It subtracts a penalty proportional to distance from each score, <span class="math inline">\(s_{ij} - m_h\,(i-j)\)</span>, with a fixed slope per head from a geometric sequence (<span class="math inline">\(\tfrac12, \tfrac14, \dots, \tfrac1{256}\)</span> for eight heads), so each head has its own horizon. Trained on 1,024 tokens, a 1.3B model matched a sinusoidal model trained on 2,048 when both were tested at 2,048.</p>
+<p><strong>No position at all.</strong> A causal mask already breaks the symmetry between positions (a token can count how many tokens it can see), and Amirhossein Kazemnejad and colleagues (2023) found decoder-only models with no position encoding (<strong>NoPE</strong>) generalised to longer inputs better than any scheme on some reasoning tasks. Llama 4 leaves RoPE out of every fourth layer; IBM’s Granite 4.0-H uses none.</p>
+<p><strong>Extending a trained model’s context.</strong> A model trained on 4,096 tokens has never seen RoPE angles beyond <span class="math inline">\(4096\,\theta_i\)</span>. <strong>Position interpolation</strong> (Shouyuan Chen and colleagues at Meta, 2023) rescales positions by <span class="math inline">\(L/L'\)</span> so that a longer input falls inside the trained range; LLaMA reached 32,768 tokens in about 1,000 fine-tuning steps. But squeezing positions blurs the fast-rotating dimensions that tell neighbouring tokens apart. The <strong>NTK-aware</strong> rule changes the base instead, <span class="math inline">\(b' = b\,s^{d/(d-2)}\)</span> for a stretch factor <span class="math inline">\(s\)</span>, which leaves the fastest rotations almost untouched and stretches the slow ones. <strong>YaRN</strong> (Bowen Peng and colleagues, 2023) interpolates only the dimensions whose wavelength exceeds the training length, leaves the fast ones alone, ramps between them, and multiplies the logits by a temperature <span class="math inline">\(\sqrt{1/t} = 0.1\ln s + 1\)</span>; it needed ten times fewer tokens than earlier methods. DeepSeek-V3 and gpt-oss ship with YaRN in their configurations: gpt-oss stretches 4,096 trained positions by 32 to 131,072.</p>
+</section>
+<section id="cheaper-attention" class="level2">
+<h2 class="anchored" data-anchor-id="cheaper-attention">Cheaper attention</h2>
+<p>Attention costs <span class="math inline">\(O(T^2)\)</span>, and every year someone proposes to cut it. Four families:</p>
+<p><strong>Sparse patterns.</strong> Attend only to some pairs: fixed strided patterns (Sparse Transformer, 2019, used in GPT-3’s alternate layers), a local window plus a few global tokens (Longformer, BigBird, 2020), or hashing similar tokens into buckets (Reformer, 2020). The one that lasted is the plainest, the <strong>sliding window</strong>: each token attends to the previous <span class="math inline">\(W\)</span>. Mistral 7B (2023) used <span class="math inline">\(W = 4{,}096\)</span>; since each layer can reach <span class="math inline">\(W\)</span> further back through the previous layer’s outputs, 32 layers reach about 131,000 tokens. Production models now interleave window layers with full ones: Gemma 3 and 4 have five local layers (window 1,024) to one global, gpt-oss alternates a 128-token window with full attention.</p>
+<p><strong>Linear attention.</strong> Angelos Katharopoulos and colleagues (2020) replaced the softmax kernel <span class="math inline">\(e^{\mathbf q\cdot\mathbf k}\)</span> with a feature map, <span class="math inline">\(\phi(\mathbf q)\cdot\phi(\mathbf k)\)</span>. Then the causal output for token <span class="math inline">\(t\)</span> is</p>
+<p><span class="math display">\[
+\mathbf z_t = \frac{\sum_{s\le t} \big(\phi(\mathbf q_t)\cdot\phi(\mathbf k_s)\big)\,\mathbf v_s}{\sum_{s\le t}\phi(\mathbf q_t)\cdot\phi(\mathbf k_s)}
+= \frac{\phi(\mathbf q_t)\,S_t}{\phi(\mathbf q_t)\cdot\mathbf u_t}, \qquad S_t = S_{t-1} + \phi(\mathbf k_t)^\top \mathbf v_t,\;\; \mathbf u_t = \mathbf u_{t-1} + \phi(\mathbf k_t),
+\]</span></p>
+<p>because matrix multiplication is associative: <span class="math inline">\((\phi(Q)\phi(K)^\top)V = \phi(Q)(\phi(K)^\top V)\)</span>. The state <span class="math inline">\(S_t\)</span> is a fixed <span class="math inline">\(d\times d\)</span> matrix, so the transformer becomes a recurrent network with constant memory per step and linear total cost. Plain linear attention is weaker than softmax, because a fixed-size state that only accumulates cannot forget. The <strong>delta rule</strong> fixes that: instead of adding <span class="math inline">\(\mathbf k_t^\top\mathbf v_t\)</span>, the update first removes what the state currently returns for key <span class="math inline">\(\mathbf k_t\)</span>,</p>
+<p><span class="math display">\[
+S_t = S_{t-1} + \beta_t\,\mathbf k_t^\top\big(\mathbf v_t - \mathbf k_t S_{t-1}\big),
+\]</span></p>
+<p>one step of gradient descent on <span class="math inline">\(\|\mathbf k_t S - \mathbf v_t\|^2\)</span>, and <strong>Gated DeltaNet</strong> (Songlin Yang, Jan Kautz and Ali Hatamizadeh, 2024) adds a learned decay gate in front of <span class="math inline">\(S_{t-1}\)</span>. That is what the 2025–26 hybrids use: Qwen3-Next and Qwen3.5 make three of every four layers Gated DeltaNet and the fourth full (gated) attention, and Kimi Linear uses its own delta-rule variant with one MLA layer in four.</p>
+<p><strong>Learned sparsity.</strong> Rather than fixing the pattern, let the model choose which past tokens matter. DeepSeek’s <strong>sparse attention</strong> (DSA, in V3.2, 2025) runs a small, low-precision <em>lightning indexer</em> over all past tokens, <span class="math inline">\(I_{t,s} = \sum_j w_{t,j}\operatorname{ReLU}(\mathbf q_{t,j}\cdot\mathbf k_s)\)</span>, and the real attention then covers only the 2,048 highest-scoring tokens. The indexer is still quadratic but very cheap; the expensive attention becomes <span class="math inline">\(O(Tk)\)</span>. DeepSeek-V4 compresses the cache along the sequence before applying this, and reports needing a tenth of V3.2’s KV cache at a million tokens.</p>
+<p><strong>Exact, but faster.</strong> FlashAttention (Tri Dao and colleagues, 2022) changed nothing in the mathematics and nearly everything in practice. A GPU’s arithmetic is far faster than its main memory; standard attention writes the <span class="math inline">\(T\times T\)</span> score matrix out to memory and reads it back. FlashAttention computes attention in tiles that fit in on-chip memory, using the <em>online softmax</em>: process the keys in blocks, keeping for each query a running maximum <span class="math inline">\(m\)</span> and running sum <span class="math inline">\(\ell\)</span>, and rescale the partial output whenever the maximum changes,</p>
+<p><span class="math display">\[
+m' = \max(m, \max_j s_j),\qquad \ell' = e^{m - m'}\ell + \sum_j e^{s_j - m'},\qquad \mathbf o' = e^{m - m'}\mathbf o + \sum_j e^{s_j - m'}\mathbf v_j,
+\]</span></p>
+<p>dividing by <span class="math inline">\(\ell\)</span> at the end. The <span class="math inline">\(T\times T\)</span> matrix is never stored, memory becomes linear in <span class="math inline">\(T\)</span>, and long sequences run several times faster. Versions 2, 3 and 4 (2023, 2024, 2026) retuned it for each new GPU generation; the fourth reaches 71% of a Blackwell B200’s peak.</p>
+<p>The chart compares the cost of one layer’s attention as the context grows, for a model with 32 heads of width 128:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="165" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 164;"><span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a>viewof costKind <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">radio</span>(<span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">"Arithmetic per new token (decode)"</span><span class="op">,</span> <span class="st">"flops"</span>]<span class="op">,</span> [<span class="st">"Memory for the score matrix (naive)"</span><span class="op">,</span> <span class="st">"mem"</span>]])<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"flops"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Measure"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="169" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 168;"><span id="cb5-169"><a href="#cb5-169" aria-hidden="true" tabindex="-1"></a>costPlot <span class="op">=</span> {</span>
+<span id="cb5-170"><a href="#cb5-170" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> h <span class="op">=</span> <span class="dv">32</span><span class="op">,</span> dh <span class="op">=</span> <span class="dv">128</span><span class="op">,</span> d <span class="op">=</span> h <span class="op">*</span> dh<span class="op">,</span> W <span class="op">=</span> <span class="dv">4096</span><span class="op">,</span> k <span class="op">=</span> <span class="dv">2048</span><span class="op">,</span> pts <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb5-171"><a href="#cb5-171" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> e <span class="op">=</span> <span class="dv">10</span><span class="op">;</span> e <span class="op">&lt;=</span> <span class="dv">20</span><span class="op">;</span> e <span class="op">+=</span> <span class="fl">0.25</span>) {</span>
+<span id="cb5-172"><a href="#cb5-172" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> T <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(<span class="dv">2</span> <span class="op">**</span> e)<span class="op">;</span></span>
+<span id="cb5-173"><a href="#cb5-173" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> f <span class="op">=</span> costKind <span class="op">===</span> <span class="st">"flops"</span> <span class="op">?</span> {</span>
+<span id="cb5-174"><a href="#cb5-174" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Full attention"</span><span class="op">:</span> <span class="dv">4</span> <span class="op">*</span> T <span class="op">*</span> d<span class="op">,</span></span>
+<span id="cb5-175"><a href="#cb5-175" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Sliding window (W = 4,096)"</span><span class="op">:</span> <span class="dv">4</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(T<span class="op">,</span> W) <span class="op">*</span> d<span class="op">,</span></span>
+<span id="cb5-176"><a href="#cb5-176" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Top-k sparse (k = 2,048) + indexer"</span><span class="op">:</span> <span class="dv">4</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(T<span class="op">,</span> k) <span class="op">*</span> d <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> T <span class="op">*</span> <span class="dv">64</span> <span class="op">*</span> <span class="dv">4</span><span class="op">,</span></span>
+<span id="cb5-177"><a href="#cb5-177" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Linear / delta-rule (state d_h × d_h per head)"</span><span class="op">:</span> <span class="dv">4</span> <span class="op">*</span> h <span class="op">*</span> dh <span class="op">*</span> dh</span>
+<span id="cb5-178"><a href="#cb5-178" aria-hidden="true" tabindex="-1"></a>    } <span class="op">:</span> {</span>
+<span id="cb5-179"><a href="#cb5-179" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Full attention"</span><span class="op">:</span> h <span class="op">*</span> T <span class="op">*</span> T <span class="op">*</span> <span class="dv">2</span><span class="op">,</span></span>
+<span id="cb5-180"><a href="#cb5-180" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Sliding window (W = 4,096)"</span><span class="op">:</span> h <span class="op">*</span> T <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(T<span class="op">,</span> W) <span class="op">*</span> <span class="dv">2</span><span class="op">,</span></span>
+<span id="cb5-181"><a href="#cb5-181" aria-hidden="true" tabindex="-1"></a>      <span class="st">"FlashAttention (tiles, not stored)"</span><span class="op">:</span> h <span class="op">*</span> <span class="dv">128</span> <span class="op">*</span> <span class="dv">128</span> <span class="op">*</span> <span class="dv">2</span> <span class="op">*</span> <span class="dv">4</span></span>
+<span id="cb5-182"><a href="#cb5-182" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb5-183"><a href="#cb5-183" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">const</span> [kind<span class="op">,</span> v] <span class="kw">of</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">entries</span>(f)) pts<span class="op">.</span><span class="fu">push</span>({T<span class="op">,</span> v<span class="op">,</span> kind})<span class="op">;</span></span>
+<span id="cb5-184"><a href="#cb5-184" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-185"><a href="#cb5-185" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">700</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">300</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">60</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb5-186"><a href="#cb5-186" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Context length T (tokens)"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"~s"</span>}<span class="op">,</span></span>
+<span id="cb5-187"><a href="#cb5-187" aria-hidden="true" tabindex="-1"></a>    <span class="dt">y</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> costKind <span class="op">===</span> <span class="st">"flops"</span> <span class="op">?</span> <span class="st">"FLOPs per new token, one layer"</span> <span class="op">:</span> <span class="st">"Bytes, one layer, 16-bit"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"~s"</span>}<span class="op">,</span></span>
+<span id="cb5-188"><a href="#cb5-188" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span>}<span class="op">,</span> <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"T"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"v"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"kind"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span>})]})<span class="op">;</span></span>
+<span id="cb5-189"><a href="#cb5-189" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="the-keyvalue-cache" class="level2">
+<h2 class="anchored" data-anchor-id="the-keyvalue-cache">The key–value cache</h2>
+<p>Part 1 showed that the cache, <span class="math inline">\(2 \times L \times T \times d\)</span> numbers per sequence, limits how many users a model can serve and how long their inputs can be. Most of the changes since 2019 that affect serving cost attack it directly.</p>
+<p><strong>MQA and GQA.</strong> Noam Shazeer’s <em>One Write-Head is All You Need</em> (2019) let all query heads share one key head and one value head: multi-query attention, an <span class="math inline">\(h\)</span>-fold smaller cache. It cost some quality. <strong>Grouped-query attention</strong> (Joshua Ainslie and colleagues, 2023) is the compromise: <span class="math inline">\(h\)</span> query heads in <span class="math inline">\(g\)</span> groups, each group sharing a key–value head, cache <span class="math inline">\(2Lgd_h\)</span> per token. Llama 3 uses 8 key–value heads for every size from 8B to 405B parameters; Qwen3-235B uses 4 for 64 query heads.</p>
+<p><strong>MLA.</strong> DeepSeek-V2’s <strong>multi-head latent attention</strong> (2024) caches a compressed latent instead of keys and values. Each token’s hidden state <span class="math inline">\(\mathbf h_t\)</span> is projected down to <span class="math inline">\(\mathbf c_t = \mathbf h_t W^{DKV}\)</span> with <span class="math inline">\(d_c = 512\)</span>, and that is all that is stored (with one shared 64-dimensional key carrying the RoPE rotation, which cannot pass through the compression). Keys and values for all 128 heads are reconstructed by up-projections, <span class="math inline">\(K = CW^{UK}\)</span>, <span class="math inline">\(V = CW^{UV}\)</span>. At inference the up-projections need never be applied: since <span class="math inline">\(\mathbf q\cdot\mathbf k = \mathbf q (\mathbf c W^{UK})^\top = (\mathbf q W^{UK\top})\cdot\mathbf c\)</span>, the matrix <span class="math inline">\(W^{UK}\)</span> can be absorbed into the query projection, and <span class="math inline">\(W^{UV}\)</span> likewise into the output projection, so attention runs directly against the cached latents. The cache is <span class="math inline">\((d_c + d^R_h)L = 576L\)</span> numbers per token, which the paper notes equals GQA with only 2.25 groups, while its quality matched or beat full multi-head attention. DeepSeek-V3 and Kimi K2 use it.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="201" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 200;"><span id="cb6-201"><a href="#cb6-201" aria-hidden="true" tabindex="-1"></a>viewof kvSet <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb6-202"><a href="#cb6-202" aria-hidden="true" tabindex="-1"></a>  <span class="dt">T</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1024</span><span class="op">,</span> <span class="dv">1048576</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">131072</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1024</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Context length (tokens)"</span>})<span class="op">,</span></span>
+<span id="cb6-203"><a href="#cb6-203" aria-hidden="true" tabindex="-1"></a>  <span class="dt">L</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">8</span><span class="op">,</span> <span class="dv">128</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">64</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Layers"</span>})</span>
+<span id="cb6-204"><a href="#cb6-204" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="208" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 207;"><span id="cb7-208"><a href="#cb7-208" aria-hidden="true" tabindex="-1"></a>kvTable <span class="op">=</span> {</span>
+<span id="cb7-209"><a href="#cb7-209" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> {T<span class="op">,</span> L} <span class="op">=</span> kvSet<span class="op">,</span> h <span class="op">=</span> <span class="dv">64</span><span class="op">,</span> dh <span class="op">=</span> <span class="dv">128</span><span class="op">,</span> by <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb7-210"><a href="#cb7-210" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rows <span class="op">=</span> [</span>
+<span id="cb7-211"><a href="#cb7-211" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Multi-head attention (64 heads × 128)"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> h <span class="op">*</span> dh]<span class="op">,</span></span>
+<span id="cb7-212"><a href="#cb7-212" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Grouped-query, 8 key–value heads"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> <span class="dv">8</span> <span class="op">*</span> dh]<span class="op">,</span></span>
+<span id="cb7-213"><a href="#cb7-213" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Multi-query, 1 key–value head"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> dh]<span class="op">,</span></span>
+<span id="cb7-214"><a href="#cb7-214" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Multi-head latent (512 + 64)"</span><span class="op">,</span> <span class="dv">512</span> <span class="op">+</span> <span class="dv">64</span>]</span>
+<span id="cb7-215"><a href="#cb7-215" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">;</span></span>
+<span id="cb7-216"><a href="#cb7-216" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-panel"&gt;&lt;h4&gt;KV cache for one sequence of </span><span class="sc">${</span><span class="fu">fmt</span>(T)<span class="sc">}</span><span class="vs"> tokens, </span><span class="sc">${</span>L<span class="sc">}</span><span class="vs"> layers, 16-bit&lt;/h4&gt;&lt;div class="tf-scroll"&gt;&lt;table class="table table-sm tf-t" style="margin:0"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Attention&lt;/th&gt;&lt;th class="num"&gt;Numbers per token per layer&lt;/th&gt;&lt;th class="num"&gt;Per token&lt;/th&gt;&lt;th class="num"&gt;Whole sequence&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb7-217"><a href="#cb7-217" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(([n<span class="op">,</span> c]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(c)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">bytesH</span>(c <span class="op">*</span> L <span class="op">*</span> by)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">bytesH</span>(c <span class="op">*</span> L <span class="op">*</span> by <span class="op">*</span> T)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb7-218"><a href="#cb7-218" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;tr&gt;&lt;td&gt;Grouped-query, window 4,096 in 5 of 6 layers&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">2</span> <span class="op">*</span> <span class="dv">8</span> <span class="op">*</span> dh)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;—&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">bytesH</span>(<span class="dv">2</span> <span class="op">*</span> <span class="dv">8</span> <span class="op">*</span> dh <span class="op">*</span> by <span class="op">*</span> (L <span class="op">/</span> <span class="dv">6</span> <span class="op">*</span> T <span class="op">+</span> <span class="dv">5</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">6</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(T<span class="op">,</span> <span class="dv">4096</span>)))<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;</span></span>
+<span id="cb7-219"><a href="#cb7-219" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb7-220"><a href="#cb7-220" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The last row is the other lever: if most layers attend only within a window, only the global layers’ caches grow with the context. Further savings come from sharing caches between layers, reusing keys as values (Gemma 4) and storing the cache in 4 or 2 bits.</p>
+<p><strong>Serving.</strong> <strong>PagedAttention</strong> (Woosuk Kwon and colleagues, 2023, the basis of vLLM) stores the cache in fixed-size pages, like an operating system’s virtual memory, so requests of unpredictable length share memory without fragmentation. <strong>Attention sinks</strong> (Guangxuan Xiao and colleagues, 2023), met in Part 2 as the first token’s habit of absorbing attention, turned out to be necessary for window attention to work on endless streams: keep the first few tokens’ keys and values and the model stays stable. gpt-oss, according to its model card, builds a learned sink into each head; Qwen’s gated attention (2025) removes the need for one by letting each head scale its output towards zero.</p>
+</section>
+<section id="mixture-of-experts" class="level2">
+<h2 class="anchored" data-anchor-id="mixture-of-experts">Mixture of experts</h2>
+<p>A dense model applies every parameter to every token. A <strong>mixture of experts</strong> (MoE) replaces the feed-forward layer with <span class="math inline">\(E\)</span> separate feed-forward networks, the experts, and a router that sends each token to a few of them. The parameter count grows with <span class="math inline">\(E\)</span>; the arithmetic per token grows only with the number chosen. For router weights <span class="math inline">\(W_g\)</span> and a token <span class="math inline">\(\mathbf x\)</span>,</p>
+<p><span class="math display">\[
+\mathbf g = \operatorname{softmax}\big(\operatorname{TopK}(\mathbf x W_g)\big), \qquad \operatorname{MoE}(\mathbf x) = \sum_{i\in\operatorname{TopK}} g_i\,\operatorname{FFN}_i(\mathbf x).
+\]</span></p>
+<p>Shazeer and colleagues introduced sparsely gated experts between LSTM layers in January 2017, before the transformer; GShard (2020) and the <strong>Switch Transformer</strong> (William Fedus, Barret Zoph and Shazeer, 2021, routing each token to one expert) brought them to transformers. The persistent difficulty is balance: a router left alone sends most tokens to a few experts, which then get better and attract more. Switch adds a loss <span class="math inline">\(\alpha N\sum_i f_i P_i\)</span>, where <span class="math inline">\(f_i\)</span> is the fraction of tokens sent to expert <span class="math inline">\(i\)</span> and <span class="math inline">\(P_i\)</span> the average router probability for it; it is minimised when both are uniform. DeepSeek’s <strong>auxiliary-loss-free</strong> balancing (2024) instead adds a bias <span class="math inline">\(b_i\)</span> to each expert’s score <em>for the top-k choice only</em>, raising it when the expert is under-used and lowering it when over-used, so balance is enforced without a gradient that pulls against the language-modelling loss.</p>
+<p><strong>DeepSeekMoE</strong> (2024) changed the shape: many small experts rather than a few large ones, with more of them chosen per token, plus one or two <strong>shared experts</strong> that every token uses, which learn the common knowledge so the routed experts can specialise.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="240" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 239;"><span id="cb8-240"><a href="#cb8-240" aria-hidden="true" tabindex="-1"></a>moeTable <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tf-scroll"&gt;&lt;table class="table table-sm tf-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Model&lt;/th&gt;&lt;th&gt;Released&lt;/th&gt;&lt;th class="num"&gt;Total parameters&lt;/th&gt;&lt;th class="num"&gt;Active per token&lt;/th&gt;&lt;th&gt;Experts&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb8-241"><a href="#cb8-241" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>[[<span class="st">"Mixtral 8x7B"</span><span class="op">,</span> <span class="st">"Dec 2023"</span><span class="op">,</span> <span class="st">"47B"</span><span class="op">,</span> <span class="st">"13B"</span><span class="op">,</span> <span class="st">"8, top-2"</span>]<span class="op">,</span></span>
+<span id="cb8-242"><a href="#cb8-242" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"DeepSeek-V2"</span><span class="op">,</span> <span class="st">"May 2024"</span><span class="op">,</span> <span class="st">"236B"</span><span class="op">,</span> <span class="st">"21B"</span><span class="op">,</span> <span class="st">"160 routed + 2 shared, top-6"</span>]<span class="op">,</span></span>
+<span id="cb8-243"><a href="#cb8-243" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"DeepSeek-V3"</span><span class="op">,</span> <span class="st">"Dec 2024"</span><span class="op">,</span> <span class="st">"671B"</span><span class="op">,</span> <span class="st">"37B"</span><span class="op">,</span> <span class="st">"256 routed + 1 shared, top-8"</span>]<span class="op">,</span></span>
+<span id="cb8-244"><a href="#cb8-244" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Llama 4 Maverick"</span><span class="op">,</span> <span class="st">"Apr 2025"</span><span class="op">,</span> <span class="st">"400B"</span><span class="op">,</span> <span class="st">"17B"</span><span class="op">,</span> <span class="st">"128, top-1, every other layer"</span>]<span class="op">,</span></span>
+<span id="cb8-245"><a href="#cb8-245" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Qwen3-235B-A22B"</span><span class="op">,</span> <span class="st">"May 2025"</span><span class="op">,</span> <span class="st">"235B"</span><span class="op">,</span> <span class="st">"22B"</span><span class="op">,</span> <span class="st">"128, top-8"</span>]<span class="op">,</span></span>
+<span id="cb8-246"><a href="#cb8-246" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Kimi K2"</span><span class="op">,</span> <span class="st">"Jul 2025"</span><span class="op">,</span> <span class="st">"1.04T"</span><span class="op">,</span> <span class="st">"32B"</span><span class="op">,</span> <span class="st">"384 routed + 1 shared, top-8"</span>]<span class="op">,</span></span>
+<span id="cb8-247"><a href="#cb8-247" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"gpt-oss-120b"</span><span class="op">,</span> <span class="st">"Aug 2025"</span><span class="op">,</span> <span class="st">"117B"</span><span class="op">,</span> <span class="st">"5.1B"</span><span class="op">,</span> <span class="st">"128, top-4"</span>]<span class="op">,</span></span>
+<span id="cb8-248"><a href="#cb8-248" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Qwen3-Next-80B-A3B"</span><span class="op">,</span> <span class="st">"Sep 2025"</span><span class="op">,</span> <span class="st">"80B"</span><span class="op">,</span> <span class="st">"3B"</span><span class="op">,</span> <span class="st">"512 routed + 1 shared, top-10"</span>]<span class="op">,</span></span>
+<span id="cb8-249"><a href="#cb8-249" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"DeepSeek-V4-Pro"</span><span class="op">,</span> <span class="st">"2026"</span><span class="op">,</span> <span class="st">"1.6T"</span><span class="op">,</span> <span class="st">"49B"</span><span class="op">,</span> <span class="st">"DeepSeekMoE"</span>]]<span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>r[<span class="dv">0</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td&gt;</span><span class="sc">${</span>r[<span class="dv">1</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>r[<span class="dv">2</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>r[<span class="dv">3</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td&gt;</span><span class="sc">${</span>r[<span class="dv">4</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb8-250"><a href="#cb8-250" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The trend is plain: ever more, ever smaller experts, and a falling fraction active. Qwen3-Next applies about 4% of its parameters to each token.</p>
+</section>
+<section id="how-big-on-how-much-data" class="level2">
+<h2 class="anchored" data-anchor-id="how-big-on-how-much-data">How big, on how much data</h2>
+<p>Jared Kaplan and colleagues (2020) found that a language model’s loss falls as a power law in its parameters <span class="math inline">\(N\)</span>, its training tokens <span class="math inline">\(D\)</span> and its compute <span class="math inline">\(C \approx 6ND\)</span>, over many orders of magnitude, and concluded that most extra compute should go into bigger models. Jordan Hoffmann and colleagues at DeepMind (<em>Chinchilla</em>, 2022) fitted</p>
+<p><span class="math display">\[
+L(N, D) = E + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}}, \qquad E = 1.69,\; A = 406.4,\; B = 410.7,\; \alpha = 0.34,\; \beta = 0.28,
+\]</span></p>
+<p>and minimising it at fixed <span class="math inline">\(C\)</span> gave the opposite advice: scale parameters and data roughly equally, about 20 tokens per parameter. Their 70B Chinchilla, trained on 1.4 trillion tokens, beat the 280B Gopher trained with the same compute. (A 2024 replication by Epoch AI found problems with one of the paper’s three fits but agreed with the other two.)</p>
+<p>Then practice moved past the optimum on purpose. Chinchilla minimises training compute, but a model is trained once and run billions of times; a smaller model trained on far more data costs more to train and less to use. Llama 3’s 8B model saw 15 trillion tokens, nearly 2,000 per parameter.</p>
+</section>
+<section id="faster-generation" class="level2">
+<h2 class="anchored" data-anchor-id="faster-generation">Faster generation</h2>
+<p>Generating one token at a time is limited by memory bandwidth, not arithmetic: every step reads all the weights to produce one token. <strong>Speculative decoding</strong> (Yaniv Leviathan, Matan Kalman and Yossi Matias, 2022; Charlie Chen and colleagues at DeepMind, 2023) uses that spare arithmetic. A small draft model proposes <span class="math inline">\(\gamma\)</span> tokens; the large model scores all of them in one parallel pass; each drafted token <span class="math inline">\(x\)</span> is accepted with probability <span class="math inline">\(\min\big(1, p(x)/q(x)\big)\)</span>, where <span class="math inline">\(p\)</span> and <span class="math inline">\(q\)</span> are the large and draft models’ probabilities, and at the first rejection a replacement is drawn from the normalised residual <span class="math inline">\(\max(0, p - q)\)</span>. The output distribution is provably identical to sampling from the large model alone. If each token is accepted with probability <span class="math inline">\(a\)</span>, a step yields on average <span class="math inline">\((1 - a^{\gamma+1})/(1-a)\)</span> tokens.</p>
+<p>The draft need not be a separate model. <strong>Medusa</strong> (2024) adds extra heads that predict tokens two, three and four ahead; <strong>EAGLE</strong> (2024) drafts at the level of hidden features. <strong>Multi-token prediction</strong> (Fabian Gloeckle and colleagues at Meta, 2024) trains the model itself to predict several future tokens from each position, which improved its coding scores and gives it a built-in drafter; DeepSeek-V3, Qwen3-Next, MiniMax-M2 and Gemma 4 all train with an extra prediction module.</p>
+</section>
+<section id="beyond-attention" class="level2">
+<h2 class="anchored" data-anchor-id="beyond-attention">Beyond attention</h2>
+<p>A different line of work asked whether attention is needed at all. <strong>State-space models</strong> describe a sequence by a linear recurrence on a hidden state, <span class="math inline">\(\mathbf s_t = A\mathbf s_{t-1} + B\mathbf x_t\)</span>, <span class="math inline">\(\mathbf y_t = C\mathbf s_t\)</span>, discretised from a continuous system; S4 (Albert Gu, Karan Goel and Christopher Ré, 2021) made them trainable on long sequences. <strong>Mamba</strong> (Gu and Tri Dao, 2023) made <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span> and the step size depend on the input, so the model can choose what to remember, and matched transformers of the same size on language at linear cost. <strong>Mamba-2</strong> (Dao and Gu, 2024) showed through <em>state-space duality</em> that a selective state-space model with scalar decay is a form of masked linear attention, <span class="math inline">\(Y = (L \odot QK^\top)V\)</span> with <span class="math inline">\(L\)</span> a lower-triangular matrix of cumulative decays, joining the two lines of work. RWKV, RetNet and xLSTM are relatives.</p>
+<p>Pure recurrent models struggle with one thing attention does trivially: recalling an exact detail from far back, because a fixed-size state must compress everything. The 2024–26 answer is <strong>hybrids</strong>: mostly recurrent layers, with a few attention layers for exact recall. AI21’s Jamba (2024) used one attention layer in eight; NVIDIA’s Nemotron-H and IBM’s Granite 4.0-H (nine Mamba-2 layers to one attention layer) followed in 2025, as did the linear-attention hybrids above. Not everyone agrees: MiniMax built its 2025 MiniMax-01 on linear attention and then went back to full attention for MiniMax-M2, citing weaknesses in multi-step reasoning at scale and practical difficulties with caching and speculative decoding.</p>
+</section>
+<section id="beyond-text" class="level2">
+<h2 class="anchored" data-anchor-id="beyond-text">Beyond text</h2>
+<p>The same architecture reads images when they are cut into patches and each patch is treated as a token: the <strong>Vision Transformer</strong> (Alexey Dosovitskiy and colleagues, 2020). <strong>CLIP</strong> (Alec Radford and colleagues, 2021) trained an image encoder and a text encoder together with the contrastive loss of the <a href="../embeddings-part-2-search-and-retrieval/#contrastive-training">embeddings series</a>, and <strong>Flamingo</strong> (2022) fed image features into a frozen language model through cross-attention, the 2017 decoder’s third sublayer, reused. Current models are increasingly trained on mixed modalities from the start; Gemma 4’s 12B model projects image patches and short audio chunks directly into the language model with no separate encoder.</p>
+<p>The one challenge to next-token prediction itself comes from <strong>diffusion language models</strong>, which start from a fully masked sequence and fill in many tokens in parallel over several refinement steps, in the manner of image diffusion: LLaDA (2025) trained one from scratch, Google announced Gemini Diffusion the same year, and DiffusionGemma (2026), adapted from Gemma 4, reported about 1,500 tokens a second on a single H100 by refining blocks of 256 tokens in parallel. The network inside is still a transformer, without the causal mask.</p>
+</section>
+<section id="what-a-2026-model-looks-like" class="level2">
+<h2 class="anchored" data-anchor-id="what-a-2026-model-looks-like">What a 2026 model looks like</h2>
+<p>Put the pieces together and compare with 2017:</p>
+<div class="tf-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>2017 Transformer</th>
+<th>GPT-2 (2019)</th>
+<th>Typical large open model, 2025–26</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Shape</td>
+<td>Encoder–decoder</td>
+<td>Decoder-only</td>
+<td>Decoder-only</td>
+</tr>
+<tr class="even">
+<td>Normalisation</td>
+<td>LayerNorm after each sublayer (Post-LN)</td>
+<td>LayerNorm before (Pre-LN)</td>
+<td>RMSNorm before, often after too; QK-norm</td>
+</tr>
+<tr class="odd">
+<td>Feed-forward</td>
+<td>ReLU, <span class="math inline">\(d_{\text{ff}} = 4d\)</span></td>
+<td>GELU</td>
+<td>SwiGLU; mixture of many small experts plus shared experts</td>
+</tr>
+<tr class="even">
+<td>Position</td>
+<td>Fixed sinusoids added to input</td>
+<td>Learned table</td>
+<td>RoPE with a large base, YaRN for long context; some layers without</td>
+</tr>
+<tr class="odd">
+<td>Attention</td>
+<td>Full, multi-head</td>
+<td>Full, multi-head</td>
+<td>GQA or MLA; mixed with sliding-window, sparse or linear (delta-rule) layers</td>
+</tr>
+<tr class="even">
+<td>Context</td>
+<td>Hundreds of tokens</td>
+<td>1,024</td>
+<td>128k to 1M</td>
+</tr>
+<tr class="odd">
+<td>Kernels</td>
+<td>Standard</td>
+<td>Standard</td>
+<td>FlashAttention; paged, quantised KV cache</td>
+</tr>
+<tr class="even">
+<td>Output</td>
+<td>Tied embedding</td>
+<td>Tied embedding</td>
+<td>Usually untied; multi-token prediction head</td>
+</tr>
+<tr class="odd">
+<td>Decoding</td>
+<td>Beam search</td>
+<td>Sampling</td>
+<td>Sampling with speculative decoding</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Every row has changed, and yet Part 1’s diagram still describes every one of these models: tokens become vectors, layers of attention and feed-forward networks add to a residual stream, and a softmax over the vocabulary predicts the next token.</p>
+</section>
+<section id="terminology-and-where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="terminology-and-where-it-comes-from">Terminology and where it comes from</h2>
+<div class="tf-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Mixture of experts</strong></td>
+<td>Several sub-networks with a learned router</td>
+<td>Robert Jacobs, Michael Jordan, Steven Nowlan and Geoffrey Hinton, “Adaptive Mixtures of Local Experts”, 1991.</td>
+</tr>
+<tr class="even">
+<td><strong>GLU</strong></td>
+<td>Gated linear unit: one projection multiplied by a gated second</td>
+<td>Yann Dauphin and colleagues, 2016, for convolutional language models; the gate idea goes back to the LSTM (Sepp Hochreiter and Jürgen Schmidhuber, 1997).</td>
+</tr>
+<tr class="odd">
+<td><strong>Swish / SiLU</strong></td>
+<td><span class="math inline">\(x\,\sigma(x)\)</span></td>
+<td><em>Sigmoid-weighted linear unit</em> (Stefan Elfwing and colleagues, 2017); renamed Swish by Prajit Ramachandran and colleagues the same year after an automated search for activation functions.</td>
+</tr>
+<tr class="even">
+<td><strong>RoPE</strong></td>
+<td>Rotary position embedding</td>
+<td>Su and colleagues, 2021: positions as rotations.</td>
+</tr>
+<tr class="odd">
+<td><strong>ALiBi</strong></td>
+<td>Attention with linear biases</td>
+<td>Press, Smith and Lewis, 2021.</td>
+</tr>
+<tr class="even">
+<td><strong>NTK-aware</strong></td>
+<td>A RoPE scaling rule</td>
+<td>From <em>neural tangent kernel</em> theory, which predicts networks learn high frequencies poorly, so the rule avoids squeezing them; named in a 2023 online post.</td>
+</tr>
+<tr class="odd">
+<td><strong>Speculative decoding</strong></td>
+<td>Draft cheaply, verify in parallel</td>
+<td>By analogy with speculative execution in processors, which compute ahead on a guess and discard the work if the guess was wrong.</td>
+</tr>
+<tr class="even">
+<td><strong>State space</strong></td>
+<td>A system described by a hidden state and linear dynamics</td>
+<td>Control theory: Rudolf Kálmán’s state-space formulation of 1960.</td>
+</tr>
+<tr class="odd">
+<td><strong>Scaling law</strong></td>
+<td>Loss as a power law of size, data and compute</td>
+<td>From physics, where scaling laws describe power-law relations near critical points.</td>
+</tr>
+<tr class="even">
+<td><strong>Birkhoff polytope</strong></td>
+<td>The set of doubly stochastic matrices</td>
+<td>Garrett Birkhoff, 1946, who showed its vertices are the permutation matrices.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>Timeline.</strong> 80 entries, each dated by its first public paper (arXiv version 1) or release; checked against the arXiv listing, the paper, or the model’s published configuration. For models without a paper (Llama 4, Granite 4.0) the date is the release announcement. “Used in” lists models whose published configuration or report confirms the feature, and is not exhaustive.</p>
+<p><strong>Cost chart.</strong> One attention layer with 32 heads of width 128 (<span class="math inline">\(d = 4{,}096\)</span>), counting <span class="math inline">\(4Td\)</span> FLOPs per new token for the score and value products over <span class="math inline">\(T\)</span> cached tokens, the window or top-<span class="math inline">\(k\)</span> count in place of <span class="math inline">\(T\)</span> where they apply, a 64-dimensional, 4-head indexer for the sparse variant, and <span class="math inline">\(4hd_h^2\)</span> for a recurrent state update. Memory: the <span class="math inline">\(h\times T\times T\)</span> score matrix in 16 bits, against FlashAttention’s on-chip tiles.</p>
+<p><strong>KV cache table.</strong> 64 query heads of width 128; 16-bit numbers; GQA with 8 key–value heads; MLA with DeepSeek-V2’s <span class="math inline">\(d_c = 512\)</span> and <span class="math inline">\(d^R_h = 64\)</span>. Real models differ in head counts and layers; the table compares the schemes on one shape.</p>
+<p><strong>Model table.</strong> Parameters as published; Mixtral’s report gives 47B and 13B, its launch blog 46.7B and 12.9B.</p>
+<p>Sources (arXiv identifiers in the timeline):</p>
+<ul>
+<li>Model families: Radford and colleagues, GPT-1 (2018) and GPT-2 (2019); Devlin and colleagues, <a href="https://arxiv.org/abs/1810.04805">BERT</a>; Raffel and colleagues, <a href="https://arxiv.org/abs/1910.10683">T5</a>; Brown and colleagues, <a href="https://arxiv.org/abs/2005.14165">GPT-3</a>.</li>
+<li>Stability: <a href="https://arxiv.org/abs/2002.04745">Xiong and colleagues 2020</a>; <a href="https://arxiv.org/abs/1910.07467">RMSNorm</a>; <a href="https://arxiv.org/abs/2010.04245">QK-norm</a>; <a href="https://arxiv.org/abs/2204.02311">PaLM</a> (z-loss, parallel blocks, SwiGLU); <a href="https://arxiv.org/abs/2502.02732">Peri-LN</a>; <a href="https://arxiv.org/abs/2203.03466">μP</a>; <a href="https://arxiv.org/abs/2507.20534">Kimi K2</a>; <a href="https://arxiv.org/abs/2512.24880">mHC</a>; <a href="https://arxiv.org/abs/2503.19786">Gemma 3</a>; <a href="https://arxiv.org/abs/2501.00656">OLMo 2</a>.</li>
+<li>Feed-forward: <a href="https://arxiv.org/abs/2002.05202">Shazeer, GLU variants</a>.</li>
+<li>Position: <a href="https://arxiv.org/abs/1803.02155">Shaw and colleagues</a>; <a href="https://arxiv.org/abs/2104.09864">RoFormer</a>; <a href="https://arxiv.org/abs/2108.12409">ALiBi</a>; <a href="https://arxiv.org/abs/2305.19466">NoPE</a>; <a href="https://arxiv.org/abs/2306.15595">position interpolation</a>; <a href="https://arxiv.org/abs/2309.00071">YaRN</a>; <a href="https://arxiv.org/abs/2407.21783">Llama 3</a>.</li>
+<li>Attention: <a href="https://arxiv.org/abs/1904.10509">Sparse Transformer</a>; <a href="https://arxiv.org/abs/2004.05150">Longformer</a>; <a href="https://arxiv.org/abs/2006.16236">linear attention</a>; <a href="https://arxiv.org/abs/2310.06825">Mistral 7B</a>; <a href="https://arxiv.org/abs/2412.06464">Gated DeltaNet</a>; <a href="https://arxiv.org/abs/2510.26692">Kimi Linear</a>; <a href="https://arxiv.org/abs/2512.02556">DeepSeek-V3.2</a>; <a href="https://arxiv.org/abs/2606.19348">DeepSeek-V4</a>; <a href="https://arxiv.org/abs/2205.14135">FlashAttention</a> and <a href="https://arxiv.org/abs/2603.05451">FlashAttention-4</a>.</li>
+<li>KV cache: <a href="https://arxiv.org/abs/1911.02150">MQA</a>; <a href="https://arxiv.org/abs/2305.13245">GQA</a>; <a href="https://arxiv.org/abs/2405.04434">DeepSeek-V2 (MLA)</a>; <a href="https://arxiv.org/abs/2309.06180">PagedAttention</a>; <a href="https://arxiv.org/abs/2309.17453">attention sinks</a>; <a href="https://arxiv.org/abs/2505.06708">gated attention</a>.</li>
+<li>Mixture of experts: <a href="https://arxiv.org/abs/1701.06538">Shazeer and colleagues 2017</a>; <a href="https://arxiv.org/abs/2101.03961">Switch Transformer</a>; <a href="https://arxiv.org/abs/2401.04088">Mixtral</a>; <a href="https://arxiv.org/abs/2401.06066">DeepSeekMoE</a>; <a href="https://arxiv.org/abs/2408.15664">auxiliary-loss-free balancing</a>; <a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3</a>; <a href="https://arxiv.org/abs/2505.09388">Qwen3</a>; <a href="https://arxiv.org/abs/2508.10925">gpt-oss</a>; model configurations on Hugging Face.</li>
+<li>Scaling: <a href="https://arxiv.org/abs/2001.08361">Kaplan and colleagues</a>; <a href="https://arxiv.org/abs/2203.15556">Chinchilla</a>; <a href="https://arxiv.org/abs/2404.10102">Epoch AI replication</a>; <a href="https://arxiv.org/abs/2401.00448">Sardana and colleagues</a>.</li>
+<li>Decoding: <a href="https://arxiv.org/abs/2211.17192">Leviathan and colleagues</a>; <a href="https://arxiv.org/abs/2302.01318">Chen and colleagues</a>; <a href="https://arxiv.org/abs/2401.10774">Medusa</a>; <a href="https://arxiv.org/abs/2401.15077">EAGLE</a>; <a href="https://arxiv.org/abs/2404.19737">multi-token prediction</a>.</li>
+<li>Alternatives: <a href="https://arxiv.org/abs/2111.00396">S4</a>; <a href="https://arxiv.org/abs/2312.00752">Mamba</a>; <a href="https://arxiv.org/abs/2405.21060">Mamba-2</a>; <a href="https://arxiv.org/abs/2403.19887">Jamba</a>; <a href="https://arxiv.org/abs/2504.03624">Nemotron-H</a>; IBM, <a href="https://www.ibm.com/new/announcements/ibm-granite-4-0-hyper-efficient-high-performance-hybrid-models">Granite 4.0</a>; MiniMax, <a href="https://www.minimax.io/news/why-did-m2-end-up-as-a-full-attention-model"><em>Why did M2 end up as a full attention model?</em></a>.</li>
+<li>Beyond text: <a href="https://arxiv.org/abs/2010.11929">ViT</a>; <a href="https://arxiv.org/abs/2103.00020">CLIP</a>; <a href="https://arxiv.org/abs/2204.14198">Flamingo</a>; <a href="https://arxiv.org/abs/2502.09992">LLaDA</a>; <a href="https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-diffusion/">Gemini Diffusion</a>; <a href="https://arxiv.org/abs/2608.00146">DiffusionGemma</a>; <a href="https://arxiv.org/abs/2607.02770">Gemma 4</a>.</li>
+</ul>
+<p><strong>Previous: <a href="../transformer-part-2-inside-gpt-2/">Part 2, inside GPT-2</a></strong> · <strong>Start: <a href="../transformer-part-1-operation-by-operation/">Part 1, operation by operation</a></strong>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG5ieXRlc0ggPSAoeCkgPT4geyBjb25zdCBhID0gTWF0aC5hYnMoeCk7IHJldHVybiBhID49IDIgKiogNDAgPyBmbXQoeCAvIDIgKiogNDAsIDIpICsgXCIgVGlCXCIgOiBhID49IDIgKiogMzAgPyBmbXQoeCAvIDIgKiogMzAsIDEpICsgXCIgR2lCXCIgOiBhID49IDIgKiogMjAgPyBmbXQoeCAvIDIgKiogMjAsIDEpICsgXCIgTWlCXCIgOiBhID49IDIgKiogMTAgPyBmbXQoeCAvIDIgKiogMTAsIDEpICsgXCIgS2lCXCIgOiBmbXQoeCkgKyBcIiBCXCI7IH1cblRMID0gRmlsZUF0dGFjaG1lbnQoXCJkYXRhL3RpbWVsaW5lLmpzb25cIikuanNvbigpXG5ncm91cHMgPSBbXCJNb2RlbCBmYW1pbGllc1wiLCBcIk5vcm1hbGlzYXRpb24gYW5kIHN0YWJpbGl0eVwiLCBcIkZlZWQtZm9yd2FyZFwiLCBcIlBvc2l0aW9uXCIsIFwiRWZmaWNpZW50IGF0dGVudGlvblwiLCBcIktWIGNhY2hlIGFuZCBtZW1vcnlcIiwgXCJNaXh0dXJlIG9mIGV4cGVydHNcIiwgXCJTY2FsaW5nXCIsIFwiRGVjb2RpbmdcIiwgXCJBbHRlcm5hdGl2ZXMgYW5kIGh5YnJpZHNcIiwgXCJCZXlvbmQgdGV4dFwiLCBcIk90aGVyXCJdXG5nY29sID0gT2JqZWN0LmZyb21FbnRyaWVzKGdyb3Vwcy5tYXAoKGcsIGkpID0+IFtnLCBkMy5zY2hlbWVUYWJsZWF1MTAuY29uY2F0KFtcIiM2YjcyODBcIiwgXCIjYjQ1MzA5XCJdKVtpXV0pKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIHRsUGljayA9IHtcbiAgY29uc3QgVyA9IDc2MCwgbGVmdCA9IDE3NSwgcmlnaHQgPSAxNiwgdG9wID0gMjYsIHJvd0ggPSAzMCwgSCA9IHRvcCArIGdyb3Vwcy5sZW5ndGggKiByb3dIICsgMzA7XG4gIGNvbnN0IHggPSBkMy5zY2FsZVRpbWUoKS5kb21haW4oW25ldyBEYXRlKDIwMTYsIDAsIDEpLCBuZXcgRGF0ZSgyMDI2LCAxMSwgMzEpXSkucmFuZ2UoW2xlZnQsIFcgLSByaWdodF0pO1xuICBjb25zdCB5ID0gZyA9PiB0b3AgKyBncm91cHMuaW5kZXhPZihnKSAqIHJvd0ggKyByb3dIIC8gMjtcbiAgY29uc3QgaXRlbXMgPSBUTC5tYXAoKGQsIGkpID0+ICh7Li4uZCwgaSwgdDogbmV3IERhdGUoZC5kYXRlICsgXCItMTVcIil9KSk7XG4gIC8vIGppdHRlciBwb2ludHMgdGhhdCBzaGFyZSBhIG1vbnRoIGFuZCByb3dcbiAgY29uc3Qgc2VlbiA9IHt9OyBpdGVtcy5mb3JFYWNoKGQgPT4geyBjb25zdCBrID0gZC5ncm91cCArIGQuZGF0ZTsgc2VlbltrXSA9IChzZWVuW2tdIHx8IDApICsgMTsgZC5qID0gKHNlZW5ba10gLSAxKSAqIDY7IH0pO1xuICBjb25zdCB5ZWFycyA9IGQzLnJhbmdlKDIwMTYsIDIwMjcpO1xuICBjb25zdCBzdmcgPSBodGwuc3ZnYDxzdmcgdmlld0JveD1cIjAgMCAke1d9ICR7SH1cIiBmb250LWZhbWlseT1cInN5c3RlbS11aSwgc2Fucy1zZXJpZlwiIGZvbnQtc2l6ZT1cIjExXCI+XG4gICAgJHt5ZWFycy5tYXAoeXIgPT4gaHRsLnN2Z2A8bGluZSB4MT1cIiR7eChuZXcgRGF0ZSh5ciwgMCwgMSkpfVwiIHgyPVwiJHt4KG5ldyBEYXRlKHlyLCAwLCAxKSl9XCIgeTE9XCIke3RvcCAtIDZ9XCIgeTI9XCIke0ggLSAyNH1cIiBzdHJva2U9XCJyZ2JhKDEyOCwxMjgsMTI4LC4yNSlcIi8+XG4gICAgICA8dGV4dCB4PVwiJHt4KG5ldyBEYXRlKHlyLCA2LCAxKSl9XCIgeT1cIiR7SCAtIDh9XCIgdGV4dC1hbmNob3I9XCJtaWRkbGVcIiBmaWxsPVwiY3VycmVudENvbG9yXCIgb3BhY2l0eT1cIi43XCI+JHt5cn08L3RleHQ+YCl9XG4gICAgJHtncm91cHMubWFwKGcgPT4gaHRsLnN2Z2A8dGV4dCB4PVwiJHtsZWZ0IC0gOH1cIiB5PVwiJHt5KGcpICsgNH1cIiB0ZXh0LWFuY2hvcj1cImVuZFwiIGZpbGw9XCIke2djb2xbZ119XCIgZm9udC13ZWlnaHQ9XCI2MDBcIj4ke2d9PC90ZXh0PlxuICAgICAgPGxpbmUgeDE9XCIke2xlZnR9XCIgeDI9XCIke1cgLSByaWdodH1cIiB5MT1cIiR7eShnKX1cIiB5Mj1cIiR7eShnKX1cIiBzdHJva2U9XCJyZ2JhKDEyOCwxMjgsMTI4LC4xMilcIi8+YCl9XG4gICAgJHtpdGVtcy5tYXAoZCA9PiBodGwuc3ZnYDxjaXJjbGUgZGF0YS1pPVwiJHtkLml9XCIgY3g9XCIke3goZC50KX1cIiBjeT1cIiR7eShkLmdyb3VwKSArIGQuaiAtIDN9XCIgcj1cIjZcIiBmaWxsPVwiJHtnY29sW2QuZ3JvdXBdfVwiIGZpbGwtb3BhY2l0eT1cIi44NVwiIHN0cm9rZT1cIiNmZmZcIj48dGl0bGU+JHtkLm5hbWV9ICgke2QuZGF0ZX0pPC90aXRsZT48L2NpcmNsZT5gKX1cbiAgPC9zdmc+YDtcbiAgY29uc3Qgd3JhcCA9IGh0bC5odG1sYDxkaXYgY2xhc3M9XCJ0Zi1wYW5lbCB0Zi10bFwiPjxoND4ke1RMLmxlbmd0aH0gYXJjaGl0ZWN0dXJhbCBjaGFuZ2VzLCBKdW5lIDIwMTYgdG8gT2N0b2JlciAyMDI2OiBjbGljayBhIHBvaW50PC9oND4ke3N2Z308L2Rpdj5gO1xuICB3cmFwLnZhbHVlID0gaXRlbXMuZmluZChkID0+IGQubmFtZSA9PT0gXCJSb1BFXCIpO1xuICBzdmcuYWRkRXZlbnRMaXN0ZW5lcihcImNsaWNrXCIsIGUgPT4geyBjb25zdCBjID0gZS50YXJnZXQuY2xvc2VzdChcImNpcmNsZVtkYXRhLWldXCIpOyBpZiAoIWMpIHJldHVybjsgd3JhcC52YWx1ZSA9IGl0ZW1zWytjLmRhdGFzZXQuaV07IHdyYXAuZGlzcGF0Y2hFdmVudChuZXcgRXZlbnQoXCJpbnB1dFwiLCB7YnViYmxlczogdHJ1ZX0pKTsgfSk7XG4gIHJldHVybiB3cmFwO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0zIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidGxDYXJkID0gaHRsLmh0bWxgPGRpdiBjbGFzcz1cInRmLWNhcmRcIiBzdHlsZT1cIi0tYzoke2djb2xbdGxQaWNrLmdyb3VwXX1cIj48ZGl2IGNsYXNzPVwiblwiPiR7dGxQaWNrLm5hbWV9IDxzcGFuIGNsYXNzPVwiZFwiPsK3ICR7bmV3IERhdGUodGxQaWNrLmRhdGUgKyBcIi0xNVwiKS50b0xvY2FsZURhdGVTdHJpbmcoXCJlbi1HQlwiLCB7bW9udGg6IFwibG9uZ1wiLCB5ZWFyOiBcIm51bWVyaWNcIn0pfSDCtyAke3RsUGljay5ncm91cH08L3NwYW4+PC9kaXY+XG4gIDxkaXY+JHt0bFBpY2sud2hhdH08L2Rpdj48ZGl2IGNsYXNzPVwiZFwiPlVzZWQgaW46ICR7dGxQaWNrLnVzZWR9JHt0bFBpY2suYXJ4aXYgPyBodGwuaHRtbGAgwrcgPGEgaHJlZj1cImh0dHBzOi8vYXJ4aXYub3JnL2Ficy8ke3RsUGljay5hcnhpdn1cIj5hclhpdiAke3RsUGljay5hcnhpdn08L2E+YCA6IFwiXCJ9PC9kaXY+PC9kaXY+YFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGNvc3RLaW5kID0gSW5wdXRzLnJhZGlvKG5ldyBNYXAoW1tcIkFyaXRobWV0aWMgcGVyIG5ldyB0b2tlbiAoZGVjb2RlKVwiLCBcImZsb3BzXCJdLCBbXCJNZW1vcnkgZm9yIHRoZSBzY29yZSBtYXRyaXggKG5haXZlKVwiLCBcIm1lbVwiXV0pLCB7dmFsdWU6IFwiZmxvcHNcIiwgbGFiZWw6IFwiTWVhc3VyZVwifSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNvc3RQbG90ID0ge1xuICBjb25zdCBoID0gMzIsIGRoID0gMTI4LCBkID0gaCAqIGRoLCBXID0gNDA5NiwgayA9IDIwNDgsIHB0cyA9IFtdO1xuICBmb3IgKGxldCBlID0gMTA7IGUgPD0gMjA7IGUgKz0gMC4yNSkge1xuICAgIGNvbnN0IFQgPSBNYXRoLnJvdW5kKDIgKiogZSk7XG4gICAgY29uc3QgZiA9IGNvc3RLaW5kID09PSBcImZsb3BzXCIgPyB7XG4gICAgICBcIkZ1bGwgYXR0ZW50aW9uXCI6IDQgKiBUICogZCxcbiAgICAgIFwiU2xpZGluZyB3aW5kb3cgKFcgPSA0LDA5NilcIjogNCAqIE1hdGgubWluKFQsIFcpICogZCxcbiAgICAgIFwiVG9wLWsgc3BhcnNlIChrID0gMiwwNDgpICsgaW5kZXhlclwiOiA0ICogTWF0aC5taW4oVCwgaykgKiBkICsgMiAqIFQgKiA2NCAqIDQsXG4gICAgICBcIkxpbmVhciAvIGRlbHRhLXJ1bGUgKHN0YXRlIGRfaCDDlyBkX2ggcGVyIGhlYWQpXCI6IDQgKiBoICogZGggKiBkaFxuICAgIH0gOiB7XG4gICAgICBcIkZ1bGwgYXR0ZW50aW9uXCI6IGggKiBUICogVCAqIDIsXG4gICAgICBcIlNsaWRpbmcgd2luZG93IChXID0gNCwwOTYpXCI6IGggKiBUICogTWF0aC5taW4oVCwgVykgKiAyLFxuICAgICAgXCJGbGFzaEF0dGVudGlvbiAodGlsZXMsIG5vdCBzdG9yZWQpXCI6IGggKiAxMjggKiAxMjggKiAyICogNFxuICAgIH07XG4gICAgZm9yIChjb25zdCBba2luZCwgdl0gb2YgT2JqZWN0LmVudHJpZXMoZikpIHB0cy5wdXNoKHtULCB2LCBraW5kfSk7XG4gIH1cbiAgcmV0dXJuIFBsb3QucGxvdCh7d2lkdGg6IE1hdGgubWluKHdpZHRoLCA3MDApLCBoZWlnaHQ6IDMwMCwgbWFyZ2luTGVmdDogNjAsIGdyaWQ6IHRydWUsXG4gICAgeDoge3R5cGU6IFwibG9nXCIsIGxhYmVsOiBcIkNvbnRleHQgbGVuZ3RoIFQgKHRva2VucylcIiwgdGlja0Zvcm1hdDogXCJ+c1wifSxcbiAgICB5OiB7dHlwZTogXCJsb2dcIiwgbGFiZWw6IGNvc3RLaW5kID09PSBcImZsb3BzXCIgPyBcIkZMT1BzIHBlciBuZXcgdG9rZW4sIG9uZSBsYXllclwiIDogXCJCeXRlcywgb25lIGxheWVyLCAxNi1iaXRcIiwgdGlja0Zvcm1hdDogXCJ+c1wifSxcbiAgICBjb2xvcjoge2xlZ2VuZDogdHJ1ZX0sIG1hcmtzOiBbUGxvdC5saW5lKHB0cywge3g6IFwiVFwiLCB5OiBcInZcIiwgc3Ryb2tlOiBcImtpbmRcIiwgc3Ryb2tlV2lkdGg6IDJ9KV19KTtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBrdlNldCA9IElucHV0cy5mb3JtKHtcbiAgVDogSW5wdXRzLnJhbmdlKFsxMDI0LCAxMDQ4NTc2XSwge3ZhbHVlOiAxMzEwNzIsIHN0ZXA6IDEwMjQsIGxhYmVsOiBcIkNvbnRleHQgbGVuZ3RoICh0b2tlbnMpXCJ9KSxcbiAgTDogSW5wdXRzLnJhbmdlKFs4LCAxMjhdLCB7dmFsdWU6IDY0LCBzdGVwOiAxLCBsYWJlbDogXCJMYXllcnNcIn0pXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC03IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoia3ZUYWJsZSA9IHtcbiAgY29uc3Qge1QsIEx9ID0ga3ZTZXQsIGggPSA2NCwgZGggPSAxMjgsIGJ5ID0gMjtcbiAgY29uc3Qgcm93cyA9IFtcbiAgICBbXCJNdWx0aS1oZWFkIGF0dGVudGlvbiAoNjQgaGVhZHMgw5cgMTI4KVwiLCAyICogaCAqIGRoXSxcbiAgICBbXCJHcm91cGVkLXF1ZXJ5LCA4IGtleeKAk3ZhbHVlIGhlYWRzXCIsIDIgKiA4ICogZGhdLFxuICAgIFtcIk11bHRpLXF1ZXJ5LCAxIGtleeKAk3ZhbHVlIGhlYWRcIiwgMiAqIGRoXSxcbiAgICBbXCJNdWx0aS1oZWFkIGxhdGVudCAoNTEyICsgNjQpXCIsIDUxMiArIDY0XVxuICBdO1xuICByZXR1cm4gaHRsLmh0bWxgPGRpdiBjbGFzcz1cInRmLXBhbmVsXCI+PGg0PktWIGNhY2hlIGZvciBvbmUgc2VxdWVuY2Ugb2YgJHtmbXQoVCl9IHRva2VucywgJHtMfSBsYXllcnMsIDE2LWJpdDwvaDQ+PGRpdiBjbGFzcz1cInRmLXNjcm9sbFwiPjx0YWJsZSBjbGFzcz1cInRhYmxlIHRhYmxlLXNtIHRmLXRcIiBzdHlsZT1cIm1hcmdpbjowXCI+PHRoZWFkPjx0cj48dGg+QXR0ZW50aW9uPC90aD48dGggY2xhc3M9XCJudW1cIj5OdW1iZXJzIHBlciB0b2tlbiBwZXIgbGF5ZXI8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlBlciB0b2tlbjwvdGg+PHRoIGNsYXNzPVwibnVtXCI+V2hvbGUgc2VxdWVuY2U8L3RoPjwvdHI+PC90aGVhZD48dGJvZHk+XG4gICAgJHtyb3dzLm1hcCgoW24sIGNdKSA9PiBodGwuaHRtbGA8dHI+PHRkPiR7bn08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KGMpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtieXRlc0goYyAqIEwgKiBieSl9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2J5dGVzSChjICogTCAqIGJ5ICogVCl9PC90ZD48L3RyPmApfVxuICAgIDx0cj48dGQ+R3JvdXBlZC1xdWVyeSwgd2luZG93IDQsMDk2IGluIDUgb2YgNiBsYXllcnM8L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KDIgKiA4ICogZGgpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+4oCUPC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2J5dGVzSCgyICogOCAqIGRoICogYnkgKiAoTCAvIDYgKiBUICsgNSAqIEwgLyA2ICogTWF0aC5taW4oVCwgNDA5NikpKX08L3RkPjwvdHI+XG4gIDwvdGJvZHk+PC90YWJsZT48L2Rpdj48L2Rpdj5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC04IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibW9lVGFibGUgPSBodGwuaHRtbGA8ZGl2IGNsYXNzPVwidGYtc2Nyb2xsXCI+PHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gdGYtdFwiPjx0aGVhZD48dHI+PHRoPk1vZGVsPC90aD48dGg+UmVsZWFzZWQ8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlRvdGFsIHBhcmFtZXRlcnM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkFjdGl2ZSBwZXIgdG9rZW48L3RoPjx0aD5FeHBlcnRzPC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAke1tbXCJNaXh0cmFsIDh4N0JcIiwgXCJEZWMgMjAyM1wiLCBcIjQ3QlwiLCBcIjEzQlwiLCBcIjgsIHRvcC0yXCJdLFxuICAgICBbXCJEZWVwU2Vlay1WMlwiLCBcIk1heSAyMDI0XCIsIFwiMjM2QlwiLCBcIjIxQlwiLCBcIjE2MCByb3V0ZWQgKyAyIHNoYXJlZCwgdG9wLTZcIl0sXG4gICAgIFtcIkRlZXBTZWVrLVYzXCIsIFwiRGVjIDIwMjRcIiwgXCI2NzFCXCIsIFwiMzdCXCIsIFwiMjU2IHJvdXRlZCArIDEgc2hhcmVkLCB0b3AtOFwiXSxcbiAgICAgW1wiTGxhbWEgNCBNYXZlcmlja1wiLCBcIkFwciAyMDI1XCIsIFwiNDAwQlwiLCBcIjE3QlwiLCBcIjEyOCwgdG9wLTEsIGV2ZXJ5IG90aGVyIGxheWVyXCJdLFxuICAgICBbXCJRd2VuMy0yMzVCLUEyMkJcIiwgXCJNYXkgMjAyNVwiLCBcIjIzNUJcIiwgXCIyMkJcIiwgXCIxMjgsIHRvcC04XCJdLFxuICAgICBbXCJLaW1pIEsyXCIsIFwiSnVsIDIwMjVcIiwgXCIxLjA0VFwiLCBcIjMyQlwiLCBcIjM4NCByb3V0ZWQgKyAxIHNoYXJlZCwgdG9wLThcIl0sXG4gICAgIFtcImdwdC1vc3MtMTIwYlwiLCBcIkF1ZyAyMDI1XCIsIFwiMTE3QlwiLCBcIjUuMUJcIiwgXCIxMjgsIHRvcC00XCJdLFxuICAgICBbXCJRd2VuMy1OZXh0LTgwQi1BM0JcIiwgXCJTZXAgMjAyNVwiLCBcIjgwQlwiLCBcIjNCXCIsIFwiNTEyIHJvdXRlZCArIDEgc2hhcmVkLCB0b3AtMTBcIl0sXG4gICAgIFtcIkRlZXBTZWVrLVY0LVByb1wiLCBcIjIwMjZcIiwgXCIxLjZUXCIsIFwiNDlCXCIsIFwiRGVlcFNlZWtNb0VcIl1dLm1hcChyID0+IGh0bC5odG1sYDx0cj48dGQ+JHtyWzBdfTwvdGQ+PHRkPiR7clsxXX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7clsyXX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7clszXX08L3RkPjx0ZD4ke3JbNF19PC90ZD48L3RyPmApfVxuPC90Ym9keT48L3RhYmxlPjwvZGl2PmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgndGxQaWNrJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2Nvc3RLaW5kJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2t2U2V0JykifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../ai/transformer-part-3-advances";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

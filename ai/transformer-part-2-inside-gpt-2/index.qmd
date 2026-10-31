@@ -1,0 +1,253 @@
+---
+title: "The Transformer, Part 2: Inside GPT-2"
+subtitle: "A trained transformer run step by step in NumPy: what its attention heads look at, how it copies, how a prediction forms layer by layer, and what the residual stream carries"
+description: "GPT-2 small, implemented from its published weights in NumPy and checked against the reference, run on example sentences. An explorer for all 144 attention heads, the previous-token and induction heads that let it copy, the heads that pick out the right name, the logit lens, and the growth of the residual stream."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, transformers, language-models, interpretability]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.tf-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.tf-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.tf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.tf-grid form { flex-wrap: wrap !important; }
+.tf-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.tf-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.tf-toks { display: flex; flex-wrap: wrap; gap: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; line-height: 1.9; }
+.tf-toks span { padding: 0 .2rem; border-radius: 3px; white-space: pre; cursor: pointer; border: 1px solid transparent; }
+.tf-toks span.q { border-color: #1d3557; }
+.tf-scroll { overflow-x: auto; }
+.tf-lens td { font-family: ui-monospace, monospace; font-size: .72rem; padding: .1rem .3rem; white-space: pre; text-align: center; border: 1px solid rgba(128,128,128,.2); }
+.tf-lens th { font-size: .7rem; font-weight: 500; padding: .1rem .3rem; white-space: pre; }
+table.tf-t td.num, table.tf-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tf-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+.tf-scroll table { min-width: 560px; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+G = FileAttachment("data/gpt2_viz.json").json()
+show = t => t === "<|endoftext|>" ? "⟨start⟩" : t.replace(/ /g, "␣").replace(/\n/g, "↵")
+attnOf = ex => { const b = Uint8Array.from(atob(ex.attn), c => c.charCodeAt(0)); return (l, h, q, k) => b[((l * 12 + h) * ex.T + q) * ex.T + k] / 255; }
+```
+
+[Part 1](../transformer-part-1-operation-by-operation/) took the transformer apart on paper. This part runs a trained one and looks inside. The model is GPT-2 small, released by OpenAI in 2019: 124 million parameters, 12 layers of 12 heads, width 768, a context of 1,024 tokens and the 50,257-token vocabulary described in the [embeddings post](../embeddings-part-1-words-to-vectors/). It was trained to predict the next token on WebText, about 40 GB of text from 8 million web pages linked from Reddit. By current standards it is small and often wrong, but it is the most studied language model there is, and the structures found in it have been found again in much larger models.
+
+So that nothing is hidden inside a library, the forward pass here is my own: about 70 lines of NumPy, following Part 1's equations, reading the published weights. On the same input it reproduces the reference implementation's output logits to within $7\times10^{-5}$, where the logits themselves reach 120. Every number below comes from it.
+
+## Five inputs
+
+Four sentences and one deliberately strange input. Each begins with GPT-2's `<|endoftext|>` token, shown as ⟨start⟩, which marks the start of a document. The model's top predictions for the token after each:
+
+```{ojs}
+nextTable = htl.html`<table class="table table-sm tf-t"><thead><tr><th>Input</th><th>Most likely next tokens</th></tr></thead><tbody>
+  ${G.examples.map(ex => htl.html`<tr><td style="font-size:.85rem">${ex.name === "Repeated random tokens" ? htl.html`<i>25 random tokens, then the same 25 again</i>` : ex.tokens.slice(1).join("")}</td>
+  <td style="font-size:.82rem">${ex.next.slice(0, 3).map(([t, p]) => htl.html`<code>${show(t)}</code> ${fmt(100 * p)}%  `)}</td></tr>`)}</tbody></table>`
+```
+
+The first is a standard test of whether a model can track who is who: *John* gave a drink to someone, and the someone must be *Mary*. GPT-2 gets it. The second ends with *Bill*, and the model predicts `␣T`, the first piece of *Tindall*, which it can only know from earlier in the same input: a surname this obscure is not something a 124-million-parameter model remembers. The third shows its limits: given the Eiffel Tower, it rates London above Paris. The fifth is there to measure something specific, explained below.
+
+## Attention, head by head
+
+Pick an input, a layer and a head; then click a token to see where it looks. The heatmap shows the head's whole attention matrix: row $i$ is the distribution over earlier positions that token $i$ attends to, and the causal mask leaves the upper triangle empty.
+
+::: {.tf-grid}
+
+```{ojs}
+viewof exName = Inputs.select(G.examples.map(e => e.name), {label: "Input"})
+```
+
+```{ojs}
+viewof lh = Inputs.form({
+  l: Inputs.range([0, 11], {value: 5, step: 1, label: "Layer"}),
+  h: Inputs.range([0, 11], {value: 5, step: 1, label: "Head"})
+})
+```
+
+:::
+
+```{ojs}
+//| output: false
+ex = G.examples.find(e => e.name === exName)
+A = attnOf(ex)
+mutable qPos = null
+```
+
+```{ojs}
+tokRow = {
+  const q = qPos === null || qPos >= ex.T ? ex.T - 1 : qPos;
+  const el = htl.html`<div class="tf-panel"><h4>Layer ${lh.l}, head ${lh.h}: where “${show(ex.tokens[q])}” (position ${q}) looks. Click any token.</h4><div class="tf-toks">
+    ${ex.tokens.map((t, k) => { const w = k <= q ? A(lh.l, lh.h, q, k) : 0;
+      return htl.html`<span data-k=${k} class=${k === q ? "q" : ""} style="background:rgba(231,111,81,${Math.min(1, w * 1.2)});color:${w > 0.6 ? "#fff" : "inherit"}" title="${fmt(100 * w, 1)}%">${show(t)}</span>`; })}
+  </div></div>`;
+  el.onclick = e => { const s = e.target.closest("span[data-k]"); if (s) mutable qPos = +s.dataset.k; };
+  return el;
+}
+```
+
+```{ojs}
+heat = {
+  const T = ex.T, cells = [];
+  for (let q = 0; q < T; q++) for (let k = 0; k <= q; k++) cells.push({q, k, w: A(lh.l, lh.h, q, k)});
+  const labs = ex.tokens.map((t, i) => `${i} ${show(t)}`);
+  const sz = Math.min(width, 640);
+  return Plot.plot({
+    width: sz, height: sz * 0.9, marginLeft: 110, marginBottom: 110, padding: 0,
+    x: {domain: labs, tickRotate: -60, label: "Attends to (key)", tickSize: 0}, y: {domain: labs, label: "Token (query)", tickSize: 0},
+    color: {scheme: "Oranges", domain: [0, 1]},
+    marks: [Plot.cell(cells, {x: d => labs[d.k], y: d => labs[d.q], fill: "w", tip: true, title: d => `${labs[d.q]} → ${labs[d.k]}: ${fmt(100 * d.w, 1)}%`})]
+  });
+}
+```
+
+Most heads, most of the time, put a large share of their attention on the first token. In the repeated-random-token input, the average over all 144 heads and all positions is `{ojs} fmt(100 * d3.mean(G.scores.first.flat()))`%. The first token is visible from every position and carries little information, and a head that has nothing useful to do for a given token needs somewhere to put its attention, because softmax weights must sum to one. Guangxuan Xiao and colleagues (2023) called these *attention sinks* and showed that keeping the first few tokens in the cache is what lets models run on streams longer than their training context.
+
+## Heads with jobs
+
+Some heads do one thing consistently. Two scores, computed on the fifth input (⟨start⟩, 25 random tokens, the same 25 repeated), find them. The **previous-token score** is a head's average attention from each token to the one just before it. The **induction score** is its average attention, in the repeated half, from each token to the token that *followed* that token's earlier occurrence: on the second sight of the sequence A B C …, from the second B to the first C. Click a cell to load that head into the explorer above.
+
+```{ojs}
+viewof scoreKind = Inputs.radio(new Map([["Previous-token score", "previous"], ["Induction score", "induction"], ["Attention to the first token", "first"]]), {value: "induction", label: "Score"})
+```
+
+```{ojs}
+scoreGrid = {
+  const S = G.scores[scoreKind], c = 30, m = 34, n = 12, W = m + n * c + 6, H = m + n * c + 6;
+  const col = d3.scaleSequential(d3.interpolateBlues).domain([0, 1]);
+  const svg = htl.svg`<svg viewBox="0 0 ${W} ${H}" style="max-width:${W}px;width:100%;height:auto;cursor:pointer" font-family="system-ui, sans-serif" font-size="10">
+    ${d3.range(n).map(h => htl.svg`<text x="${m + h * c + c / 2}" y="${m - 8}" text-anchor="middle" fill="currentColor">${h}</text>`)}
+    ${d3.range(n).map(l => htl.svg`<text x="${m - 8}" y="${m + l * c + c / 2 + 3}" text-anchor="end" fill="currentColor">${l}</text>`)}
+    <text x="${m + n * c / 2}" y="10" text-anchor="middle" fill="currentColor">Head</text>
+    <text x="8" y="${m + n * c / 2}" text-anchor="middle" fill="currentColor" transform="rotate(-90 8 ${m + n * c / 2})">Layer</text>
+    ${d3.range(n).flatMap(l => d3.range(n).map(h => htl.svg`<g data-l="${l}" data-h="${h}"><title>Layer ${l}, head ${h}: ${fmt(S[l][h], 2)}</title>
+      <rect x="${m + h * c + 1}" y="${m + l * c + 1}" width="${c - 2}" height="${c - 2}" rx="3" fill="${col(S[l][h])}"/>
+      ${S[l][h] > 0.5 ? htl.svg`<text x="${m + h * c + c / 2}" y="${m + l * c + c / 2 + 3}" text-anchor="middle" fill="#fff" font-size="9">${fmt(S[l][h], 2)}</text>` : null}</g>`))}
+  </svg>`;
+  svg.addEventListener("click", e => {
+    const g = e.target.closest("g[data-l]"); if (!g) return;
+    const l = +g.dataset.l, h = +g.dataset.h, f = viewof lh;
+    const r = f.querySelectorAll("input[type=range]"), nb = f.querySelectorAll("input[type=number]");
+    r[0].value = nb[0].value = l; r[1].value = nb[1].value = h;
+    r[0].dispatchEvent(new Event("input", {bubbles: true})); r[1].dispatchEvent(new Event("input", {bubbles: true}));
+  });
+  return htl.html`<div class="tf-panel"><h4>${scoreKind === "previous" ? "Previous-token score" : scoreKind === "induction" ? "Induction score" : "Attention to the first token"}, all 144 heads (darker is higher)</h4>${svg}</div>`;
+}
+```
+
+```{ojs}
+topHeads = {
+  const top = k => G.scores[k].flatMap((r, l) => r.map((v, h) => ({l, h, v}))).sort((a, b) => b.v - a.v).slice(0, 5);
+  const fmtH = arr => arr.map(d => `${d.l}.${d.h} (${fmt(d.v, 2)})`).join(", ");
+  return md`Written as *layer.head*, the strongest previous-token heads are ${fmtH(top("previous").slice(0, 3))}, and the strongest induction heads ${fmtH(top("induction"))}. Head 4.11 attends to the previous token almost without exception.`;
+}
+```
+
+### Induction: how a transformer copies
+
+The induction heads are the mechanism behind the `␣T` after *Bill*. Load head 5.5 with the second input and click the last token: it puts most of its attention on `␣T`, the token that followed *Bill* the first time. The model has learned a general rule, *if the current token appeared before, predict whatever came after it last time*, and it works for sequences it has never seen, including random ones. On the fifth input the model's average loss on the first 25 random tokens is 12.5 nats, worse than a uniform guess over the whole vocabulary (10.8 nats); on the repeated 25 it is 0.47 nats, about 62% probability on each correct token.
+
+The rule needs two heads in different layers, which is why induction heads are never in the first layer. An earlier **previous-token head** (such as 4.11) copies information about each token into the next position: after it, the residual stream at `␣T` carries "the token before me was *Bill*". The later **induction head** then forms its query from the current token, *Bill*, and its key at each position from that copied information, so its score is high exactly where the previous token was *Bill*. It attends there and copies the token forward into the prediction. Nelson Elhage and colleagues at Anthropic described this two-step circuit in 2021, a head's keys built from another head's output being *K-composition*, and Catherine Olsson and colleagues (2022) showed that induction heads appear suddenly during training, at the same point as a visible bump in the loss curve, and argued they underlie much of what is called in-context learning.
+
+### Who gave a drink to whom
+
+The first input has its own known circuit. Kevin Wang and colleagues (2022) traced how GPT-2 small completes sentences like it, and found among other components a set of **name mover heads** in layers 9 and 10 that attend from the final token to the correct name and copy it to the output, steered by earlier heads that detect which name was repeated and suppress it. Load heads 9.9 and 9.6 with the first input and click the last token, *to*: they put more than half their attention on *Mary* and about a tenth on *John*. Head 10.0, another of the name movers in that paper, does the same less strongly.
+
+## The prediction forms: the logit lens
+
+The final layer turns the residual stream into a prediction by applying a last LayerNorm and the unembedding. Nothing stops us applying the same readout to the residual stream after *every* layer, to ask what the model would predict if it stopped there. This is the **logit lens**, proposed in 2020 by the pseudonymous researcher nostalgebraist. It is only an approximation, since the earlier layers were never trained to be read this way, but in GPT-2 it works well. Each cell shows the top token at that layer and position; the shading is the probability of the model's *final* top prediction, so you can see where the answer arrives.
+
+```{ojs}
+viewof lensEx = Inputs.select(G.examples.filter(e => e.T < 30).map(e => e.name), {label: "Input"})
+```
+
+```{ojs}
+lensTable = {
+  const e = G.examples.find(x => x.name === lensEx);
+  return htl.html`<div class="tf-scroll"><table class="tf-lens"><thead><tr><th>after</th>${e.tokens.map(t => htl.html`<th>${show(t)}</th>`)}</tr></thead><tbody>
+    ${e.lens.map((row, l) => htl.html`<tr><th>${l === 0 ? "embed" : "layer " + (l - 1)}</th>${row.map(([t, p, pf]) => htl.html`<td style="background:rgba(42,157,143,${pf})" title="top ${fmt(100 * p)}%, final answer ${fmt(100 * pf)}%">${show(t)}</td>`)}</tr>`).reverse()}
+  </tbody></table></div>`;
+}
+```
+
+Read from the bottom up. For the indirect-object sentence, the last position's best guess passes through generic continuations (*get*, *fill*, *drink*, *the*, *them*) for ten layers; *Mary* appears only after layer 9, where the name mover heads live, at 99%, and the last two layers temper it to the final 65%. For the second input, `␣T` arrives after layer 9 too: the copying happens late, once the induction heads in layers 5 to 7 have found the right place and later layers have moved its contents into position. Early layers mostly work on the current token itself; the next-token prediction is assembled in the second half of the network.
+
+## The residual stream
+
+Each layer adds to the stream; nothing subtracts. The length of each position's vector grows steadily through the model:
+
+```{ojs}
+viewof normEx = Inputs.select(G.examples.map(e => e.name), {label: "Input"})
+```
+
+```{ojs}
+normPlot = {
+  const e = G.examples.find(x => x.name === normEx), pts = [];
+  e.norms.forEach((r, l) => r.forEach((v, t) => { if (t > 0) pts.push({l, v, kind: "Residual stream ‖x‖"}); }));
+  e.attn_norm.forEach((r, l) => r.forEach((v, t) => { if (t > 0) pts.push({l: l + 0.5, v, kind: "Attention output"}); }));
+  e.mlp_norm.forEach((r, l) => r.forEach((v, t) => { if (t > 0) pts.push({l: l + 0.75, v, kind: "Feed-forward output"}); }));
+  const med = d3.rollups(pts, v => d3.median(v, d => d.v), d => d.kind, d => d.l).flatMap(([k, a]) => a.map(([l, v]) => ({k, l, v})));
+  return Plot.plot({width: Math.min(width, 680), height: 300, marginLeft: 55, grid: true,
+    x: {label: "Layer"}, y: {type: "log", label: "Length (median over positions)"}, color: {legend: true},
+    marks: [Plot.line(med, {x: "l", y: "v", stroke: "k", strokeWidth: 2}), Plot.dot(med, {x: "l", y: "v", fill: "k", r: 2.5})]});
+}
+```
+
+```{ojs}
+normText = {
+  const e = G.examples.find(x => x.name === "Indirect object");
+  const m = l => d3.median(e.norms[l].slice(1));
+  return md`For the indirect-object sentence the median length is ${fmt(m(0), 1)} straight from the embedding, ${fmt(m(1), 0)} after the first block, and ${fmt(m(12), 0)} after the last. The jump in the first block is a known quirk of GPT-2: both its attention and its feed-forward layer write large vectors at every position (median lengths ${fmt(d3.median(e.attn_norm[0].slice(1)), 0)} and ${fmt(d3.median(e.mlp_norm[0].slice(1)), 0)}, against about 10 in the next block), and interpretability work treats that first feed-forward layer roughly as an extension of the embedding of the current token. The steady growth after that is why every sublayer reads the stream through a LayerNorm (Pre-LN): without it, a layer near the top would see inputs eight times larger than one near the bottom, and the final layer's input is a hundred times the size of the embedding.`;
+}
+```
+
+## What this shows, and what it doesn't
+
+The heads described here are a handful of the 144, chosen because earlier research had already found them; most heads in GPT-2 have no tidy description. Attention patterns show where information is read from, not what is done with it, and the feed-forward layers, which hold two-thirds of the parameters, are much harder to read. Finding and testing circuits like the induction and name-mover circuits takes interventions: removing a head or patching in its output from a different input, and measuring what changes. That is the field of *mechanistic interpretability*, and it is where the papers cited here come from.
+
+The architecture is still the one from Part 1. [Part 3](../transformer-part-3-advances/) covers how it has changed since: what the large models of 2026 do differently, and why.
+
+## Terminology and where it comes from
+
+::: {.tf-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Induction head** | A head that attends to the token after the previous occurrence of the current token | Elhage and colleagues, 2021, by analogy with induction in the logical sense: inferring a pattern from earlier instances (A was followed by B, so A will be followed by B). |
+| **Circuit** | A small set of heads and neurons that together implement a behaviour | Borrowed from electronics by Chris Olah and colleagues' 2020 work on vision models, *Zoom In: An Introduction to Circuits*. |
+| **Residual stream** | The running sum of the embedding and every sublayer's output at a position | Elhage and colleagues, 2021, picturing the residual connections as a stream that layers read from and write to. |
+| **Logit lens** | Reading out a prediction from an intermediate layer with the final unembedding | nostalgebraist, 2020: a lens to look at the hidden state in the vocabulary's terms. |
+| **Attention sink** | A token, usually the first, that absorbs attention that has nowhere better to go | Xiao and colleagues, 2023. |
+| **Ablation** | Removing a component to see what it did | From surgery and neuroscience: the removal of tissue. |
+:::
+
+## Method and sources
+
+**Model.** `openai-community/gpt2` weights from Hugging Face. The NumPy forward pass uses the row-vector convention throughout (GPT-2 stores its linear layers as $d_{\text{in}}\times d_{\text{out}}$ matrices, so they are applied as $XW$), Pre-LN with $\epsilon = 10^{-5}$, the tanh approximation of GELU that GPT-2 was trained with, and tied unembedding. Checked against the Hugging Face Transformers `GPT2LMHeadModel` loaded with the same weights: largest difference in the logits $6.9\times10^{-5}$.
+
+**Inputs.** Tokenised with GPT-2's tokeniser (the `r50k_base` encoding), each prefixed by `<|endoftext|>` (id 50256). The random sequence is 25 token ids drawn uniformly from 1,000 to 20,000 with a fixed seed, repeated once.
+
+**Scores.** Previous-token: mean attention from position $t$ to $t-1$, over positions 2 to 50. Induction: mean attention from each position $t$ in the second copy to position $t - 25 + 1$, the token after the earlier occurrence. First token: mean attention to position 0 over all later positions. Attention is stored in the page at 8 bits.
+
+**Logit lens.** The residual stream after the embedding and after each block, passed through the final LayerNorm and the unembedding, then a softmax.
+
+Sources:
+
+- A. Radford and colleagues, [*Language Models are Unsupervised Multitask Learners*](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf) (GPT-2), 2019.
+- N. Elhage and colleagues, [*A Mathematical Framework for Transformer Circuits*](https://transformer-circuits.pub/2021/framework/index.html), Anthropic, 2021. C. Olsson and colleagues, [*In-context Learning and Induction Heads*](https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html), 2022.
+- K. Wang and colleagues, [*Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small*](https://arxiv.org/abs/2211.00593), 2022.
+- nostalgebraist, [*interpreting GPT: the logit lens*](https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens), 2020.
+- G. Xiao and colleagues, [*Efficient Streaming Language Models with Attention Sinks*](https://arxiv.org/abs/2309.17453), 2023.
+- C. Olah and colleagues, [*Zoom In: An Introduction to Circuits*](https://distill.pub/2020/circuits/zoom-in/), *Distill*, 2020.
+
+**Previous: [Part 1, operation by operation](../transformer-part-1-operation-by-operation/)** · **Next: [Part 3, advances since 2017](../transformer-part-3-advances/)**.
