@@ -1,0 +1,630 @@
+[
+  {
+    "group": "directions and parts of the boat",
+    "term": "port",
+    "meaning": "The left-hand side of the boat when you face forward (the bow).",
+    "origin": "English 'port' (the left side). Two explanations: Etymonline says it is likely from 'the side facing the harbor' (port n.1, a harbour); Wordorigins (David Wilton) instead derives it from 'port' meaning a gate or opening in the hull's side (French porte, Latin porta), since the cargo port was on the left side.",
+    "first_recorded": "1540s (Etymonline); 1543-4 as a direction term (Wordorigins). Royal Navy Admiralty order of 1844 (2 November 1844 per Wordorigins) said 'Larboard' 'shall no longer be used'; US Navy Department notice of 1846 (Etymonline).",
+    "sources": [
+      "https://www.etymonline.com/word/larboard",
+      "https://www.etymonline.com/search?q=larboard",
+      "https://www.wordorigins.org/big-list-entries/port-larboard-starboard",
+      "https://navyhistory.au/?p=10232"
+    ],
+    "confidence": "disputed/folk",
+    "note": "The date and the 1844 Admiralty order are well established. The source sense is disputed: 'harbour side' (Etymonline, 'likely') versus 'cargo-port/gate side' (Wordorigins, which explicitly rejects the quay-side story). Wordorigins says the 1844 change was about standardisation rather than a major larboard/starboard confusion problem. Separate folk story: 'posh' = 'Port Out, Starboard Home'. Etymonline says 'there is no evidence' for it; the acronym story is attested only from 1933, after 'posh' (by 1914, 1903 as 'push'), and was challenged in Mariner's Mirror (Jan 1971). See https://www.etymonline.com/word/posh"
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "starboard",
+    "meaning": "The right-hand side of the boat when you face forward.",
+    "origin": "Old English steorbord, from steor 'steering paddle, rudder' + bord 'ship's side': the side the boat was steered from. Cognates: Old Norse stjornborði, Dutch stuurboord, German Steuerbord; French tribord is a Germanic loan.",
+    "first_recorded": "Old English (Middle English sterebord); Wordorigins cites a late-9th-century translation of Orosius.",
+    "sources": [
+      "https://www.etymonline.com/word/starboard",
+      "https://www.wordorigins.org/big-list-entries/port-larboard-starboard"
+    ],
+    "confidence": "established",
+    "note": "Etymonline, citing the OED, says early Germanic boats were steered by a paddle on the right side. The common add-on that this was 'because most people are right-handed' (repeated on Wordorigins) is a plausible explanation, not a documented fact. It has nothing to do with stars."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "larboard",
+    "meaning": "The old name for the left side (port), now obsolete in English.",
+    "origin": "Middle English ladde-borde, altered in the 16th century (d to r) under the influence of 'starboard'. The first element is of unknown origin: suggestions are 'loading side' (from laden/lade 'to load') or Old English geledan 'to lead'. Old English used bæcbord 'back-board', the side behind the steersman's back.",
+    "first_recorded": "ladde-borde c.1300; 'larboard' 1580s (Etymonline). Wordorigins notes 'laddeborde' in Patience (c.1380).",
+    "sources": [
+      "https://www.etymonline.com/word/larboard",
+      "https://www.wordorigins.org/big-list-entries/port-larboard-starboard",
+      "https://navyhistory.au/?p=10232"
+    ],
+    "confidence": "disputed/folk",
+    "note": "That it was replaced by 'port' (Admiralty order 1844) is established. What 'ladde-' means is disputed: both the 'loading' and 'leading' explanations are unproven, and Wordorigins presents them only as possibilities."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "bow",
+    "meaning": "The front end of the hull, where the sides curve in to meet.",
+    "origin": "From a Low German or Scandinavian source such as Old Norse bogr, Middle Low German boog or Middle Dutch boech ('bow of a ship'), from Proto-Germanic *bugon-, from PIE *bheug- 'to bend'.",
+    "first_recorded": "mid-14c. (bou, boue)",
+    "sources": [
+      "https://www.etymonline.com/word/bow"
+    ],
+    "confidence": "probable",
+    "note": "Etymonline gives the donor only as 'a source such as', so the exact language is not pinned down. Not related to the bow you shoot arrows with in the sense of a direct borrowing, though both may go back to the 'bend' root. Rhymes with 'cow'."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "stern",
+    "meaning": "The back end of the hull.",
+    "origin": "Probably Scandinavian, e.g. Old Norse stjorn 'a steering' (related to styra 'to steer'), or Old Frisian stiarne 'rudder'. The name refers to where the steering gear was.",
+    "first_recorded": "early 13c.",
+    "sources": [
+      "https://www.etymonline.com/word/stern"
+    ],
+    "confidence": "probable",
+    "note": "Etymonline gives both the Norse and Frisian sources with hedges ('probably', 'or may come from'). Not the same word as the adjective 'stern' (severe)."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "aft / abaft",
+    "meaning": "'Aft' means toward or at the stern; 'abaft' means behind (further aft than) something aboard, e.g. 'abaft the mast'.",
+    "origin": "aft: Old English æftan 'from behind, behind, farthest back', a superlative of æf/of 'away, off' (PIE *apo-). abaft: Old English on bæftan (on + be 'by' + æftan), Middle English on baft.",
+    "first_recorded": "aft: Old English. abaft: Middle English on baft late 13c.; 'abaft' in its modern form 1590s.",
+    "sources": [
+      "https://www.etymonline.com/word/aft",
+      "https://www.etymonline.com/word/abaft"
+    ],
+    "confidence": "established",
+    "note": "Etymonline notes sailors kept 'abaft' after landsmen dropped it. 'Aft' is related to 'after'."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "abeam",
+    "meaning": "At right angles to the boat's centreline, level with the middle of the side, e.g. 'wind abeam'.",
+    "origin": "a- (Old English an 'on') + beam. 'Beam' is Old English beam 'tree', later 'rafter, ship's timber'; nautical sense 'transverse timber holding a ship together' from early 13c., then 'greatest breadth of a ship'.",
+    "first_recorded": "beam (ship's timber): early 13c. A first date for 'abeam' itself was not verified.",
+    "sources": [
+      "https://www.etymonline.com/word/abeam"
+    ],
+    "confidence": "established",
+    "note": "Etymonline's abeam page traces 'beam' but does not date 'abeam' or explicitly explain its a- prefix; the a- = 'on' reading follows Etymonline's general note on the prefix. The beam is also the boat's maximum width (a J/109 is about 3.5 m)."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "windward",
+    "meaning": "The side or direction the wind is coming from; upwind.",
+    "origin": "wind + -ward (Old English -weard 'toward').",
+    "first_recorded": "noun 'point from which the wind blows' 1510s; adjective 1680s.",
+    "sources": [
+      "https://www.etymonline.com/word/windward"
+    ],
+    "confidence": "established",
+    "note": "Opposite of leeward. The windward side is also called the 'weather' side."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "leeward",
+    "meaning": "The side or direction away from the wind; downwind. Sailors pronounce it 'LOO-erd'.",
+    "origin": "lee + -ward. 'Lee' is Old English hleo 'shelter, cover, protection'; the nautical sense (the side sheltered from the wind) is of Scandinavian origin.",
+    "first_recorded": "Etymonline: leeward 1660s; lee (nautical) c.1400. Merriam-Webster: noun 1549, adjective 1630. The two sources disagree on the date.",
+    "sources": [
+      "https://www.etymonline.com/word/leeward",
+      "https://www.merriam-webster.com/dictionary/leeward",
+      "https://www.dictionary.com/browse/lee"
+    ],
+    "confidence": "established",
+    "note": "Pronunciation: Merriam-Webster gives 'LEE-werd' and 'LOO-erd', the latter labelled 'especially nautical'. Etymonline does not discuss it. The deeper sense of 'lee' (perhaps 'warm', PIE *kele-) is uncertain. Related: 'alee' (late 14c.), as in 'helm's a-lee'."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "lee shore",
+    "meaning": "A coastline downwind of the boat, which the wind pushes you toward; dangerous in a blow.",
+    "origin": "lee (Old English hleo 'shelter') + shore.",
+    "first_recorded": "circa 1580 (Merriam-Webster).",
+    "sources": [
+      "https://www.merriam-webster.com/dictionary/lee%20shore",
+      "https://www.etymonline.com/word/leeward"
+    ],
+    "confidence": "established",
+    "note": "Counter-intuitive: the 'lee' is from the boat's point of view, so a lee shore offers no shelter."
+  },
+  {
+    "group": "directions and parts of the boat",
+    "term": "keel",
+    "meaning": "The fin beneath the hull; on a J/109 a lead-bulbed fin that resists sideways slip and carries ballast to keep the boat upright.",
+    "origin": "Probably Scandinavian: Old Norse kjölr, Danish kjøl, Swedish köl.",
+    "first_recorded": "mid-14c.",
+    "sources": [
+      "https://www.etymonline.com/word/keel",
+      "https://www.practical-sailor.com/sailboat-reviews/j-109/"
+    ],
+    "confidence": "probable",
+    "note": "Etymonline reports a deeper link to PIE *gwele- 'to swallow' (Watkins) only as a suggestion. The OED and Middle English Compendium treat 'keel' meaning a barge (c.1200, cf. Old English ceol) as a separate but related word. 'On an even keel' is from the 1560s."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "mast",
+    "meaning": "The vertical spar that holds up the sails.",
+    "origin": "Old English mæst, from Proto-Germanic *mastaz, from PIE *mazdo- 'pole, rod' (cognate with Latin malus 'mast').",
+    "first_recorded": "Old English (no specific date given by Etymonline).",
+    "sources": [
+      "https://www.etymonline.com/word/mast"
+    ],
+    "confidence": "established",
+    "note": ""
+  },
+  {
+    "group": "the rig and sails",
+    "term": "boom",
+    "meaning": "The horizontal spar along the foot of the mainsail, pivoting on the mast.",
+    "origin": "Dutch boom 'tree, pole, beam' (via Scottish boun), related to German Baum and English 'beam'.",
+    "first_recorded": "'long pole' 1640s; nautical 'long spar run out from a ship' 1660s.",
+    "sources": [
+      "https://www.etymonline.com/word/boom"
+    ],
+    "confidence": "established",
+    "note": "So 'beam' and 'boom' are cousins. It has nothing to do with the noise a boom makes when it swings across."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "gaff",
+    "meaning": "A spar holding up the top edge of a four-sided sail on traditional rigs (a J/109 has a triangular Bermuda mainsail and no gaff).",
+    "origin": "Old French gaffe 'boat hook', from Old Provençal gafar 'to seize', probably from Germanic.",
+    "first_recorded": "'iron hook' c.1300; spar sense 1769.",
+    "sources": [
+      "https://www.etymonline.com/word/gaff"
+    ],
+    "confidence": "established",
+    "note": "The Germanic root, and a possible PIE *kap- 'grasp', are hedged by Etymonline. Included only as background for the 'gaff vang' that gave the boom vang its name."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "sheet",
+    "meaning": "A rope that controls a sail's angle to the wind, e.g. mainsheet, jib sheet; it is not the sail itself.",
+    "origin": "Old English sceatline 'sheet-line', from sceata 'lower part of a sail', originally 'piece of cloth', + line; shortened to shete.",
+    "first_recorded": "late 13c. (shete).",
+    "sources": [
+      "https://www.etymonline.com/word/sheet"
+    ],
+    "confidence": "established",
+    "note": "'Three sheets in the wind' (drunk) is recorded by 1812: sheets loose, sails flapping, boat out of control. A common landlubber mistake is to think 'sheet' means sail."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "halyard",
+    "meaning": "A rope that hoists a sail up the mast.",
+    "origin": "Middle English halier, from halen 'to haul' (Old French haler), i.e. 'hauler'. Respelled in the 17th century under the influence of 'yard' (a sail spar).",
+    "first_recorded": "halier late 14c.; 'halyard' 1620s.",
+    "sources": [
+      "https://www.etymonline.com/word/halyard"
+    ],
+    "confidence": "established",
+    "note": "It looks like 'haul + yard', but the '-yard' is a later respelling. The original word simply meant 'thing for hauling'."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "boom vang (kicker)",
+    "meaning": "A tackle or strut from the boom to the base of the mast that pulls the boom down to control mainsail twist; called the kicker or kicking strap in the UK.",
+    "origin": "Dutch vang, a 'device for securing something' (cf. vanglijn 'bow rope'); Wiktionary gives Dutch vangen 'to catch'. It was first a rope steadying a gaff.",
+    "first_recorded": "1760-70 (Dictionary.com, in the gaff-steadying sense).",
+    "sources": [
+      "https://www.dictionary.com/browse/vang",
+      "https://en.wiktionary.com/wiki/vang",
+      "https://en.wikipedia.org/wiki/Boom_vang"
+    ],
+    "confidence": "probable",
+    "note": "The Dutch source is consistent across sources, but the exact donor word (vang vs. vangen) differs. The date of the modern boom-vang sense was not verified. A 'gnav' (an upside-down strut) is 'vang' spelled backwards."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "cunningham",
+    "meaning": "A control line that pulls down the mainsail's luff near the tack, to tension the luff and move the sail's deepest point forward.",
+    "origin": "Eponym: named after its inventor, Briggs Cunningham, America's Cup skipper and yacht builder.",
+    "first_recorded": "Not verified; no first date found.",
+    "sources": [
+      "https://en.wikipedia.org/wiki/Cunningham_(sailing)"
+    ],
+    "confidence": "established",
+    "note": "Wikipedia cites a 2003 New York Times obituary for the eponym. No date of invention or first use was found."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "luff (noun and verb)",
+    "meaning": "Noun: the leading (front) edge of a sail. Verb: to steer toward the wind until the sail's front edge flutters, or (of the sail) to flutter.",
+    "origin": "Middle English lof/loof, probably from Middle Dutch lof 'windward side of a ship' (Dutch loef) or Old French lof (a spar or steering device). Etymonline traces it further to Proto-Germanic *lofo 'palm of the hand' (PIE *lep- 'flat'). Dictionary.com glosses the Dutch source as 'tholepin'.",
+    "first_recorded": "noun c.1200 (Dictionary.com: 1175-1225); verb late 14c.",
+    "sources": [
+      "https://www.etymonline.com/word/luff",
+      "https://www.dictionary.com/browse/luff",
+      "https://www.etymonline.com/word/aloof"
+    ],
+    "confidence": "disputed/folk",
+    "note": "Etymonline calls it 'of uncertain origin and sense development'. The sources disagree on the immediate donor (Dutch vs French) and on what the Dutch word meant. Related, and well established: 'aloof' (1530s) began as a helm order 'a-loof', to keep the bow to windward and clear of a lee shore."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "leech",
+    "meaning": "The trailing (back) edge of a sail.",
+    "origin": "Earlier lek/leche/lyche; akin to Dutch lijk and Old Norse lík, a nautical term of uncertain meaning, probably 'bolt rope'.",
+    "first_recorded": "1480-90 (Dictionary.com).",
+    "sources": [
+      "https://www.dictionary.com/browse/leech",
+      "https://www.merriam-webster.com/dictionary/leech%20line"
+    ],
+    "confidence": "probable",
+    "note": "Not the bloodsucking worm (Etymonline's 'leech' entries cover only the worm and 'physician'). The meaning of Old Norse lík is uncertain."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "foot",
+    "meaning": "The bottom edge of a sail.",
+    "origin": "Old English fot (cognate with Latin pes, Greek pous), applied to a sail by analogy.",
+    "first_recorded": "Old English 'before 900' for the word; the nautical sense's date was not verified.",
+    "sources": [
+      "https://www.dictionary.com/browse/foot?ch=dic&r=75"
+    ],
+    "confidence": "established",
+    "note": "Related sailing use: 'to foot' means to sail slightly lower than close-hauled for speed (Dictionary.com has only the general sense 'of vessels, to move forward; sail')."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "head",
+    "meaning": "The top corner of a triangular sail (on four-sided sails, the top edge).",
+    "origin": "Old English heafod (related to Latin caput), applied to a sail by analogy.",
+    "first_recorded": "Old English 'before 900' for the word; the nautical sense's date was not verified.",
+    "sources": [
+      "https://www.dictionary.com/browse/head?o=1"
+    ],
+    "confidence": "established",
+    "note": "Dictionary.com also gives 'head' for the forepart of a vessel. The ship's toilet ('the heads') is another sense that was not checked here."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "tack (corner of a sail)",
+    "meaning": "The lower front corner of a sail, where the foot meets the luff.",
+    "origin": "From 'tack' 'nail, pin, fastening' (Old North French taque, probably Germanic, cf. Middle Dutch tacke 'twig, spike'). It was the rope or hook holding that corner down.",
+    "first_recorded": "nautical use late 14c.; 'rope or hooked wire to hold the lower corner of a sail' late 15c.",
+    "sources": [
+      "https://www.etymonline.com/word/tack"
+    ],
+    "confidence": "established",
+    "note": "The corner took its name from the fastening that held it. The manoeuvre is listed separately."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "clew",
+    "meaning": "The lower back corner of a sail, where the sheet attaches.",
+    "origin": "Old English cliewen 'ball, ball of thread or yarn' (cognate with Dutch kluwen). 'Clue' is the same word.",
+    "first_recorded": "word: before the 12th century (Merriam-Webster); the date of the sail-corner sense was not verified.",
+    "sources": [
+      "https://www.merriam-webster.com/dictionary/clew",
+      "https://www.etymonline.com/word/clew"
+    ],
+    "confidence": "probable",
+    "note": "The word history is established. Neither source explains how 'ball of yarn' came to mean a sail corner. Etymonline's clew page does not cover the nautical sense at all."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "jib",
+    "meaning": "A triangular sail set ahead of the mast; the J/109 uses a non-overlapping jib on a furler.",
+    "origin": "Uncertain. Possibly linked to 'gibbet'/'gib' (a projecting crane arm), or to the nautical verb 'jib/jibe' from Dutch gijben/gijpen 'turn suddenly'.",
+    "first_recorded": "1660s (spelled gibb).",
+    "sources": [
+      "https://www.etymonline.com/word/jib",
+      "https://www.practical-sailor.com/sailboat-reviews/j-109/"
+    ],
+    "confidence": "disputed/folk",
+    "note": "Etymonline: 'of uncertain origin'. 'The cut of his jib' (appearance), 1821, comes from judging a strange ship by its jibs."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "genoa",
+    "meaning": "A large headsail that overlaps the mast and mainsail; a J/109 normally carries a non-overlapping jib instead.",
+    "origin": "Named after Genoa (Italian Genova), the Italian city.",
+    "first_recorded": "Merriam-Webster: 1932 ('genoa jib'). Dictionary.com: 1930-35.",
+    "sources": [
+      "https://www.merriam-webster.com/dictionary/genoa%20jib",
+      "https://dictionary.com/browse/genoa?r=66",
+      "https://en.wikipedia.org/wiki/Genoa_(sail)",
+      "https://6metrearchive.org/six-metre-stories/innovation-and-evolution/innovation-and-evolution-page-2/"
+    ],
+    "confidence": "disputed/folk",
+    "note": "The city namesake is not in doubt; who and when is. The popular story that Sven Salén introduced it on his Six Metre 'May Be' at Genoa in 1926 (Wikipedia, uncited) conflicts with the 6 Metre Archive. That source credits Italian sailmaker Raimondo Panario and the Six Metre Cora IV, trialled at Genoa in early 1926, and says Salén's role was showing it at the 1927 Scandinavian Gold Cup, Oyster Bay. Wikipedia also says the sail was first called an 'overlapping jib' and that Dutch botter fishermen used similar sails long before (uncited). Neither Etymonline's 'Genoa' page nor Merriam-Webster gives an etymology for the sail."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "spinnaker",
+    "meaning": "A large, light, balloon-shaped sail for downwind sailing; the J/109 flies an asymmetric spinnaker from a retractable bowsprit.",
+    "origin": "Unknown. Proposals: an alteration of 'Sphinx', the yacht said to have first used it regularly; a derivative of 'spin'; or 'spin-maker'.",
+    "first_recorded": "1866 (Etymonline, Merriam-Webster); Dictionary.com: 1865-70.",
+    "sources": [
+      "https://www.etymonline.com/word/spinnaker",
+      "https://www.merriam-webster.com/dictionary/spinnaker",
+      "https://www.dictionary.com/browse/spinnaker",
+      "https://www.yachtingmonthly.com/news/the-150th-anniversary-of-the-spinnaker-34861",
+      "https://languagehat.com/spinnaker/",
+      "https://www.practical-sailor.com/sailboat-reviews/j-109/"
+    ],
+    "confidence": "disputed/folk",
+    "note": "Merriam-Webster: 'origin unknown'. Etymonline says contemporary English accounts 'do not suggest' the Sphinx story. Yachting Monthly gives two rival tales: Niobe and William Gordon in 1865 ('a sail to make her spin', so 'spin-maker'), and Sphinx in 1866 ('Spinx-acre'). It endorses neither. Languagehat retracted a supposed 1812 USS Constitution 'spinnaker' citation, which proved to read 'Spanker'."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "sloop",
+    "meaning": "A sailboat with one mast and a single headsail, like the J/109 (a fractional sloop).",
+    "origin": "Dutch sloep, probably from French chaloupe (cf. English 'shallop'); alternatively from Middle Dutch slupen 'to glide' (Barnhart, Watkins).",
+    "first_recorded": "1620s.",
+    "sources": [
+      "https://www.etymonline.com/word/sloop",
+      "https://www.practical-sailor.com/sailboat-reviews/j-109/"
+    ],
+    "confidence": "probable",
+    "note": "The Dutch immediate source is clear. The step before that is disputed, and Etymonline gives both routes without choosing."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "yacht",
+    "meaning": "A sailing or motor vessel used for pleasure or racing.",
+    "origin": "Early Dutch jaght / Norwegian jaght, from Middle Low German jacht, short for jachtschip 'fast (pirate) ship', literally 'ship for chasing', from jagen 'to chase, hunt'.",
+    "first_recorded": "1550s (spelled yeaghe).",
+    "sources": [
+      "https://www.etymonline.com/word/yacht"
+    ],
+    "confidence": "established",
+    "note": "Etymonline says it was first a fast state vessel for important people, and only later a rich person's pleasure boat. 'Yacht club' by 1834."
+  },
+  {
+    "group": "the rig and sails",
+    "term": "reef",
+    "meaning": "To reduce sail area by partly lowering the sail and tying or rolling the surplus; also the reduced section itself.",
+    "origin": "Old Norse rif 'rib; ridge', probably transferred from the 'ridge under the sea' sense; the bands of a reefed sail resemble ribs.",
+    "first_recorded": "noun late 14c. (rif); rif-rope mid-14c.; verb 1660s.",
+    "sources": [
+      "https://www.etymonline.com/word/reef"
+    ],
+    "confidence": "established",
+    "note": "Shares an Old Norse root with the rock 'reef' (1580s, via Dutch). Etymonline treats the sail sense coming from the sea-ridge sense as probable."
+  },
+  {
+    "group": "steering and forces",
+    "term": "rudder",
+    "meaning": "The underwater blade at the stern that steers the boat.",
+    "origin": "Old English roðor 'paddle, oar', from Proto-Germanic *rothru-, from PIE *ere- 'to row' + a tool suffix (cf. German Ruder 'oar').",
+    "first_recorded": "rudder form mid-15c. (Middle English rother); steering-board sense c.1300.",
+    "sources": [
+      "https://www.etymonline.com/word/rudder"
+    ],
+    "confidence": "established",
+    "note": "Literally 'the rowing thing'. Steering began with an oar over the side, which also explains 'starboard'."
+  },
+  {
+    "group": "steering and forces",
+    "term": "tiller",
+    "meaning": "A lever fixed to the rudder head for steering; the J/109 uses a wheel, so a tiller there is only an emergency fitting.",
+    "origin": "Middle English teler 'stock of a crossbow, handle', from Old French telier 'weaver's beam', from Medieval Latin telarium, from Latin tela 'web, loom' (texere 'to weave').",
+    "first_recorded": "teler mid-14c.; boat-steering sense 1620s.",
+    "sources": [
+      "https://www.etymonline.com/word/tiller",
+      "https://www.practical-sailor.com/sailboat-reviews/j-109/"
+    ],
+    "confidence": "established",
+    "note": "Surprising: it comes from weaving, not from 'till' (to plough). Etymonline does not explain how the sense shifted from crossbow stock to steering bar. Whether J/109s have an emergency tiller was not checked."
+  },
+  {
+    "group": "steering and forces",
+    "term": "helm (and weather/lee helm)",
+    "meaning": "The steering control (wheel or tiller). 'Weather helm' is the boat's tendency to turn toward the wind, needing the tiller held to windward. 'Lee helm' is the opposite tendency.",
+    "origin": "Old English helma 'rudder; position of control', from Proto-Germanic *helmaz, from PIE *kelp- 'to hold, grasp' (cf. Old High German helmo 'tiller').",
+    "first_recorded": "Merriam-Webster: noun before the 12th century; verb 1603. No date found for 'weather helm'/'lee helm'.",
+    "sources": [
+      "https://www.etymonline.com/word/helm",
+      "https://www.merriam-webster.com/dictionary/helm",
+      "https://www.pbo.co.uk/nautical-almanac/glossary-of-nautical-terms/weather-helm-6857"
+    ],
+    "confidence": "established",
+    "note": "A separate word from 'helm' meaning helmet (PIE *kel- 'to cover'). Practical Boat Owner says weather helm arises because when the boat heels, the sails' drive sits to leeward of the hull's resistance. A little weather helm is helpful, since in a gust the boat rounds up and sheds pressure."
+  },
+  {
+    "group": "steering and forces",
+    "term": "heel",
+    "meaning": "For the boat to lean over sideways under the wind's pressure on the sails.",
+    "origin": "Old English hieldan 'incline, lean, slope', Middle English hield. The final -d was probably mistaken for a past-tense ending and dropped when the word was respelled in the 16th century.",
+    "first_recorded": "Respelled heel in the 16th century; root Old English.",
+    "sources": [
+      "https://www.etymonline.com/word/heel"
+    ],
+    "confidence": "established",
+    "note": "Unrelated to the heel of the foot, which comes from a different Proto-Germanic root (*hanhilaz). Dutch hellen 'to lean' is a cognate."
+  },
+  {
+    "group": "steering and forces",
+    "term": "leeway",
+    "meaning": "The sideways drift of a boat downwind of its heading, caused by the wind; the keel works to minimise it.",
+    "origin": "lee (Old English hleo 'shelter') + way (Old English weg, nautically 'progress through the water').",
+    "first_recorded": "nautical 1660s; 'loss of progress' 1827; figurative 'extra room' by 1835.",
+    "sources": [
+      "https://www.etymonline.com/word/leeway"
+    ],
+    "confidence": "established",
+    "note": "The modern 'give someone some leeway' (room to drift) comes from this sense."
+  },
+  {
+    "group": "steering and forces",
+    "term": "trim",
+    "meaning": "To adjust the sails to the wind (and, of a boat, its fore-and-aft and side-to-side balance).",
+    "origin": "Probably Old English trymian/trymman 'strengthen; set in order, prepare', from trum 'strong, firm' (PIE *deru- 'be firm').",
+    "first_recorded": "verb 1510s; 'distribute a ship's load' 1570s; adjusting sails 1620s; noun 'state of a ship' 1580s.",
+    "sources": [
+      "https://www.etymonline.com/word/trim"
+    ],
+    "confidence": "probable",
+    "note": "Etymonline calls the link to Middle English 'apparent' because the word is missing from records after about 1250. The 'trimmer' (political fence-sitter, 1680s) comes from the ballast sense."
+  },
+  {
+    "group": "steering and forces",
+    "term": "telltale",
+    "meaning": "A short ribbon or yarn on a sail or shroud that streams in the airflow and shows whether the sail is trimmed correctly.",
+    "origin": "tell + tale; originally a person who reveals secrets (from the phrase 'tell a tale').",
+    "first_recorded": "1540s (person, Etymonline); 1548 (Merriam-Webster), 1540-50 (Dictionary.com). The date of the wind-indicator sense was not verified.",
+    "sources": [
+      "https://www.etymonline.com/word/telltale",
+      "https://www.merriam-webster.com/dictionary/telltale",
+      "https://www.dictionary.com/browse/telltale"
+    ],
+    "confidence": "established",
+    "note": "Dictionary.com also lists older nautical telltales: a rudder-position indicator, and vanes on the shrouds showing apparent wind."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "point of sail",
+    "meaning": "The boat's heading relative to the wind direction: close-hauled, reaching or running.",
+    "origin": "'point' in the sense of a bearing, as in the 32 compass points, + sail.",
+    "first_recorded": "Not verified.",
+    "sources": [
+      "https://www.dictionary.com/browse/point"
+    ],
+    "confidence": "probable",
+    "note": "Dictionary.com defines 'point of sailing' as 'the bearing of a sailing vessel, considered with relation to the direction of the wind'. Also: 'to point' means to sail close to the wind."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "close-hauled",
+    "meaning": "Sailing as close toward the wind as the boat will efficiently go, with the sails pulled in tight.",
+    "origin": "close + hauled. 'Haul' is Middle English halen 'to pull', from Anglo-French haler (Germanic origin): sheets hauled close in.",
+    "first_recorded": "1694 (Merriam-Webster).",
+    "sources": [
+      "https://www.merriam-webster.com/dictionary/close-hauled",
+      "https://www.merriam-webster.com/dictionary/hauled"
+    ],
+    "confidence": "established",
+    "note": "Merriam-Webster also gives 'haul' (transitive) as changing a ship's course 'so as to sail closer to the wind'."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "beat / beating",
+    "meaning": "Making progress upwind by sailing close-hauled on alternating tacks.",
+    "origin": "Old English beatan 'to strike repeatedly'.",
+    "first_recorded": "nautical verb 1670s; 'beating' (sailing against the wind) by 1883.",
+    "sources": [
+      "https://www.etymonline.com/word/beating",
+      "https://www.etymonline.com/word/beat",
+      "https://www.dictionary.com/browse/beat"
+    ],
+    "confidence": "established",
+    "note": "The idea is battering one's way against the wind."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "reach (close / beam / broad)",
+    "meaning": "Sailing with the wind roughly across the boat: close reach (wind forward of abeam), beam reach (wind abeam), broad reach (wind abaft the beam).",
+    "origin": "Old English ræcan 'to stretch out'. The nautical noun is 'the tack sailed... with the wind just forward of the beam or... abeam or abaft the beam'.",
+    "first_recorded": "word: before the 12th century (Merriam-Webster); the date of the nautical sense was not verified.",
+    "sources": [
+      "https://www.merriam-webster.com/dictionary/reach"
+    ],
+    "confidence": "established",
+    "note": "Reaching is usually the fastest point of sail."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "run / running",
+    "meaning": "Sailing with the wind coming from directly or nearly directly behind.",
+    "origin": "Old English rinnan, partly from Old Norse rinna/renna.",
+    "first_recorded": "word before 900 (Dictionary.com); the date of the nautical sense was not verified.",
+    "sources": [
+      "https://www.dictionary.com/browse/run?q=run*"
+    ],
+    "confidence": "established",
+    "note": "Dictionary.com/Collins: a run is the course on which 'the wind comes from astern'. Asymmetric-spinnaker boats like the J/109 usually sail broad reaches and gybe downwind rather than running dead downwind."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "in irons",
+    "meaning": "Stalled head-to-wind with the sails flapping, unable to steer onto either tack.",
+    "origin": "irons 'shackles, fetters' (mid-14c.), presumably by metaphor: the boat is as helpless as a shackled prisoner.",
+    "first_recorded": "Not verified for the nautical phrase.",
+    "sources": [
+      "https://www.dictionary.com/browse/iron",
+      "https://www.etymonline.com/word/irons"
+    ],
+    "confidence": "probable",
+    "note": "Dictionary.com (American Heritage Idioms) confirms the meaning. No source found traces the phrase's origin, so the shackles metaphor is an inference, not a documented etymology. Neither Etymonline nor Merriam-Webster lists the sailing sense."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "by the lee",
+    "meaning": "Running with the wind coming over the same side the boom is on, which risks an accidental gybe.",
+    "origin": "by + lee (Old English hleo 'shelter').",
+    "first_recorded": "Not verified.",
+    "sources": [
+      "https://www.dictionary.com/browse/lee"
+    ],
+    "confidence": "established",
+    "note": "Dictionary.com: 'accidentally against what should be the lee side of a sail'."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "tack (manoeuvre)",
+    "meaning": "To turn the bow through the wind so the wind comes over the other side; also the course itself, 'on port tack' or 'on starboard tack'.",
+    "origin": "From the 'tack' rope on the sail's lower corner (tack 'fastening'): tacking shifted the sails' tacks to the other side.",
+    "first_recorded": "verb 1550s; noun 'course of a ship in relation to her sails' 1610s; figurative 'course of conduct' 1670s.",
+    "sources": [
+      "https://www.etymonline.com/word/tack"
+    ],
+    "confidence": "established",
+    "note": "The 'port/starboard tack' naming refers to the side the wind comes over. 'Change tack' in ordinary speech comes from this."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "gybe / jibe",
+    "meaning": "To turn the stern through the wind so the boom swings across to the other side.",
+    "origin": "Dutch gijben (more commonly gijpen) 'to turn suddenly' (of sails), apparently related to gijk 'boom'.",
+    "first_recorded": "1690s (Etymonline); 1685-95 (Dictionary.com).",
+    "sources": [
+      "https://www.etymonline.com/word/gybe",
+      "https://www.etymonline.com/word/jibe",
+      "https://www.dictionary.com/browse/jibe"
+    ],
+    "confidence": "probable",
+    "note": "'Gybe' is usual in British usage and 'jibe' in American; they are the same word. Etymonline hedges the Dutch source as 'probably'. A possible link to the noun 'jib' is uncertain. Unrelated to 'jibe' meaning a taunt (gibe)."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "bear away",
+    "meaning": "To turn the bow away from the wind (to 'fall off'), easing the sheets.",
+    "origin": "bear + away (verb phrase).",
+    "first_recorded": "Not verified.",
+    "sources": [
+      "https://www.merriam-webster.com/dictionary/bear%20away"
+    ],
+    "confidence": "established",
+    "note": "Merriam-Webster: 'to change course so as to sail with the wind farther aft'. Also 'bear off'. The opposite of heading up."
+  },
+  {
+    "group": "points of sail and manoeuvres",
+    "term": "head up",
+    "meaning": "To turn the bow toward the wind (also 'luff up'); the opposite of bearing away.",
+    "origin": "head (Old English heafod; nautically 'forepart of a vessel') + up.",
+    "first_recorded": "Not verified.",
+    "sources": [
+      "https://www.dictionary.com/browse/head?o=1",
+      "https://www.dictionary.com/browse/luff"
+    ],
+    "confidence": "probable",
+    "note": "No dictionary entry for the sailing phrase was found. The meaning is standard sailing usage, and Dictionary.com's 'luff' verb ('to bring the head of a sailing ship closer to... the wind') describes the same action. Origin and date are unverified."
+  },
+  {
+    "group": "measures",
+    "term": "knot",
+    "meaning": "A unit of speed: one nautical mile (1,852 m) per hour.",
+    "origin": "Old English cnotta 'knot in a cord'. Speed was measured with a log line, knotted at equal intervals and paid out behind the ship while a sand-glass ran; the number of knots that ran out gave the speed.",
+    "first_recorded": "speed sense 1630s.",
+    "sources": [
+      "https://www.etymonline.com/word/knot",
+      "https://www.etymonline.com/word/log"
+    ],
+    "confidence": "established",
+    "note": "The log-line explanation is well documented. Etymonline quotes Juan and Ulloa (1760) on knots spaced 1/120 of a mile with a half-minute glass. 'Log' (the wooden chip) also gave 'log-book' (1670s). Since a knot is already a rate, 'knots per hour' is wrong. The 1,852 m figure is the modern international definition and was not checked on the pages read; Etymonline gives the older ~6,080 ft value."
+  }
+]

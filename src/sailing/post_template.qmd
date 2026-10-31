@@ -1,0 +1,576 @@
+---
+title: "Sailing, Part 1: Two Wings in Balance"
+subtitle: "Why a sailboat moves, how far it heels and how close to the wind it can point, worked out for a real 35-foot racing yacht and checked against 43 of its rating certificates"
+description: "A sailing keelboat is two wings, one in air and one in water, held in balance in three dimensions. This post builds a small velocity prediction program for the J/109 from published sail and hull data, solves the balance of drive, side force and heel at every wind speed and angle, checks it against the boat's ORC certificates, and explains the words sailors use for all of it."
+author: "Paul Milne"
+image: thumbnail.png
+date: "2026-10-30"
+categories: [mechanics, sailing, fluid dynamics, physics, python]
+resources:
+  - sail3d.js
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.sl-controls { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:.4rem 1.2rem; align-items:center; margin:.25rem 0 .6rem; }
+.sl-controls form { margin:0; }
+.sl-play { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.sl-play button, .sl-chip { font: inherit; font-size:.85rem; padding:.25rem .65rem; border-radius:999px;
+  border:1px solid var(--bs-border-color, #ccc); background:var(--bs-body-bg, #fff); color:inherit; cursor:pointer; }
+.sl-play button.primary { background:#1d3557; color:#fff; border-color:#1d3557; min-width:6rem; }
+.sl-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin:.35rem .25rem 0; }
+.sl-chip.active { border-color:#e76f51; color:#b5452b; background: rgba(231,111,81,.12); }
+.sl-panels { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:.75rem; }
+.sl-panel { border:1px solid var(--bs-border-color, #ddd); border-radius:8px; padding:.5rem; background:var(--bs-body-bg, #fff); min-width:0; }
+.sl-panel.wide { grid-column: 1 / -1; }
+.sl-panel h4 { font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; margin:.1rem .25rem .4rem; opacity:.7; }
+.sl-hud { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:.45rem .9rem; font-variant-numeric: tabular-nums; padding:.2rem .25rem; }
+.sl-hud .k { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; opacity:.65; }
+.sl-hud .v { font-size:1.08rem; font-weight:600; }
+.sl-hud .s { font-size:.78rem; opacity:.7; }
+.sl-legend { font-size:.82rem; display:flex; gap:.9rem; flex-wrap:wrap; margin:.4rem .25rem 0; }
+.sl-legend span::before { content:""; display:inline-block; width:.7rem; height:.7rem; border-radius:50%; margin-right:.3rem; vertical-align:-1px; background:var(--c); }
+.sl-mode { font-weight:600; margin:.1rem .25rem .3rem; }
+.sl-note { font-size:.8rem; opacity:.75; margin:.3rem .25rem 0; }
+.sl-terms { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:.6rem; margin:.5rem 0 1rem; }
+.sl-term { border:1px solid var(--bs-border-color, #ddd); border-radius:8px; padding:.55rem .7rem; font-size:.88rem; }
+.sl-term .t { font-weight:700; font-size:1rem; }
+.sl-term .m { margin:.2rem 0 .35rem; }
+.sl-term .o { opacity:.85; }
+.sl-term .d { font-size:.78rem; opacity:.7; margin-top:.3rem; }
+.sl-term .src { font-size:.75rem; margin-top:.25rem; }
+.sl-term .src a { margin-right:.5rem; }
+.sl-conf { display:inline-block; font-size:.66rem; padding:.05rem .45rem; border-radius:999px; color:#fff; margin-left:.4rem; vertical-align:2px; }
+.sl-search { width:100%; max-width:28rem; padding:.35rem .6rem; border-radius:6px; border:1px solid var(--bs-border-color,#ccc); background:var(--bs-body-bg,#fff); color:inherit; }
+table.sl-table { font-size:.88rem; width:100%; }
+table.sl-table td.num { text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+</style>
+```
+
+A sailing yacht is two wings. One, the sails, works in air. The other, the keel, works in water. The wind pushes on the sails with a force that points mostly sideways, and the keel pushes back with a force that also points mostly sideways, and what is left over, a small forward component, drives the boat. Everything else about sailing (why you cannot sail straight into the wind, why the boat leans over, why it goes fastest with the wind on the beam and slows down when the wind is directly behind) comes from how those two forces, and the twisting moment between them, balance.
+
+This post works that balance out for a real boat, the **J/109**, a 35-foot racing and cruising yacht designed by Rod Johnstone and built by J/Boats since the early 2000s. It is a common boat in handicap racing, which matters here: every boat racing under the Offshore Racing Congress (ORC) rule carries a certificate listing its predicted speed at each wind speed and angle, and 43 J/109 certificates from nine countries for 2024 are public. They are the check.
+
+A [second post](../sailing-part-2-tacking-gybing-tide/) takes the same model through the **sailing modes**: the best angles upwind and downwind and why the fastest route downwind is not straight downwind, what a tack or a gybe costs, simulated second by second, and what a tidal current does to the wind a boat sails in.
+
+## How this post is built
+
+The approach is the one used in the [Apollo 11 series](../../space/): documented numbers as anchors, physics between them, and a small number of quantities fitted so that the physics passes through the anchors.
+
+- **The boat's dimensions** come from its ORC certificates (displacement, crew weight, wetted surface, draft, sail areas: the median of the 43) and from the J/109 class association (waterline length, ballast, rig dimensions).
+- **The sails** are described by the ORC's published lift and drag coefficients for a mainsail, a jib and an asymmetric spinnaker, measured in wind tunnels and refined against real boats.
+- **The hull's wave-making resistance** comes from the ORC's resistance surfaces, derived from towing-tank tests of systematic series of yacht hulls; friction from the standard turbulent flat-plate line.
+- **The keel and rudder** are treated as wings, with lifting-line theory for their lift and induced drag.
+- **Two numbers nobody publishes** are fitted to the certificates: the hull's stability (its metacentric height, $GM$) and its effective sailing length.
+
+At every true wind speed and angle the program then finds the boat speed, heel and leeway at which the forces balance, and picks the sail trim that gives the most speed without heeling the boat beyond 30°.
+
+```{ojs}
+data = FileAttachment("data/sailing.json").json()
+terms = FileAttachment("data/terms.json").json()
+M = data.meta
+COL = Object.fromEntries(M.columns.map((c, i) => [c, i]))
+fmt = (x, d = 1) => (+x).toLocaleString("en-GB", {minimumFractionDigits: d, maximumFractionDigits: d})
+KN = 0.514444
+```
+
+```{ojs}
+// Bilinear interpolation in the solved grid (true wind speed every 2 knots, angle every 2 degrees).
+at = {
+  const TWS = M.tws, TWA = M.twa, nA = TWA.length;
+  const row = (i, j) => data.grid[i * nA + j];
+  return (tws, twa) => {
+    const fi = Math.max(0, Math.min(TWS.length - 1.0001, (tws - TWS[0]) / (TWS[1] - TWS[0])));
+    const fj = Math.max(0, Math.min(nA - 1.0001, (twa - TWA[0]) / (TWA[1] - TWA[0])));
+    const i = Math.floor(fi), j = Math.floor(fj), a = fi - i, b = fj - j;
+    const r00 = row(i, j), r01 = row(i, j + 1), r10 = row(i + 1, j), r11 = row(i + 1, j + 1);
+    const out = {};
+    for (const [k, c] of Object.entries(COL)) {
+      out[k] = (1 - a) * ((1 - b) * r00[c] + b * r01[c]) + a * ((1 - b) * r10[c] + b * r11[c]);
+    }
+    const near = row(Math.round(fi), Math.round(fj));
+    out.kite = near[COL.kite] > 0.5;
+    out.tws = tws; out.twa = twa;
+    out.vmg = out.v * Math.cos(twa * Math.PI / 180);
+    out.epsA = Math.atan2(out.drag, out.lift) * 180 / Math.PI;
+    out.epsH = Math.atan2(out.rtot, out.side) * 180 / Math.PI;
+    return out;
+  };
+}
+```
+
+## Sail the J/109
+
+Set the wind speed and the boat's angle to the true wind, or press **Sweep** to swing the boat from close-hauled to dead downwind. The boat is on starboard tack: the wind comes over its right-hand side and the sails are out to the left. The 3D view shows the sail force (red), split into the drive along the course (green) and the side force across it (orange), and the water's force on the keel and hull (blue). Switch on **Lift and drag** to see the sail force split the other way, relative to the wind the sail feels, and **Righting** to see the weight and buoyancy that hold the boat up. The arrows are to scale with each other; the wind arrows above the mast are the true wind (dark blue) and the apparent wind (light blue). The compass rose on the water gives bearings in degrees true: set the direction the wind comes from, and the boat's **heading** (where its bow points) and its **course** through the water (the heading plus the leeway) follow. Try **Underwater** to see the keel and the rudder that the water pushes on. Drag to look around and scroll to zoom.
+
+```{ojs}
+viewof tws = Inputs.range([4, 24], {step: 0.5, value: 12, label: "True wind speed (knots)"})
+```
+
+```{ojs}
+viewof wdir = Inputs.range([0, 355], {step: 5, value: 225, label: "Wind from (° true)"})
+brg = x => `${String(Math.round(((x % 360) + 360) % 360) % 360).padStart(3, "0")}°`
+```
+
+```{ojs}
+viewof twa = {
+  const range = Inputs.range([30, 180], {step: 1, value: 45, label: "True wind angle (°)"});
+  const play = htl.html`<button type="button" class="primary">▶ Sweep</button>`;
+  const root = htl.html`<div class="sl-play">${range}${play}</div>`;
+  root.value = range.value;
+  let raf = null, dir = 1, last = null;
+  range.addEventListener("input", e => { e.stopPropagation(); root.value = range.value; root.dispatchEvent(new Event("input", {bubbles: true})); });
+  const step = ts => {
+    if (last != null) {
+      let v = root.value + dir * (ts - last) / 1000 * 12;
+      if (v >= 180) { v = 180; dir = -1; } else if (v <= 30) { v = 30; dir = 1; }
+      root.value = v; range.value = Math.round(v);
+      root.dispatchEvent(new Event("input", {bubbles: true}));
+    }
+    last = ts; raf = requestAnimationFrame(step);
+  };
+  play.onclick = () => {
+    if (raf) { cancelAnimationFrame(raf); raf = null; last = null; play.textContent = "▶ Sweep"; }
+    else { play.textContent = "❚❚ Stop"; raf = requestAnimationFrame(step); }
+  };
+  invalidation.then(() => raf && cancelAnimationFrame(raf));
+  return root;
+}
+```
+
+```{ojs}
+BEAUFORT = [  // Met Office: force, description, mean and limits (knots), sea state, probable and maximum wave height (m)
+  [0, "Calm", 0, 0, 0.99, "Calm (glassy)", null, null], [1, "Light air", 2, 1, 3, "Calm (rippled)", 0.1, 0.1],
+  [2, "Light breeze", 5, 4, 6, "Smooth (wavelets)", 0.2, 0.3], [3, "Gentle breeze", 9, 7, 10, "Slight", 0.6, 1.0],
+  [4, "Moderate breeze", 13, 11, 16, "Slight to moderate", 1.0, 1.5], [5, "Fresh breeze", 19, 17, 21, "Moderate", 2.0, 2.5],
+  [6, "Strong breeze", 24, 22, 27, "Rough", 3.0, 4.0], [7, "Near gale", 30, 28, 33, "Rough to very rough", 4.0, 5.5]]
+bft = kn => BEAUFORT.find(b => kn < b[4] + 1) ?? BEAUFORT.at(-1)
+// Fetch-limited wind sea (JONSWAP relations), 20 km of open water, capped at a fully developed sea.
+seaState = kn => {
+  const g = 9.81, U = Math.max(0.5, kn * KN), x = g * 20000 / (U * U);
+  const hs = Math.min(1.6e-3 * Math.sqrt(x) * U * U / g, 0.21 * U * U / g);
+  const tp = Math.min(0.286 * Math.cbrt(x) * U / g, 7.14 * U / g);
+  return {hs, tp, lp: g * tp * tp / (2 * Math.PI)};
+}
+```
+
+```{ojs}
+{
+  const b = bft(tws), sea = seaState(tws);
+  return htl.html`<div class="sl-note" style="font-size:.88rem;margin:-.2rem 0 .5rem"><b>Force ${b[0]}, ${b[1].toLowerCase()}</b> (${b[3]}–${b[4]} knots). Sea: ${b[5].toLowerCase()}${b[6] != null ? `, open-sea waves about ${fmt(b[6], 1)} m` : ""} (Met Office). The 3D sea shows the waves 20 km of open water would raise: about ${fmt(sea.hs, 1)} m high and ${fmt(sea.lp, 0)} m long.</div>`;
+}
+```
+
+```{ojs}
+viewof forces = Inputs.checkbox(["Sail force", "Water force", "Wind", "Lift and drag", "Righting"], {value: ["Sail force", "Water force", "Wind"], label: "Show"})
+```
+
+```{ojs}
+S = at(tws, twa)
+pointOfSail = t => t < 34 ? "Pinching: too close to the wind" : t < 50 ? "Close-hauled (beating)" : t < 75 ? "Close reach" : t < 105 ? "Beam reach" : t < 150 ? "Broad reach" : "Running"
+```
+
+```{ojs}
+THREE = require("three@0.128.0/build/three.min.js")
+sail3d = import(new URL("sail3d.js", document.baseURI).href)
+view3d = {
+  const api = sail3d.createScene(THREE, M, {width: 960, height: 600});
+  const chips = htl.html`<div class="sl-chips">${api.presets.map(p => htl.html`<button type="button" class="sl-chip ${p === "Astern" ? "active" : ""}" data-p=${p}>${p}</button>`)}</div>`;
+  chips.onclick = e => { const b = e.target.closest("button"); if (!b) return; chips.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b)); api.setPreset(b.dataset.p); };
+  const label = htl.html`<div class="sl-mode"></div>`;
+  const el = htl.html`<div class="sl-panel wide"><h4>The J/109 on starboard tack (computer-generated, to scale)</h4>${label}${api.canvas}${chips}
+    <div class="sl-legend"><span style="--c:#e63946">Sail force</span><span style="--c:#2a9d8f">Drive (or lift)</span><span style="--c:#f4a261">Side force (or drag)</span><span style="--c:#1d3557">Water force</span><span style="--c:#457b9d">Keel side force</span><span style="--c:#6d597a">Resistance</span><span style="--c:#1d4ed8">True wind</span><span style="--c:#06b6d4">Apparent wind</span></div>
+    <div class="sl-note">Sail shapes and sheeting angles are drawn to suggest the trim; the forces, heel and leeway are the model's.</div></div>`;
+  invalidation.then(() => api.dispose());
+  return {api, el, label};
+}
+```
+
+```{ojs}
+{
+  const sel = new Set([forces.includes("Sail force") ? "aero" : null, forces.includes("Water force") ? "hydro" : null,
+    forces.includes("Wind") ? "wind" : null, forces.includes("Lift and drag") ? "liftdrag" : null, forces.includes("Righting") ? "righting" : null].filter(Boolean));
+  view3d.api.update({...S, windFrom: wdir}, sel);
+  view3d.label.textContent = `${pointOfSail(twa)}, ${S.kite ? "mainsail and spinnaker" : "mainsail and jib"}; heading ${brg(wdir - twa + S.leeway)} true`;
+  return htl.html`<span></span>`;
+}
+```
+
+```{ojs}
+triangle = {
+  const w = 320, h = 320, cx = 120, cy = 205, sc = 7;      // pixels per knot
+  const t = twa * Math.PI / 180, a = S.awa * Math.PI / 180;
+  // Course points up the page; the wind comes from the upper right (starboard).
+  const P = (x, y) => [cx + x * sc, cy - y * sc];         // x: to starboard, y: along the course (knots)
+  const tw = [-Math.sin(t) * tws, -Math.cos(t) * tws];   // true wind velocity (where the air goes)
+  const bw = [0, -S.v];                                    // wind due to the boat's own motion
+  const aw = [tw[0] + bw[0], tw[1] + bw[1]];               // apparent wind velocity
+  const arrow = (from, v, col, lab, dash, side = 1) => {
+    const p0 = P(from[0], from[1]), p1 = P(from[0] + v[0], from[1] + v[1]);
+    const ang = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
+    const nx = -Math.sin(ang) * side, ny = Math.cos(ang) * side;           // label offset, normal to the arrow
+    const hd = [[p1[0] - 9 * Math.cos(ang - 0.4), p1[1] - 9 * Math.sin(ang - 0.4)], [p1[0] - 9 * Math.cos(ang + 0.4), p1[1] - 9 * Math.sin(ang + 0.4)]];
+    return htl.svg`<g><line x1=${p0[0]} y1=${p0[1]} x2=${p1[0]} y2=${p1[1]} stroke=${col} stroke-width="2.5" stroke-dasharray="${dash || "none"}"/>
+      <path d="M${p1}L${hd[0]}L${hd[1]}Z" fill=${col} />
+      </g>`;
+  };
+  const base = [Math.sin(t) * tws, Math.cos(t) * tws];
+  return htl.html`<div class="sl-panel"><h4>Wind triangle: true wind + boat's motion = apparent wind</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px;font-size:11px">
+      <line x1=${cx} y1=${cy + 40} x2=${cx} y2="10" stroke="#ffffff22" stroke-dasharray="4 4"/>
+      <text x=${cx + 4} y="20" fill="#ffffff80">course</text>
+      ${arrow(base, tw, "#6c8cff", `true wind ${fmt(tws, 1)} kn`, "", -1)}
+      ${arrow([base[0] + tw[0], base[1] + tw[1]], bw, "#bbbbbb", `boat ${fmt(S.v, 1)} kn`, "4 3", -1)}
+      ${arrow(base, aw, "#22d3ee", `apparent ${fmt(S.aws, 1)} kn`, "", 1)}
+      <g transform="translate(${cx},${cy})"><path d="M0,-14 C5,-6 5,8 3,14 L-3,14 C-5,8 -5,-6 0,-14Z" fill="#f4f4f0"/></g>
+      <text x="10" y=${h - 26} fill="#cfe2f3">true wind angle ${fmt(twa, 0)}°</text>
+      <text x="10" y=${h - 10} fill="#7fe3f5">apparent wind angle ${fmt(S.awa, 1)}°</text>
+    </svg>
+    <div class="sl-legend"><span style="--c:#6c8cff">True wind ${fmt(tws, 1)} kn</span><span style="--c:#bbbbbb">Headwind from the boat's motion ${fmt(S.v, 1)} kn</span><span style="--c:#22d3ee">Apparent wind ${fmt(S.aws, 1)} kn</span></div>
+    <div class="sl-note">Each arrow shows where the air is going. The boat's motion adds a headwind equal to its speed, so the wind the sails feel is stronger and further forward than the true wind, except when running.</div></div>`;
+}
+```
+
+```{ojs}
+polarPanel = {
+  const w = 320, h = 320, cx = 30, cy = 160, R = 135;
+  const vmax = 12;
+  const r = v => v / vmax * R;
+  const pt = (ang, v) => [cx + r(v) * Math.sin(ang * Math.PI / 180), cy - r(v) * Math.cos(ang * Math.PI / 180)];
+  const curve = M.twa.filter(a => a >= 30).map(a => [a, at(tws, a).v]);
+  const line = d3.line().x(d => pt(d[0], d[1])[0]).y(d => pt(d[0], d[1])[1]);
+  const C = data.cert, ci = C.speeds.findIndex(s => Math.abs(s - tws) < 0.26);
+  const certPts = ci >= 0 ? C.angles.map((a, k) => ({a, m: C.median[k][ci], lo: C.p10[k][ci], hi: C.p90[k][ci]})) : [];
+  const vm = data.vmg.reduce((b, v) => Math.abs(v[0] - tws) < Math.abs(b[0] - tws) ? v : b);
+  const upA = vm[1], dnA = vm[3];
+  return htl.html`<div class="sl-panel"><h4>Polar: boat speed at every angle, ${fmt(tws, 1)} knots of wind</h4>
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block;background:#07111f;border-radius:6px;font-size:10px">
+      ${[2, 4, 6, 8, 10, 12].map(v => htl.svg`<path d="M${cx},${cy - r(v)} A${r(v)},${r(v)} 0 0 1 ${cx},${cy + r(v)}" fill="none" stroke="#ffffff18"/><text x=${cx + 3} y=${cy - r(v) + 10} fill="#ffffff70">${v}</text>`)}
+      ${[0, 30, 60, 90, 120, 150, 180].map(a => { const p = pt(a, vmax); return htl.svg`<line x1=${cx} y1=${cy} x2=${p[0]} y2=${p[1]} stroke="#ffffff12"/><text x=${p[0] + 4 * Math.sin(a * Math.PI / 180)} y=${p[1] - 4 * Math.cos(a * Math.PI / 180) + 3} fill="#ffffff70">${a}°</text>`; })}
+      <path d="M${cx},${cy} L${pt(0, vmax)} A${R},${R} 0 0 1 ${pt(30, vmax)} Z" fill="#e6394622"/>
+      <path d=${line(curve)} fill="none" stroke="#f4a261" stroke-width="2.2"/>
+      ${certPts.map(c => { const a = pt(c.a, c.lo), b = pt(c.a, c.hi), m = pt(c.a, c.m); return htl.svg`<line x1=${a[0]} y1=${a[1]} x2=${b[0]} y2=${b[1]} stroke="#2a9d8f" stroke-width="3" opacity=".6"/><circle cx=${m[0]} cy=${m[1]} r="3.2" fill="#2a9d8f" stroke="#fff" stroke-width=".7"/>`; })}
+      <line x1=${cx} y1=${cy} x2=${pt(upA, at(tws, upA).v)[0]} y2=${pt(upA, at(tws, upA).v)[1]} stroke="#9b5de5" stroke-dasharray="3 3"/>
+      <line x1=${cx} y1=${cy} x2=${pt(dnA, at(tws, dnA).v)[0]} y2=${pt(dnA, at(tws, dnA).v)[1]} stroke="#9b5de5" stroke-dasharray="3 3"/>
+      <circle cx=${pt(twa, S.v)[0]} cy=${pt(twa, S.v)[1]} r="5.5" fill="#e63946" stroke="#fff" stroke-width="1.5"/>
+      <text x=${cx + 4} y="14" fill="#ffffff90">wind from here ↓</text>
+      <text x=${w - 6} y=${h - 8} fill="#ffffff70" text-anchor="end">boat speed, knots</text>
+    </svg>
+    <div class="sl-legend"><span style="--c:#f4a261">Model</span><span style="--c:#2a9d8f">ORC certificates: median, 10–90%${ci < 0 ? " (shown at 6, 8 … 16, 20, 24 kn)" : ""}</span><span style="--c:#9b5de5">Best VMG angles</span><span style="--c:#e6394655">No-go zone</span></div></div>`;
+}
+```
+
+```{ojs}
+hud = {
+  const cell = (k, v, s) => htl.html`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  return htl.html`<div class="sl-panel"><h4>The balance</h4><div class="sl-mode">${pointOfSail(twa)}</div><div class="sl-hud">
+    ${cell("Wind", `Force ${bft(tws)[0]}`, `${bft(tws)[1].toLowerCase()}, ${fmt(tws, 1)} kn`)}
+    ${cell("Boat speed", `${fmt(S.v, 2)} kn`, `VMG ${fmt(S.vmg, 2)} kn ${S.vmg >= 0 ? "upwind" : "downwind"}`)}
+    ${cell("Heel", `${fmt(S.heel, 1)}°`, `leeway ${fmt(S.leeway, 1)}°`)}
+    ${cell("Heading", `${brg(wdir - twa + S.leeway)} T`, `course through the water ${brg(wdir - twa)}; wind from ${brg(wdir)}`)}
+    ${cell("Apparent wind", `${fmt(S.aws, 1)} kn`, `at ${fmt(S.awa, 1)}° off the bow`)}
+    ${cell("Sails", S.kite ? "Main + spinnaker" : "Main + jib", `power ${fmt(100 * S.flat, 0)}%${S.reef < 0.995 ? `, reefed to ${fmt(100 * S.reef * S.reef, 0)}% area` : ""}`)}
+    ${cell("Sail force", `${fmt(Math.hypot(S.lift, S.drag) / 1000, 2)} kN`, `lift ${fmt(S.lift / 1000, 2)}, drag ${fmt(S.drag / 1000, 2)} kN`)}
+    ${cell("Drive = resistance", `${fmt(S.drive / 1000, 2)} kN`, `waves ${fmt(S.rr / 1000, 2)}, friction ${fmt((S.rv + S.rapp) / 1000, 2)}, induced ${fmt(S.ri / 1000, 2)}`)}
+    ${cell("Side force", `${fmt(S.side / 1000, 2)} kN`, `${fmt(S.side / Math.max(S.drive, 1), 1)} × the drive`)}
+    ${cell("Heeling moment", `${fmt(S.hm / 1000, 1)} kN·m`, `= hull ${fmt(S.rm_hull / 1000, 1)} + crew ${fmt(S.rm_crew / 1000, 1)} − keel ${fmt(S.rm_keel / 1000, 1)}`)}
+  </div></div>`;
+}
+```
+
+```{ojs}
+htl.html`<div class="sl-panels">${view3d.el}${triangle}${polarPanel}${hud}</div>`
+```
+
+## The wind the sails feel
+
+A moving boat makes its own wind. If you motor at 7 knots on a calm day, you feel a 7-knot headwind. Under sail the same thing happens, and the wind the sails actually feel, the **apparent wind**, is the vector sum of the true wind and that headwind. With the true wind speed $w$ at angle $\gamma$ to the course and the boat moving at $v$,
+
+$$
+v_a^2 = w^2 + v^2 + 2wv\cos\gamma, \qquad \tan\beta = \frac{w\sin\gamma}{w\cos\gamma + v},
+$$
+
+where $\beta$ is the apparent wind angle. Two refinements matter. The wind is slower near the water than at the masthead, so the model scales the true wind with height using a logarithmic profile, $w(z) \propto \ln(z/z_0)$ with roughness length $z_0 = 5$ mm, as the ORC does. And when the boat heels, the part of the wind blowing across the boat no longer meets the sails square on: only its component in the plane of the tilted mast, $w\sin\gamma\cos\phi$, counts.
+
+Close-hauled in %%W1%% knots of true wind at %%A1%%°, the J/109 sails at %%V1%% knots, and its sails feel %%AWS1%% knots at %%AWA1%%°: more wind than there is, from further ahead. On a run the boat's speed is subtracted from the wind instead, which is why running in a breeze feels calm and warm, and beating into the same breeze feels cold and wet.
+
+## Wind, sea and the Beaufort scale
+
+Sailors describe the wind by its **Beaufort force**, a scale drawn up by Francis Beaufort, a Royal Navy officer, in 1805 for describing the effect of the wind on a warship's sails, and later tied to measured wind speeds and to the state of the sea. The J/109's certificates cover forces 2 to 6:
+
+```{ojs}
+bftTable = {
+  const cur = bft(tws)[0];
+  return htl.html`<table class="sl-table"><thead><tr><th>Force</th><th>Description</th><th>Wind (knots)</th><th>Sea</th><th>Open-sea waves, probable (max), m</th><th>Waves in 20 km of fetch, m</th></tr></thead><tbody>
+    ${BEAUFORT.slice(1).map(b => htl.html`<tr style=${b[0] === cur ? "background:rgba(231,111,81,.15);font-weight:600" : ""}>
+      <td class="num">${b[0]}</td><td>${b[1]}</td><td class="num">${b[3]}–${b[4]}</td><td>${b[5]}</td>
+      <td class="num">${fmt(b[6], 1)} (${fmt(b[7], 1)})</td><td class="num">${fmt(seaState(b[2]).hs, seaState(b[2]).hs < 0.1 ? 2 : 1)}</td></tr>`)}
+  </tbody></table>`;
+}
+```
+
+The Met Office's wave heights are for a sea that has had the wind blowing over it long enough, and over enough open water, to be fully developed. Most racing happens in coastal waters where the **fetch**, the distance of open water upwind, is much shorter, and the waves stay smaller and shorter. The standard relations for a fetch-limited wind sea, from the JONSWAP North Sea wave project, give the significant wave height $H_s$ and the peak period $T_p$ from the wind speed $U$ and the fetch $F$:
+
+$$
+\frac{g H_s}{U^2} = 1.6\times10^{-3}\left(\frac{gF}{U^2}\right)^{1/2}, \qquad \frac{g T_p}{U} = 0.286\left(\frac{gF}{U^2}\right)^{1/3},
+$$
+
+and the wavelength of deep-water waves of period $T$ is $gT^2/2\pi$. The 3D view uses these for 20 km of fetch, with a few wave trains travelling downwind at their own speeds and white crests from force 4, and the boat pitching, rolling and heaving on them. The waves are for show: the speed model assumes flat water. Waves slow a real boat, most of all upwind, where it climbs every one of them; that is one reason the ORC's own program is more detailed than this one.
+
+## The sail is a wing
+
+A sail set at a small angle to the apparent wind turns the airflow, and the turning produces a **lift** force at right angles to the apparent wind and a smaller **drag** force along it. Both scale with the dynamic pressure of the apparent wind and the sail area $A$:
+
+$$
+L = \tfrac12 \rho_\text{air}\, v_a^2\, A\, C_L(\beta), \qquad D = \tfrac12 \rho_\text{air}\, v_a^2\, A\, C_D(\beta).
+$$
+
+The coefficients $C_L$ and $C_D$ depend on the apparent wind angle and the type of sail. The ORC publishes them for a mainsail, a jib and several kinds of spinnaker; they are the backbone of every modern handicap rating:
+
+```{ojs}
+sailCoeffPlot = {
+  const names = {main: "Mainsail", jib: "Jib", asym_cl_kite: "Asymmetric spinnaker"};
+  const col = {main: "#457b9d", jib: "#2a9d8f", asym_cl_kite: "#e76f51"};
+  const curves = Object.entries(data.sails).flatMap(([k, s]) => s.curve.flatMap(([a, l, d]) => [{s: names[k], k, a, c: l, q: "lift, C_L"}, {s: names[k], k, a, c: d, q: "drag, C_D"}]));
+  const pts = Object.entries(data.sails).flatMap(([k, s]) => s.awa.map((a, i) => ({s: names[k], k, a, cl: s.cl[i], cd: s.cd[i]})));
+  return Plot.plot({
+    width, height: 280, marginLeft: 45, grid: true, color: {domain: Object.values(names), range: Object.values(col), legend: true},
+    x: {label: "Apparent wind angle (°)", domain: [0, 180]}, y: {label: "Coefficient", domain: [-0.2, 1.6]},
+    marks: [
+      Plot.line(curves.filter(d => d.q.startsWith("lift")), {x: "a", y: "c", stroke: "s", strokeWidth: 2}),
+      Plot.line(curves.filter(d => d.q.startsWith("drag")), {x: "a", y: "c", stroke: "s", strokeWidth: 1.5, strokeDasharray: "4 3"}),
+      Plot.dot(pts, {x: "a", y: "cl", fill: "s", r: 2.5}), Plot.dot(pts, {x: "a", y: "cd", stroke: "s", r: 2.5}),
+      Plot.ruleX([S.awa], {stroke: "#e63946"}), Plot.text([S.awa], {x: d => d, y: 1.55, text: () => "now", dx: 14, fill: "#e63946"})
+    ]
+  });
+}
+```
+
+Solid lines are lift, dashed drag; dots are the ORC's published points and the lines the smooth curves through them used in the model. Close-hauled, the sails work like an aircraft wing near its best angle: high lift, little drag. Running, the flow separates, lift falls away and the sail becomes a parachute that works by drag alone.
+
+Lift and drag are defined relative to the apparent wind, but the boat needs them relative to its course. Resolving them gives the **drive** along the course and the **side force** across it:
+
+$$
+F_\text{drive} = L\sin\beta - D\cos\beta, \qquad F_\text{side} = L\cos\beta + D\sin\beta.
+$$
+
+Close to the wind $\beta$ is small, so most of the lift becomes side force and the drag subtracts directly from the drive. In the example above the sails produce %%LIFT1%% N of lift and %%DRAG1%% N of drag, which turn into %%DRIVE1%% N of drive and %%SIDE1%% N of side force: the sails push the boat sideways %%RATIO1%% times as hard as they push it forward. Turn on **Lift and drag** in the 3D view to see the two decompositions of the same force.
+
+The drag here includes more than the sails' profile drag. A finite wing sheds tip vortices, and the energy in them shows up as **induced drag**, $C_{D_i} = C_L^2/(\pi\,h_\text{eff}^2/A)$, which depends on the rig's effective height $h_\text{eff}$, set by the ORC's formulas from the mast height and the apparent wind angle. The mast, rigging and topsides add their own windage.
+
+## The keel is a wing too
+
+The side force has to be resisted, or the boat would just blow sideways. It is resisted by the keel, and the keel can only do that by meeting the water at an angle, which means the boat moves slightly sideways as well as forward. That angle is the **leeway**, $\lambda$. Like the sail, the keel produces lift in proportion to its angle of attack:
+
+$$
+F_\text{keel} = \tfrac12 \rho_\text{water}\, v^2\, S\, \frac{2\pi\,\mathcal{A}_e}{\mathcal{A}_e + 2}\,\lambda,
+$$
+
+where $S$ is the keel's area and $\mathcal{A}_e$ its effective aspect ratio. The hull acts as a mirror at the keel's root, so $\mathcal{A}_e$ is twice the geometric value. The rudder and the canoe body carry part of the side force too, the rudder more as the boat heels. Water is about 840 times denser than air, so the keel, at a few square metres, can balance sails of 70 m² at a leeway of only %%LEE1%%° in the example. The cost is the keel's own induced drag, $F^2/(\tfrac12\rho v^2\,\pi\, b_\text{eff}^2)$ for an effective span $b_\text{eff}$, which grows as the square of the side force and falls as the square of the speed. That is why a boat sailing slowly close to the wind is so inefficient, and why a deep keel points higher than a shallow one.
+
+## Resistance: friction and waves
+
+The drive has to equal the water's resistance to the hull moving forward. There are three main parts:
+
+- **Friction**, from the water dragged along the hull's wetted surface, $R_F = \tfrac12\rho v^2 S_w C_F(\mathrm{Re})$, with the friction coefficient from the turbulent flat-plate line $C_F = 0.066/(\log_{10}\mathrm{Re} - 2.03)^2$, and the same for the keel and rudder.
+- **Wave-making resistance**, the energy that goes into the bow and stern waves. It depends on the **Froude number** $\mathrm{Fn} = v/\sqrt{gL}$, and on the hull's slenderness: its length against the cube root of its displaced volume. The model takes it from the ORC's resistance surfaces.
+- **Induced drag** of the keel, rudder and hull, from the side force (above).
+
+```{ojs}
+resPlot = {
+  const d = data.resistance.flatMap(([kn, fn, rr, rv, ra]) => [{kn, part: "Wave-making", r: rr}, {kn, part: "Hull friction", r: rv}, {kn, part: "Keel and rudder friction", r: ra}]);
+  return Plot.plot({
+    width, height: 260, marginLeft: 55, grid: true, color: {domain: ["Wave-making", "Hull friction", "Keel and rudder friction"], range: ["#e76f51", "#457b9d", "#a8dadc"], legend: true},
+    x: {label: "Boat speed (knots), upright", domain: [0, 12]}, y: {label: "Resistance (N)"},
+    marks: [Plot.areaY(d, {x: "kn", y: "r", fill: "part", order: ["Keel and rudder friction", "Hull friction", "Wave-making"], fillOpacity: 0.85}),
+      Plot.ruleX([S.v], {stroke: "#e63946"}),
+      Plot.ruleX([1.34 * Math.sqrt(M.lsm / 0.3048)], {stroke: "#333", strokeDasharray: "3 3"}),
+      Plot.text([1.34 * Math.sqrt(M.lsm / 0.3048)], {x: d => d, y: 6500, text: () => "'hull speed'", dx: -32, fill: "currentColor"})]
+  });
+}
+```
+
+Friction dominates in light air; above about 7 knots the waves take over, and they grow so fast that the boat runs into what sailors call **hull speed**. At $\mathrm{Fn} \approx 0.4$ the wave the boat makes is as long as the boat itself, and the boat sits in the trough of its own wave with its bow climbing the face. The old rule of thumb puts this at $1.34\sqrt{L}$ knots for a waterline $L$ in feet: %%HULLSPEED%% knots for the J/109's sailing length. It is not a hard limit, as the polar shows: in strong wind with the spinnaker up the J/109 reaches %%VMAX%% knots, but each extra knot costs much more force than the one before.
+
+The fit put the J/109's effective **sailing length** at %%LSM%% m against a static waterline of 9.30 m. The boat has overhangs, particularly at the stern, which immerse as it heels and as its own wave lifts the stern, so it sails longer than it floats. The ORC rule measures the same effect.
+
+## Heel and the righting moment
+
+The sail's side force acts high up, at the centre of effort %%ZCE1%% m above the water in the example, and the keel's side force acts below the water. They form a couple that tries to roll the boat over. The boat resists with a **righting moment**: when it heels, the centre of buoyancy moves to the low side while the centre of gravity (with 1.77 tonnes of ballast in the keel, low down) stays put, and weight and buoyancy form a couple of their own. For small angles the lever arm between them is $GZ = GM\sin\phi$, where $GM$ is the **metacentric height**. The crew, sitting on the windward rail, add their own lever:
+
+$$
+F_\text{side}\,(z_\text{CE} + 0.43\,T) = \Delta g\,GM\sin\phi + m_\text{crew}\, g\, y_\text{crew}\cos\phi.
+$$
+
+```{ojs}
+rmPlot = {
+  const d = data.righting.flatMap(([phi, rh, rc]) => [{phi, part: "Hull and ballast", r: rh / 1000}, {phi, part: "Crew on the rail", r: rc / 1000}, {phi, part: "Total", r: (rh + rc) / 1000}]);
+  const need = (S.hm + S.rm_keel) / 1000;
+  return Plot.plot({
+    width, height: 250, marginLeft: 50, grid: true, color: {domain: ["Hull and ballast", "Crew on the rail", "Total"], range: ["#457b9d", "#9b5de5", "#1d3557"], legend: true},
+    x: {label: "Heel (°)", domain: [0, 40]}, y: {label: "Moment (kN·m)"},
+    marks: [Plot.line(d.filter(q => q.phi <= 40), {x: "phi", y: "r", stroke: "part", strokeWidth: 2}),
+      Plot.ruleY([need], {stroke: "#e63946", strokeDasharray: "4 3"}),
+      Plot.ruleX([30], {stroke: "#999", strokeDasharray: "2 3"}),
+      Plot.dot([{phi: S.heel, r: need}], {x: "phi", y: "r", fill: "#e63946", r: 5, stroke: "#fff"}),
+      Plot.text([{phi: 1, r: need}], {x: "phi", y: "r", text: () => "heeling moment now", dy: -8, textAnchor: "start", fill: "#e63946"})]
+  });
+}
+```
+
+The boat heels until the two moments are equal. The fit put the J/109's $GM$ at %%GM%% m, which with %%MASS%% tonnes sailing displacement and %%CREW%% kg of crew on the rail gives a righting moment of %%RM25%% kN·m at 25° of heel; about %%CREWPCT%%% of that comes from the crew. Heel is costly: it tilts the sails away from the wind, reduces the keel's effective span and increases its induced drag, and makes the hull asymmetric in the water. Racing crews keep a boat like this at or below about 25 to 30°, and the model allows at most 30°.
+
+When the wind gets up, the boat cannot use all the force its sails could make. The model then **depowers**: it flattens the sails and twists their upper parts off to leeward, which reduces lift (and heeling moment) more than it reduces drive, and when that is not enough it reefs. Both are what a crew does: flattening by tensioning the backstay, outhaul and cunningham and easing the traveller, reefing by tying down the bottom of the mainsail. In the panel above, *power* is the fraction of the sails' full lift being used. Up to about %%DEPOWER_TWS%% knots of true wind the J/109 sails close-hauled at full power; beyond that it is flattening, and from about %%REEF_TWS%% knots it is reefing.
+
+## Why you cannot sail into the wind
+
+Put the three balances together and a simple relation appears, usually credited to the aeronautical pioneer Frederick Lanchester and known in yacht design as the **course theorem**. The sail's total force leans back from the perpendicular to the apparent wind by the sail's drag angle $\varepsilon_A = \arctan(D/L)$. The water's total force leans back from the perpendicular to the course by the hull's drag angle $\varepsilon_H = \arctan(R/F_\text{keel})$. In steady sailing the two forces are equal and opposite, and the geometry forces
+
+$$
+\beta = \varepsilon_A + \varepsilon_H.
+$$
+
+```{ojs}
+htl.html`<div class="sl-panel" style="font-variant-numeric:tabular-nums">Right now, at ${fmt(twa, 0)}° in ${fmt(tws, 1)} knots: sail drag angle <i>ε</i><sub>A</sub> = ${fmt(S.epsA, 1)}°, hull drag angle <i>ε</i><sub>H</sub> = ${fmt(S.epsH, 1)}°, sum ${fmt(S.epsA + S.epsH, 1)}°; apparent wind angle <i>β</i> = ${fmt(S.awa, 1)}°.</div>`
+```
+
+The apparent wind angle a boat can sail at is the sum of the inefficiencies of its two wings. No sail is drag-free and no hull is resistance-free, so $\beta$ can never be zero. A J/109 needs an apparent wind angle of at least about %%AWAMIN%%°, which with its speed comes to a true wind angle in the high thirties; anything closer and the sails luff and the boat stops. That wedge either side of the wind is the **no-go zone**, shaded on the polar. To go upwind a boat zigzags, **beating** on alternate tacks. Every improvement in sailing efficiency, from better sail cloth to deeper keels, is an attack on $\varepsilon_A$ or $\varepsilon_H$.
+
+## The polar, checked
+
+Solving the balance at every angle and wind speed gives the **polar diagram**, the boat's speed in every direction. The ORC certificates contain the same thing, predicted by the ORC's own, far more detailed, velocity prediction program from each boat's measured hull, rig and sails. Comparing the two at the certificates' 64 points:
+
+```{ojs}
+residPlot = {
+  const C = data.cert;
+  const d = C.angles.flatMap((a, i) => C.speeds.map((s, j) => ({a, s, r: data.resid[i][j], spread: C.p90[i][j] - C.p10[i][j], m: C.median[i][j]})));
+  return Plot.plot({
+    width, height: 270, marginLeft: 50, padding: 0.04,
+    x: {label: "True wind speed (knots)", type: "band"}, y: {label: "True wind angle (°)", type: "band"},
+    color: {type: "diverging", domain: [-0.6, 0.6], scheme: "RdBu", legend: true, label: "Model − certificate median (knots)"},
+    marks: [Plot.cell(d, {x: "s", y: "a", fill: "r", inset: 0.5, title: q => `${q.s} kn, ${q.a}°: certificates ${fmt(q.m, 2)} kn (10–90%: ±${fmt(q.spread / 2, 2)}), model ${fmt(q.m + q.r, 2)}`}),
+      Plot.text(d, {x: "s", y: "a", text: q => fmt(q.r, 2), fill: q => Math.abs(q.r) > 0.35 ? "white" : "black", fontSize: 9})]
+  });
+}
+```
+
+```{ojs}
+polarGrid = {
+  const C = data.cert;
+  const d = C.speeds.flatMap((s, j) => C.angles.map((a, i) => ({s: `${s} kn`, a, m: C.median[i][j], lo: C.p10[i][j], hi: C.p90[i][j]})));
+  const m = C.speeds.flatMap(s => M.twa.filter(a => a >= 36).map(a => ({s: `${s} kn`, a, v: at(s, a).v})));
+  return Plot.plot({
+    width, height: 300, marginLeft: 40, grid: true,
+    fx: {label: null, domain: data.cert.speeds.map(s => `${s} kn`)}, x: {label: "True wind angle (°)", domain: [30, 180], ticks: [45, 90, 135, 180]}, y: {label: "Boat speed (kn)", domain: [0, 13]},
+    marks: [Plot.line(m, {fx: "s", x: "a", y: "v", stroke: "#f4a261", strokeWidth: 1.8}),
+      Plot.ruleX(d, {fx: "s", x: "a", y1: "lo", y2: "hi", stroke: "#2a9d8f", strokeWidth: 3, opacity: 0.6}),
+      Plot.dot(d, {fx: "s", x: "a", y: "m", fill: "#2a9d8f", r: 2.5})]
+  });
+}
+```
+
+The root-mean-square difference is %%RMS%% knots. The spread among the 43 real boats, the gap between the 10th and 90th percentiles, is typically %%SPREAD%% knots, from differences in sails, keel, weight and measured stability. The largest differences are where a simple model would be expected to struggle:
+
+- **Fast broad reaching in strong wind** (135° in 24 knots), where the real boat surfs down waves and the ORC program adds dynamic effects this model does not have.
+- **Around 90°**, where the model changes from jib to spinnaker. Exactly where that crossover falls depends on the sails' coefficients near it, and the model's is a degree or two from wherever the ORC program puts it.
+
+The certificates also give the best upwind and downwind angles and the velocity made good (VMG) at each wind speed: the speed directly towards or away from the wind, $v\cos\gamma$. These were part of the fit upwind:
+
+```{ojs}
+vmgTable = {
+  const C = data.cert;
+  const rows = C.speeds.map((s, j) => { const m = data.vmg.find(v => v[0] === s); return {s, ba: C.beat_angle[j], bv: C.beat_vmg[j], mba: m && m[1], mbv: m && m[2], ra: C.run_angle[j], rv: C.run_vmg[j], mra: m && m[3], mrv: m && m[4]}; });
+  return htl.html`<table class="sl-table"><thead><tr><th>Wind (kn)</th><th colspan="2">Best upwind angle (°)</th><th colspan="2">Upwind VMG (kn)</th><th colspan="2">Best downwind angle (°)</th><th colspan="2">Downwind VMG (kn)</th></tr>
+    <tr><th></th><th>ORC</th><th>model</th><th>ORC</th><th>model</th><th>ORC</th><th>model</th><th>ORC</th><th>model</th></tr></thead><tbody>
+    ${rows.map(r => htl.html`<tr><td class="num">${r.s}</td><td class="num">${fmt(r.ba, 1)}</td><td class="num">${r.mba ?? "–"}</td><td class="num">${fmt(r.bv, 2)}</td><td class="num">${r.mbv != null ? fmt(r.mbv, 2) : "–"}</td><td class="num">${fmt(r.ra, 1)}</td><td class="num">${r.mra ?? "–"}</td><td class="num">${fmt(r.rv, 2)}</td><td class="num">${r.mrv != null ? fmt(r.mrv, 2) : "–"}</td></tr>`)}
+    </tbody></table>`;
+}
+```
+
+%%VMGTEXT%%
+
+## Points of sail
+
+Sailors name the angle to the wind by the way the boat is sailed. The boundaries are loose, but the physics behind them is in the sections above:
+
+```{ojs}
+posDiagram = {
+  const w = 360, h = 330, cx = 180, cy = 175, R = 140;
+  const zones = [[0, 34, "No-go zone", "#e6394633"], [34, 50, "Close-hauled", "#457b9d55"], [50, 75, "Close reach", "#2a9d8f55"],
+    [75, 105, "Beam reach", "#e9c46a77"], [105, 150, "Broad reach", "#f4a26177"], [150, 180, "Run", "#e76f5166"]];
+  const arc = (a0, a1, side) => {
+    const s = side, p = a => [cx + s * R * Math.sin(a * Math.PI / 180), cy - R * Math.cos(a * Math.PI / 180)];
+    return `M${cx},${cy} L${p(a0)} A${R},${R} 0 0 ${s > 0 ? 1 : 0} ${p(a1)} Z`;
+  };
+  const lab = (a, t, s) => { const r = R * 0.68, x = cx + s * r * Math.sin(a * Math.PI / 180), y = cy - r * Math.cos(a * Math.PI / 180); return htl.svg`<text x=${x} y=${y} text-anchor="middle" font-size="11" fill="currentColor">${t}</text>`; };
+  const cur = [cx + R * 1.05 * Math.sin(twa * Math.PI / 180), cy - R * 1.05 * Math.cos(twa * Math.PI / 180)];
+  return htl.html`<div><svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:420px;display:block;margin:auto">
+    ${zones.map(([a, b, t, c]) => htl.svg`<path d=${arc(a, b, 1)} fill=${c} stroke="#fff"/><path d=${arc(a, b, -1)} fill=${c} stroke="#fff"/>`)}
+    ${zones.map(([a, b, t]) => lab((a + b) / 2, t, 1))}
+    <text x=${cx} y="18" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">wind ↓</text>
+    <text x=${cx - R * 0.55} y=${cy + 4} text-anchor="middle" font-size="11" fill="currentColor">port tack</text>
+    <text x=${cx + R * 0.15} y=${cy + R + 18} text-anchor="middle" font-size="11" fill="currentColor">starboard tack →</text>
+    <circle cx=${cur[0]} cy=${cur[1]} r="6" fill="#e63946" stroke="#fff" stroke-width="1.5"/>
+    <g transform="translate(${cx},${cy})"><path d="M0,-12 C4,-5 4,7 3,12 L-3,12 C-4,7 -4,-5 0,-12Z" fill="#1d3557"/></g>
+  </svg></div>`;
+}
+```
+
+The red dot follows the true wind angle set above. With the wind on the starboard side the boat is on **starboard tack**; on the other side, **port tack**. The next post looks at each of these in turn and at moving between them.
+
+## The words, and where they come from
+
+Sailing has its own vocabulary, much of it centuries old and most of it borrowed from the languages of the North Sea, where the European sailing ship developed. Dutch, the Scandinavian languages and Old English supply most of it, and because sailors' stories travel better than their documents, it also carries more than its share of folk etymology. The origins below are from the Online Etymology Dictionary and Merriam-Webster, with naval history from the sources linked on each entry. Each is marked **established** where the dictionaries agree, **probable** where they hedge, and **disputed** where there are rival accounts or a popular story without evidence. Dates are first recorded uses in English.
+
+```{ojs}
+viewof termSearch = Inputs.text({placeholder: "Search the terms, e.g. tack, Dutch, wind…", width: 360})
+```
+
+```{ojs}
+termCards = {
+  const q = termSearch.trim().toLowerCase();
+  const groups = ["directions and parts of the boat", "the rig and sails", "steering and forces", "points of sail and manoeuvres", "measures"];
+  const conf = {established: ["established", "#2a9d8f"], probable: ["probable", "#e9a23b"], "disputed/folk": ["disputed", "#e63946"]};
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } };
+  const match = t => !q || [t.term, t.meaning, t.origin, t.note || ""].join(" ").toLowerCase().includes(q);
+  return htl.html`<div>${groups.map(g => {
+    const ts = terms.filter(t => t.group === g && match(t));
+    if (!ts.length) return "";
+    return htl.html`<h4 style="margin-top:1rem">${g[0].toUpperCase() + g.slice(1)}</h4><div class="sl-terms">${ts.map(t => {
+      const c = conf[t.confidence] || [t.confidence, "#888"];
+      return htl.html`<div class="sl-term"><div class="t">${t.term}<span class="sl-conf" style="background:${c[1]}">${c[0]}</span></div>
+        <div class="m">${t.meaning}</div><div class="o"><b>Origin.</b> ${t.origin}</div>
+        ${t.first_recorded ? htl.html`<div class="d">First recorded: ${t.first_recorded}</div>` : ""}
+        ${t.note ? htl.html`<details class="d"><summary>More</summary>${t.note}</details>` : ""}
+        <div class="src">${t.sources.map(u => htl.html`<a href=${u} target="_blank" rel="noopener">${host(u)}</a>`)}</div></div>`;
+    })}</div>`;
+  })}</div>`;
+}
+```
+
+A few things stand out. **Starboard** is the steering side: Old English *steorbord*, the side the steering oar hung from. Early Germanic boats were steered from the right; that this was because most people are right-handed is a plausible explanation rather than a documented one. The left side was **larboard** until an Admiralty order of 1844 replaced it with **port** in the Royal Navy (the US Navy followed in 1846). The usual explanation is that *larboard* and *starboard* were too easily confused when shouted into a gale, though at least one historian of the words argues the change was simply standardisation, and why the left side was called *port* is itself disputed. **Heel** in the sense of leaning over has nothing to do with feet; it is Old English *hieldan*, "to lean", which lost its final *d* in the 16th century. **Tiller** comes from weaving, through the stock of a crossbow. **Yacht** is Dutch *jacht*, short for *jachtschip*, a fast ship for chasing. And **leeward**, the side away from the wind, is still pronounced "loo-ard" by sailors.
+
+The best stories are usually the least certain. The **spinnaker** is first recorded in 1866; the popular account that it is a corruption of *Sphinx*, a yacht that carried an early one, is not supported by the publications of the time, and the word's origin is unknown. The **genoa** is named after the Italian city, but whether the sail was first shown there by the Swedish yachtsman Sven Salén, or by an Italian sailmaker a year earlier, depends on which account you read. And "port out, starboard home" as the origin of *posh* is a story without evidence: the acronym is only recorded decades after the word.
+
+## Method and sources
+
+The model is a three-degree-of-freedom velocity prediction program: at each true wind speed and angle it solves for boat speed, heel and leeway so that drive equals resistance, the sails' side force equals the side force from keel, rudder and hull, and the heeling moment equals the righting moment. The sail trim (a flattening factor scaling the lift and, through the ORC's drag multiplier, the drag, and a reefing factor scaling the area and the height of the centre of effort) is chosen for the highest speed with at most 30° of heel. Upwind the boat carries its mainsail and jib; from 70° it may set its asymmetric spinnaker instead of the jib if that is faster. The code is in the blog's repository, in `src/sailing`.
+
+Two quantities are fitted by least squares to the median of the 43 certificates' 64 polar speeds and their 8 best upwind VMGs: the metacentric height $GM$ = %%GM%% m and the sailing length %%LSM%% m. Several dimensions are assumed, because no source gives them: the waterline beam (3.00 m), the canoe-body draft (0.50 m), the keel's and rudder's planforms, the heights of the deck and boom above the water at the mast, and the crew's average distance from the centreline (1.45 m). The sail shapes and sheeting in the 3D view are drawn for illustration.
+
+What the model leaves out: waves and the motion they cause, the yaw balance between sails and rudder (weather helm), dynamic effects like surfing, and the detailed sail and hull geometry the ORC's program uses. The ORC's documentation describes all of these.
+
+Sources:
+
+- Offshore Racing Congress, *ORC VPP Documentation*, published with each year's rules ([orc.org](https://orc.org/for-designers/orc-vpp)): sail coefficient tables, effective rig height, residuary resistance surfaces, heeled wind triangle and wind gradient.
+- ORC certificate data for 2024, as collected by J. P. Waagmeester, [orc-data](https://github.com/jieter/orc-data) (MIT licence): the 43 J/109 certificates.
+- M. Lauber, [Python-VPP](https://github.com/marinlauber/Python-VPP) (MIT licence): digitised ORC coefficient tables and resistance surfaces, used here as data. The model code is independent.
+- J/109 class association, [specifications](https://j109.org/?p=35): waterline length, ballast, rig dimensions.
+- L. Larsson, R. E. Eliasson and M. Orych, *Principles of Yacht Design*: the course theorem and the structure of a velocity prediction program.
+- Word origins: [Online Etymology Dictionary](https://www.etymonline.com/), [Merriam-Webster](https://www.merriam-webster.com/), [Wordorigins.org](https://www.wordorigins.org/), and the other sources linked on each term.
