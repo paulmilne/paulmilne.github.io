@@ -1,6 +1,6 @@
 ---
 title: "math-blog"
-description: "Paper reproductions, math explainers, and original research from Paul Milne."
+description: "Mathematics, physics and engineering worked through in code: interactive models, explainers, paper reproductions and original research from Paul Milne."
 listing:
   contents: posts
   sort: "date desc"

@@ -1,6 +1,6 @@
 ---
 title: "Astronomy"
-description: "Notes and worked examples on observational and theoretical astronomy."
+description: "Telescopes, optics and observing: the instruments and techniques of practical astronomy."
 listing:
   contents: .
   sort: "date desc"
@@ -12,4 +12,4 @@ page-layout: full
 title-block-banner: true
 ---
 
-Notes and worked examples on astronomy.
+Telescopes, optics and observing: the instruments and techniques of practical astronomy, worked through in code.

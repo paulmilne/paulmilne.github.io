@@ -10,6 +10,7 @@ project:
     - "explainers/**"
     - "probability/**"
     - "cosmology/**"
+    - "astronomy/**"
     - "sci-fi/**"
     - "mechanics/**"
     - "papers/**"
@@ -22,7 +23,7 @@ project:
 website:
   title: "math-blog"
   site-url: "https://paulmilne.github.io"
-  description: "Paul Milne's blog on math, statistics, and machine learning: paper reproductions, math explainers, and original research."
+  description: "Paul Milne's blog on mathematics, physics and engineering, worked through in code: probability and statistics, cosmology and astronomy, mechanics and spaceflight, AI, paper reproductions and original research."
   open-graph: true
   twitter-card: true
   navbar:
@@ -37,6 +38,8 @@ website:
         text: Probability
       - href: cosmology/index.qmd
         text: Cosmology
+      - href: astronomy/index.qmd
+        text: Astronomy
       - href: sci-fi/index.qmd
         text: Sci-Fi
       - href: mechanics/index.qmd

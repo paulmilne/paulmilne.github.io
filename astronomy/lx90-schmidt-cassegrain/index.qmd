@@ -6,6 +6,8 @@ image: thumbnail.png
 author: "Paul Milne"
 date: "2026-10-18"
 categories: [astronomy, optics, python]
+aliases:
+  - /cosmology/astronomy/lx90-schmidt-cassegrain/index.html
 jupyter: python3
 format:
   html:
