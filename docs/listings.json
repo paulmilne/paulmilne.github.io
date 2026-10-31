@@ -1,14 +1,33 @@
 [
   {
-    "listing": "/papers/index.html",
+    "listing": "/space/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html",
-      "/papers/rg-critical-phenomena/index.html"
+      "/space/apollo-11-part-4-rendezvous-return-and-entry/index.html",
+      "/space/apollo-11-part-2-translunar-coast/index.html",
+      "/space/apollo-11-part-3-descent-and-landing/index.html",
+      "/space/apollo-11-part-1-launch-to-tli/index.html"
+    ]
+  },
+  {
+    "listing": "/sci-fi/index.html",
+    "items": [
+      "/sci-fi/gargantua/index.html",
+      "/sci-fi/martian-tripod/index.html"
+    ]
+  },
+  {
+    "listing": "/probability/index.html",
+    "items": [
+      "/probability/pearl-causal-inference/index.html",
+      "/probability/birthday-paradox/index.html",
+      "/probability/prosecutors-fallacy/index.html"
     ]
   },
   {
     "listing": "/mechanics/index.html",
     "items": [
+      "/mechanics/sailing-part-2-tacking-gybing-tide/index.html",
+      "/mechanics/sailing-part-1-two-wings/index.html",
       "/mechanics/lego-numbers/index.html",
       "/mechanics/lego-orrery/index.html",
       "/mechanics/lego-solar-system/index.html",
@@ -16,24 +35,27 @@
     ]
   },
   {
+    "listing": "/ai/index.html",
+    "items": []
+  },
+  {
+    "listing": "/astronomy/index.html",
+    "items": [
+      "/astronomy/lx90-schmidt-cassegrain/index.html"
+    ]
+  },
+  {
     "listing": "/cosmology/index.html",
     "items": [
-      "/cosmology/astronomy/index.html",
-      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html",
       "/cosmology/many-worlds/index.html",
       "/cosmology/rees-six-numbers/index.html",
       "/cosmology/stellar-nucleosynthesis/index.html"
     ]
   },
   {
-    "listing": "/cosmology/astronomy/index.html",
-    "items": [
-      "/cosmology/astronomy/lx90-schmidt-cassegrain/index.html"
-    ]
-  },
-  {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/apollo-11-frames-of-reference/index.html",
       "/explainers/accretion-disk-light/index.html",
       "/explainers/black-hole-ray-tracing/index.html",
       "/explainers/kerr-black-hole/index.html",
@@ -58,31 +80,10 @@
     ]
   },
   {
-    "listing": "/probability/index.html",
+    "listing": "/papers/index.html",
     "items": [
-      "/probability/pearl-causal-inference/index.html",
-      "/probability/birthday-paradox/index.html",
-      "/probability/prosecutors-fallacy/index.html"
-    ]
-  },
-  {
-    "listing": "/sci-fi/index.html",
-    "items": [
-      "/sci-fi/gargantua/index.html",
-      "/sci-fi/martian-tripod/index.html"
-    ]
-  },
-  {
-    "listing": "/ai/index.html",
-    "items": []
-  },
-  {
-    "listing": "/space/index.html",
-    "items": [
-      "/space/apollo-11-part-4-rendezvous-return-and-entry/index.html",
-      "/space/apollo-11-part-2-translunar-coast/index.html",
-      "/space/apollo-11-part-3-descent-and-landing/index.html",
-      "/space/apollo-11-part-1-launch-to-tli/index.html"
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   }
 ]
