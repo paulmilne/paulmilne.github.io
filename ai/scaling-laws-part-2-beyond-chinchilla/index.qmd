@@ -1,0 +1,329 @@
+---
+title: "Scaling Laws, Part 2: Beyond Chinchilla, the Frontier and Its Limits"
+subtitle: "Why models are now trained far past the compute-optimal point, what happens when the data runs out, the new scaling axis of reasoning at test time, where the frontier stands in 2026, and the physical and economic limits ahead"
+description: "Inference-aware scaling and overtraining, repeated and synthetic data, the stock of human text, scaling laws for experts and precision, whether emergence is real, test-time compute and reinforcement-learning scaling, frontier compute and cost trends to 2026, the 2024–25 slowdown debate, and the limits of power, chips and data, with the forecasts on how long scaling can last. Interactive calculators throughout."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, scaling-laws, language-models, forecasting]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.sc-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.sc-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.sc-grid form { flex-wrap: wrap !important; }
+.sc-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.sc-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.sc-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.sc-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.sc-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.sc-kpis .s { font-size: .76rem; opacity: .7; }
+table.sc-t td.num, table.sc-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sc-scroll { overflow-x: auto; max-width: 100%; }
+.sc-scroll table { min-width: 600px; }
+.sc-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+sup = s => String(s).split("").map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] ?? (c === "-" ? "⁻" : c)).join("")
+sci = (x, d = 1) => { const e = Math.floor(Math.log10(Math.abs(x))), m = x / 10 ** e; return `${fmt(m, d)}×10${sup(e)}`; }
+pow10 = d => { const e = Math.round(Math.log10(d)); return Math.abs(Math.log10(d) - e) < 1e-6 ? "10" + sup(e) : ""; }
+paramTick = d => { const e = Math.log10(d); if (Math.abs(e - Math.round(e)) > 1e-6) return ""; return d >= 1e12 ? d / 1e12 + "T" : d >= 1e9 ? d / 1e9 + "B" : d >= 1e6 ? d / 1e6 + "M" : d >= 1e3 ? d / 1e3 + "k" : String(d); }
+human = (x) => { const a = Math.abs(x); return a >= 1e12 ? fmt(x / 1e12, 1) + " trillion" : a >= 1e9 ? fmt(x / 1e9, 1) + " billion" : a >= 1e6 ? fmt(x / 1e6, 1) + " million" : fmt(x); }
+CH = ({E: 1.8172, A: 482.01, B: 2085.43, alpha: 0.3478, beta: 0.3658})   // Epoch AI refit of Chinchilla
+Lf = (N, D) => CH.E + CH.A / N ** CH.alpha + CH.B / D ** CH.beta
+```
+
+[Part 1](../scaling-laws-part-1-power-laws/) derived the compute-optimal rule: for a fixed training budget, grow parameters and data together, about 20 tokens per parameter at Chinchilla's scale. Almost nobody follows it any more. This part is about why, and about what has happened to scaling since: the shift from training bigger models to training them longer, the approaching end of fresh human text, the arrival of a second axis of scaling (letting a model think for longer at test time), where the frontier stood in 2026, and the limits that forecasters argue will decide how long the curves can continue.
+
+A note on sources. Much of this concerns events of 2024–26, after the period most of the well-established literature covers. Where numbers come from estimates rather than published figures (training compute of closed models, for instance), the post says so, and names whose estimate it is.
+
+## Training for the life of the model
+
+Chinchilla minimises the cost of *training*. But a model is trained once and then used, sometimes for trillions of tokens. Running a model costs about $2N$ operations per token generated, so a model of $N$ parameters that will serve $D_{\text{inf}}$ tokens in its lifetime costs
+
+$$
+C_{\text{total}} = 6ND + 2N D_{\text{inf}}.
+$$
+
+A smaller model is cheaper to run for ever; it reaches the same loss only by training on more data. Nikhil Sardana and Jonathan Frankle (2023) did the optimisation: fix a target loss $\ell$, minimise $C_{\text{total}}$ subject to $L(N, D) = \ell$. The result is that the more a model will be used, the smaller and longer-trained it should be. For inference demand of around a billion requests they found the optimum well past Chinchilla, and in tests up to 10,000 tokens per parameter the loss of a 150-million-parameter model had still not plateaued. The calculator does the same optimisation with the Chinchilla law (Epoch AI's refit):
+
+::: {.sc-grid}
+
+```{ojs}
+viewof inf = Inputs.form({
+  loss: Inputs.range([1.95, 2.3], {value: 2.05, step: 0.005, label: "Target loss (nats per token)"}),
+  logInf: Inputs.range([9, 16], {value: 13, step: 0.1, label: "Lifetime inference, log₁₀ tokens"})
+})
+```
+
+:::
+
+```{ojs}
+//| output: false
+infOpt = {
+  const {loss, logInf} = inf, Dinf = 10 ** logInf;
+  const Dfor = N => { const r = loss - CH.E - CH.A / N ** CH.alpha; return r > 0 ? Math.pow(CH.B / r, 1 / CH.beta) : Infinity; };
+  let best = null, chin = null, pts = [];
+  for (let x = 7; x <= 13; x += 0.01) {
+    const N = 10 ** x, D = Dfor(N); if (!isFinite(D)) continue;
+    const train = 6 * N * D, tot = train + 2 * N * Dinf;
+    pts.push({N, D, train, tot});
+    if (!best || tot < best.tot) best = {N, D, train, tot};
+    if (!chin || train < chin.train) chin = {N, D, train, tot};
+  }
+  return {best, chin, pts, Dinf};
+}
+```
+
+```{ojs}
+infView = htl.html`<div class="sc-panel"><h4>Reaching loss ${fmt(inf.loss, 3)} and then serving ${sci(infOpt.Dinf, 0)} tokens</h4><div class="sc-kpis">
+  <div><div class="k">Training-optimal (Chinchilla)</div><div class="v">${human(infOpt.chin.N)}</div><div class="s">${human(infOpt.chin.D)} tokens, ${fmt(infOpt.chin.D / infOpt.chin.N, 0)} per parameter</div></div>
+  <div><div class="k">Lifetime-optimal</div><div class="v">${human(infOpt.best.N)}</div><div class="s">${human(infOpt.best.D)} tokens, ${fmt(infOpt.best.D / infOpt.best.N, 0)} per parameter</div></div>
+  <div><div class="k">Training cost</div><div class="v">${fmt(infOpt.best.train / infOpt.chin.train, 1)}×</div><div class="s">the training-optimal model's</div></div>
+  <div><div class="k">Lifetime cost saved</div><div class="v">${fmt(100 * (1 - infOpt.best.tot / infOpt.chin.tot), 0)}%</div><div class="s">training + inference</div></div>
+</div></div>`
+```
+
+```{ojs}
+infPlot = Plot.plot({width: Math.min(width, 640), height: 260, marginLeft: 55, grid: true,
+  x: {type: "log", label: "Parameters", tickFormat: paramTick}, y: {type: "log", label: "Compute (FLOPs)", tickFormat: pow10}, color: {legend: true},
+  marks: [Plot.line(infOpt.pts.flatMap(p => [{N: p.N, v: p.train, k: "Training"}, {N: p.N, v: p.tot, k: "Training + inference"}]), {x: "N", y: "v", stroke: "k", strokeWidth: 2}),
+          Plot.dot([infOpt.best], {x: "N", y: "tot", r: 6, fill: "#e76f51"}), Plot.dot([infOpt.chin], {x: "N", y: "train", r: 6, fill: "#1d3557"})]})
+```
+
+Every model on this curve reaches the same loss. Raise the inference volume and the lifetime optimum slides to a smaller model trained for longer; at $10^{13}$ tokens of use, a modest amount for a popular model, the best choice already trains on more than ten times Chinchilla's ratio. This is the economics behind the open models of 2024–26:
+
+```{ojs}
+tppTable = htl.html`<div class="sc-scroll"><table class="table table-sm sc-t"><thead><tr><th>Model</th><th>Year</th><th class="num">Parameters</th><th class="num">Training tokens</th><th class="num">Tokens per parameter</th></tr></thead><tbody>
+  ${[["GPT-3", "2020", "175B", "0.3T", 1.7], ["Chinchilla", "2022", "70B", "1.4T", 20], ["Llama 2 70B", "2023", "70B", "2T", 29], ["Llama 2 7B", "2023", "7B", "2T", 286],
+     ["Llama 3 405B", "2024", "405B", "15.6T", 38.5], ["Llama 3 70B", "2024", "70B", "~15T", 214], ["Llama 3 8B", "2024", "8B", "~15T", 1875],
+     ["Gemma 2 27B", "2024", "27B", "13T", 480], ["Qwen2.5 7B", "2024", "7B", "18T", 2570], ["DeepSeek-V3 (MoE)", "2024", "671B total, 37B active", "14.8T", "22 (total), 400 (active)"],
+     ["Qwen3 32B", "2025", "32B", "36T", 1125], ["SmolLM2 1.7B", "2025", "1.7B", "~11T", 6500], ["Qwen3 0.6B", "2025", "0.6B", "36T", 60000]]
+    .map(r => htl.html`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${typeof r[4] === "number" ? fmt(r[4], r[4] < 10 ? 1 : 0) : r[4]}</td></tr>`)}
+</tbody></table></div>`
+```
+
+Two cautions. Gemma's smaller models were trained by distillation, learning to match a larger model's predicted distributions rather than raw text, which makes each token worth more and the ratios not comparable with Chinchilla's. And for mixture-of-experts models the ratio depends on whether you divide by total or active parameters, a factor of eighteen for DeepSeek-V3.
+
+## When the data runs out
+
+Overtraining needs data, and the supply of good human text is finite. Three questions follow: how much is repeated data worth, how much better is better data, and how much is there?
+
+**Repetition.** Niklas Muennighoff and colleagues (2023) trained 400 models of up to 9 billion parameters on repeated data. Up to about four epochs, repeated tokens were almost as good as new ones; beyond that their value decayed, and by about sixteen it was mostly gone. They modelled the effective amount of data from $U$ unique tokens seen $1 + R$ times as
+
+$$
+D' = U + U R^* \left(1 - e^{-R/R^*}\right), \qquad R^* \approx 15,
+$$
+
+so that each repetition is worth a bit less than the last and the total saturates at $U(1 + R^*)$, sixteen times the unique data:
+
+```{ojs}
+repPlot = {
+  const Rs = 15.4, pts = d3.range(0, 60.01, 0.25).map(e => ({e: e + 1, eff: 1 + Rs * (1 - Math.exp(-e / Rs)), naive: e + 1}));
+  return Plot.plot({width: Math.min(width, 600), height: 240, marginLeft: 55, grid: true,
+    x: {label: "Epochs (passes over the unique data)"}, y: {label: "Effective data ÷ unique data"},
+    marks: [Plot.line(pts, {x: "e", y: "naive", stroke: "#bbb", strokeDasharray: "4 3"}), Plot.line(pts, {x: "e", y: "eff", stroke: "#e76f51", strokeWidth: 2.5}),
+            Plot.ruleY([1 + Rs], {stroke: "#e76f51", strokeOpacity: .4}), Plot.text([{e: 45, y: 1 + Rs}], {x: "e", y: "y", text: () => "ceiling: 16× unique", dy: -8, fill: "#b5452b"})]});
+}
+```
+
+**Quality.** Filtering changes the exponents themselves. Hugging Face's FineWeb (2024) built 15 trillion tokens from 96 crawls of the web and showed that a 1.3-trillion-token "educational" subset, selected by a classifier, trained markedly better models; the DataComp-LM project (DCLM, 2024) found model-based filtering "key", with a 7B model reaching 64% on the MMLU benchmark from 2.6 trillion tokens, comparable to Llama 3 8B with a sixth of the compute. Microsoft's phi-1 (2023), trained on 7 billion tokens of filtered code and synthetic "textbooks", reached 50.6% on the HumanEval coding test at 1.3 billion parameters. Ben Sorscher and colleagues (2022) showed in vision that a good enough data-pruning metric can, in principle, turn power-law scaling into exponential scaling: if you can tell which examples matter, you need far fewer of them.
+
+**Synthetic data.** Models can generate training data for other models, and do: phi-1's textbooks, the reasoning traces that train the models of a later section, and the rewritten and translated data in most 2025–26 corpora. The risk is the one Ilia Shumailov and colleagues showed in *Nature* in 2024: train generation after generation on the previous generation's output, indiscriminately, and the tails of the distribution disappear, an effect they called **model collapse**. Used deliberately (filtered, verified, mixed with real data), synthetic data is a resource; used blindly, a slow poison.
+
+**The stock.** Pablo Villalobos and colleagues at Epoch AI estimated in 2024 that the effective stock of public human-generated text is about 300 trillion tokens (90% interval 100 to 1,000 trillion), and that at current trends it will be fully used somewhere between 2026 and 2032. A compute-optimal model using all of it would be trained with about $5\times10^{28}$ FLOPs. Overtraining brings the date forward: five-fold overtraining exhausts the stock by about 2027. Their 2022 estimate had been "likely before 2026" for high-quality text; it moved later because filtered web data proved better than expected and repeated epochs work. The estimate keeps moving, which is itself a lesson. Ilya Sutskever put it more starkly at NeurIPS in December 2024: "we have but one internet", and "pre-training as we know it will unquestionably end".
+
+## More axes: experts, precision, and emergence
+
+**Mixture of experts.** For a mixture-of-experts model ([Part 3 of the transformer series](../transformer-part-3-advances/#mixture-of-experts)) the parameter count and the compute per token are separate quantities, and Aidan Clark and colleagues (2022) found that loss scales with both: more experts at fixed compute keeps helping, and they defined an effective parameter count along which dense and sparse models fall on one law. Jakub Krajewski and colleagues (2024) added *granularity*, how finely the experts are divided, and found that experts the size of a dense model's feed-forward layer are "not optimal at almost any computational budget", which is the trend Part 3 of the transformer series tabulated: ever more, ever smaller experts.
+
+**Precision.** Tanishq Kumar and colleagues (2024) fitted laws in which training at lower numerical precision reduces a model's *effective* parameter count, and found that quantising a model after training hurts more the more data it was trained on, to the point where extra pretraining data can make a later-quantised model worse. Their fits suggest that larger models at lower precision may be compute-optimal, though they were validated only up to 1.7 billion parameters.
+
+**Emergence.** Smooth loss curves sit uneasily with a striking observation: some abilities seem absent in small models and then appear suddenly in large ones. Jason Wei and colleagues (2022) catalogued dozens of such *emergent abilities*, defined as those that cannot be predicted by extrapolating from smaller models. Rylan Schaeffer, Brando Miranda and Sanmi Koyejo replied in 2023 with *Are Emergent Abilities of Large Language Models a Mirage?*: much apparent emergence comes from the metric. If a task needs an exact answer of $k$ tokens, and the model's per-token accuracy $p$ improves smoothly with scale, then exact-match accuracy $p^k$ stays near zero and then shoots up:
+
+```{ojs}
+viewof ek = Inputs.range([1, 30], {value: 10, step: 1, label: "Answer length k (tokens that must all be right)"})
+```
+
+```{ojs}
+emPlot = {
+  const pts = d3.range(6, 13.01, 0.05).flatMap(x => {
+    const p = 1 - 0.5 * Math.pow(10, -(x - 6) * 0.45);
+    return [{x: 10 ** x, v: p, k: "Per-token probability (smooth)"}, {x: 10 ** x, v: Math.pow(p, ek), k: `Exact match on ${ek} tokens`}];
+  });
+  return Plot.plot({width: Math.min(width, 640), height: 260, marginLeft: 55, grid: true, x: {type: "log", label: "Model scale (illustrative)", tickFormat: pow10},
+    y: {label: "Score", domain: [0, 1]}, color: {legend: true}, marks: [Plot.line(pts, {x: "x", y: "v", stroke: "k", strokeWidth: 2})]});
+}
+```
+
+The same underlying improvement, measured two ways. The debate is not fully settled: some abilities stay abrupt under continuous metrics, and the quantization model of Part 1 predicts genuinely discrete skills. But it showed that "emergent" is often a property of the yardstick.
+
+## The second axis: thinking for longer
+
+In September 2024 OpenAI released o1, a model trained with reinforcement learning to produce a long chain of reasoning before its answer. Its announcement showed two scaling plots: accuracy on a mathematics competition rising smoothly with the logarithm of the **training** compute spent on reinforcement learning, and also with the logarithm of the **test-time** compute, how long it was allowed to think. On the 2024 AIME, o1 solved 74% of problems with one attempt, 83% with a consensus of 64 and 93% when re-ranking 1,000 samples. Noam Brown, one of its creators, recalled that in his earlier work on poker, twenty seconds of search had been worth scaling the model up 100,000 times.
+
+There are two ways to spend compute at test time, and both have laws.
+
+**Sampling.** Bradley Brown and colleagues' *Large Language Monkeys* (2024) found that the fraction of problems solved by *at least one* of $k$ samples grows smoothly over four orders of magnitude of $k$. If a problem is solved in one attempt with probability $p$, then $\text{pass@}k = 1 - (1-p)^k$; averaged over problems of varying difficulty, the curve looks like a power law in $k$. With 250 samples, a model's success on a set of real software bugs rose from 15.9% to 56%. The catch is choosing *which* sample: without a reliable checker, majority voting plateaus.
+
+```{ojs}
+viewof pk = Inputs.range([0, 4], {value: 2, step: 0.1, label: "Spread of problem difficulty (log-odds standard deviation)"})
+```
+
+```{ojs}
+passPlot = {
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647, g = () => Math.sqrt(-2 * Math.log(rnd())) * Math.cos(2 * Math.PI * rnd());
+  const ps = d3.range(2000).map(() => 1 / (1 + Math.exp(-(-2 + pk * g()))));
+  const pts = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384].map(k => ({k, cov: d3.mean(ps, p => 1 - Math.pow(1 - p, k))}));
+  return Plot.plot({width: Math.min(width, 640), height: 250, marginLeft: 55, grid: true, x: {type: "log", label: "Samples per problem k"}, y: {label: "Fraction of problems solved (pass@k)", domain: [0, 1]},
+    marks: [Plot.line(pts, {x: "k", y: "cov", stroke: "#2a9d8f", strokeWidth: 2.5}), Plot.dot(pts, {x: "k", y: "cov", fill: "#2a9d8f"})]});
+}
+```
+
+The wider the spread of difficulty, the more gradually the coverage climbs: easy problems are solved at once, hard ones need thousands of tries, and the mixture produces the smooth, slow curve seen in practice.
+
+**Reasoning.** Charlie Snell and colleagues (2024) showed that allocating test-time compute well (adapting to each problem's difficulty, with a verifier to guide search) was more than four times as efficient as simple best-of-$N$ sampling, and that on problems where a base model had some success, a small model given extra test-time compute could beat one fourteen times larger. It did not help on the hardest problems: thinking longer cannot supply knowledge the model lacks. DeepSeek-R1 (January 2025) showed the training side in the open: reinforcement learning alone, rewarding only correct final answers, raised a model's single-attempt AIME score from 15.6% to 71%, with its answers growing longer and self-correction appearing without being taught.
+
+**How reinforcement learning scales.** Devvrit Khatri and colleagues' *The Art of Scaling Reinforcement Learning Compute for LLMs* (2025), from more than 400,000 GPU-hours of experiments, found that performance against RL compute follows not a power law but a sigmoid,
+
+$$
+R(C) = R_0 + \frac{A - R_0}{1 + (C_{\text{mid}}/C)^{B}},
+$$
+
+rising from the starting score $R_0$ towards an asymptote $A$. Most changes to the training recipe altered the efficiency $B$; only some raised the ceiling $A$. As with pretraining, small runs predicted large ones. The shape matters for the forecasts below: a sigmoid has a ceiling, set by the recipe, which new methods must raise.
+
+By 2025 the frontier laboratories had moved much of their spending to this axis. Epoch AI concluded that GPT-5 (August 2025) used *less* training compute than GPT-4.5 (February 2025), because OpenAI found reinforcement learning after pretraining a more efficient way to improve the model.
+
+## The frontier in 2026
+
+Epoch AI's database of notable models shows the training compute of frontier models growing about **4 to 5 times a year** since 2010, with language models since 2020 at about 5 times. GPT-3 used about $3\times10^{23}$ FLOPs in 2020; Epoch estimates GPT-4 (2023) at about $2\times10^{25}$; Meta reported $3.8\times10^{25}$ for Llama 3.1 405B in 2024. By mid-2025 more than thirty models from twelve developers had passed $10^{25}$, and Epoch described xAI's Grok 4 (July 2025) as the largest training run to date, at an estimated $490 million and 310 gigawatt-hours. Its database lists estimates approaching $10^{27}$ FLOPs for models released in 2026, though for closed models these are inferences from cluster size and duration, not published figures.
+
+Two other trends compound the hardware. The cost of the largest final training runs has grown about 2.4 times a year since 2016 (Ben Cottier and colleagues, Epoch AI, 2024), on course to pass a billion dollars by 2027. And **algorithmic progress** has cut the compute needed to reach a given level of performance in half roughly every eight months (Anson Ho and colleagues, 2024, 95% interval 5 to 14 months), so the *effective* compute of the frontier grows faster than the hardware alone. DeepSeek-V3's final training run (December 2024), at about $3\times10^{24}$ FLOPs and a reported $5.6 million of GPU time, matched models trained with far more, a reminder that the frontier of capability and the frontier of compute are not the same line.
+
+## Limits
+
+How far can the hardware curve go? Jaime Sevilla and colleagues at Epoch AI (*Can AI scaling continue through 2030?*, 2024) took each constraint in turn and estimated the largest training run it would allow by 2030:
+
+```{ojs}
+limits = [
+  {k: "Power, one campus (1–5 GW)", lo: 1e28, hi: 3e29},
+  {k: "Power, distributed (2–45 GW)", lo: 2e28, hi: 2e30},
+  {k: "Chip production", lo: 1e29, hi: 5e30},
+  {k: "Data (multimodal, synthetic)", lo: 6e28, hi: 2e32},
+  {k: "Latency wall", lo: 3e30, hi: 1e32}
+]
+```
+
+```{ojs}
+limPlot = Plot.plot({width: Math.min(width, 680), height: 240, marginLeft: 190, grid: true,
+  x: {type: "log", label: "Largest training run possible by 2030 (FLOPs)", domain: [3e27, 3e32], tickFormat: pow10}, y: {label: null, domain: limits.map(d => d.k)},
+  marks: [Plot.ruleY(limits, {y: "k", x1: "lo", x2: "hi", stroke: "#e76f51", strokeWidth: 9, strokeLinecap: "round"}),
+          Plot.ruleX([2e29], {stroke: "#1d3557", strokeDasharray: "4 3"}), Plot.text([{x: 2e29}], {x: "x", y: () => limits[0].k, text: () => "2×10²⁹: Epoch's central estimate", dy: -14, dx: 4, textAnchor: "start", fill: "#1d3557", fontSize: 10})]})
+```
+
+Their conclusion: training runs of about $2\times10^{29}$ FLOPs, ten thousand times GPT-4, are likely to be feasible by 2030, and **power** is likely to bind first, then chip manufacturing. Data, with multimodal and synthetic sources counted, and the *latency wall* (the minimum time per training step, which caps how many sequential steps fit in a training run) bind later. A 2025 follow-up commissioned by Google DeepMind (David Owen, *What will AI look like in 2030?*) put it at about $10^{29}$, with clusters costing over $100 billion and drawing gigawatts.
+
+The power numbers are now concrete. The International Energy Agency estimated that data centres used 415 terawatt-hours in 2024, about 1.5% of the world's electricity, 485 in 2025, and projects about 950 by 2030, roughly Japan's consumption today, with demand from AI-focused centres growing fastest. Individual sites have reached the scale of power stations: Epoch's satellite analysis of xAI's Colossus 2 in Memphis measured about 950 megawatts of IT power in 2026; OpenAI's Stargate partnership announced five further US sites in September 2025 with a combined draw of over 5.5 gigawatts towards a 10-gigawatt target; Meta said its Hyperion campus in Louisiana will scale to 5 gigawatts over several years. The bottlenecks the IEA lists are no longer chips alone but turbines, transformers and planning permission.
+
+The projection tool lets you set a growth rate and see when each limit's central value would be reached, starting from GPT-4's estimated $2\times10^{25}$ FLOPs in March 2023:
+
+```{ojs}
+viewof growth = Inputs.range([1.5, 6], {value: 4.5, step: 0.1, label: "Growth of frontier training compute (× per year)"})
+```
+
+```{ojs}
+projTable = {
+  const y0 = 2023.2, c0 = 2e25, yr = c => y0 + Math.log(c / c0) / Math.log(growth);
+  const rows = [["Data, compute-optimal on all human text (Epoch 2024)", 5e28], ["Epoch's 2030 feasibility estimate", 2e29], ["Power, single campus, upper end", 3e29], ["Chip production, median", 9e29], ["Latency wall, lower end", 3e30]];
+  return htl.html`<div class="sc-panel"><h4>At ${fmt(growth, 1)}× a year from 2×10²⁵ in 2023</h4><div class="sc-scroll"><table class="table table-sm sc-t" style="margin:0"><thead><tr><th>Threshold</th><th class="num">FLOPs</th><th class="num">Reached in</th></tr></thead><tbody>
+    ${rows.map(([n, c]) => htl.html`<tr><td>${n}</td><td class="num">${sci(c, 0)}</td><td class="num">${yr(c).toFixed(1)}</td></tr>`)}</tbody></table></div></div>`;
+}
+```
+
+At Epoch's historical rate the constraints arrive around the end of the decade. At three times a year, the rate Leopold Aschenbrenner assumed, everything moves out by several years.
+
+## Is scaling slowing?
+
+In November 2024, *The Information* and then Reuters reported that OpenAI's next large model, code-named Orion, was better than GPT-4 but by less than GPT-4 had improved on GPT-3, and that other laboratories had hit similar difficulties. Orion was released as GPT-4.5 in February 2025: OpenAI's largest model, at the frontier of what it called unsupervised learning, expensive to run and outscored on mathematics and science benchmarks by smaller reasoning models. Reports in 2025 described Meta delaying its largest Llama 4 model, Behemoth, over difficulties improving it. GPT-5, in August 2025, was received by sceptics such as Gary Marcus as "the latest incremental advance".
+
+The other side of the ledger is just as concrete. GPT-5, as noted, used less pretraining compute than GPT-4.5: the laboratories had reallocated rather than run out of ideas. Reasoning models improved rapidly through 2025. And the measure that tracks practical capability most directly kept its pace: METR's measurement of the length of software tasks that AI agents complete half the time doubled about every seven months from 2019 to early 2025, and the 2026 revision of the paper put the doubling time at about 200 days, faster in the recent data.
+
+The fairest summary of the sources is that two things are true at once. The returns to *pretraining alone* diminished noticeably in 2024–25, as the power law said they would: each tenfold increase in compute buys a smaller absolute drop in loss, and the data was getting harder to find. And capabilities continued to improve, mostly through the second axis, reinforcement learning and test-time reasoning, along with better data and algorithms. The disagreement is about whether the new axis has its own ceiling, and how soon.
+
+## How long can it last?
+
+The forecasts span a wide range, and the people making them are explicit about their assumptions:
+
+::: {.sc-scroll}
+| Source | When | Position |
+|---|---|---|
+| Epoch AI, *Can AI scaling continue through 2030?* | Aug 2024 | About 4× a year is feasible to roughly $2\times10^{29}$ FLOPs by 2030; power binds first. |
+| Epoch AI (David Owen), *What will AI look like in 2030?* | Sep 2025 | Runs of about $10^{29}$ FLOPs, clusters over $100 billion, gigawatt power; scaling likely to continue; objections about walls, data and power judged surmountable. |
+| Leopold Aschenbrenner, *Situational Awareness* | Jun 2024 | Counting orders of magnitude: about 0.5 a year from compute, 0.5 from algorithms, plus "unhobbling"; "AGI by 2027 is strikingly plausible". |
+| AI Futures Project, *AI 2027* timelines | Apr–Dec 2025 | Medians for a superhuman AI coder between 2027 and 2033 across forecasters and methods; revised later in May and December 2025. |
+| Ilya Sutskever | Dec 2024 | "Pre-training as we know it will unquestionably end"; data is "the fossil fuel of AI"; new ideas needed. |
+| Gary Marcus | 2022–25 | Pure scaling will not produce general intelligence; GPT-5 "incremental"; argues for hybrid symbolic approaches. |
+:::
+
+Pulling the threads of both posts together, the limits most often named are:
+
+- **Diminishing returns are built in.** A power law with exponent $\alpha \approx 0.3$ means each halving of reducible loss costs about $2^{1/0.3} \approx 10$ times the resources. That is not a wall but a steepening hill, and it was always the expectation.
+- **Data** for pretraining: human text running out somewhere around 2026–32 by Epoch's estimate, softened by repetition, filtering, multimodal data and synthetic data, with the risk of collapse if the last is used carelessly.
+- **Power and chips**, which Epoch expects to bind first, around the end of the decade at historical growth rates.
+- **Money**: a training run costing over a billion dollars by 2027 and clusters over a hundred billion by 2030 need revenue to match; the forecasts assume it continues to grow.
+- **The new axis has its own shape.** Reinforcement-learning returns follow a sigmoid with a recipe-dependent ceiling, and test-time compute helps most where the model can already sometimes succeed.
+
+None of these is a sharp limit; each is a slope that steepens. The history of the field is a sequence of apparent walls (the end of overparameterised nets, the limits of recurrent networks, the data wall) followed by a change of axis. The open question is whether the next change of axis arrives as reliably as the last ones did.
+
+## Terminology and where it comes from
+
+::: {.sc-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Overtraining** | Training past the compute-optimal number of tokens | Relative to Chinchilla's optimum; the term spread with Llama (2023). Not overfitting: the model still improves on held-out data. |
+| **Distillation** | Training a small model to match a large model's output distribution | Geoffrey Hinton, Oriol Vinyals and Jeff Dean, *Distilling the Knowledge in a Neural Network*, 2015, by analogy with distilling a liquid to its essence. |
+| **Model collapse** | Degradation from training on generated data | Shumailov and colleagues, 2023–24. |
+| **Emergence** | An ability appearing abruptly with scale | From philosophy and physics, Philip Anderson's *More Is Different* (1972); applied to language models by Wei and colleagues, 2022. |
+| **Test-time compute** | Computation spent while answering rather than while training | From the machine-learning distinction between training and test phases. |
+| **pass@k** | Probability that at least one of $k$ samples is correct | Introduced for code generation by Mark Chen and colleagues (Codex, 2021). |
+| **Reinforcement learning** | Learning from rewards rather than labelled answers | Richard Sutton and Andrew Barto's 1980s synthesis of trial-and-error learning from psychology and optimal control. |
+| **Latency wall** | The minimum time per training step | Epoch AI, 2024. |
+| **Effective compute** | Hardware compute multiplied by algorithmic efficiency gains | Used by Epoch AI and forecasters such as Aschenbrenner to combine the two trends. |
+:::
+
+## Method and sources
+
+**Calculators.** The inference-aware optimum uses Epoch AI's refit of the Chinchilla law ($E = 1.817$, $A = 482.0$, $B = 2085.4$, $\alpha = 0.348$, $\beta = 0.366$) with training cost $6ND$ and inference cost $2N$ per token, minimised over $N$ on a grid of 0.01 in $\log_{10}N$ at fixed loss. The repetition chart uses Muennighoff and colleagues' $R^* = 15.4$. The emergence and pass@$k$ charts are illustrations of the stated formulas, not fits. The projection grows compute exponentially from Epoch's estimate of GPT-4's training compute.
+
+**Tokens per parameter.** Computed from parameters and training tokens reported in each model's paper; for Llama 3 8B and 70B and Qwen2.5 the full corpus is assumed to have been used.
+
+Sources:
+
+- N. Sardana, J. Frankle, [*Beyond Chinchilla-Optimal*](https://arxiv.org/abs/2401.00448), ICML 2024.
+- Model reports: [Llama 2](https://arxiv.org/abs/2307.09288), [Llama 3](https://arxiv.org/abs/2407.21783), [Gemma 2](https://arxiv.org/abs/2408.00118), [Gemma 3](https://arxiv.org/abs/2503.19786), [Qwen2.5](https://arxiv.org/abs/2412.15115), [Qwen3](https://arxiv.org/abs/2505.09388), [SmolLM2](https://arxiv.org/abs/2502.02737), [DeepSeek-V3](https://arxiv.org/abs/2412.19437).
+- N. Muennighoff and colleagues, [*Scaling Data-Constrained Language Models*](https://arxiv.org/abs/2305.16264), 2023. G. Penedo and colleagues, [*FineWeb*](https://arxiv.org/abs/2406.17557), 2024. [*DataComp-LM*](https://arxiv.org/abs/2406.11794), 2024. S. Gunasekar and colleagues, [*Textbooks Are All You Need*](https://arxiv.org/abs/2306.11644), 2023. B. Sorscher and colleagues, [*Beyond neural scaling laws*](https://arxiv.org/abs/2206.14486), NeurIPS 2022. I. Shumailov and colleagues, [*AI models collapse when trained on recursively generated data*](https://doi.org/10.1038/s41586-024-07566-y), *Nature* 631, 2024.
+- P. Villalobos and colleagues, [*Will we run out of data?*](https://epoch.ai/blog/will-we-run-out-of-data-limits-of-llm-scaling-based-on-human-generated-data), Epoch AI, 2024.
+- A. Clark and colleagues, [*Unified Scaling Laws for Routed Language Models*](https://arxiv.org/abs/2202.01169), 2022. J. Krajewski and colleagues, [*Scaling Laws for Fine-Grained Mixture of Experts*](https://arxiv.org/abs/2402.07871), 2024. T. Kumar and colleagues, [*Scaling Laws for Precision*](https://arxiv.org/abs/2411.04330), 2024.
+- J. Wei and colleagues, [*Emergent Abilities of Large Language Models*](https://arxiv.org/abs/2206.07682), 2022. R. Schaeffer, B. Miranda, S. Koyejo, [*Are Emergent Abilities of Large Language Models a Mirage?*](https://arxiv.org/abs/2304.15004), 2023.
+- OpenAI, [*Learning to Reason with LLMs*](https://openai.com/index/learning-to-reason-with-llms/), September 2024. B. Brown and colleagues, [*Large Language Monkeys*](https://arxiv.org/abs/2407.21787), 2024. C. Snell and colleagues, [*Scaling LLM Test-Time Compute Optimally*](https://arxiv.org/abs/2408.03314), 2024. DeepSeek-AI, [*DeepSeek-R1*](https://arxiv.org/abs/2501.12948), 2025. D. Khatri and colleagues, [*The Art of Scaling Reinforcement Learning Compute for LLMs*](https://arxiv.org/abs/2510.13786), 2025.
+- Epoch AI: [*Training compute of frontier AI models grows by 4–5× per year*](https://epoch.ai/blog/training-compute-of-frontier-ai-models-grows-by-4-5x-per-year) (2024); [*Models over 10²⁵ FLOP*](https://epoch.ai/data-insights/models-over-1e25-flop); [*Grok 4 training resources*](https://epoch.ai/data-insights/grok-4-training-resources) (2025); [*Why GPT-5 used less training compute than GPT-4.5*](https://epoch.ai/gradient-updates/why-gpt5-used-less-training-compute-than-gpt45-but-gpt6-probably-wont) (2025); B. Cottier and colleagues, [*How much does it cost to train frontier AI models?*](https://epoch.ai/blog/how-much-does-it-cost-to-train-frontier-ai-models) (2024); [*Can AI scaling continue through 2030?*](https://epoch.ai/blog/can-ai-scaling-continue-through-2030) (2024); D. Owen, [*What will AI look like in 2030?*](https://epoch.ai/blog/what-will-ai-look-like-in-2030) (2025); [Colossus 2 satellite analysis](https://epoch.ai/data/data-centers/satellite-explorer/xAIColossus2MemphisTennessee/2026-01-13).
+- A. Ho and colleagues, [*Algorithmic progress in language models*](https://arxiv.org/abs/2403.05812), 2024.
+- International Energy Agency, [*Energy and AI*](https://www.iea.org/reports/energy-and-ai) (2025) and [*Key Questions on Energy and AI*](https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary) (2026).
+- Reporting on the slowdown: [TechCrunch on *The Information*'s Orion report](https://techcrunch.com/2024/11/09/openai-reportedly-developing-new-strategies-to-deal-with-ai-improvement-slowdown) (Nov 2024); [Reuters](https://investing.com/news/economy-news/openai-and-rivals-seek-new-path-to-smarter-ai-as-current-methods-hit-limitations-3724166) (Nov 2024); [GPT-4.5](https://techcrunch.com/2025/02/27/openai-unveils-gpt-4-5-orion-its-largest-ai-model-yet) (Feb 2025); [Sutskever at NeurIPS 2024](https://www.computing.co.uk/news/2024/ai/sutskever-warns-ai-will-become-less-predictable); [Marcus on GPT-5](https://the-decoder.com/gpt-5-is-here-and-gary-marcus-is-not-impressed/) (Aug 2025).
+- T. Kwa and colleagues (METR), [*Measuring AI Ability to Complete Long Tasks*](https://arxiv.org/abs/2503.14499), 2025, revised 2026.
+- Forecasts: L. Aschenbrenner, [*Situational Awareness*](https://situational-awareness.ai/), 2024; AI Futures Project, [*AI 2027* timelines forecast](https://ai-2027.com/research/timelines-forecast), 2025. Stargate: [SiliconANGLE](https://siliconangle.com/?p=712569) (Sep 2025); Meta Hyperion: [The Register](https://www.theregister.com/2025/07/15/meta_datacenter_build_plan/) (Jul 2025).
+
+**Previous: [Part 1, power laws and a small-model experiment](../scaling-laws-part-1-power-laws/)**.

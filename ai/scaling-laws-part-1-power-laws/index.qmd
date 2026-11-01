@@ -1,0 +1,375 @@
+---
+title: "Scaling Laws, Part 1: Power Laws and a Small-Model Experiment"
+subtitle: "Why a language model's loss falls as a power law in its size, its data and its compute, how Kaplan and Chinchilla turned that into rules for spending a training budget, and the same experiment run here on 35 small ones"
+description: "Neural scaling laws from first principles: power laws and what their exponents mean, theories of where they come from, Kaplan's 2020 laws, Chinchilla's compute-optimal allocation derived with a Lagrange multiplier, why the two disagreed, and a scaling study run for this post: 35 small character-level transformers trained at five compute budgets, fitted and used to predict a larger run, which reproduces the Kaplan–Chinchilla disagreement in miniature. Interactive loss landscape and training planner."
+author: "Paul Milne"
+date: "2026-10-31"
+categories: [ai, scaling-laws, language-models, statistics]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.sc-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.sc-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.sc-grid form { flex-wrap: wrap !important; }
+.sc-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.sc-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.sc-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.sc-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.sc-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.sc-kpis .s { font-size: .76rem; opacity: .7; }
+table.sc-t td.num, table.sc-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sc-scroll { overflow-x: auto; max-width: 100%; }
+.sc-scroll table { min-width: 560px; }
+.sc-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+sci = (x, d = 1) => { if (!isFinite(x) || x === 0) return String(x); const e = Math.floor(Math.log10(Math.abs(x))), m = x / 10 ** e; return `${fmt(m, d)}×10${String(e).split("").map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] ?? (c === "-" ? "⁻" : c)).join("")}`; }
+pow10 = d => { const e = Math.log10(d); return Math.abs(e - Math.round(e)) < 1e-6 ? sci(d, 0).replace(/^1×/, "") : ""; }
+human = (x) => { const a = Math.abs(x); return a >= 1e12 ? fmt(x / 1e12, 1) + " trillion" : a >= 1e9 ? fmt(x / 1e9, 1) + " billion" : a >= 1e6 ? fmt(x / 1e6, 1) + " million" : a >= 1e3 ? fmt(x / 1e3, 0) + " thousand" : fmt(x); }
+S = FileAttachment("data/scaling.json").json()
+```
+
+In January 2020 a group at OpenAI led by Jared Kaplan published a set of graphs that changed how language models are built. They trained transformers ranging over seven orders of magnitude in size and found that the test loss fell along a straight line on log–log axes: a power law in the number of parameters, in the amount of training data and in the compute spent, with no sign of levelling off. If the lines continued, the performance of a model a thousand times larger than any yet built could be predicted before it was trained, and the budget split optimally between size and data.
+
+They did continue. OpenAI's GPT-4 technical report (2023) says its final loss was predicted, "with high accuracy", by fitting a power law with an irreducible term to models trained with at most 10,000 times less compute. Scaling laws are now how laboratories decide what to build: how big, on how much data, for how long.
+
+This is the first of two posts. This one covers the laws themselves: what a power law is, why one might appear, Kaplan's laws, the Chinchilla correction and the mathematics of spending a budget, and then the experiment run for this post, 35 small transformers trained here on a CPU, fitted and used to predict a larger run. [Part 2](../scaling-laws-part-2-beyond-chinchilla/) covers what has happened since: overtraining, running out of data, test-time compute, the frontier in 2026 and the limits ahead.
+
+## Power laws
+
+A power law relates two quantities as $y = a x^{-\alpha}$. Take logarithms and it becomes a straight line, $\log y = \log a - \alpha \log x$, with slope $-\alpha$. Its defining property is **scale invariance**: multiplying $x$ by any factor $k$ multiplies $y$ by $k^{-\alpha}$, whatever $x$ was. There is no characteristic scale at which the behaviour changes, which is why a law fitted at small scale can be extrapolated to large, and why that extrapolation is the whole point.
+
+For language models the quantity is the **loss**: the average cross-entropy, in nats per token, of the model's predictions on text it has not seen, as in the earlier posts on [embeddings](../embeddings-part-1-words-to-vectors/) and [transformers](../transformer-part-1-operation-by-operation/). Loss is the right thing to scale because it is what training minimises and because it has a direct meaning: a model with loss $L$ nats per token can compress text to $L/\ln 2$ bits per token with arithmetic coding. Language has some irreducible entropy, uncertainty no model can remove (which word an author chooses next is genuinely unpredictable), so the realistic form has a floor:
+
+$$
+L(x) = E + \frac{A}{x^{\alpha}}.
+$$
+
+$E$ is the entropy of the text itself; $A/x^\alpha$ is the **reducible loss**, the model's excess over perfect prediction. The exponent says how fast that excess shrinks: doubling $x$ multiplies it by $2^{-\alpha}$. With $\alpha = 0.34$, Chinchilla's exponent for parameters, doubling the model removes 21% of the reducible loss; with $\alpha = 0.076$, Kaplan's, only 5%. Small exponents mean that each fixed improvement costs a multiplicative increase in resources, which is the economic fact behind everything in Part 2.
+
+## Why power laws?
+
+There is no single accepted derivation, but several theories give power laws with the right flavour.
+
+**Fitting a manifold.** Utkarsh Sharma and Jared Kaplan (2020) argued that a network fits a function on a data manifold of intrinsic dimension $d$. With $N$ parameters it can resolve the manifold into about $N$ pieces of linear size $N^{-1/d}$; for a piecewise-linear approximation the error in each piece scales as the square of its size, and the loss as the error squared, giving $L \propto N^{-4/d}$. Larger intrinsic dimension, smaller exponent. They found the exponents measured on different datasets roughly consistent with the dimension measured on the network's own representations.
+
+**Variance and resolution.** Yasaman Bahri and colleagues (2021) separated two regimes. When one resource is effectively unlimited (an infinite dataset, say), the loss is limited by how finely the network can resolve the data, and decreases as a power of the bottleneck resource. When it is limited by noise in a finite sample, a separate argument gives an exponent of 1. Real models sit in the resolution-limited regime, with exponents set by the spectrum of the data.
+
+**Many skills of decreasing frequency.** Eric Michaud and colleagues (2023) proposed the *quantization model*: language is a mix of many discrete skills ("quanta"), each useful on a fraction of tokens, with those fractions following a power law (Zipf's law), the way word frequencies do. A model learns the quanta in order of usefulness; a bigger model or more data lets it learn more of the tail. If the $k$-th most useful quantum is used with frequency $\propto k^{-(\alpha+1)}$, the loss left by the unlearned ones falls as $n^{-\alpha}$ in the number learned. This model also explains why individual abilities can appear abruptly while the average loss falls smoothly, a theme of Part 2.
+
+What all the theories share is the source of the power law: data with heavy-tailed, scale-free structure. Natural language has it at every level, from Zipf's law for word frequencies upwards.
+
+## Kaplan 2020
+
+Kaplan and colleagues trained decoder-only transformers from 768 to 1.5 billion non-embedding parameters on WebText2 and fitted, for $N$ non-embedding parameters, $D$ tokens and $C$ the compute of an efficiently allocated run,
+
+$$
+L(N) = \left(\frac{N_c}{N}\right)^{\alpha_N}, \qquad L(D) = \left(\frac{D_c}{D}\right)^{\alpha_D}, \qquad L(C_{\min}) = \left(\frac{C_c}{C_{\min}}\right)^{\alpha_C},
+$$
+
+with $\alpha_N \approx 0.076$, $\alpha_D \approx 0.095$ and $\alpha_C \approx 0.050$ (for compute in petaflop-days, $C_c \approx 3.1\times10^{8}$), each holding when the other resources are not a bottleneck. They combined size and data into one law, $L(N, D) = \big[(N_c/N)^{\alpha_N/\alpha_D} + D_c/D\big]^{\alpha_D}$, which captures overfitting: a model too large for its data stops improving.
+
+Their headline conclusion was about allocation. Given $C$ more compute, the optimal model size should grow as $N \propto C^{0.73}$ and the data only as $D \propto C^{0.27}$: spend most of a larger budget on a bigger model, and stop training well before convergence. GPT-3, trained in 2020 with 175 billion parameters on 300 billion tokens (under 2 tokens per parameter), followed that advice.
+
+## Chinchilla 2022
+
+Jordan Hoffmann and colleagues at DeepMind asked the same question with a different method and got a different answer. They trained over 400 models from 70 million to 16 billion parameters on 5 to 500 billion tokens, and estimated the optimal size three ways: (1) for each model size, take the lowest loss reached at each compute level along its training curve; (2) fix a compute budget, train several sizes for exactly that budget each, and find the minimum of the resulting U-shaped **iso-FLOP curve**; (3) fit a parametric surface to all final losses:
+
+$$
+L(N, D) = E + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}}, \qquad E = 1.69,\;\; A = 406.4,\;\; B = 410.7,\;\; \alpha = 0.34,\;\; \beta = 0.28.
+$$
+
+The three approaches gave optimal-size exponents of 0.50, 0.49 and 0.46: parameters and data should grow at about the same rate. To test it they trained **Chinchilla**, 70 billion parameters on 1.4 trillion tokens, with the same compute as their 280-billion-parameter Gopher trained on 300 billion. Chinchilla beat Gopher on nearly every benchmark, and the field's models had been, by this measure, several times too big for their data.
+
+### Spending a budget: the derivation
+
+Training compute is about $C = 6ND$ operations ([Part 1 of the transformer series](../transformer-part-1-operation-by-operation/#counting-parameters-and-arithmetic) derived the 6). Minimise $L(N, D)$ subject to that constraint with a Lagrange multiplier $\lambda$:
+
+$$
+\mathcal L = E + A N^{-\alpha} + B D^{-\beta} + \lambda(6ND - C).
+$$
+
+Setting the partial derivatives to zero,
+
+$$
+\frac{\partial\mathcal L}{\partial N} = -\alpha A N^{-\alpha-1} + 6\lambda D = 0, \qquad \frac{\partial\mathcal L}{\partial D} = -\beta B D^{-\beta-1} + 6\lambda N = 0.
+$$
+
+Multiply the first by $N$ and the second by $D$; both remaining terms equal $6\lambda ND$, so
+
+$$
+\alpha A N^{-\alpha} = \beta B D^{-\beta}:
+$$
+
+**at the optimum, the two reducible terms are in the fixed ratio $\beta : \alpha$**. Substituting $D = C/(6N)$ and solving for $N$,
+
+$$
+N^*(C) = G\left(\frac{C}{6}\right)^{a}, \qquad D^*(C) = G^{-1}\left(\frac{C}{6}\right)^{b}, \qquad a = \frac{\beta}{\alpha + \beta},\;\; b = \frac{\alpha}{\alpha + \beta},\;\; G = \left(\frac{\alpha A}{\beta B}\right)^{\frac{1}{\alpha+\beta}}.
+$$
+
+With Chinchilla's fitted values, $a = 0.28/0.62 = 0.45$ and $b = 0.55$. Because $a \ne b$, the optimal ratio of tokens to parameters is not a constant: $D^*/N^* = G^{-2}(C/6)^{b-a}$ grows slowly with the budget. The well-known "20 tokens per parameter" is the ratio at Chinchilla's own scale, not a law.
+
+```{ojs}
+ratioTable = {
+  const f = S.fits.chinchilla, rows = [1e21, 1e22, 5.8e23, 1e24, 1e25, 1e26].map(C => {
+    const a = f.beta / (f.alpha + f.beta), b = f.alpha / (f.alpha + f.beta), G = Math.pow(f.alpha * f.A / (f.beta * f.B), 1 / (f.alpha + f.beta));
+    const N = G * Math.pow(C / 6, a), D = Math.pow(C / 6, b) / G;
+    return {C, N, D, L: f.E + f.A / N ** f.alpha + f.B / D ** f.beta};
+  });
+  return htl.html`<div class="sc-scroll"><table class="table table-sm sc-t"><thead><tr><th class="num">Compute (FLOPs)</th><th class="num">Optimal parameters</th><th class="num">Optimal tokens</th><th class="num">Tokens per parameter</th><th class="num">Predicted loss</th></tr></thead><tbody>
+  ${rows.map(r => htl.html`<tr><td class="num">${sci(r.C)}</td><td class="num">${human(r.N)}</td><td class="num">${human(r.D)}</td><td class="num">${fmt(r.D / r.N, 0)}</td><td class="num">${fmt(r.L, 3)}</td></tr>`)}</tbody></table></div>`;
+}
+```
+
+Using the fitted surface (approach 3) at Chinchilla's own budget of $5.8\times10^{23}$ FLOPs gives a smaller model trained on more tokens than Chinchilla itself; approaches 1 and 2 put the optimum at about 70 billion parameters, which is the model they built. The parametric fit is the one most often quoted, and also the one a 2024 replication by Tamay Besiroglu and colleagues at Epoch AI found problems with: refitting the paper's own data, they obtained an estimate consistent with the other two approaches. Part 2 returns to this.
+
+### Why Kaplan and Chinchilla disagreed
+
+Two 2024 papers explain the gap, from complementary directions. Tim Pearce and Jinyeop Song showed that most of it comes from what was counted: Kaplan used non-embedding parameters and worked at small scale, where the embedding matrices are a large share of the model. Simulating Chinchilla's law under Kaplan's conventions reproduces an exponent near Kaplan's 0.73. Tomer Porian and colleagues reproduced Kaplan's result directly and traced it to three details of the experiments: the compute of the final output layer was left out, the learning-rate warm-up was too long for the small models, and optimiser settings were not retuned with scale. Correct those and Kaplan's own setup gives Chinchilla's answer. Both papers recommend counting total parameters and total compute, and fitting with an irreducible-loss term, which Kaplan's compute law lacked.
+
+## The landscape
+
+The explorer draws the loss surface $L(N, D)$ as contours, with lines of constant compute $6ND = C$ running diagonally and the compute-optimal frontier $N^*(C)$ through them. Choose a fit and a budget; the readout gives the optimum and what it costs to deviate from it.
+
+::: {.sc-grid}
+
+```{ojs}
+viewof fitName = Inputs.radio(new Map([["Chinchilla, approach 3 (2022)", "chinchilla"], ["Epoch AI refit (2024)", "epoch"]]), {value: "chinchilla", label: "Fitted law"})
+```
+
+```{ojs}
+viewof logC = Inputs.range([19, 27], {value: 23.76, step: 0.01, label: "Compute budget, log₁₀ FLOPs"})
+```
+
+```{ojs}
+viewof skew = Inputs.range([-1.5, 1.5], {value: 0, step: 0.05, label: "Model size vs optimum, log₁₀ factor"})
+```
+
+:::
+
+```{ojs}
+//| output: false
+fit = S.fits[fitName]
+Lf = (N, D) => fit.E + fit.A / N ** fit.alpha + fit.B / D ** fit.beta
+opt = C => { const a = fit.beta / (fit.alpha + fit.beta), b = fit.alpha / (fit.alpha + fit.beta), G = Math.pow(fit.alpha * fit.A / (fit.beta * fit.B), 1 / (fit.alpha + fit.beta));
+  return {N: G * Math.pow(C / 6, a), D: Math.pow(C / 6, b) / G}; }
+here = { const C = 10 ** logC, o = opt(C), N = o.N * 10 ** skew, D = C / (6 * N); return {C, o, N, D, L: Lf(N, D), Lo: Lf(o.N, o.D)}; }
+```
+
+```{ojs}
+landscape = {
+  const nx = 90, ny = 70, lnN = [7, 13], lnD = [8, 15], grid = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const x = lnN[0] + (lnN[1] - lnN[0]) * (i + .5) / nx, y = lnD[0] + (lnD[1] - lnD[0]) * (j + .5) / ny;
+    grid.push(Lf(10 ** x, 10 ** y));
+  }
+  const iso = d3.range(19, 28, 1).map(c => ({c, pts: d3.range(lnN[0], lnN[1] + .01, .1).map(x => ({x, y: c - Math.log10(6) - x})).filter(p => p.y >= lnD[0] && p.y <= lnD[1])}));
+  const front = d3.range(17, 29, .1).map(c => { const o = opt(10 ** c); return {x: Math.log10(o.N), y: Math.log10(o.D)}; }).filter(p => p.x >= lnN[0] && p.x <= lnN[1] && p.y >= lnD[0] && p.y <= lnD[1]);
+  const W = Math.min(width, 680);
+  return Plot.plot({width: W, height: W * 0.72, marginLeft: 55, marginBottom: 40,
+    x: {domain: lnN, label: "log₁₀ parameters N"}, y: {domain: lnD, label: "log₁₀ training tokens D"},
+    color: {type: "log", scheme: "YlGnBu", reverse: true, legend: true, label: "Loss (nats per token)"},
+    marks: [
+      Plot.contour(grid, {width: nx, height: ny, x1: lnN[0], x2: lnN[1], y1: lnD[0], y2: lnD[1], fill: Plot.identity, stroke: "white", strokeOpacity: .4, thresholds: 18}),
+      ...iso.map(s => Plot.line(s.pts, {x: "x", y: "y", stroke: "#555", strokeDasharray: "3 3", strokeWidth: .8})),
+      ...iso.map(s => Plot.text(s.pts.slice(-1), {x: "x", y: "y", text: () => `10^${s.c}`, dx: -4, dy: -6, fontSize: 9, fill: "#444", textAnchor: "end"})),
+      Plot.line(front, {x: "x", y: "y", stroke: "#e76f51", strokeWidth: 2.5}),
+      Plot.dot([here], {x: d => Math.log10(d.N), y: d => Math.log10(d.D), r: 6, fill: "#e76f51", stroke: "white"}),
+      Plot.dot([{x: Math.log10(70e9), y: Math.log10(1.4e12), l: "Chinchilla"}, {x: Math.log10(280e9), y: Math.log10(300e9), l: "Gopher"}, {x: Math.log10(175e9), y: Math.log10(300e9), l: "GPT-3"}, {x: Math.log10(8e9), y: Math.log10(15e12), l: "Llama 3 8B"}],
+        {x: "x", y: "y", r: 3.5, fill: "black"}),
+      Plot.text([{x: Math.log10(70e9), y: Math.log10(1.4e12), l: "Chinchilla"}, {x: Math.log10(280e9), y: Math.log10(300e9), l: "Gopher"}, {x: Math.log10(175e9), y: Math.log10(300e9), l: "GPT-3"}, {x: Math.log10(8e9), y: Math.log10(15e12), l: "Llama 3 8B"}],
+        {x: "x", y: "y", text: "l", dx: 6, textAnchor: "start", fontSize: 10})
+    ]});
+}
+```
+
+```{ojs}
+landRead = htl.html`<div class="sc-panel"><h4>At ${sci(here.C, 2)} FLOPs</h4><div class="sc-kpis">
+  <div><div class="k">Optimal size</div><div class="v">${human(here.o.N)}</div><div class="s">trained on ${human(here.o.D)} tokens, ${fmt(here.o.D / here.o.N, 0)} per parameter</div></div>
+  <div><div class="k">Your choice</div><div class="v">${human(here.N)}</div><div class="s">${human(here.D)} tokens, ${fmt(here.D / here.N, 0)} per parameter</div></div>
+  <div><div class="k">Loss</div><div class="v">${fmt(here.L, 4)}</div><div class="s">optimum ${fmt(here.Lo, 4)}; floor E = ${fmt(fit.E, 2)}</div></div>
+  <div><div class="k">Compute wasted</div><div class="v">${fmt(100 * (1 - wasteRatio), 0)}%</div><div class="s">an optimal model reaches your loss with ${fmt(100 * wasteRatio, 0)}% of the compute</div></div>
+</div></div>`
+wasteRatio = {
+  // compute an optimally allocated model needs to reach this loss
+  if (Math.abs(here.L - here.Lo) < 1e-9) return 1;
+  let lo = Math.log10(here.C) - 4, hi = Math.log10(here.C);
+  for (let k = 0; k < 60; k++) { const m = (lo + hi) / 2, o = opt(10 ** m); if (Lf(o.N, o.D) > here.L) lo = m; else hi = m; }
+  return 10 ** ((lo + hi) / 2) / here.C;
+}
+```
+
+The penalty for missing the optimum is gentle near it and steep far from it: a model twice or half the optimal size wastes only a few per cent of the compute, but GPT-3's ratio of under two tokens per parameter is far up the slope. The dots mark some real models; their losses are not comparable with this surface, which was fitted to one dataset and tokeniser, but their positions show the history. Llama 3 8B sits far to the right of the frontier, trained on fifteen trillion tokens, deliberately: Part 2 explains why.
+
+## Planning a run
+
+The same law turns hardware into a plan. A training cluster delivers its peak throughput times a utilisation factor (*model FLOPs utilisation*, typically 35–50% for large runs) for some number of days:
+
+::: {.sc-grid}
+
+```{ojs}
+viewof hw = Inputs.form({
+  gpus: Inputs.range([8, 200000], {value: 16384, step: 8, label: "GPUs"}),
+  peak: Inputs.select(new Map([["A100, 312 TFLOP/s (BF16)", 312e12], ["H100, 989 TFLOP/s (BF16)", 989e12], ["B200, 2,250 TFLOP/s (BF16)", 2250e12]]), {value: 989e12, label: "Accelerator"})
+})
+```
+
+```{ojs}
+viewof hw2 = Inputs.form({
+  mfu: Inputs.range([0.1, 0.7], {value: 0.4, step: 0.01, label: "Utilisation (MFU)"}),
+  days: Inputs.range([1, 180], {value: 54, step: 1, label: "Days"})
+})
+```
+
+:::
+
+```{ojs}
+planView = {
+  const C = hw.gpus * hw.peak * hw2.mfu * hw2.days * 86400, o = opt(C);
+  return htl.html`<div class="sc-panel"><h4>${fmt(hw.gpus)} GPUs for ${hw2.days} days at ${fmt(100 * hw2.mfu)}% utilisation</h4><div class="sc-kpis">
+    <div><div class="k">Compute</div><div class="v">${sci(C, 2)} FLOPs</div></div>
+    <div><div class="k">Compute-optimal size</div><div class="v">${human(o.N)}</div><div class="s">${fitName === "epoch" ? "Epoch refit" : "Chinchilla fit"}</div></div>
+    <div><div class="k">Tokens</div><div class="v">${human(o.D)}</div><div class="s">${fmt(o.D / o.N, 0)} per parameter</div></div>
+    <div><div class="k">Predicted loss</div><div class="v">${fmt(Lf(o.N, o.D), 3)}</div><div class="s">on Chinchilla's data; floor ${fmt(fit.E, 2)}</div></div>
+  </div></div>`;
+}
+```
+
+The defaults approximate Meta's account of Llama 3 405B: 16,384 H100s at about 40% utilisation, $3.8\times10^{25}$ FLOPs in total. Meta fitted its own scaling law on its own data, which put the optimum at that budget at 402 billion parameters on 16.55 trillion tokens; it trained 405 billion on 15.6 trillion. Notice how much the answer depends on the fit: the published constants above, from a different dataset, give a different optimum. Scaling laws transfer as shapes, not as numbers, and every laboratory refits them on its own data and tokeniser. The smaller Llama 3 models went far past any of these frontiers, deliberately.
+
+## The experiment
+
+Everything above can be checked on a small scale. I trained a family of character-level transformers, built like GPT-2 (Pre-LN, GELU, learned positions, a context of 128 characters), on text8, the first 100 million characters of an English Wikipedia dump used in the [embeddings post](../embeddings-part-1-words-to-vectors/): 95 million characters for training, 5 million held out. Nine shapes from width 16 with 2 layers (6,600 non-embedding parameters) to width 192 with 6 layers (2.7 million), each trained at several of five compute budgets from $10^{12}$ to $10^{14}$ FLOPs, with the learning-rate schedule matched to the length of each run, as Chinchilla prescribed. The largest budget is a few trillionths of Llama 3 405B's. The whole study, 35 runs, took `{ojs} fmt(S.total_cpu_hours, 1)` CPU-hours.
+
+Every run used the same batch of 32 sequences, 4,096 characters per optimiser step. That turned out to matter. A large model at a small budget gets very few steps, as few as 50, and its loss is then limited by the number of updates rather than by its size or its data: it has barely left the starting point. The first version of this study included such runs and the fits were nonsense. Runs with fewer than `{ojs} S.min_steps.toLocaleString("en-GB")` steps are therefore excluded from every fit below (they appear as hollow circles on the iso-FLOP chart), leaving `{ojs} S.n_used`. This is not a detail: it is one of the two mechanisms Porian and colleagues found behind Kaplan's numbers.
+
+```{ojs}
+viewof curveX = Inputs.radio(new Map([["Training compute", "flops"], ["Characters seen", "tokens"]]), {value: "flops", label: "Horizontal axis"})
+```
+
+```{ojs}
+curvePlot = {
+  const pts = S.runs.filter(r => r.used).flatMap(r => r.log.map(p => ({x: curveX === "flops" ? p.tokens * r.per_token : p.tokens, y: p.val, run: `${r.name} @ ${sci(r.C, 0)}`, N: r.N})));
+  return Plot.plot({width: Math.min(width, 700), height: 340, marginLeft: 55, grid: true,
+    x: {type: "log", label: curveX === "flops" ? "Training compute (FLOPs)" : "Characters seen", tickFormat: curveX === "flops" ? pow10 : "~s"},
+    y: {type: "log", label: "Held-out loss (nats per character)", domain: [1.05, 2.9]},
+    color: {type: "log", scheme: "Viridis", legend: true, label: "Non-embedding parameters"},
+    marks: [Plot.line(pts, {x: "x", y: "y", z: "run", stroke: "N", strokeWidth: 1.4, strokeOpacity: .85})]});
+}
+```
+
+```{ojs}
+md`On the compute axis, the curves form an envelope: at every level of compute, some size of model is lowest, and which one moves right as the compute grows. The best final loss at the largest budget was ${fmt(S.best_final, 3)} nats per character (${fmt(S.best_final / Math.LN2, 2)} bits), against ${fmt(Math.log(27), 2)} nats for a uniform guess over the 27 characters.`
+```
+
+### Iso-FLOP curves
+
+Fix the compute, vary the size: Chinchilla's approach 2. Each budget gives a U-shaped curve, too small a model under-fits and too large a one sees too little data, and a parabola in $\log N$ through the points locates the minimum.
+
+```{ojs}
+isoPlot = {
+  const pts = S.runs.filter(r => r.used).map(r => ({N: r.N, L: r.final_val, C: sci(r.C, 0)})), out = S.runs.filter(r => !r.used).map(r => ({N: r.N, L: r.final_val, C: sci(r.C, 0)}));
+  const curves = S.isoflop.flatMap(c => d3.range(Math.log10(c.Nmin) - .15, Math.log10(c.Nmax) + .15, .02).map(x => ({N: 10 ** x, L: c.p[0] * x * x + c.p[1] * x + c.p[2], C: sci(c.C, 0)})));
+  const mins = S.isoflop.map(c => ({N: c.Nopt, L: c.Lmin, C: sci(c.C, 0)}));
+  return Plot.plot({width: Math.min(width, 700), height: 320, marginLeft: 55, grid: true,
+    x: {type: "log", label: "Non-embedding parameters N", tickFormat: "~s"}, y: {label: "Final held-out loss (nats per character)"},
+    color: {legend: true, label: "Compute", domain: S.isoflop.map(c => sci(c.C, 0))},
+    marks: [Plot.line(curves, {x: "N", y: "L", stroke: "C", strokeOpacity: .7}), Plot.dot(pts, {x: "N", y: "L", fill: "C", r: 4}), Plot.dot(out, {x: "N", y: "L", stroke: "C", r: 4, strokeOpacity: .6}),
+            Plot.dot(mins, {x: "N", y: "L", stroke: "C", r: 8, strokeWidth: 2, symbol: "times"})]});
+}
+```
+
+```{ojs}
+isoText = md`The minima (crosses) move to larger models as compute grows, but fast: fitting <i>N</i>* ∝ <i>C</i><sup><i>a</i></sup> through them gives <i>a</i> = ${fmt(S.frontier.a_iso, 2)}, not Chinchilla's 0.5 but closer to, even beyond, Kaplan's 0.73. The optimal number of characters per parameter falls from about ${fmt(Math.round(S.isoflop[0].ratio / 100) * 100, 0)} at the smallest budget to about ${fmt(S.isoflop[S.isoflop.length - 1].ratio, 0)} at the largest, where Chinchilla would hold it constant.`
+```
+
+So a small study, done carefully by the standards of a blog post, reproduces Kaplan's answer rather than Chinchilla's. That is the disagreement of the previous section in miniature, and the causes are the ones Pearce and Song and Porian and colleagues identified. The models are tiny, where the attention cost and the non-embedding parameter count distort the bookkeeping. The batch size and learning rate were fixed across sizes rather than tuned for each, so the larger models at each budget, with the fewest steps, are handicapped even above the exclusion threshold, which pushes the optimum towards smaller models at small budgets and makes it run away as compute grows. And the smallest shapes have only two layers, which caps what they can learn from context however long they train: the two-layer model of width 32 improved by only 0.04 nats between $10^{13}$ and $3\times10^{13}$ FLOPs while the three-layer model beside it improved by 0.12. Kaplan's own paper noted that models with only one or two layers fall off its trend. Chinchilla's experiments avoided all three: larger models, tuned schedules, a wide spread of depths.
+
+### The fitted surface
+
+Approach 3: fit $L(N,D) = E + A/N^\alpha + B/D^\beta$ to all `{ojs} S.n_used` final losses that pass the step threshold, all at once, by minimising the Huber loss of the log-residuals, as Chinchilla did.
+
+```{ojs}
+ourFit = { const f = S.fits.ours; return md`The fit gives <i>E</i> = ${fmt(f.E, 2)}, <i>A</i> = ${fmt(f.A, 2)}, <i>B</i> = ${fmt(f.B, 0)}, α = ${fmt(f.alpha, 3)} and β = ${fmt(f.beta, 3)}, with a root-mean-square error of ${fmt(f.rmse, 3)} nats over the runs. The exponents give an allocation <i>a</i> = β/(α + β) = ${fmt(f.beta / (f.alpha + f.beta), 2)}, ${Math.abs(f.beta / (f.alpha + f.beta) - S.frontier.a_iso) < 0.1 ? "consistent with" : "different from"} the iso-FLOP estimate of ${fmt(S.frontier.a_iso, 2)}. The floor is the weak point. An <i>E</i> of ${fmt(f.E, 2)} nats would mean lower-case Wikipedia is almost perfectly predictable at the character level, which it is not: the best published models on text8 reach about 1.1 bits (0.75 nats) per character. Two decades of compute and a handful of points per budget cannot separate a floor from a slow power-law decline, so the optimiser trades one for the other, a fragility of the same kind that Besiroglu and colleagues found when they refitted Chinchilla's own approach 3.`; }
+```
+
+```{ojs}
+predPlot = {
+  const f = S.fits.ours, pts = S.runs.filter(r => r.used).map(r => ({pred: f.E + f.A / r.N ** f.alpha + f.B / r.tokens ** f.beta, act: r.final_val, C: sci(r.C, 0)}));
+  const lo = d3.min(pts, d => Math.min(d.pred, d.act)) - .02, hi = d3.max(pts, d => Math.max(d.pred, d.act)) + .02;
+  return Plot.plot({width: Math.min(width, 420), height: 380, marginLeft: 55, grid: true,
+    x: {domain: [lo, hi], label: "Fitted loss"}, y: {domain: [lo, hi], label: "Measured loss"}, color: {legend: true, label: "Compute", domain: S.isoflop.map(c => sci(c.C, 0))},
+    marks: [Plot.line([[lo, lo], [hi, hi]], {stroke: "#999", strokeDasharray: "4 3"}), Plot.dot(pts, {x: "pred", y: "act", fill: "C", r: 4})]});
+}
+```
+
+### Predicting the biggest budget
+
+The test that matters is extrapolation. Fit the surface using only the four smaller budgets, then predict the runs at $10^{14}$ FLOPs, which the fit has never seen:
+
+```{ojs}
+holdTable = htl.html`<div class="sc-scroll"><table class="table table-sm sc-t"><thead><tr><th>Model</th><th class="num">Parameters</th><th class="num">Characters</th><th class="num">Predicted</th><th class="num">Measured</th><th class="num">Error</th></tr></thead><tbody>
+  ${S.holdout.rows.map(r => htl.html`<tr><td>${r.name}</td><td class="num">${human(r.N)}</td><td class="num">${human(r.D)}</td><td class="num">${fmt(r.pred, 3)}</td><td class="num">${fmt(r.act, 3)}</td><td class="num">${(r.pred - r.act >= 0 ? "+" : "") + fmt(r.pred - r.act, 3)}</td></tr>`)}
+</tbody></table></div>`
+```
+
+```{ojs}
+holdText = md`The mean absolute error is ${fmt(S.holdout.mae, 3)} nats per character, ${fmt(100 * S.holdout.mae_rel, 1)}% of the loss, from a fit to runs with at most a third of the compute, and every prediction is too optimistic. The cause is the floor: a fit with almost no irreducible loss expects the decline to continue undiminished, and the real curves are already starting to flatten. The shape of the law extrapolated; the numbers drifted. That is why the large laboratories fit across many decades of compute with each size's hyperparameters tuned, and why the GPT-4 and Llama 3 predictions in the earlier sections, made from runs a thousand to ten thousand times smaller, are more impressive than they look.`
+```
+
+### What the small study can and can't show
+
+Scale invariance cuts both ways. The same law that extrapolates from small runs is only an empirical regularity, and small runs have quirks the large ones do not: here the attention cost, $6Ld\,T_{\text{ctx}}$ per token, is a third of the total for the smallest model and is counted in the compute; the smallest models are inefficient on a CPU, so wall-clock time is not proportional to FLOPs; one seed per run leaves noise of a few thousandths of a nat; and character-level text8 has a different entropy and structure from tokenised web text, so the constants mean nothing outside this study. What does carry over is qualitative: loss falls as a power law in compute along an envelope of model sizes; at each budget the optimum is a U-shaped valley that moves predictably to larger models; and the allocation you measure depends on how carefully each size is trained, which is exactly how the field got Kaplan's answer first and Chinchilla's second. A better version of this experiment would tune the batch size and learning rate per model, use only models of three or more layers, and span three or four decades of compute; at these sizes that is a few days of CPU time rather than four hours.
+
+## Terminology and where it comes from
+
+::: {.sc-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Scaling law** | Loss as a power law in parameters, data or compute | From physics, where scaling laws relate quantities near critical points and across sizes; the machine-learning use dates from Joel Hestness and colleagues at Baidu (2017), who found power laws in error against dataset size in several domains. |
+| **Power law** | $y = ax^{-\alpha}$ | Named for the power (exponent) of $x$; such laws are central to Vilfredo Pareto's income distributions (1896) and George Zipf's word frequencies (1935, 1949). |
+| **Zipf's law** | The $k$-th most frequent word has frequency $\propto 1/k$ | George Kingsley Zipf, *The Psycho-Biology of Language* (1935); observed earlier by Jean-Baptiste Estoup (1916). |
+| **Compute-optimal** | The allocation of a fixed budget that minimises loss | Hoffmann and colleagues, 2022. |
+| **Iso-FLOP** | A set of runs with the same total compute | From the Greek *isos*, equal, as in isobar and isotherm. |
+| **FLOP** | One floating-point operation; FLOPs, many; FLOP/s, a rate | From scientific computing benchmarks of the 1970s onward; the LINPACK benchmark (Jack Dongarra, 1979) made it the standard measure. |
+| **Lagrange multiplier** | The constraint variable in constrained optimisation | Joseph-Louis Lagrange, *Mécanique analytique*, 1788. |
+| **Chinchilla** | The 70B model, and by extension its allocation rule | DeepMind named a series of its 2021–22 models after animals: Gopher, Chinchilla, Flamingo. |
+:::
+
+## Method and sources
+
+**Models.** Decoder-only, Pre-LN, GELU, learned positions, untied output layer, heads of width 32, context 128 characters, vocabulary of 27 (letters and space). Non-embedding parameters $N = L(12d^2 + 13d) + 2d$. AdamW with $\beta = (0.9, 0.95)$, weight decay 0.1, gradient clipping at 1, batch 32 sequences (4,096 characters), learning rate $\min(3\times10^{-3}, 3\times10^{-3}\sqrt{128/d})$ with linear warm-up over 2% of steps and cosine decay to 10% over exactly the run's length. PyTorch on one CPU core per run.
+
+**Compute.** $C = (6N + 6LdT_{\text{ctx}})D$ per run, the second term counting attention. Budgets $10^{12}$, $3\times10^{12}$, $10^{13}$, $3\times10^{13}$ and $10^{14}$; nine shapes (width/layers 16/2, 24/2, 32/2, 48/3, 64/4, 96/4, 128/5, 160/6, 192/6), 35 runs in all; runs with fewer than 1,000 optimiser steps excluded from the fits; the number of characters $D$ chosen to meet the budget for each shape. Loss is measured on 256 fixed windows (32,768 characters) of the held-out 5 million.
+
+**Fits.** Iso-FLOP: quadratic in $\log_{10}N$ through each budget's final losses, minimum taken as $N^*$, then a least-squares line through $(\log C, \log N^*)$. Surface: $L = E + AN^{-\alpha} + BD^{-\beta}$ fitted by minimising the Huber loss ($\delta = 10^{-3}$) of $\log L_{\text{fit}} - \log L$ with L-BFGS from a grid of starting points, as in Chinchilla. Hold-out: the same fit to the $10^{12}$–$3\times10^{13}$ runs only, evaluated on the $10^{14}$ runs.
+
+**Refits.** The Epoch AI values in the explorer are their refit of Chinchilla's approach 3 to data reconstructed from the paper's figures: $E = 1.817$, $A = 482.0$, $B = 2085.4$, $\alpha = 0.348$, $\beta = 0.366$, giving $a = 0.51$ and about 20 tokens per parameter at Chinchilla's scale; Hoffmann and colleagues' own approach-3 constants imply about 70. Kaplan's constants are from section 1.2 of the paper ($\alpha_N = 0.076$, $\alpha_D = 0.095$, $\alpha_C^{\min} = 0.050$); its Table 2 gives $\alpha_D = 0.103$ for the combined law.
+
+Sources:
+
+- J. Kaplan and colleagues, [*Scaling Laws for Neural Language Models*](https://arxiv.org/abs/2001.08361), 2020.
+- J. Hoffmann and colleagues, [*Training Compute-Optimal Large Language Models*](https://arxiv.org/abs/2203.15556) (Chinchilla), 2022.
+- T. Besiroglu and colleagues, [*Chinchilla Scaling: A replication attempt*](https://arxiv.org/abs/2404.10102), Epoch AI, 2024.
+- OpenAI, [*GPT-4 Technical Report*](https://arxiv.org/abs/2303.08774), 2023, section 3.
+- J. Hestness and colleagues, [*Deep Learning Scaling is Predictable, Empirically*](https://arxiv.org/abs/1712.00409), 2017.
+- U. Sharma, J. Kaplan, [*A Neural Scaling Law from the Dimension of the Data Manifold*](https://arxiv.org/abs/2004.10802), 2020. Y. Bahri and colleagues, [*Explaining Neural Scaling Laws*](https://arxiv.org/abs/2102.06701), 2021. E. Michaud and colleagues, [*The Quantization Model of Neural Scaling*](https://arxiv.org/abs/2303.13506), 2023.
+- Meta, [*The Llama 3 Herd of Models*](https://arxiv.org/abs/2407.21783), 2024: training compute, hardware and tokens.
+- T. Brown and colleagues, [*Language Models are Few-Shot Learners*](https://arxiv.org/abs/2005.14165) (GPT-3), 2020. J. Rae and colleagues, [*Scaling Language Models*](https://arxiv.org/abs/2112.11446) (Gopher), 2021.
+- Data: [text8](https://mattmahoney.net/dc/textdata.html).
+
+**Next: [Part 2, beyond Chinchilla](../scaling-laws-part-2-beyond-chinchilla/)**: overtraining, data limits, test-time compute, the 2026 frontier and how long it can last.

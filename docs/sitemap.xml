@@ -98,7 +98,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/ai/index.html</loc>
-    <lastmod>2026-10-30T17:49:13.660Z</lastmod>
+    <lastmod>2026-10-30T17:49:13.000Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/about.html</loc>
@@ -214,14 +214,22 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/ai/transformer-part-1-operation-by-operation/index.html</loc>
-    <lastmod>2026-10-31T15:07:13.826Z</lastmod>
+    <lastmod>2026-10-31T15:05:56.006Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/ai/transformer-part-2-inside-gpt-2/index.html</loc>
-    <lastmod>2026-10-31T15:07:13.846Z</lastmod>
+    <lastmod>2026-10-31T15:05:56.012Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/ai/transformer-part-3-advances/index.html</loc>
-    <lastmod>2026-10-31T15:07:13.851Z</lastmod>
+    <lastmod>2026-10-31T15:05:56.017Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/ai/scaling-laws-part-2-beyond-chinchilla/index.html</loc>
+    <lastmod>2026-10-31T18:36:05.116Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/ai/scaling-laws-part-1-power-laws/index.html</loc>
+    <lastmod>2026-10-31T18:36:05.112Z</lastmod>
   </url>
 </urlset>

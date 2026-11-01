@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="Inference-aware scaling and overtraining, repeated and synthetic data, the stock of human text, scaling laws for experts and precision, whether emergence is real, test-time compute and reinforcement-learning scaling, frontier compute and cost trends to 2026, the 2024–25 slowdown debate, and the limits of power, chips and data, with the forecasts on how long scaling can last. Interactive calculators throughout.">
+
+<title>Scaling Laws, Part 2: Beyond Chinchilla, the Frontier and Its Limits – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Scaling Laws, Part 2: Beyond Chinchilla, the Frontier and Its Limits – math-blog">
+<meta property="og:description" content="Inference-aware scaling and overtraining, repeated and synthetic data, the stock of human text, scaling laws for experts and precision, whether emergence is real, test-time compute and reinforcement-learning scaling, frontier compute and cost trends to 2026, the 2024–25 slowdown debate, and the limits of power, chips and data, with the forecasts on how long scaling can last. Interactive calculators throughout.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/scaling-laws-part-2-beyond-chinchilla/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="Scaling Laws, Part 2: Beyond Chinchilla, the Frontier and Its Limits – math-blog">
+<meta name="twitter:description" content="Inference-aware scaling and overtraining, repeated and synthetic data, the stock of human text, scaling laws for experts and precision, whether emergence is real, test-time compute and reinforcement-learning scaling, frontier compute and cost trends to 2026, the 2024–25 slowdown debate, and the limits of power, chips and data, with the forecasts on how long scaling can last. Interactive calculators throughout.">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/scaling-laws-part-2-beyond-chinchilla/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Scaling Laws, Part 2: Beyond Chinchilla, the Frontier and Its Limits</h1>
+            <p class="subtitle lead">Why models are now trained far past the compute-optimal point, what happens when the data runs out, the new scaling axis of reasoning at test time, where the frontier stands in 2026, and the physical and economic limits ahead</p>
+                  <div>
+        <div class="description">
+          Inference-aware scaling and overtraining, repeated and synthetic data, the stock of human text, scaling laws for experts and precision, whether emergence is real, test-time compute and reinforcement-learning scaling, frontier compute and cost trends to 2026, the 2024–25 slowdown debate, and the limits of power, chips and data, with the forecasts on how long scaling can last. Interactive calculators throughout.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">scaling-laws</div>
+                <div class="quarto-category">language-models</div>
+                <div class="quarto-category">forecasting</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#training-for-the-life-of-the-model" id="toc-training-for-the-life-of-the-model" class="nav-link active" data-scroll-target="#training-for-the-life-of-the-model">Training for the life of the model</a></li>
+  <li><a href="#when-the-data-runs-out" id="toc-when-the-data-runs-out" class="nav-link" data-scroll-target="#when-the-data-runs-out">When the data runs out</a></li>
+  <li><a href="#more-axes-experts-precision-and-emergence" id="toc-more-axes-experts-precision-and-emergence" class="nav-link" data-scroll-target="#more-axes-experts-precision-and-emergence">More axes: experts, precision, and emergence</a></li>
+  <li><a href="#the-second-axis-thinking-for-longer" id="toc-the-second-axis-thinking-for-longer" class="nav-link" data-scroll-target="#the-second-axis-thinking-for-longer">The second axis: thinking for longer</a></li>
+  <li><a href="#the-frontier-in-2026" id="toc-the-frontier-in-2026" class="nav-link" data-scroll-target="#the-frontier-in-2026">The frontier in 2026</a></li>
+  <li><a href="#limits" id="toc-limits" class="nav-link" data-scroll-target="#limits">Limits</a></li>
+  <li><a href="#is-scaling-slowing" id="toc-is-scaling-slowing" class="nav-link" data-scroll-target="#is-scaling-slowing">Is scaling slowing?</a></li>
+  <li><a href="#how-long-can-it-last" id="toc-how-long-can-it-last" class="nav-link" data-scroll-target="#how-long-can-it-last">How long can it last?</a></li>
+  <li><a href="#terminology-and-where-it-comes-from" id="toc-terminology-and-where-it-comes-from" class="nav-link" data-scroll-target="#terminology-and-where-it-comes-from">Terminology and where it comes from</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.sc-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.sc-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.sc-grid form { flex-wrap: wrap !important; }
+.sc-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.sc-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.sc-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.sc-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.sc-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.sc-kpis .s { font-size: .76rem; opacity: .7; }
+table.sc-t td.num, table.sc-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sc-scroll { overflow-x: auto; max-width: 100%; }
+.sc-scroll table { min-width: 600px; }
+.sc-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="39" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 38;"><span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>sup <span class="op">=</span> s <span class="kw">=&gt;</span> <span class="bu">String</span>(s)<span class="op">.</span><span class="fu">split</span>(<span class="st">""</span>)<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> <span class="st">"⁰¹²³⁴⁵⁶⁷⁸⁹"</span>[c] <span class="op">??</span> (c <span class="op">===</span> <span class="st">"-"</span> <span class="op">?</span> <span class="st">"⁻"</span> <span class="op">:</span> c))<span class="op">.</span><span class="fu">join</span>(<span class="st">""</span>)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>sci <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">1</span>) <span class="kw">=&gt;</span> { <span class="kw">const</span> e <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(x)))<span class="op">,</span> m <span class="op">=</span> x <span class="op">/</span> <span class="dv">10</span> <span class="op">**</span> e<span class="op">;</span> <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(m<span class="op">,</span> d)<span class="sc">}</span><span class="vs">×10</span><span class="sc">${</span><span class="fu">sup</span>(e)<span class="sc">}</span><span class="vs">`</span><span class="op">;</span> }</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>pow10 <span class="op">=</span> d <span class="kw">=&gt;</span> { <span class="kw">const</span> e <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(d))<span class="op">;</span> <span class="cf">return</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(d) <span class="op">-</span> e) <span class="op">&lt;</span> <span class="fl">1e-6</span> <span class="op">?</span> <span class="st">"10"</span> <span class="op">+</span> <span class="fu">sup</span>(e) <span class="op">:</span> <span class="st">""</span><span class="op">;</span> }</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>paramTick <span class="op">=</span> d <span class="kw">=&gt;</span> { <span class="kw">const</span> e <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(d)<span class="op">;</span> <span class="cf">if</span> (<span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(e <span class="op">-</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(e)) <span class="op">&gt;</span> <span class="fl">1e-6</span>) <span class="cf">return</span> <span class="st">""</span><span class="op">;</span> <span class="cf">return</span> d <span class="op">&gt;=</span> <span class="fl">1e12</span> <span class="op">?</span> d <span class="op">/</span> <span class="fl">1e12</span> <span class="op">+</span> <span class="st">"T"</span> <span class="op">:</span> d <span class="op">&gt;=</span> <span class="fl">1e9</span> <span class="op">?</span> d <span class="op">/</span> <span class="fl">1e9</span> <span class="op">+</span> <span class="st">"B"</span> <span class="op">:</span> d <span class="op">&gt;=</span> <span class="fl">1e6</span> <span class="op">?</span> d <span class="op">/</span> <span class="fl">1e6</span> <span class="op">+</span> <span class="st">"M"</span> <span class="op">:</span> d <span class="op">&gt;=</span> <span class="fl">1e3</span> <span class="op">?</span> d <span class="op">/</span> <span class="fl">1e3</span> <span class="op">+</span> <span class="st">"k"</span> <span class="op">:</span> <span class="bu">String</span>(d)<span class="op">;</span> }</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>human <span class="op">=</span> (x) <span class="kw">=&gt;</span> { <span class="kw">const</span> a <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(x)<span class="op">;</span> <span class="cf">return</span> a <span class="op">&gt;=</span> <span class="fl">1e12</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e12</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" trillion"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="fl">1e9</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e9</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" billion"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="fl">1e6</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e6</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" million"</span> <span class="op">:</span> <span class="fu">fmt</span>(x)<span class="op">;</span> }</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>CH <span class="op">=</span> ({<span class="dt">E</span><span class="op">:</span> <span class="fl">1.8172</span><span class="op">,</span> <span class="dt">A</span><span class="op">:</span> <span class="fl">482.01</span><span class="op">,</span> <span class="dt">B</span><span class="op">:</span> <span class="fl">2085.43</span><span class="op">,</span> <span class="dt">alpha</span><span class="op">:</span> <span class="fl">0.3478</span><span class="op">,</span> <span class="dt">beta</span><span class="op">:</span> <span class="fl">0.3658</span>})   <span class="co">// Epoch AI refit of Chinchilla</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>Lf <span class="op">=</span> (N<span class="op">,</span> D) <span class="kw">=&gt;</span> CH<span class="op">.</span><span class="at">E</span> <span class="op">+</span> CH<span class="op">.</span><span class="at">A</span> <span class="op">/</span> N <span class="op">**</span> CH<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> CH<span class="op">.</span><span class="at">B</span> <span class="op">/</span> D <span class="op">**</span> CH<span class="op">.</span><span class="at">beta</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p><a href="../scaling-laws-part-1-power-laws/">Part 1</a> derived the compute-optimal rule: for a fixed training budget, grow parameters and data together, about 20 tokens per parameter at Chinchilla’s scale. Almost nobody follows it any more. This part is about why, and about what has happened to scaling since: the shift from training bigger models to training them longer, the approaching end of fresh human text, the arrival of a second axis of scaling (letting a model think for longer at test time), where the frontier stood in 2026, and the limits that forecasters argue will decide how long the curves can continue.</p>
+<p>A note on sources. Much of this concerns events of 2024–26, after the period most of the well-established literature covers. Where numbers come from estimates rather than published figures (training compute of closed models, for instance), the post says so, and names whose estimate it is.</p>
+<section id="training-for-the-life-of-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="training-for-the-life-of-the-model">Training for the life of the model</h2>
+<p>Chinchilla minimises the cost of <em>training</em>. But a model is trained once and then used, sometimes for trillions of tokens. Running a model costs about <span class="math inline">\(2N\)</span> operations per token generated, so a model of <span class="math inline">\(N\)</span> parameters that will serve <span class="math inline">\(D_{\text{inf}}\)</span> tokens in its lifetime costs</p>
+<p><span class="math display">\[
+C_{\text{total}} = 6ND + 2N D_{\text{inf}}.
+\]</span></p>
+<p>A smaller model is cheaper to run for ever; it reaches the same loss only by training on more data. Nikhil Sardana and Jonathan Frankle (2023) did the optimisation: fix a target loss <span class="math inline">\(\ell\)</span>, minimise <span class="math inline">\(C_{\text{total}}\)</span> subject to <span class="math inline">\(L(N, D) = \ell\)</span>. The result is that the more a model will be used, the smaller and longer-trained it should be. For inference demand of around a billion requests they found the optimum well past Chinchilla, and in tests up to 10,000 tokens per parameter the loss of a 150-million-parameter model had still not plateaued. The calculator does the same optimisation with the Chinchilla law (Epoch AI’s refit):</p>
+<div class="sc-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="65" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 64;"><span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>viewof inf <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>  <span class="dt">loss</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="fl">1.95</span><span class="op">,</span> <span class="fl">2.3</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">2.05</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.005</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Target loss (nats per token)"</span>})<span class="op">,</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  <span class="dt">logInf</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">9</span><span class="op">,</span> <span class="dv">16</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">13</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Lifetime inference, log₁₀ tokens"</span>})</span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="75" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 74;"><span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>infOpt <span class="op">=</span> {</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> {loss<span class="op">,</span> logInf} <span class="op">=</span> inf<span class="op">,</span> Dinf <span class="op">=</span> <span class="dv">10</span> <span class="op">**</span> logInf<span class="op">;</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> Dfor <span class="op">=</span> N <span class="kw">=&gt;</span> { <span class="kw">const</span> r <span class="op">=</span> loss <span class="op">-</span> CH<span class="op">.</span><span class="at">E</span> <span class="op">-</span> CH<span class="op">.</span><span class="at">A</span> <span class="op">/</span> N <span class="op">**</span> CH<span class="op">.</span><span class="at">alpha</span><span class="op">;</span> <span class="cf">return</span> r <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(CH<span class="op">.</span><span class="at">B</span> <span class="op">/</span> r<span class="op">,</span> <span class="dv">1</span> <span class="op">/</span> CH<span class="op">.</span><span class="at">beta</span>) <span class="op">:</span> <span class="kw">Infinity</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> best <span class="op">=</span> <span class="kw">null</span><span class="op">,</span> chin <span class="op">=</span> <span class="kw">null</span><span class="op">,</span> pts <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> x <span class="op">=</span> <span class="dv">7</span><span class="op">;</span> x <span class="op">&lt;=</span> <span class="dv">13</span><span class="op">;</span> x <span class="op">+=</span> <span class="fl">0.01</span>) {</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> N <span class="op">=</span> <span class="dv">10</span> <span class="op">**</span> x<span class="op">,</span> D <span class="op">=</span> <span class="fu">Dfor</span>(N)<span class="op">;</span> <span class="cf">if</span> (<span class="op">!</span><span class="pp">isFinite</span>(D)) <span class="cf">continue</span><span class="op">;</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> train <span class="op">=</span> <span class="dv">6</span> <span class="op">*</span> N <span class="op">*</span> D<span class="op">,</span> tot <span class="op">=</span> train <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> N <span class="op">*</span> Dinf<span class="op">;</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>    pts<span class="op">.</span><span class="fu">push</span>({N<span class="op">,</span> D<span class="op">,</span> train<span class="op">,</span> tot})<span class="op">;</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>best <span class="op">||</span> tot <span class="op">&lt;</span> best<span class="op">.</span><span class="at">tot</span>) best <span class="op">=</span> {N<span class="op">,</span> D<span class="op">,</span> train<span class="op">,</span> tot}<span class="op">;</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>chin <span class="op">||</span> train <span class="op">&lt;</span> chin<span class="op">.</span><span class="at">train</span>) chin <span class="op">=</span> {N<span class="op">,</span> D<span class="op">,</span> train<span class="op">,</span> tot}<span class="op">;</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {best<span class="op">,</span> chin<span class="op">,</span> pts<span class="op">,</span> Dinf}<span class="op">;</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="91" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 90;"><span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>infView <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-panel"&gt;&lt;h4&gt;Reaching loss </span><span class="sc">${</span><span class="fu">fmt</span>(inf<span class="op">.</span><span class="at">loss</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs"> and then serving </span><span class="sc">${</span><span class="fu">sci</span>(infOpt<span class="op">.</span><span class="at">Dinf</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> tokens&lt;/h4&gt;&lt;div class="sc-kpis"&gt;</span></span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Training-optimal (Chinchilla)&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">human</span>(infOpt<span class="op">.</span><span class="at">chin</span><span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;</span><span class="sc">${</span><span class="fu">human</span>(infOpt<span class="op">.</span><span class="at">chin</span><span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs"> tokens, </span><span class="sc">${</span><span class="fu">fmt</span>(infOpt<span class="op">.</span><span class="at">chin</span><span class="op">.</span><span class="at">D</span> <span class="op">/</span> infOpt<span class="op">.</span><span class="at">chin</span><span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> per parameter&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Lifetime-optimal&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">human</span>(infOpt<span class="op">.</span><span class="at">best</span><span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;</span><span class="sc">${</span><span class="fu">human</span>(infOpt<span class="op">.</span><span class="at">best</span><span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs"> tokens, </span><span class="sc">${</span><span class="fu">fmt</span>(infOpt<span class="op">.</span><span class="at">best</span><span class="op">.</span><span class="at">D</span> <span class="op">/</span> infOpt<span class="op">.</span><span class="at">best</span><span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> per parameter&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Training cost&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(infOpt<span class="op">.</span><span class="at">best</span><span class="op">.</span><span class="at">train</span> <span class="op">/</span> infOpt<span class="op">.</span><span class="at">chin</span><span class="op">.</span><span class="at">train</span><span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">×&lt;/div&gt;&lt;div class="s"&gt;the training-optimal model's&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Lifetime cost saved&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> infOpt<span class="op">.</span><span class="at">best</span><span class="op">.</span><span class="at">tot</span> <span class="op">/</span> infOpt<span class="op">.</span><span class="at">chin</span><span class="op">.</span><span class="at">tot</span>)<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">%&lt;/div&gt;&lt;div class="s"&gt;training + inference&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/div&gt;&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="100" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 99;"><span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a>infPlot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">640</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">260</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Parameters"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> paramTick}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Compute (FLOPs)"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> pow10}<span class="op">,</span> <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span>}<span class="op">,</span></span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(infOpt<span class="op">.</span><span class="at">pts</span><span class="op">.</span><span class="fu">flatMap</span>(p <span class="kw">=&gt;</span> [{<span class="dt">N</span><span class="op">:</span> p<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dt">v</span><span class="op">:</span> p<span class="op">.</span><span class="at">train</span><span class="op">,</span> <span class="dt">k</span><span class="op">:</span> <span class="st">"Training"</span>}<span class="op">,</span> {<span class="dt">N</span><span class="op">:</span> p<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dt">v</span><span class="op">:</span> p<span class="op">.</span><span class="at">tot</span><span class="op">,</span> <span class="dt">k</span><span class="op">:</span> <span class="st">"Training + inference"</span>}])<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"v"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span>})<span class="op">,</span></span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>          Plot<span class="op">.</span><span class="fu">dot</span>([infOpt<span class="op">.</span><span class="at">best</span>]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"tot"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">6</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#e76f51"</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">dot</span>([infOpt<span class="op">.</span><span class="at">chin</span>]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"train"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">6</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#1d3557"</span>})]})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Every model on this curve reaches the same loss. Raise the inference volume and the lifetime optimum slides to a smaller model trained for longer; at <span class="math inline">\(10^{13}\)</span> tokens of use, a modest amount for a popular model, the best choice already trains on more than ten times Chinchilla’s ratio. This is the economics behind the open models of 2024–26:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="109" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 108;"><span id="cb6-109"><a href="#cb6-109" aria-hidden="true" tabindex="-1"></a>tppTable <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-scroll"&gt;&lt;table class="table table-sm sc-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Model&lt;/th&gt;&lt;th&gt;Year&lt;/th&gt;&lt;th class="num"&gt;Parameters&lt;/th&gt;&lt;th class="num"&gt;Training tokens&lt;/th&gt;&lt;th class="num"&gt;Tokens per parameter&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb6-110"><a href="#cb6-110" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>[[<span class="st">"GPT-3"</span><span class="op">,</span> <span class="st">"2020"</span><span class="op">,</span> <span class="st">"175B"</span><span class="op">,</span> <span class="st">"0.3T"</span><span class="op">,</span> <span class="fl">1.7</span>]<span class="op">,</span> [<span class="st">"Chinchilla"</span><span class="op">,</span> <span class="st">"2022"</span><span class="op">,</span> <span class="st">"70B"</span><span class="op">,</span> <span class="st">"1.4T"</span><span class="op">,</span> <span class="dv">20</span>]<span class="op">,</span> [<span class="st">"Llama 2 70B"</span><span class="op">,</span> <span class="st">"2023"</span><span class="op">,</span> <span class="st">"70B"</span><span class="op">,</span> <span class="st">"2T"</span><span class="op">,</span> <span class="dv">29</span>]<span class="op">,</span> [<span class="st">"Llama 2 7B"</span><span class="op">,</span> <span class="st">"2023"</span><span class="op">,</span> <span class="st">"7B"</span><span class="op">,</span> <span class="st">"2T"</span><span class="op">,</span> <span class="dv">286</span>]<span class="op">,</span></span>
+<span id="cb6-111"><a href="#cb6-111" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Llama 3 405B"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"405B"</span><span class="op">,</span> <span class="st">"15.6T"</span><span class="op">,</span> <span class="fl">38.5</span>]<span class="op">,</span> [<span class="st">"Llama 3 70B"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"70B"</span><span class="op">,</span> <span class="st">"~15T"</span><span class="op">,</span> <span class="dv">214</span>]<span class="op">,</span> [<span class="st">"Llama 3 8B"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"8B"</span><span class="op">,</span> <span class="st">"~15T"</span><span class="op">,</span> <span class="dv">1875</span>]<span class="op">,</span></span>
+<span id="cb6-112"><a href="#cb6-112" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Gemma 2 27B"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"27B"</span><span class="op">,</span> <span class="st">"13T"</span><span class="op">,</span> <span class="dv">480</span>]<span class="op">,</span> [<span class="st">"Qwen2.5 7B"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"7B"</span><span class="op">,</span> <span class="st">"18T"</span><span class="op">,</span> <span class="dv">2570</span>]<span class="op">,</span> [<span class="st">"DeepSeek-V3 (MoE)"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"671B total, 37B active"</span><span class="op">,</span> <span class="st">"14.8T"</span><span class="op">,</span> <span class="st">"22 (total), 400 (active)"</span>]<span class="op">,</span></span>
+<span id="cb6-113"><a href="#cb6-113" aria-hidden="true" tabindex="-1"></a>     [<span class="st">"Qwen3 32B"</span><span class="op">,</span> <span class="st">"2025"</span><span class="op">,</span> <span class="st">"32B"</span><span class="op">,</span> <span class="st">"36T"</span><span class="op">,</span> <span class="dv">1125</span>]<span class="op">,</span> [<span class="st">"SmolLM2 1.7B"</span><span class="op">,</span> <span class="st">"2025"</span><span class="op">,</span> <span class="st">"1.7B"</span><span class="op">,</span> <span class="st">"~11T"</span><span class="op">,</span> <span class="dv">6500</span>]<span class="op">,</span> [<span class="st">"Qwen3 0.6B"</span><span class="op">,</span> <span class="st">"2025"</span><span class="op">,</span> <span class="st">"0.6B"</span><span class="op">,</span> <span class="st">"36T"</span><span class="op">,</span> <span class="dv">60000</span>]]</span>
+<span id="cb6-114"><a href="#cb6-114" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>r[<span class="dv">0</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td&gt;</span><span class="sc">${</span>r[<span class="dv">1</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>r[<span class="dv">2</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>r[<span class="dv">3</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="kw">typeof</span> r[<span class="dv">4</span>] <span class="op">===</span> <span class="st">"number"</span> <span class="op">?</span> <span class="fu">fmt</span>(r[<span class="dv">4</span>]<span class="op">,</span> r[<span class="dv">4</span>] <span class="op">&lt;</span> <span class="dv">10</span> <span class="op">?</span> <span class="dv">1</span> <span class="op">:</span> <span class="dv">0</span>) <span class="op">:</span> r[<span class="dv">4</span>]<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb6-115"><a href="#cb6-115" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Two cautions. Gemma’s smaller models were trained by distillation, learning to match a larger model’s predicted distributions rather than raw text, which makes each token worth more and the ratios not comparable with Chinchilla’s. And for mixture-of-experts models the ratio depends on whether you divide by total or active parameters, a factor of eighteen for DeepSeek-V3.</p>
+</section>
+<section id="when-the-data-runs-out" class="level2">
+<h2 class="anchored" data-anchor-id="when-the-data-runs-out">When the data runs out</h2>
+<p>Overtraining needs data, and the supply of good human text is finite. Three questions follow: how much is repeated data worth, how much better is better data, and how much is there?</p>
+<p><strong>Repetition.</strong> Niklas Muennighoff and colleagues (2023) trained 400 models of up to 9 billion parameters on repeated data. Up to about four epochs, repeated tokens were almost as good as new ones; beyond that their value decayed, and by about sixteen it was mostly gone. They modelled the effective amount of data from <span class="math inline">\(U\)</span> unique tokens seen <span class="math inline">\(1 + R\)</span> times as</p>
+<p><span class="math display">\[
+D' = U + U R^* \left(1 - e^{-R/R^*}\right), \qquad R^* \approx 15,
+\]</span></p>
+<p>so that each repetition is worth a bit less than the last and the total saturates at <span class="math inline">\(U(1 + R^*)\)</span>, sixteen times the unique data:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="133" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 132;"><span id="cb7-133"><a href="#cb7-133" aria-hidden="true" tabindex="-1"></a>repPlot <span class="op">=</span> {</span>
+<span id="cb7-134"><a href="#cb7-134" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> Rs <span class="op">=</span> <span class="fl">15.4</span><span class="op">,</span> pts <span class="op">=</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="dv">0</span><span class="op">,</span> <span class="fl">60.01</span><span class="op">,</span> <span class="fl">0.25</span>)<span class="op">.</span><span class="fu">map</span>(e <span class="kw">=&gt;</span> ({<span class="dt">e</span><span class="op">:</span> e <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">eff</span><span class="op">:</span> <span class="dv">1</span> <span class="op">+</span> Rs <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">exp</span>(<span class="op">-</span>e <span class="op">/</span> Rs))<span class="op">,</span> <span class="dt">naive</span><span class="op">:</span> e <span class="op">+</span> <span class="dv">1</span>}))<span class="op">;</span></span>
+<span id="cb7-135"><a href="#cb7-135" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">600</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">240</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb7-136"><a href="#cb7-136" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Epochs (passes over the unique data)"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Effective data ÷ unique data"</span>}<span class="op">,</span></span>
+<span id="cb7-137"><a href="#cb7-137" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"e"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"naive"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#bbb"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"4 3"</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"e"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"eff"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">2.5</span>})<span class="op">,</span></span>
+<span id="cb7-138"><a href="#cb7-138" aria-hidden="true" tabindex="-1"></a>            Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">1</span> <span class="op">+</span> Rs]<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">strokeOpacity</span><span class="op">:</span> <span class="op">.</span><span class="dv">4</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">text</span>([{<span class="dt">e</span><span class="op">:</span> <span class="dv">45</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="dv">1</span> <span class="op">+</span> Rs}]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"e"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">"ceiling: 16× unique"</span><span class="op">,</span> <span class="dt">dy</span><span class="op">:</span> <span class="op">-</span><span class="dv">8</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#b5452b"</span>})]})<span class="op">;</span></span>
+<span id="cb7-139"><a href="#cb7-139" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p><strong>Quality.</strong> Filtering changes the exponents themselves. Hugging Face’s FineWeb (2024) built 15 trillion tokens from 96 crawls of the web and showed that a 1.3-trillion-token “educational” subset, selected by a classifier, trained markedly better models; the DataComp-LM project (DCLM, 2024) found model-based filtering “key”, with a 7B model reaching 64% on the MMLU benchmark from 2.6 trillion tokens, comparable to Llama 3 8B with a sixth of the compute. Microsoft’s phi-1 (2023), trained on 7 billion tokens of filtered code and synthetic “textbooks”, reached 50.6% on the HumanEval coding test at 1.3 billion parameters. Ben Sorscher and colleagues (2022) showed in vision that a good enough data-pruning metric can, in principle, turn power-law scaling into exponential scaling: if you can tell which examples matter, you need far fewer of them.</p>
+<p><strong>Synthetic data.</strong> Models can generate training data for other models, and do: phi-1’s textbooks, the reasoning traces that train the models of a later section, and the rewritten and translated data in most 2025–26 corpora. The risk is the one Ilia Shumailov and colleagues showed in <em>Nature</em> in 2024: train generation after generation on the previous generation’s output, indiscriminately, and the tails of the distribution disappear, an effect they called <strong>model collapse</strong>. Used deliberately (filtered, verified, mixed with real data), synthetic data is a resource; used blindly, a slow poison.</p>
+<p><strong>The stock.</strong> Pablo Villalobos and colleagues at Epoch AI estimated in 2024 that the effective stock of public human-generated text is about 300 trillion tokens (90% interval 100 to 1,000 trillion), and that at current trends it will be fully used somewhere between 2026 and 2032. A compute-optimal model using all of it would be trained with about <span class="math inline">\(5\times10^{28}\)</span> FLOPs. Overtraining brings the date forward: five-fold overtraining exhausts the stock by about 2027. Their 2022 estimate had been “likely before 2026” for high-quality text; it moved later because filtered web data proved better than expected and repeated epochs work. The estimate keeps moving, which is itself a lesson. Ilya Sutskever put it more starkly at NeurIPS in December 2024: “we have but one internet”, and “pre-training as we know it will unquestionably end”.</p>
+</section>
+<section id="more-axes-experts-precision-and-emergence" class="level2">
+<h2 class="anchored" data-anchor-id="more-axes-experts-precision-and-emergence">More axes: experts, precision, and emergence</h2>
+<p><strong>Mixture of experts.</strong> For a mixture-of-experts model (<a href="../transformer-part-3-advances/#mixture-of-experts">Part 3 of the transformer series</a>) the parameter count and the compute per token are separate quantities, and Aidan Clark and colleagues (2022) found that loss scales with both: more experts at fixed compute keeps helping, and they defined an effective parameter count along which dense and sparse models fall on one law. Jakub Krajewski and colleagues (2024) added <em>granularity</em>, how finely the experts are divided, and found that experts the size of a dense model’s feed-forward layer are “not optimal at almost any computational budget”, which is the trend Part 3 of the transformer series tabulated: ever more, ever smaller experts.</p>
+<p><strong>Precision.</strong> Tanishq Kumar and colleagues (2024) fitted laws in which training at lower numerical precision reduces a model’s <em>effective</em> parameter count, and found that quantising a model after training hurts more the more data it was trained on, to the point where extra pretraining data can make a later-quantised model worse. Their fits suggest that larger models at lower precision may be compute-optimal, though they were validated only up to 1.7 billion parameters.</p>
+<p><strong>Emergence.</strong> Smooth loss curves sit uneasily with a striking observation: some abilities seem absent in small models and then appear suddenly in large ones. Jason Wei and colleagues (2022) catalogued dozens of such <em>emergent abilities</em>, defined as those that cannot be predicted by extrapolating from smaller models. Rylan Schaeffer, Brando Miranda and Sanmi Koyejo replied in 2023 with <em>Are Emergent Abilities of Large Language Models a Mirage?</em>: much apparent emergence comes from the metric. If a task needs an exact answer of <span class="math inline">\(k\)</span> tokens, and the model’s per-token accuracy <span class="math inline">\(p\)</span> improves smoothly with scale, then exact-match accuracy <span class="math inline">\(p^k\)</span> stays near zero and then shoots up:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="157" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 156;"><span id="cb8-157"><a href="#cb8-157" aria-hidden="true" tabindex="-1"></a>viewof ek <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">30</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Answer length k (tokens that must all be right)"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="161" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 160;"><span id="cb9-161"><a href="#cb9-161" aria-hidden="true" tabindex="-1"></a>emPlot <span class="op">=</span> {</span>
+<span id="cb9-162"><a href="#cb9-162" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> pts <span class="op">=</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="dv">6</span><span class="op">,</span> <span class="fl">13.01</span><span class="op">,</span> <span class="fl">0.05</span>)<span class="op">.</span><span class="fu">flatMap</span>(x <span class="kw">=&gt;</span> {</span>
+<span id="cb9-163"><a href="#cb9-163" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> p <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(<span class="dv">10</span><span class="op">,</span> <span class="op">-</span>(x <span class="op">-</span> <span class="dv">6</span>) <span class="op">*</span> <span class="fl">0.45</span>)<span class="op">;</span></span>
+<span id="cb9-164"><a href="#cb9-164" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [{<span class="dt">x</span><span class="op">:</span> <span class="dv">10</span> <span class="op">**</span> x<span class="op">,</span> <span class="dt">v</span><span class="op">:</span> p<span class="op">,</span> <span class="dt">k</span><span class="op">:</span> <span class="st">"Per-token probability (smooth)"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="dv">10</span> <span class="op">**</span> x<span class="op">,</span> <span class="dt">v</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(p<span class="op">,</span> ek)<span class="op">,</span> <span class="dt">k</span><span class="op">:</span> <span class="vs">`Exact match on </span><span class="sc">${</span>ek<span class="sc">}</span><span class="vs"> tokens`</span>}]<span class="op">;</span></span>
+<span id="cb9-165"><a href="#cb9-165" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb9-166"><a href="#cb9-166" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">640</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">260</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Model scale (illustrative)"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> pow10}<span class="op">,</span></span>
+<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a>    <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Score"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>]}<span class="op">,</span> <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span>}<span class="op">,</span> <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"v"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span>})]})<span class="op">;</span></span>
+<span id="cb9-168"><a href="#cb9-168" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The same underlying improvement, measured two ways. The debate is not fully settled: some abilities stay abrupt under continuous metrics, and the quantization model of Part 1 predicts genuinely discrete skills. But it showed that “emergent” is often a property of the yardstick.</p>
+</section>
+<section id="the-second-axis-thinking-for-longer" class="level2">
+<h2 class="anchored" data-anchor-id="the-second-axis-thinking-for-longer">The second axis: thinking for longer</h2>
+<p>In September 2024 OpenAI released o1, a model trained with reinforcement learning to produce a long chain of reasoning before its answer. Its announcement showed two scaling plots: accuracy on a mathematics competition rising smoothly with the logarithm of the <strong>training</strong> compute spent on reinforcement learning, and also with the logarithm of the <strong>test-time</strong> compute, how long it was allowed to think. On the 2024 AIME, o1 solved 74% of problems with one attempt, 83% with a consensus of 64 and 93% when re-ranking 1,000 samples. Noam Brown, one of its creators, recalled that in his earlier work on poker, twenty seconds of search had been worth scaling the model up 100,000 times.</p>
+<p>There are two ways to spend compute at test time, and both have laws.</p>
+<p><strong>Sampling.</strong> Bradley Brown and colleagues’ <em>Large Language Monkeys</em> (2024) found that the fraction of problems solved by <em>at least one</em> of <span class="math inline">\(k\)</span> samples grows smoothly over four orders of magnitude of <span class="math inline">\(k\)</span>. If a problem is solved in one attempt with probability <span class="math inline">\(p\)</span>, then <span class="math inline">\(\text{pass@}k = 1 - (1-p)^k\)</span>; averaged over problems of varying difficulty, the curve looks like a power law in <span class="math inline">\(k\)</span>. With 250 samples, a model’s success on a set of real software bugs rose from 15.9% to 56%. The catch is choosing <em>which</em> sample: without a reliable checker, majority voting plateaus.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="182" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 181;"><span id="cb10-182"><a href="#cb10-182" aria-hidden="true" tabindex="-1"></a>viewof pk <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Spread of problem difficulty (log-odds standard deviation)"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb11" data-startfrom="186" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 185;"><span id="cb11-186"><a href="#cb11-186" aria-hidden="true" tabindex="-1"></a>passPlot <span class="op">=</span> {</span>
+<span id="cb11-187"><a href="#cb11-187" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> s <span class="op">=</span> <span class="dv">7</span><span class="op">;</span> <span class="kw">const</span> rnd <span class="op">=</span> () <span class="kw">=&gt;</span> (s <span class="op">=</span> (s <span class="op">*</span> <span class="dv">16807</span>) <span class="op">%</span> <span class="dv">2147483647</span>) <span class="op">/</span> <span class="dv">2147483647</span><span class="op">,</span> g <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(<span class="op">-</span><span class="dv">2</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">rnd</span>())) <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">cos</span>(<span class="dv">2</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="cn">PI</span> <span class="op">*</span> <span class="fu">rnd</span>())<span class="op">;</span></span>
+<span id="cb11-188"><a href="#cb11-188" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> ps <span class="op">=</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="dv">2000</span>)<span class="op">.</span><span class="fu">map</span>(() <span class="kw">=&gt;</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">exp</span>(<span class="op">-</span>(<span class="op">-</span><span class="dv">2</span> <span class="op">+</span> pk <span class="op">*</span> <span class="fu">g</span>()))))<span class="op">;</span></span>
+<span id="cb11-189"><a href="#cb11-189" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> pts <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">16</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">64</span><span class="op">,</span> <span class="dv">128</span><span class="op">,</span> <span class="dv">256</span><span class="op">,</span> <span class="dv">512</span><span class="op">,</span> <span class="dv">1024</span><span class="op">,</span> <span class="dv">4096</span><span class="op">,</span> <span class="dv">16384</span>]<span class="op">.</span><span class="fu">map</span>(k <span class="kw">=&gt;</span> ({k<span class="op">,</span> <span class="dt">cov</span><span class="op">:</span> d3<span class="op">.</span><span class="fu">mean</span>(ps<span class="op">,</span> p <span class="kw">=&gt;</span> <span class="dv">1</span> <span class="op">-</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(<span class="dv">1</span> <span class="op">-</span> p<span class="op">,</span> k))}))<span class="op">;</span></span>
+<span id="cb11-190"><a href="#cb11-190" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">640</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">250</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Samples per problem k"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Fraction of problems solved (pass@k)"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>]}<span class="op">,</span></span>
+<span id="cb11-191"><a href="#cb11-191" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"cov"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#2a9d8f"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">2.5</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">dot</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"cov"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#2a9d8f"</span>})]})<span class="op">;</span></span>
+<span id="cb11-192"><a href="#cb11-192" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-11" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The wider the spread of difficulty, the more gradually the coverage climbs: easy problems are solved at once, hard ones need thousands of tries, and the mixture produces the smooth, slow curve seen in practice.</p>
+<p><strong>Reasoning.</strong> Charlie Snell and colleagues (2024) showed that allocating test-time compute well (adapting to each problem’s difficulty, with a verifier to guide search) was more than four times as efficient as simple best-of-<span class="math inline">\(N\)</span> sampling, and that on problems where a base model had some success, a small model given extra test-time compute could beat one fourteen times larger. It did not help on the hardest problems: thinking longer cannot supply knowledge the model lacks. DeepSeek-R1 (January 2025) showed the training side in the open: reinforcement learning alone, rewarding only correct final answers, raised a model’s single-attempt AIME score from 15.6% to 71%, with its answers growing longer and self-correction appearing without being taught.</p>
+<p><strong>How reinforcement learning scales.</strong> Devvrit Khatri and colleagues’ <em>The Art of Scaling Reinforcement Learning Compute for LLMs</em> (2025), from more than 400,000 GPU-hours of experiments, found that performance against RL compute follows not a power law but a sigmoid,</p>
+<p><span class="math display">\[
+R(C) = R_0 + \frac{A - R_0}{1 + (C_{\text{mid}}/C)^{B}},
+\]</span></p>
+<p>rising from the starting score <span class="math inline">\(R_0\)</span> towards an asymptote <span class="math inline">\(A\)</span>. Most changes to the training recipe altered the efficiency <span class="math inline">\(B\)</span>; only some raised the ceiling <span class="math inline">\(A\)</span>. As with pretraining, small runs predicted large ones. The shape matters for the forecasts below: a sigmoid has a ceiling, set by the recipe, which new methods must raise.</p>
+<p>By 2025 the frontier laboratories had moved much of their spending to this axis. Epoch AI concluded that GPT-5 (August 2025) used <em>less</em> training compute than GPT-4.5 (February 2025), because OpenAI found reinforcement learning after pretraining a more efficient way to improve the model.</p>
+</section>
+<section id="the-frontier-in-2026" class="level2">
+<h2 class="anchored" data-anchor-id="the-frontier-in-2026">The frontier in 2026</h2>
+<p>Epoch AI’s database of notable models shows the training compute of frontier models growing about <strong>4 to 5 times a year</strong> since 2010, with language models since 2020 at about 5 times. GPT-3 used about <span class="math inline">\(3\times10^{23}\)</span> FLOPs in 2020; Epoch estimates GPT-4 (2023) at about <span class="math inline">\(2\times10^{25}\)</span>; Meta reported <span class="math inline">\(3.8\times10^{25}\)</span> for Llama 3.1 405B in 2024. By mid-2025 more than thirty models from twelve developers had passed <span class="math inline">\(10^{25}\)</span>, and Epoch described xAI’s Grok 4 (July 2025) as the largest training run to date, at an estimated $490 million and 310 gigawatt-hours. Its database lists estimates approaching <span class="math inline">\(10^{27}\)</span> FLOPs for models released in 2026, though for closed models these are inferences from cluster size and duration, not published figures.</p>
+<p>Two other trends compound the hardware. The cost of the largest final training runs has grown about 2.4 times a year since 2016 (Ben Cottier and colleagues, Epoch AI, 2024), on course to pass a billion dollars by 2027. And <strong>algorithmic progress</strong> has cut the compute needed to reach a given level of performance in half roughly every eight months (Anson Ho and colleagues, 2024, 95% interval 5 to 14 months), so the <em>effective</em> compute of the frontier grows faster than the hardware alone. DeepSeek-V3’s final training run (December 2024), at about <span class="math inline">\(3\times10^{24}\)</span> FLOPs and a reported $5.6 million of GPU time, matched models trained with far more, a reminder that the frontier of capability and the frontier of compute are not the same line.</p>
+</section>
+<section id="limits" class="level2">
+<h2 class="anchored" data-anchor-id="limits">Limits</h2>
+<p>How far can the hardware curve go? Jaime Sevilla and colleagues at Epoch AI (<em>Can AI scaling continue through 2030?</em>, 2024) took each constraint in turn and estimated the largest training run it would allow by 2030:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb12" data-startfrom="220" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 219;"><span id="cb12-220"><a href="#cb12-220" aria-hidden="true" tabindex="-1"></a>limits <span class="op">=</span> [</span>
+<span id="cb12-221"><a href="#cb12-221" aria-hidden="true" tabindex="-1"></a>  {<span class="dt">k</span><span class="op">:</span> <span class="st">"Power, one campus (1–5 GW)"</span><span class="op">,</span> <span class="dt">lo</span><span class="op">:</span> <span class="fl">1e28</span><span class="op">,</span> <span class="dt">hi</span><span class="op">:</span> <span class="fl">3e29</span>}<span class="op">,</span></span>
+<span id="cb12-222"><a href="#cb12-222" aria-hidden="true" tabindex="-1"></a>  {<span class="dt">k</span><span class="op">:</span> <span class="st">"Power, distributed (2–45 GW)"</span><span class="op">,</span> <span class="dt">lo</span><span class="op">:</span> <span class="fl">2e28</span><span class="op">,</span> <span class="dt">hi</span><span class="op">:</span> <span class="fl">2e30</span>}<span class="op">,</span></span>
+<span id="cb12-223"><a href="#cb12-223" aria-hidden="true" tabindex="-1"></a>  {<span class="dt">k</span><span class="op">:</span> <span class="st">"Chip production"</span><span class="op">,</span> <span class="dt">lo</span><span class="op">:</span> <span class="fl">1e29</span><span class="op">,</span> <span class="dt">hi</span><span class="op">:</span> <span class="fl">5e30</span>}<span class="op">,</span></span>
+<span id="cb12-224"><a href="#cb12-224" aria-hidden="true" tabindex="-1"></a>  {<span class="dt">k</span><span class="op">:</span> <span class="st">"Data (multimodal, synthetic)"</span><span class="op">,</span> <span class="dt">lo</span><span class="op">:</span> <span class="fl">6e28</span><span class="op">,</span> <span class="dt">hi</span><span class="op">:</span> <span class="fl">2e32</span>}<span class="op">,</span></span>
+<span id="cb12-225"><a href="#cb12-225" aria-hidden="true" tabindex="-1"></a>  {<span class="dt">k</span><span class="op">:</span> <span class="st">"Latency wall"</span><span class="op">,</span> <span class="dt">lo</span><span class="op">:</span> <span class="fl">3e30</span><span class="op">,</span> <span class="dt">hi</span><span class="op">:</span> <span class="fl">1e32</span>}</span>
+<span id="cb12-226"><a href="#cb12-226" aria-hidden="true" tabindex="-1"></a>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-12" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb13" data-startfrom="230" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 229;"><span id="cb13-230"><a href="#cb13-230" aria-hidden="true" tabindex="-1"></a>limPlot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">680</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">240</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">190</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb13-231"><a href="#cb13-231" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Largest training run possible by 2030 (FLOPs)"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="fl">3e27</span><span class="op">,</span> <span class="fl">3e32</span>]<span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> pow10}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> limits<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">k</span>)}<span class="op">,</span></span>
+<span id="cb13-232"><a href="#cb13-232" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">ruleY</span>(limits<span class="op">,</span> {<span class="dt">y</span><span class="op">:</span> <span class="st">"k"</span><span class="op">,</span> <span class="dt">x1</span><span class="op">:</span> <span class="st">"lo"</span><span class="op">,</span> <span class="dt">x2</span><span class="op">:</span> <span class="st">"hi"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">9</span><span class="op">,</span> <span class="dt">strokeLinecap</span><span class="op">:</span> <span class="st">"round"</span>})<span class="op">,</span></span>
+<span id="cb13-233"><a href="#cb13-233" aria-hidden="true" tabindex="-1"></a>          Plot<span class="op">.</span><span class="fu">ruleX</span>([<span class="fl">2e29</span>]<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"#1d3557"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"4 3"</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">text</span>([{<span class="dt">x</span><span class="op">:</span> <span class="fl">2e29</span>}]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> () <span class="kw">=&gt;</span> limits[<span class="dv">0</span>]<span class="op">.</span><span class="at">k</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">"2×10²⁹: Epoch's central estimate"</span><span class="op">,</span> <span class="dt">dy</span><span class="op">:</span> <span class="op">-</span><span class="dv">14</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span> <span class="dt">textAnchor</span><span class="op">:</span> <span class="st">"start"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#1d3557"</span><span class="op">,</span> <span class="dt">fontSize</span><span class="op">:</span> <span class="dv">10</span>})]})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-13" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Their conclusion: training runs of about <span class="math inline">\(2\times10^{29}\)</span> FLOPs, ten thousand times GPT-4, are likely to be feasible by 2030, and <strong>power</strong> is likely to bind first, then chip manufacturing. Data, with multimodal and synthetic sources counted, and the <em>latency wall</em> (the minimum time per training step, which caps how many sequential steps fit in a training run) bind later. A 2025 follow-up commissioned by Google DeepMind (David Owen, <em>What will AI look like in 2030?</em>) put it at about <span class="math inline">\(10^{29}\)</span>, with clusters costing over $100 billion and drawing gigawatts.</p>
+<p>The power numbers are now concrete. The International Energy Agency estimated that data centres used 415 terawatt-hours in 2024, about 1.5% of the world’s electricity, 485 in 2025, and projects about 950 by 2030, roughly Japan’s consumption today, with demand from AI-focused centres growing fastest. Individual sites have reached the scale of power stations: Epoch’s satellite analysis of xAI’s Colossus 2 in Memphis measured about 950 megawatts of IT power in 2026; OpenAI’s Stargate partnership announced five further US sites in September 2025 with a combined draw of over 5.5 gigawatts towards a 10-gigawatt target; Meta said its Hyperion campus in Louisiana will scale to 5 gigawatts over several years. The bottlenecks the IEA lists are no longer chips alone but turbines, transformers and planning permission.</p>
+<p>The projection tool lets you set a growth rate and see when each limit’s central value would be reached, starting from GPT-4’s estimated <span class="math inline">\(2\times10^{25}\)</span> FLOPs in March 2023:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb14" data-startfrom="243" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 242;"><span id="cb14-243"><a href="#cb14-243" aria-hidden="true" tabindex="-1"></a>viewof growth <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="fl">1.5</span><span class="op">,</span> <span class="dv">6</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">4.5</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Growth of frontier training compute (× per year)"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-14" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb15" data-startfrom="247" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 246;"><span id="cb15-247"><a href="#cb15-247" aria-hidden="true" tabindex="-1"></a>projTable <span class="op">=</span> {</span>
+<span id="cb15-248"><a href="#cb15-248" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> y0 <span class="op">=</span> <span class="fl">2023.2</span><span class="op">,</span> c0 <span class="op">=</span> <span class="fl">2e25</span><span class="op">,</span> yr <span class="op">=</span> c <span class="kw">=&gt;</span> y0 <span class="op">+</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(c <span class="op">/</span> c0) <span class="op">/</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(growth)<span class="op">;</span></span>
+<span id="cb15-249"><a href="#cb15-249" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rows <span class="op">=</span> [[<span class="st">"Data, compute-optimal on all human text (Epoch 2024)"</span><span class="op">,</span> <span class="fl">5e28</span>]<span class="op">,</span> [<span class="st">"Epoch's 2030 feasibility estimate"</span><span class="op">,</span> <span class="fl">2e29</span>]<span class="op">,</span> [<span class="st">"Power, single campus, upper end"</span><span class="op">,</span> <span class="fl">3e29</span>]<span class="op">,</span> [<span class="st">"Chip production, median"</span><span class="op">,</span> <span class="fl">9e29</span>]<span class="op">,</span> [<span class="st">"Latency wall, lower end"</span><span class="op">,</span> <span class="fl">3e30</span>]]<span class="op">;</span></span>
+<span id="cb15-250"><a href="#cb15-250" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-panel"&gt;&lt;h4&gt;At </span><span class="sc">${</span><span class="fu">fmt</span>(growth<span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">× a year from 2×10²⁵ in 2023&lt;/h4&gt;&lt;div class="sc-scroll"&gt;&lt;table class="table table-sm sc-t" style="margin:0"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Threshold&lt;/th&gt;&lt;th class="num"&gt;FLOPs&lt;/th&gt;&lt;th class="num"&gt;Reached in&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb15-251"><a href="#cb15-251" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(([n<span class="op">,</span> c]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">sci</span>(c<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">yr</span>(c)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">1</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb15-252"><a href="#cb15-252" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-15" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>At Epoch’s historical rate the constraints arrive around the end of the decade. At three times a year, the rate Leopold Aschenbrenner assumed, everything moves out by several years.</p>
+</section>
+<section id="is-scaling-slowing" class="level2">
+<h2 class="anchored" data-anchor-id="is-scaling-slowing">Is scaling slowing?</h2>
+<p>In November 2024, <em>The Information</em> and then Reuters reported that OpenAI’s next large model, code-named Orion, was better than GPT-4 but by less than GPT-4 had improved on GPT-3, and that other laboratories had hit similar difficulties. Orion was released as GPT-4.5 in February 2025: OpenAI’s largest model, at the frontier of what it called unsupervised learning, expensive to run and outscored on mathematics and science benchmarks by smaller reasoning models. Reports in 2025 described Meta delaying its largest Llama 4 model, Behemoth, over difficulties improving it. GPT-5, in August 2025, was received by sceptics such as Gary Marcus as “the latest incremental advance”.</p>
+<p>The other side of the ledger is just as concrete. GPT-5, as noted, used less pretraining compute than GPT-4.5: the laboratories had reallocated rather than run out of ideas. Reasoning models improved rapidly through 2025. And the measure that tracks practical capability most directly kept its pace: METR’s measurement of the length of software tasks that AI agents complete half the time doubled about every seven months from 2019 to early 2025, and the 2026 revision of the paper put the doubling time at about 200 days, faster in the recent data.</p>
+<p>The fairest summary of the sources is that two things are true at once. The returns to <em>pretraining alone</em> diminished noticeably in 2024–25, as the power law said they would: each tenfold increase in compute buys a smaller absolute drop in loss, and the data was getting harder to find. And capabilities continued to improve, mostly through the second axis, reinforcement learning and test-time reasoning, along with better data and algorithms. The disagreement is about whether the new axis has its own ceiling, and how soon.</p>
+</section>
+<section id="how-long-can-it-last" class="level2">
+<h2 class="anchored" data-anchor-id="how-long-can-it-last">How long can it last?</h2>
+<p>The forecasts span a wide range, and the people making them are explicit about their assumptions:</p>
+<div class="sc-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source</th>
+<th>When</th>
+<th>Position</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Epoch AI, <em>Can AI scaling continue through 2030?</em></td>
+<td>Aug 2024</td>
+<td>About 4× a year is feasible to roughly <span class="math inline">\(2\times10^{29}\)</span> FLOPs by 2030; power binds first.</td>
+</tr>
+<tr class="even">
+<td>Epoch AI (David Owen), <em>What will AI look like in 2030?</em></td>
+<td>Sep 2025</td>
+<td>Runs of about <span class="math inline">\(10^{29}\)</span> FLOPs, clusters over $100 billion, gigawatt power; scaling likely to continue; objections about walls, data and power judged surmountable.</td>
+</tr>
+<tr class="odd">
+<td>Leopold Aschenbrenner, <em>Situational Awareness</em></td>
+<td>Jun 2024</td>
+<td>Counting orders of magnitude: about 0.5 a year from compute, 0.5 from algorithms, plus “unhobbling”; “AGI by 2027 is strikingly plausible”.</td>
+</tr>
+<tr class="even">
+<td>AI Futures Project, <em>AI 2027</em> timelines</td>
+<td>Apr–Dec 2025</td>
+<td>Medians for a superhuman AI coder between 2027 and 2033 across forecasters and methods; revised later in May and December 2025.</td>
+</tr>
+<tr class="odd">
+<td>Ilya Sutskever</td>
+<td>Dec 2024</td>
+<td>“Pre-training as we know it will unquestionably end”; data is “the fossil fuel of AI”; new ideas needed.</td>
+</tr>
+<tr class="even">
+<td>Gary Marcus</td>
+<td>2022–25</td>
+<td>Pure scaling will not produce general intelligence; GPT-5 “incremental”; argues for hybrid symbolic approaches.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Pulling the threads of both posts together, the limits most often named are:</p>
+<ul>
+<li><strong>Diminishing returns are built in.</strong> A power law with exponent <span class="math inline">\(\alpha \approx 0.3\)</span> means each halving of reducible loss costs about <span class="math inline">\(2^{1/0.3} \approx 10\)</span> times the resources. That is not a wall but a steepening hill, and it was always the expectation.</li>
+<li><strong>Data</strong> for pretraining: human text running out somewhere around 2026–32 by Epoch’s estimate, softened by repetition, filtering, multimodal data and synthetic data, with the risk of collapse if the last is used carelessly.</li>
+<li><strong>Power and chips</strong>, which Epoch expects to bind first, around the end of the decade at historical growth rates.</li>
+<li><strong>Money</strong>: a training run costing over a billion dollars by 2027 and clusters over a hundred billion by 2030 need revenue to match; the forecasts assume it continues to grow.</li>
+<li><strong>The new axis has its own shape.</strong> Reinforcement-learning returns follow a sigmoid with a recipe-dependent ceiling, and test-time compute helps most where the model can already sometimes succeed.</li>
+</ul>
+<p>None of these is a sharp limit; each is a slope that steepens. The history of the field is a sequence of apparent walls (the end of overparameterised nets, the limits of recurrent networks, the data wall) followed by a change of axis. The open question is whether the next change of axis arrives as reliably as the last ones did.</p>
+</section>
+<section id="terminology-and-where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="terminology-and-where-it-comes-from">Terminology and where it comes from</h2>
+<div class="sc-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Overtraining</strong></td>
+<td>Training past the compute-optimal number of tokens</td>
+<td>Relative to Chinchilla’s optimum; the term spread with Llama (2023). Not overfitting: the model still improves on held-out data.</td>
+</tr>
+<tr class="even">
+<td><strong>Distillation</strong></td>
+<td>Training a small model to match a large model’s output distribution</td>
+<td>Geoffrey Hinton, Oriol Vinyals and Jeff Dean, <em>Distilling the Knowledge in a Neural Network</em>, 2015, by analogy with distilling a liquid to its essence.</td>
+</tr>
+<tr class="odd">
+<td><strong>Model collapse</strong></td>
+<td>Degradation from training on generated data</td>
+<td>Shumailov and colleagues, 2023–24.</td>
+</tr>
+<tr class="even">
+<td><strong>Emergence</strong></td>
+<td>An ability appearing abruptly with scale</td>
+<td>From philosophy and physics, Philip Anderson’s <em>More Is Different</em> (1972); applied to language models by Wei and colleagues, 2022.</td>
+</tr>
+<tr class="odd">
+<td><strong>Test-time compute</strong></td>
+<td>Computation spent while answering rather than while training</td>
+<td>From the machine-learning distinction between training and test phases.</td>
+</tr>
+<tr class="even">
+<td><strong>pass@k</strong></td>
+<td>Probability that at least one of <span class="math inline">\(k\)</span> samples is correct</td>
+<td>Introduced for code generation by Mark Chen and colleagues (Codex, 2021).</td>
+</tr>
+<tr class="odd">
+<td><strong>Reinforcement learning</strong></td>
+<td>Learning from rewards rather than labelled answers</td>
+<td>Richard Sutton and Andrew Barto’s 1980s synthesis of trial-and-error learning from psychology and optimal control.</td>
+</tr>
+<tr class="even">
+<td><strong>Latency wall</strong></td>
+<td>The minimum time per training step</td>
+<td>Epoch AI, 2024.</td>
+</tr>
+<tr class="odd">
+<td><strong>Effective compute</strong></td>
+<td>Hardware compute multiplied by algorithmic efficiency gains</td>
+<td>Used by Epoch AI and forecasters such as Aschenbrenner to combine the two trends.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>Calculators.</strong> The inference-aware optimum uses Epoch AI’s refit of the Chinchilla law (<span class="math inline">\(E = 1.817\)</span>, <span class="math inline">\(A = 482.0\)</span>, <span class="math inline">\(B = 2085.4\)</span>, <span class="math inline">\(\alpha = 0.348\)</span>, <span class="math inline">\(\beta = 0.366\)</span>) with training cost <span class="math inline">\(6ND\)</span> and inference cost <span class="math inline">\(2N\)</span> per token, minimised over <span class="math inline">\(N\)</span> on a grid of 0.01 in <span class="math inline">\(\log_{10}N\)</span> at fixed loss. The repetition chart uses Muennighoff and colleagues’ <span class="math inline">\(R^* = 15.4\)</span>. The emergence and pass@<span class="math inline">\(k\)</span> charts are illustrations of the stated formulas, not fits. The projection grows compute exponentially from Epoch’s estimate of GPT-4’s training compute.</p>
+<p><strong>Tokens per parameter.</strong> Computed from parameters and training tokens reported in each model’s paper; for Llama 3 8B and 70B and Qwen2.5 the full corpus is assumed to have been used.</p>
+<p>Sources:</p>
+<ul>
+<li>N. Sardana, J. Frankle, <a href="https://arxiv.org/abs/2401.00448"><em>Beyond Chinchilla-Optimal</em></a>, ICML 2024.</li>
+<li>Model reports: <a href="https://arxiv.org/abs/2307.09288">Llama 2</a>, <a href="https://arxiv.org/abs/2407.21783">Llama 3</a>, <a href="https://arxiv.org/abs/2408.00118">Gemma 2</a>, <a href="https://arxiv.org/abs/2503.19786">Gemma 3</a>, <a href="https://arxiv.org/abs/2412.15115">Qwen2.5</a>, <a href="https://arxiv.org/abs/2505.09388">Qwen3</a>, <a href="https://arxiv.org/abs/2502.02737">SmolLM2</a>, <a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3</a>.</li>
+<li>N. Muennighoff and colleagues, <a href="https://arxiv.org/abs/2305.16264"><em>Scaling Data-Constrained Language Models</em></a>, 2023. G. Penedo and colleagues, <a href="https://arxiv.org/abs/2406.17557"><em>FineWeb</em></a>, 2024. <a href="https://arxiv.org/abs/2406.11794"><em>DataComp-LM</em></a>, 2024. S. Gunasekar and colleagues, <a href="https://arxiv.org/abs/2306.11644"><em>Textbooks Are All You Need</em></a>, 2023. B. Sorscher and colleagues, <a href="https://arxiv.org/abs/2206.14486"><em>Beyond neural scaling laws</em></a>, NeurIPS 2022. I. Shumailov and colleagues, <a href="https://doi.org/10.1038/s41586-024-07566-y"><em>AI models collapse when trained on recursively generated data</em></a>, <em>Nature</em> 631, 2024.</li>
+<li>P. Villalobos and colleagues, <a href="https://epoch.ai/blog/will-we-run-out-of-data-limits-of-llm-scaling-based-on-human-generated-data"><em>Will we run out of data?</em></a>, Epoch AI, 2024.</li>
+<li>A. Clark and colleagues, <a href="https://arxiv.org/abs/2202.01169"><em>Unified Scaling Laws for Routed Language Models</em></a>, 2022. J. Krajewski and colleagues, <a href="https://arxiv.org/abs/2402.07871"><em>Scaling Laws for Fine-Grained Mixture of Experts</em></a>, 2024. T. Kumar and colleagues, <a href="https://arxiv.org/abs/2411.04330"><em>Scaling Laws for Precision</em></a>, 2024.</li>
+<li>J. Wei and colleagues, <a href="https://arxiv.org/abs/2206.07682"><em>Emergent Abilities of Large Language Models</em></a>, 2022. R. Schaeffer, B. Miranda, S. Koyejo, <a href="https://arxiv.org/abs/2304.15004"><em>Are Emergent Abilities of Large Language Models a Mirage?</em></a>, 2023.</li>
+<li>OpenAI, <a href="https://openai.com/index/learning-to-reason-with-llms/"><em>Learning to Reason with LLMs</em></a>, September 2024. B. Brown and colleagues, <a href="https://arxiv.org/abs/2407.21787"><em>Large Language Monkeys</em></a>, 2024. C. Snell and colleagues, <a href="https://arxiv.org/abs/2408.03314"><em>Scaling LLM Test-Time Compute Optimally</em></a>, 2024. DeepSeek-AI, <a href="https://arxiv.org/abs/2501.12948"><em>DeepSeek-R1</em></a>, 2025. D. Khatri and colleagues, <a href="https://arxiv.org/abs/2510.13786"><em>The Art of Scaling Reinforcement Learning Compute for LLMs</em></a>, 2025.</li>
+<li>Epoch AI: <a href="https://epoch.ai/blog/training-compute-of-frontier-ai-models-grows-by-4-5x-per-year"><em>Training compute of frontier AI models grows by 4–5× per year</em></a> (2024); <a href="https://epoch.ai/data-insights/models-over-1e25-flop"><em>Models over 10²⁵ FLOP</em></a>; <a href="https://epoch.ai/data-insights/grok-4-training-resources"><em>Grok 4 training resources</em></a> (2025); <a href="https://epoch.ai/gradient-updates/why-gpt5-used-less-training-compute-than-gpt45-but-gpt6-probably-wont"><em>Why GPT-5 used less training compute than GPT-4.5</em></a> (2025); B. Cottier and colleagues, <a href="https://epoch.ai/blog/how-much-does-it-cost-to-train-frontier-ai-models"><em>How much does it cost to train frontier AI models?</em></a> (2024); <a href="https://epoch.ai/blog/can-ai-scaling-continue-through-2030"><em>Can AI scaling continue through 2030?</em></a> (2024); D. Owen, <a href="https://epoch.ai/blog/what-will-ai-look-like-in-2030"><em>What will AI look like in 2030?</em></a> (2025); <a href="https://epoch.ai/data/data-centers/satellite-explorer/xAIColossus2MemphisTennessee/2026-01-13">Colossus 2 satellite analysis</a>.</li>
+<li>A. Ho and colleagues, <a href="https://arxiv.org/abs/2403.05812"><em>Algorithmic progress in language models</em></a>, 2024.</li>
+<li>International Energy Agency, <a href="https://www.iea.org/reports/energy-and-ai"><em>Energy and AI</em></a> (2025) and <a href="https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary"><em>Key Questions on Energy and AI</em></a> (2026).</li>
+<li>Reporting on the slowdown: <a href="https://techcrunch.com/2024/11/09/openai-reportedly-developing-new-strategies-to-deal-with-ai-improvement-slowdown">TechCrunch on <em>The Information</em>’s Orion report</a> (Nov 2024); <a href="https://investing.com/news/economy-news/openai-and-rivals-seek-new-path-to-smarter-ai-as-current-methods-hit-limitations-3724166">Reuters</a> (Nov 2024); <a href="https://techcrunch.com/2025/02/27/openai-unveils-gpt-4-5-orion-its-largest-ai-model-yet">GPT-4.5</a> (Feb 2025); <a href="https://www.computing.co.uk/news/2024/ai/sutskever-warns-ai-will-become-less-predictable">Sutskever at NeurIPS 2024</a>; <a href="https://the-decoder.com/gpt-5-is-here-and-gary-marcus-is-not-impressed/">Marcus on GPT-5</a> (Aug 2025).</li>
+<li>T. Kwa and colleagues (METR), <a href="https://arxiv.org/abs/2503.14499"><em>Measuring AI Ability to Complete Long Tasks</em></a>, 2025, revised 2026.</li>
+<li>Forecasts: L. Aschenbrenner, <a href="https://situational-awareness.ai/"><em>Situational Awareness</em></a>, 2024; AI Futures Project, <a href="https://ai-2027.com/research/timelines-forecast"><em>AI 2027</em> timelines forecast</a>, 2025. Stargate: <a href="https://siliconangle.com/?p=712569">SiliconANGLE</a> (Sep 2025); Meta Hyperion: <a href="https://www.theregister.com/2025/07/15/meta_datacenter_build_plan/">The Register</a> (Jul 2025).</li>
+</ul>
+<p><strong>Previous: <a href="../scaling-laws-part-1-power-laws/">Part 1, power laws and a small-model experiment</a></strong>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG5zdXAgPSBzID0+IFN0cmluZyhzKS5zcGxpdChcIlwiKS5tYXAoYyA9PiBcIuKBsMK5wrLCs+KBtOKBteKBtuKBt+KBuOKBuVwiW2NdID8/IChjID09PSBcIi1cIiA/IFwi4oG7XCIgOiBjKSkuam9pbihcIlwiKVxuc2NpID0gKHgsIGQgPSAxKSA9PiB7IGNvbnN0IGUgPSBNYXRoLmZsb29yKE1hdGgubG9nMTAoTWF0aC5hYnMoeCkpKSwgbSA9IHggLyAxMCAqKiBlOyByZXR1cm4gYCR7Zm10KG0sIGQpfcOXMTAke3N1cChlKX1gOyB9XG5wb3cxMCA9IGQgPT4geyBjb25zdCBlID0gTWF0aC5yb3VuZChNYXRoLmxvZzEwKGQpKTsgcmV0dXJuIE1hdGguYWJzKE1hdGgubG9nMTAoZCkgLSBlKSA8IDFlLTYgPyBcIjEwXCIgKyBzdXAoZSkgOiBcIlwiOyB9XG5wYXJhbVRpY2sgPSBkID0+IHsgY29uc3QgZSA9IE1hdGgubG9nMTAoZCk7IGlmIChNYXRoLmFicyhlIC0gTWF0aC5yb3VuZChlKSkgPiAxZS02KSByZXR1cm4gXCJcIjsgcmV0dXJuIGQgPj0gMWUxMiA/IGQgLyAxZTEyICsgXCJUXCIgOiBkID49IDFlOSA/IGQgLyAxZTkgKyBcIkJcIiA6IGQgPj0gMWU2ID8gZCAvIDFlNiArIFwiTVwiIDogZCA+PSAxZTMgPyBkIC8gMWUzICsgXCJrXCIgOiBTdHJpbmcoZCk7IH1cbmh1bWFuID0gKHgpID0+IHsgY29uc3QgYSA9IE1hdGguYWJzKHgpOyByZXR1cm4gYSA+PSAxZTEyID8gZm10KHggLyAxZTEyLCAxKSArIFwiIHRyaWxsaW9uXCIgOiBhID49IDFlOSA/IGZtdCh4IC8gMWU5LCAxKSArIFwiIGJpbGxpb25cIiA6IGEgPj0gMWU2ID8gZm10KHggLyAxZTYsIDEpICsgXCIgbWlsbGlvblwiIDogZm10KHgpOyB9XG5DSCA9ICh7RTogMS44MTcyLCBBOiA0ODIuMDEsIEI6IDIwODUuNDMsIGFscGhhOiAwLjM0NzgsIGJldGE6IDAuMzY1OH0pICAgLy8gRXBvY2ggQUkgcmVmaXQgb2YgQ2hpbmNoaWxsYVxuTGYgPSAoTiwgRCkgPT4gQ0guRSArIENILkEgLyBOICoqIENILmFscGhhICsgQ0guQiAvIEQgKiogQ0guYmV0YVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGluZiA9IElucHV0cy5mb3JtKHtcbiAgbG9zczogSW5wdXRzLnJhbmdlKFsxLjk1LCAyLjNdLCB7dmFsdWU6IDIuMDUsIHN0ZXA6IDAuMDA1LCBsYWJlbDogXCJUYXJnZXQgbG9zcyAobmF0cyBwZXIgdG9rZW4pXCJ9KSxcbiAgbG9nSW5mOiBJbnB1dHMucmFuZ2UoWzksIDE2XSwge3ZhbHVlOiAxMywgc3RlcDogMC4xLCBsYWJlbDogXCJMaWZldGltZSBpbmZlcmVuY2UsIGxvZ+KCgeKCgCB0b2tlbnNcIn0pXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0zIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaW5mT3B0ID0ge1xuICBjb25zdCB7bG9zcywgbG9nSW5mfSA9IGluZiwgRGluZiA9IDEwICoqIGxvZ0luZjtcbiAgY29uc3QgRGZvciA9IE4gPT4geyBjb25zdCByID0gbG9zcyAtIENILkUgLSBDSC5BIC8gTiAqKiBDSC5hbHBoYTsgcmV0dXJuIHIgPiAwID8gTWF0aC5wb3coQ0guQiAvIHIsIDEgLyBDSC5iZXRhKSA6IEluZmluaXR5OyB9O1xuICBsZXQgYmVzdCA9IG51bGwsIGNoaW4gPSBudWxsLCBwdHMgPSBbXTtcbiAgZm9yIChsZXQgeCA9IDc7IHggPD0gMTM7IHggKz0gMC4wMSkge1xuICAgIGNvbnN0IE4gPSAxMCAqKiB4LCBEID0gRGZvcihOKTsgaWYgKCFpc0Zpbml0ZShEKSkgY29udGludWU7XG4gICAgY29uc3QgdHJhaW4gPSA2ICogTiAqIEQsIHRvdCA9IHRyYWluICsgMiAqIE4gKiBEaW5mO1xuICAgIHB0cy5wdXNoKHtOLCBELCB0cmFpbiwgdG90fSk7XG4gICAgaWYgKCFiZXN0IHx8IHRvdCA8IGJlc3QudG90KSBiZXN0ID0ge04sIEQsIHRyYWluLCB0b3R9O1xuICAgIGlmICghY2hpbiB8fCB0cmFpbiA8IGNoaW4udHJhaW4pIGNoaW4gPSB7TiwgRCwgdHJhaW4sIHRvdH07XG4gIH1cbiAgcmV0dXJuIHtiZXN0LCBjaGluLCBwdHMsIERpbmZ9O1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaW5mVmlldyA9IGh0bC5odG1sYDxkaXYgY2xhc3M9XCJzYy1wYW5lbFwiPjxoND5SZWFjaGluZyBsb3NzICR7Zm10KGluZi5sb3NzLCAzKX0gYW5kIHRoZW4gc2VydmluZyAke3NjaShpbmZPcHQuRGluZiwgMCl9IHRva2VuczwvaDQ+PGRpdiBjbGFzcz1cInNjLWtwaXNcIj5cbiAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPlRyYWluaW5nLW9wdGltYWwgKENoaW5jaGlsbGEpPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke2h1bWFuKGluZk9wdC5jaGluLk4pfTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+JHtodW1hbihpbmZPcHQuY2hpbi5EKX0gdG9rZW5zLCAke2ZtdChpbmZPcHQuY2hpbi5EIC8gaW5mT3B0LmNoaW4uTiwgMCl9IHBlciBwYXJhbWV0ZXI8L2Rpdj48L2Rpdj5cbiAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPkxpZmV0aW1lLW9wdGltYWw8L2Rpdj48ZGl2IGNsYXNzPVwidlwiPiR7aHVtYW4oaW5mT3B0LmJlc3QuTil9PC9kaXY+PGRpdiBjbGFzcz1cInNcIj4ke2h1bWFuKGluZk9wdC5iZXN0LkQpfSB0b2tlbnMsICR7Zm10KGluZk9wdC5iZXN0LkQgLyBpbmZPcHQuYmVzdC5OLCAwKX0gcGVyIHBhcmFtZXRlcjwvZGl2PjwvZGl2PlxuICA8ZGl2PjxkaXYgY2xhc3M9XCJrXCI+VHJhaW5pbmcgY29zdDwvZGl2PjxkaXYgY2xhc3M9XCJ2XCI+JHtmbXQoaW5mT3B0LmJlc3QudHJhaW4gLyBpbmZPcHQuY2hpbi50cmFpbiwgMSl9w5c8L2Rpdj48ZGl2IGNsYXNzPVwic1wiPnRoZSB0cmFpbmluZy1vcHRpbWFsIG1vZGVsJ3M8L2Rpdj48L2Rpdj5cbiAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPkxpZmV0aW1lIGNvc3Qgc2F2ZWQ8L2Rpdj48ZGl2IGNsYXNzPVwidlwiPiR7Zm10KDEwMCAqICgxIC0gaW5mT3B0LmJlc3QudG90IC8gaW5mT3B0LmNoaW4udG90KSwgMCl9JTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+dHJhaW5pbmcgKyBpbmZlcmVuY2U8L2Rpdj48L2Rpdj5cbjwvZGl2PjwvZGl2PmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImluZlBsb3QgPSBQbG90LnBsb3Qoe3dpZHRoOiBNYXRoLm1pbih3aWR0aCwgNjQwKSwgaGVpZ2h0OiAyNjAsIG1hcmdpbkxlZnQ6IDU1LCBncmlkOiB0cnVlLFxuICB4OiB7dHlwZTogXCJsb2dcIiwgbGFiZWw6IFwiUGFyYW1ldGVyc1wiLCB0aWNrRm9ybWF0OiBwYXJhbVRpY2t9LCB5OiB7dHlwZTogXCJsb2dcIiwgbGFiZWw6IFwiQ29tcHV0ZSAoRkxPUHMpXCIsIHRpY2tGb3JtYXQ6IHBvdzEwfSwgY29sb3I6IHtsZWdlbmQ6IHRydWV9LFxuICBtYXJrczogW1Bsb3QubGluZShpbmZPcHQucHRzLmZsYXRNYXAocCA9PiBbe046IHAuTiwgdjogcC50cmFpbiwgazogXCJUcmFpbmluZ1wifSwge046IHAuTiwgdjogcC50b3QsIGs6IFwiVHJhaW5pbmcgKyBpbmZlcmVuY2VcIn1dKSwge3g6IFwiTlwiLCB5OiBcInZcIiwgc3Ryb2tlOiBcImtcIiwgc3Ryb2tlV2lkdGg6IDJ9KSxcbiAgICAgICAgICBQbG90LmRvdChbaW5mT3B0LmJlc3RdLCB7eDogXCJOXCIsIHk6IFwidG90XCIsIHI6IDYsIGZpbGw6IFwiI2U3NmY1MVwifSksIFBsb3QuZG90KFtpbmZPcHQuY2hpbl0sIHt4OiBcIk5cIiwgeTogXCJ0cmFpblwiLCByOiA2LCBmaWxsOiBcIiMxZDM1NTdcIn0pXX0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ0cHBUYWJsZSA9IGh0bC5odG1sYDxkaXYgY2xhc3M9XCJzYy1zY3JvbGxcIj48dGFibGUgY2xhc3M9XCJ0YWJsZSB0YWJsZS1zbSBzYy10XCI+PHRoZWFkPjx0cj48dGg+TW9kZWw8L3RoPjx0aD5ZZWFyPC90aD48dGggY2xhc3M9XCJudW1cIj5QYXJhbWV0ZXJzPC90aD48dGggY2xhc3M9XCJudW1cIj5UcmFpbmluZyB0b2tlbnM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlRva2VucyBwZXIgcGFyYW1ldGVyPC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAke1tbXCJHUFQtM1wiLCBcIjIwMjBcIiwgXCIxNzVCXCIsIFwiMC4zVFwiLCAxLjddLCBbXCJDaGluY2hpbGxhXCIsIFwiMjAyMlwiLCBcIjcwQlwiLCBcIjEuNFRcIiwgMjBdLCBbXCJMbGFtYSAyIDcwQlwiLCBcIjIwMjNcIiwgXCI3MEJcIiwgXCIyVFwiLCAyOV0sIFtcIkxsYW1hIDIgN0JcIiwgXCIyMDIzXCIsIFwiN0JcIiwgXCIyVFwiLCAyODZdLFxuICAgICBbXCJMbGFtYSAzIDQwNUJcIiwgXCIyMDI0XCIsIFwiNDA1QlwiLCBcIjE1LjZUXCIsIDM4LjVdLCBbXCJMbGFtYSAzIDcwQlwiLCBcIjIwMjRcIiwgXCI3MEJcIiwgXCJ+MTVUXCIsIDIxNF0sIFtcIkxsYW1hIDMgOEJcIiwgXCIyMDI0XCIsIFwiOEJcIiwgXCJ+MTVUXCIsIDE4NzVdLFxuICAgICBbXCJHZW1tYSAyIDI3QlwiLCBcIjIwMjRcIiwgXCIyN0JcIiwgXCIxM1RcIiwgNDgwXSwgW1wiUXdlbjIuNSA3QlwiLCBcIjIwMjRcIiwgXCI3QlwiLCBcIjE4VFwiLCAyNTcwXSwgW1wiRGVlcFNlZWstVjMgKE1vRSlcIiwgXCIyMDI0XCIsIFwiNjcxQiB0b3RhbCwgMzdCIGFjdGl2ZVwiLCBcIjE0LjhUXCIsIFwiMjIgKHRvdGFsKSwgNDAwIChhY3RpdmUpXCJdLFxuICAgICBbXCJRd2VuMyAzMkJcIiwgXCIyMDI1XCIsIFwiMzJCXCIsIFwiMzZUXCIsIDExMjVdLCBbXCJTbW9sTE0yIDEuN0JcIiwgXCIyMDI1XCIsIFwiMS43QlwiLCBcIn4xMVRcIiwgNjUwMF0sIFtcIlF3ZW4zIDAuNkJcIiwgXCIyMDI1XCIsIFwiMC42QlwiLCBcIjM2VFwiLCA2MDAwMF1dXG4gICAgLm1hcChyID0+IGh0bC5odG1sYDx0cj48dGQ+JHtyWzBdfTwvdGQ+PHRkPiR7clsxXX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7clsyXX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7clszXX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7dHlwZW9mIHJbNF0gPT09IFwibnVtYmVyXCIgPyBmbXQocls0XSwgcls0XSA8IDEwID8gMSA6IDApIDogcls0XX08L3RkPjwvdHI+YCl9XG48L3Rib2R5PjwvdGFibGU+PC9kaXY+YFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC03IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoicmVwUGxvdCA9IHtcbiAgY29uc3QgUnMgPSAxNS40LCBwdHMgPSBkMy5yYW5nZSgwLCA2MC4wMSwgMC4yNSkubWFwKGUgPT4gKHtlOiBlICsgMSwgZWZmOiAxICsgUnMgKiAoMSAtIE1hdGguZXhwKC1lIC8gUnMpKSwgbmFpdmU6IGUgKyAxfSkpO1xuICByZXR1cm4gUGxvdC5wbG90KHt3aWR0aDogTWF0aC5taW4od2lkdGgsIDYwMCksIGhlaWdodDogMjQwLCBtYXJnaW5MZWZ0OiA1NSwgZ3JpZDogdHJ1ZSxcbiAgICB4OiB7bGFiZWw6IFwiRXBvY2hzIChwYXNzZXMgb3ZlciB0aGUgdW5pcXVlIGRhdGEpXCJ9LCB5OiB7bGFiZWw6IFwiRWZmZWN0aXZlIGRhdGEgw7cgdW5pcXVlIGRhdGFcIn0sXG4gICAgbWFya3M6IFtQbG90LmxpbmUocHRzLCB7eDogXCJlXCIsIHk6IFwibmFpdmVcIiwgc3Ryb2tlOiBcIiNiYmJcIiwgc3Ryb2tlRGFzaGFycmF5OiBcIjQgM1wifSksIFBsb3QubGluZShwdHMsIHt4OiBcImVcIiwgeTogXCJlZmZcIiwgc3Ryb2tlOiBcIiNlNzZmNTFcIiwgc3Ryb2tlV2lkdGg6IDIuNX0pLFxuICAgICAgICAgICAgUGxvdC5ydWxlWShbMSArIFJzXSwge3N0cm9rZTogXCIjZTc2ZjUxXCIsIHN0cm9rZU9wYWNpdHk6IC40fSksIFBsb3QudGV4dChbe2U6IDQ1LCB5OiAxICsgUnN9XSwge3g6IFwiZVwiLCB5OiBcInlcIiwgdGV4dDogKCkgPT4gXCJjZWlsaW5nOiAxNsOXIHVuaXF1ZVwiLCBkeTogLTgsIGZpbGw6IFwiI2I1NDUyYlwifSldfSk7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTgiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2YgZWsgPSBJbnB1dHMucmFuZ2UoWzEsIDMwXSwge3ZhbHVlOiAxMCwgc3RlcDogMSwgbGFiZWw6IFwiQW5zd2VyIGxlbmd0aCBrICh0b2tlbnMgdGhhdCBtdXN0IGFsbCBiZSByaWdodClcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJlbVBsb3QgPSB7XG4gIGNvbnN0IHB0cyA9IGQzLnJhbmdlKDYsIDEzLjAxLCAwLjA1KS5mbGF0TWFwKHggPT4ge1xuICAgIGNvbnN0IHAgPSAxIC0gMC41ICogTWF0aC5wb3coMTAsIC0oeCAtIDYpICogMC40NSk7XG4gICAgcmV0dXJuIFt7eDogMTAgKiogeCwgdjogcCwgazogXCJQZXItdG9rZW4gcHJvYmFiaWxpdHkgKHNtb290aClcIn0sIHt4OiAxMCAqKiB4LCB2OiBNYXRoLnBvdyhwLCBlayksIGs6IGBFeGFjdCBtYXRjaCBvbiAke2VrfSB0b2tlbnNgfV07XG4gIH0pO1xuICByZXR1cm4gUGxvdC5wbG90KHt3aWR0aDogTWF0aC5taW4od2lkdGgsIDY0MCksIGhlaWdodDogMjYwLCBtYXJnaW5MZWZ0OiA1NSwgZ3JpZDogdHJ1ZSwgeDoge3R5cGU6IFwibG9nXCIsIGxhYmVsOiBcIk1vZGVsIHNjYWxlIChpbGx1c3RyYXRpdmUpXCIsIHRpY2tGb3JtYXQ6IHBvdzEwfSxcbiAgICB5OiB7bGFiZWw6IFwiU2NvcmVcIiwgZG9tYWluOiBbMCwgMV19LCBjb2xvcjoge2xlZ2VuZDogdHJ1ZX0sIG1hcmtzOiBbUGxvdC5saW5lKHB0cywge3g6IFwieFwiLCB5OiBcInZcIiwgc3Ryb2tlOiBcImtcIiwgc3Ryb2tlV2lkdGg6IDJ9KV19KTtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTAiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2YgcGsgPSBJbnB1dHMucmFuZ2UoWzAsIDRdLCB7dmFsdWU6IDIsIHN0ZXA6IDAuMSwgbGFiZWw6IFwiU3ByZWFkIG9mIHByb2JsZW0gZGlmZmljdWx0eSAobG9nLW9kZHMgc3RhbmRhcmQgZGV2aWF0aW9uKVwifSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTEiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJwYXNzUGxvdCA9IHtcbiAgbGV0IHMgPSA3OyBjb25zdCBybmQgPSAoKSA9PiAocyA9IChzICogMTY4MDcpICUgMjE0NzQ4MzY0NykgLyAyMTQ3NDgzNjQ3LCBnID0gKCkgPT4gTWF0aC5zcXJ0KC0yICogTWF0aC5sb2cocm5kKCkpKSAqIE1hdGguY29zKDIgKiBNYXRoLlBJICogcm5kKCkpO1xuICBjb25zdCBwcyA9IGQzLnJhbmdlKDIwMDApLm1hcCgoKSA9PiAxIC8gKDEgKyBNYXRoLmV4cCgtKC0yICsgcGsgKiBnKCkpKSkpO1xuICBjb25zdCBwdHMgPSBbMSwgMiwgNCwgOCwgMTYsIDMyLCA2NCwgMTI4LCAyNTYsIDUxMiwgMTAyNCwgNDA5NiwgMTYzODRdLm1hcChrID0+ICh7aywgY292OiBkMy5tZWFuKHBzLCBwID0+IDEgLSBNYXRoLnBvdygxIC0gcCwgaykpfSkpO1xuICByZXR1cm4gUGxvdC5wbG90KHt3aWR0aDogTWF0aC5taW4od2lkdGgsIDY0MCksIGhlaWdodDogMjUwLCBtYXJnaW5MZWZ0OiA1NSwgZ3JpZDogdHJ1ZSwgeDoge3R5cGU6IFwibG9nXCIsIGxhYmVsOiBcIlNhbXBsZXMgcGVyIHByb2JsZW0ga1wifSwgeToge2xhYmVsOiBcIkZyYWN0aW9uIG9mIHByb2JsZW1zIHNvbHZlZCAocGFzc0BrKVwiLCBkb21haW46IFswLCAxXX0sXG4gICAgbWFya3M6IFtQbG90LmxpbmUocHRzLCB7eDogXCJrXCIsIHk6IFwiY292XCIsIHN0cm9rZTogXCIjMmE5ZDhmXCIsIHN0cm9rZVdpZHRoOiAyLjV9KSwgUGxvdC5kb3QocHRzLCB7eDogXCJrXCIsIHk6IFwiY292XCIsIGZpbGw6IFwiIzJhOWQ4ZlwifSldfSk7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEyIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibGltaXRzID0gW1xuICB7azogXCJQb3dlciwgb25lIGNhbXB1cyAoMeKAkzUgR1cpXCIsIGxvOiAxZTI4LCBoaTogM2UyOX0sXG4gIHtrOiBcIlBvd2VyLCBkaXN0cmlidXRlZCAoMuKAkzQ1IEdXKVwiLCBsbzogMmUyOCwgaGk6IDJlMzB9LFxuICB7azogXCJDaGlwIHByb2R1Y3Rpb25cIiwgbG86IDFlMjksIGhpOiA1ZTMwfSxcbiAge2s6IFwiRGF0YSAobXVsdGltb2RhbCwgc3ludGhldGljKVwiLCBsbzogNmUyOCwgaGk6IDJlMzJ9LFxuICB7azogXCJMYXRlbmN5IHdhbGxcIiwgbG86IDNlMzAsIGhpOiAxZTMyfVxuXVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImxpbVBsb3QgPSBQbG90LnBsb3Qoe3dpZHRoOiBNYXRoLm1pbih3aWR0aCwgNjgwKSwgaGVpZ2h0OiAyNDAsIG1hcmdpbkxlZnQ6IDE5MCwgZ3JpZDogdHJ1ZSxcbiAgeDoge3R5cGU6IFwibG9nXCIsIGxhYmVsOiBcIkxhcmdlc3QgdHJhaW5pbmcgcnVuIHBvc3NpYmxlIGJ5IDIwMzAgKEZMT1BzKVwiLCBkb21haW46IFszZTI3LCAzZTMyXSwgdGlja0Zvcm1hdDogcG93MTB9LCB5OiB7bGFiZWw6IG51bGwsIGRvbWFpbjogbGltaXRzLm1hcChkID0+IGQuayl9LFxuICBtYXJrczogW1Bsb3QucnVsZVkobGltaXRzLCB7eTogXCJrXCIsIHgxOiBcImxvXCIsIHgyOiBcImhpXCIsIHN0cm9rZTogXCIjZTc2ZjUxXCIsIHN0cm9rZVdpZHRoOiA5LCBzdHJva2VMaW5lY2FwOiBcInJvdW5kXCJ9KSxcbiAgICAgICAgICBQbG90LnJ1bGVYKFsyZTI5XSwge3N0cm9rZTogXCIjMWQzNTU3XCIsIHN0cm9rZURhc2hhcnJheTogXCI0IDNcIn0pLCBQbG90LnRleHQoW3t4OiAyZTI5fV0sIHt4OiBcInhcIiwgeTogKCkgPT4gbGltaXRzWzBdLmssIHRleHQ6ICgpID0+IFwiMsOXMTDCsuKBuTogRXBvY2gncyBjZW50cmFsIGVzdGltYXRlXCIsIGR5OiAtMTQsIGR4OiA0LCB0ZXh0QW5jaG9yOiBcInN0YXJ0XCIsIGZpbGw6IFwiIzFkMzU1N1wiLCBmb250U2l6ZTogMTB9KV19KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xNCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBncm93dGggPSBJbnB1dHMucmFuZ2UoWzEuNSwgNl0sIHt2YWx1ZTogNC41LCBzdGVwOiAwLjEsIGxhYmVsOiBcIkdyb3d0aCBvZiBmcm9udGllciB0cmFpbmluZyBjb21wdXRlICjDlyBwZXIgeWVhcilcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE1IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoicHJvalRhYmxlID0ge1xuICBjb25zdCB5MCA9IDIwMjMuMiwgYzAgPSAyZTI1LCB5ciA9IGMgPT4geTAgKyBNYXRoLmxvZyhjIC8gYzApIC8gTWF0aC5sb2coZ3Jvd3RoKTtcbiAgY29uc3Qgcm93cyA9IFtbXCJEYXRhLCBjb21wdXRlLW9wdGltYWwgb24gYWxsIGh1bWFuIHRleHQgKEVwb2NoIDIwMjQpXCIsIDVlMjhdLCBbXCJFcG9jaCdzIDIwMzAgZmVhc2liaWxpdHkgZXN0aW1hdGVcIiwgMmUyOV0sIFtcIlBvd2VyLCBzaW5nbGUgY2FtcHVzLCB1cHBlciBlbmRcIiwgM2UyOV0sIFtcIkNoaXAgcHJvZHVjdGlvbiwgbWVkaWFuXCIsIDllMjldLCBbXCJMYXRlbmN5IHdhbGwsIGxvd2VyIGVuZFwiLCAzZTMwXV07XG4gIHJldHVybiBodGwuaHRtbGA8ZGl2IGNsYXNzPVwic2MtcGFuZWxcIj48aDQ+QXQgJHtmbXQoZ3Jvd3RoLCAxKX3DlyBhIHllYXIgZnJvbSAyw5cxMMKy4oG1IGluIDIwMjM8L2g0PjxkaXYgY2xhc3M9XCJzYy1zY3JvbGxcIj48dGFibGUgY2xhc3M9XCJ0YWJsZSB0YWJsZS1zbSBzYy10XCIgc3R5bGU9XCJtYXJnaW46MFwiPjx0aGVhZD48dHI+PHRoPlRocmVzaG9sZDwvdGg+PHRoIGNsYXNzPVwibnVtXCI+RkxPUHM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlJlYWNoZWQgaW48L3RoPjwvdHI+PC90aGVhZD48dGJvZHk+XG4gICAgJHtyb3dzLm1hcCgoW24sIGNdKSA9PiBodGwuaHRtbGA8dHI+PHRkPiR7bn08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7c2NpKGMsIDApfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHt5cihjKS50b0ZpeGVkKDEpfTwvdGQ+PC90cj5gKX08L3Rib2R5PjwvdGFibGU+PC9kaXY+PC9kaXY+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnaW5mJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2VrJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3BrJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2dyb3d0aCcpIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../ai/scaling-laws-part-2-beyond-chinchilla";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

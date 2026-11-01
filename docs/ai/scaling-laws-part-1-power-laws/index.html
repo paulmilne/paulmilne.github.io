@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-10-31">
+<meta name="description" content="Neural scaling laws from first principles: power laws and what their exponents mean, theories of where they come from, Kaplan’s 2020 laws, Chinchilla’s compute-optimal allocation derived with a Lagrange multiplier, why the two disagreed, and a scaling study run for this post: 35 small character-level transformers trained at five compute budgets, fitted and used to predict a larger run, which reproduces the Kaplan–Chinchilla disagreement in miniature. Interactive loss landscape and training planner.">
+
+<title>Scaling Laws, Part 1: Power Laws and a Small-Model Experiment – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Scaling Laws, Part 1: Power Laws and a Small-Model Experiment – math-blog">
+<meta property="og:description" content="Neural scaling laws from first principles: power laws and what their exponents mean, theories of where they come from, Kaplan’s 2020 laws, Chinchilla’s compute-optimal allocation derived with a Lagrange multiplier, why the two disagreed, and a scaling study run for this post: 35 small character-level transformers trained at five compute budgets, fitted and used to predict a larger run, which reproduces the Kaplan–Chinchilla disagreement in miniature. Interactive loss landscape and training planner.">
+<meta property="og:image" content="https://paulmilne.github.io/ai/scaling-laws-part-1-power-laws/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="Scaling Laws, Part 1: Power Laws and a Small-Model Experiment – math-blog">
+<meta name="twitter:description" content="Neural scaling laws from first principles: power laws and what their exponents mean, theories of where they come from, Kaplan’s 2020 laws, Chinchilla’s compute-optimal allocation derived with a Lagrange multiplier, why the two disagreed, and a scaling study run for this post: 35 small character-level transformers trained at five compute budgets, fitted and used to predict a larger run, which reproduces the Kaplan–Chinchilla disagreement in miniature. Interactive loss landscape and training planner.">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/scaling-laws-part-1-power-laws/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Scaling Laws, Part 1: Power Laws and a Small-Model Experiment</h1>
+            <p class="subtitle lead">Why a language model’s loss falls as a power law in its size, its data and its compute, how Kaplan and Chinchilla turned that into rules for spending a training budget, and the same experiment run here on 35 small ones</p>
+                  <div>
+        <div class="description">
+          Neural scaling laws from first principles: power laws and what their exponents mean, theories of where they come from, Kaplan’s 2020 laws, Chinchilla’s compute-optimal allocation derived with a Lagrange multiplier, why the two disagreed, and a scaling study run for this post: 35 small character-level transformers trained at five compute budgets, fitted and used to predict a larger run, which reproduces the Kaplan–Chinchilla disagreement in miniature. Interactive loss landscape and training planner.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">ai</div>
+                <div class="quarto-category">scaling-laws</div>
+                <div class="quarto-category">language-models</div>
+                <div class="quarto-category">statistics</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 31, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#power-laws" id="toc-power-laws" class="nav-link active" data-scroll-target="#power-laws">Power laws</a></li>
+  <li><a href="#why-power-laws" id="toc-why-power-laws" class="nav-link" data-scroll-target="#why-power-laws">Why power laws?</a></li>
+  <li><a href="#kaplan-2020" id="toc-kaplan-2020" class="nav-link" data-scroll-target="#kaplan-2020">Kaplan 2020</a></li>
+  <li><a href="#chinchilla-2022" id="toc-chinchilla-2022" class="nav-link" data-scroll-target="#chinchilla-2022">Chinchilla 2022</a>
+  <ul class="collapse">
+  <li><a href="#spending-a-budget-the-derivation" id="toc-spending-a-budget-the-derivation" class="nav-link" data-scroll-target="#spending-a-budget-the-derivation">Spending a budget: the derivation</a></li>
+  <li><a href="#why-kaplan-and-chinchilla-disagreed" id="toc-why-kaplan-and-chinchilla-disagreed" class="nav-link" data-scroll-target="#why-kaplan-and-chinchilla-disagreed">Why Kaplan and Chinchilla disagreed</a></li>
+  </ul></li>
+  <li><a href="#the-landscape" id="toc-the-landscape" class="nav-link" data-scroll-target="#the-landscape">The landscape</a></li>
+  <li><a href="#planning-a-run" id="toc-planning-a-run" class="nav-link" data-scroll-target="#planning-a-run">Planning a run</a></li>
+  <li><a href="#the-experiment" id="toc-the-experiment" class="nav-link" data-scroll-target="#the-experiment">The experiment</a>
+  <ul class="collapse">
+  <li><a href="#iso-flop-curves" id="toc-iso-flop-curves" class="nav-link" data-scroll-target="#iso-flop-curves">Iso-FLOP curves</a></li>
+  <li><a href="#the-fitted-surface" id="toc-the-fitted-surface" class="nav-link" data-scroll-target="#the-fitted-surface">The fitted surface</a></li>
+  <li><a href="#predicting-the-biggest-budget" id="toc-predicting-the-biggest-budget" class="nav-link" data-scroll-target="#predicting-the-biggest-budget">Predicting the biggest budget</a></li>
+  <li><a href="#what-the-small-study-can-and-cant-show" id="toc-what-the-small-study-can-and-cant-show" class="nav-link" data-scroll-target="#what-the-small-study-can-and-cant-show">What the small study can and can’t show</a></li>
+  </ul></li>
+  <li><a href="#terminology-and-where-it-comes-from" id="toc-terminology-and-where-it-comes-from" class="nav-link" data-scroll-target="#terminology-and-where-it-comes-from">Terminology and where it comes from</a></li>
+  <li><a href="#method-and-sources" id="toc-method-and-sources" class="nav-link" data-scroll-target="#method-and-sources">Method and sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.sc-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.sc-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.sc-grid form { flex-wrap: wrap !important; }
+.sc-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.sc-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.sc-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.sc-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.sc-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.sc-kpis .s { font-size: .76rem; opacity: .7; }
+table.sc-t td.num, table.sc-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sc-scroll { overflow-x: auto; max-width: 100%; }
+.sc-scroll table { min-width: 560px; }
+.sc-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="39" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 38;"><span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>sci <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">1</span>) <span class="kw">=&gt;</span> { <span class="cf">if</span> (<span class="op">!</span><span class="pp">isFinite</span>(x) <span class="op">||</span> x <span class="op">===</span> <span class="dv">0</span>) <span class="cf">return</span> <span class="bu">String</span>(x)<span class="op">;</span> <span class="kw">const</span> e <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(x)))<span class="op">,</span> m <span class="op">=</span> x <span class="op">/</span> <span class="dv">10</span> <span class="op">**</span> e<span class="op">;</span> <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span><span class="fu">fmt</span>(m<span class="op">,</span> d)<span class="sc">}</span><span class="vs">×10</span><span class="sc">${</span><span class="bu">String</span>(e)<span class="op">.</span><span class="fu">split</span>(<span class="st">""</span>)<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> <span class="st">"⁰¹²³⁴⁵⁶⁷⁸⁹"</span>[c] <span class="op">??</span> (c <span class="op">===</span> <span class="st">"-"</span> <span class="op">?</span> <span class="st">"⁻"</span> <span class="op">:</span> c))<span class="op">.</span><span class="fu">join</span>(<span class="st">""</span>)<span class="sc">}</span><span class="vs">`</span><span class="op">;</span> }</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>pow10 <span class="op">=</span> d <span class="kw">=&gt;</span> { <span class="kw">const</span> e <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(d)<span class="op">;</span> <span class="cf">return</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(e <span class="op">-</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(e)) <span class="op">&lt;</span> <span class="fl">1e-6</span> <span class="op">?</span> <span class="fu">sci</span>(d<span class="op">,</span> <span class="dv">0</span>)<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">^</span><span class="ss">1×/</span><span class="op">,</span> <span class="st">""</span>) <span class="op">:</span> <span class="st">""</span><span class="op">;</span> }</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>human <span class="op">=</span> (x) <span class="kw">=&gt;</span> { <span class="kw">const</span> a <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(x)<span class="op">;</span> <span class="cf">return</span> a <span class="op">&gt;=</span> <span class="fl">1e12</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e12</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" trillion"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="fl">1e9</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e9</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" billion"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="fl">1e6</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e6</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">" million"</span> <span class="op">:</span> a <span class="op">&gt;=</span> <span class="fl">1e3</span> <span class="op">?</span> <span class="fu">fmt</span>(x <span class="op">/</span> <span class="fl">1e3</span><span class="op">,</span> <span class="dv">0</span>) <span class="op">+</span> <span class="st">" thousand"</span> <span class="op">:</span> <span class="fu">fmt</span>(x)<span class="op">;</span> }</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> <span class="fu">FileAttachment</span>(<span class="st">"data/scaling.json"</span>)<span class="op">.</span><span class="fu">json</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p>In January 2020 a group at OpenAI led by Jared Kaplan published a set of graphs that changed how language models are built. They trained transformers ranging over seven orders of magnitude in size and found that the test loss fell along a straight line on log–log axes: a power law in the number of parameters, in the amount of training data and in the compute spent, with no sign of levelling off. If the lines continued, the performance of a model a thousand times larger than any yet built could be predicted before it was trained, and the budget split optimally between size and data.</p>
+<p>They did continue. OpenAI’s GPT-4 technical report (2023) says its final loss was predicted, “with high accuracy”, by fitting a power law with an irreducible term to models trained with at most 10,000 times less compute. Scaling laws are now how laboratories decide what to build: how big, on how much data, for how long.</p>
+<p>This is the first of two posts. This one covers the laws themselves: what a power law is, why one might appear, Kaplan’s laws, the Chinchilla correction and the mathematics of spending a budget, and then the experiment run for this post, 35 small transformers trained here on a CPU, fitted and used to predict a larger run. <a href="../scaling-laws-part-2-beyond-chinchilla/">Part 2</a> covers what has happened since: overtraining, running out of data, test-time compute, the frontier in 2026 and the limits ahead.</p>
+<section id="power-laws" class="level2">
+<h2 class="anchored" data-anchor-id="power-laws">Power laws</h2>
+<p>A power law relates two quantities as <span class="math inline">\(y = a x^{-\alpha}\)</span>. Take logarithms and it becomes a straight line, <span class="math inline">\(\log y = \log a - \alpha \log x\)</span>, with slope <span class="math inline">\(-\alpha\)</span>. Its defining property is <strong>scale invariance</strong>: multiplying <span class="math inline">\(x\)</span> by any factor <span class="math inline">\(k\)</span> multiplies <span class="math inline">\(y\)</span> by <span class="math inline">\(k^{-\alpha}\)</span>, whatever <span class="math inline">\(x\)</span> was. There is no characteristic scale at which the behaviour changes, which is why a law fitted at small scale can be extrapolated to large, and why that extrapolation is the whole point.</p>
+<p>For language models the quantity is the <strong>loss</strong>: the average cross-entropy, in nats per token, of the model’s predictions on text it has not seen, as in the earlier posts on <a href="../embeddings-part-1-words-to-vectors/">embeddings</a> and <a href="../transformer-part-1-operation-by-operation/">transformers</a>. Loss is the right thing to scale because it is what training minimises and because it has a direct meaning: a model with loss <span class="math inline">\(L\)</span> nats per token can compress text to <span class="math inline">\(L/\ln 2\)</span> bits per token with arithmetic coding. Language has some irreducible entropy, uncertainty no model can remove (which word an author chooses next is genuinely unpredictable), so the realistic form has a floor:</p>
+<p><span class="math display">\[
+L(x) = E + \frac{A}{x^{\alpha}}.
+\]</span></p>
+<p><span class="math inline">\(E\)</span> is the entropy of the text itself; <span class="math inline">\(A/x^\alpha\)</span> is the <strong>reducible loss</strong>, the model’s excess over perfect prediction. The exponent says how fast that excess shrinks: doubling <span class="math inline">\(x\)</span> multiplies it by <span class="math inline">\(2^{-\alpha}\)</span>. With <span class="math inline">\(\alpha = 0.34\)</span>, Chinchilla’s exponent for parameters, doubling the model removes 21% of the reducible loss; with <span class="math inline">\(\alpha = 0.076\)</span>, Kaplan’s, only 5%. Small exponents mean that each fixed improvement costs a multiplicative increase in resources, which is the economic fact behind everything in Part 2.</p>
+</section>
+<section id="why-power-laws" class="level2">
+<h2 class="anchored" data-anchor-id="why-power-laws">Why power laws?</h2>
+<p>There is no single accepted derivation, but several theories give power laws with the right flavour.</p>
+<p><strong>Fitting a manifold.</strong> Utkarsh Sharma and Jared Kaplan (2020) argued that a network fits a function on a data manifold of intrinsic dimension <span class="math inline">\(d\)</span>. With <span class="math inline">\(N\)</span> parameters it can resolve the manifold into about <span class="math inline">\(N\)</span> pieces of linear size <span class="math inline">\(N^{-1/d}\)</span>; for a piecewise-linear approximation the error in each piece scales as the square of its size, and the loss as the error squared, giving <span class="math inline">\(L \propto N^{-4/d}\)</span>. Larger intrinsic dimension, smaller exponent. They found the exponents measured on different datasets roughly consistent with the dimension measured on the network’s own representations.</p>
+<p><strong>Variance and resolution.</strong> Yasaman Bahri and colleagues (2021) separated two regimes. When one resource is effectively unlimited (an infinite dataset, say), the loss is limited by how finely the network can resolve the data, and decreases as a power of the bottleneck resource. When it is limited by noise in a finite sample, a separate argument gives an exponent of 1. Real models sit in the resolution-limited regime, with exponents set by the spectrum of the data.</p>
+<p><strong>Many skills of decreasing frequency.</strong> Eric Michaud and colleagues (2023) proposed the <em>quantization model</em>: language is a mix of many discrete skills (“quanta”), each useful on a fraction of tokens, with those fractions following a power law (Zipf’s law), the way word frequencies do. A model learns the quanta in order of usefulness; a bigger model or more data lets it learn more of the tail. If the <span class="math inline">\(k\)</span>-th most useful quantum is used with frequency <span class="math inline">\(\propto k^{-(\alpha+1)}\)</span>, the loss left by the unlearned ones falls as <span class="math inline">\(n^{-\alpha}\)</span> in the number learned. This model also explains why individual abilities can appear abruptly while the average loss falls smoothly, a theme of Part 2.</p>
+<p>What all the theories share is the source of the power law: data with heavy-tailed, scale-free structure. Natural language has it at every level, from Zipf’s law for word frequencies upwards.</p>
+</section>
+<section id="kaplan-2020" class="level2">
+<h2 class="anchored" data-anchor-id="kaplan-2020">Kaplan 2020</h2>
+<p>Kaplan and colleagues trained decoder-only transformers from 768 to 1.5 billion non-embedding parameters on WebText2 and fitted, for <span class="math inline">\(N\)</span> non-embedding parameters, <span class="math inline">\(D\)</span> tokens and <span class="math inline">\(C\)</span> the compute of an efficiently allocated run,</p>
+<p><span class="math display">\[
+L(N) = \left(\frac{N_c}{N}\right)^{\alpha_N}, \qquad L(D) = \left(\frac{D_c}{D}\right)^{\alpha_D}, \qquad L(C_{\min}) = \left(\frac{C_c}{C_{\min}}\right)^{\alpha_C},
+\]</span></p>
+<p>with <span class="math inline">\(\alpha_N \approx 0.076\)</span>, <span class="math inline">\(\alpha_D \approx 0.095\)</span> and <span class="math inline">\(\alpha_C \approx 0.050\)</span> (for compute in petaflop-days, <span class="math inline">\(C_c \approx 3.1\times10^{8}\)</span>), each holding when the other resources are not a bottleneck. They combined size and data into one law, <span class="math inline">\(L(N, D) = \big[(N_c/N)^{\alpha_N/\alpha_D} + D_c/D\big]^{\alpha_D}\)</span>, which captures overfitting: a model too large for its data stops improving.</p>
+<p>Their headline conclusion was about allocation. Given <span class="math inline">\(C\)</span> more compute, the optimal model size should grow as <span class="math inline">\(N \propto C^{0.73}\)</span> and the data only as <span class="math inline">\(D \propto C^{0.27}\)</span>: spend most of a larger budget on a bigger model, and stop training well before convergence. GPT-3, trained in 2020 with 175 billion parameters on 300 billion tokens (under 2 tokens per parameter), followed that advice.</p>
+</section>
+<section id="chinchilla-2022" class="level2">
+<h2 class="anchored" data-anchor-id="chinchilla-2022">Chinchilla 2022</h2>
+<p>Jordan Hoffmann and colleagues at DeepMind asked the same question with a different method and got a different answer. They trained over 400 models from 70 million to 16 billion parameters on 5 to 500 billion tokens, and estimated the optimal size three ways: (1) for each model size, take the lowest loss reached at each compute level along its training curve; (2) fix a compute budget, train several sizes for exactly that budget each, and find the minimum of the resulting U-shaped <strong>iso-FLOP curve</strong>; (3) fit a parametric surface to all final losses:</p>
+<p><span class="math display">\[
+L(N, D) = E + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}}, \qquad E = 1.69,\;\; A = 406.4,\;\; B = 410.7,\;\; \alpha = 0.34,\;\; \beta = 0.28.
+\]</span></p>
+<p>The three approaches gave optimal-size exponents of 0.50, 0.49 and 0.46: parameters and data should grow at about the same rate. To test it they trained <strong>Chinchilla</strong>, 70 billion parameters on 1.4 trillion tokens, with the same compute as their 280-billion-parameter Gopher trained on 300 billion. Chinchilla beat Gopher on nearly every benchmark, and the field’s models had been, by this measure, several times too big for their data.</p>
+<section id="spending-a-budget-the-derivation" class="level3">
+<h3 class="anchored" data-anchor-id="spending-a-budget-the-derivation">Spending a budget: the derivation</h3>
+<p>Training compute is about <span class="math inline">\(C = 6ND\)</span> operations (<a href="../transformer-part-1-operation-by-operation/#counting-parameters-and-arithmetic">Part 1 of the transformer series</a> derived the 6). Minimise <span class="math inline">\(L(N, D)\)</span> subject to that constraint with a Lagrange multiplier <span class="math inline">\(\lambda\)</span>:</p>
+<p><span class="math display">\[
+\mathcal L = E + A N^{-\alpha} + B D^{-\beta} + \lambda(6ND - C).
+\]</span></p>
+<p>Setting the partial derivatives to zero,</p>
+<p><span class="math display">\[
+\frac{\partial\mathcal L}{\partial N} = -\alpha A N^{-\alpha-1} + 6\lambda D = 0, \qquad \frac{\partial\mathcal L}{\partial D} = -\beta B D^{-\beta-1} + 6\lambda N = 0.
+\]</span></p>
+<p>Multiply the first by <span class="math inline">\(N\)</span> and the second by <span class="math inline">\(D\)</span>; both remaining terms equal <span class="math inline">\(6\lambda ND\)</span>, so</p>
+<p><span class="math display">\[
+\alpha A N^{-\alpha} = \beta B D^{-\beta}:
+\]</span></p>
+<p><strong>at the optimum, the two reducible terms are in the fixed ratio <span class="math inline">\(\beta : \alpha\)</span></strong>. Substituting <span class="math inline">\(D = C/(6N)\)</span> and solving for <span class="math inline">\(N\)</span>,</p>
+<p><span class="math display">\[
+N^*(C) = G\left(\frac{C}{6}\right)^{a}, \qquad D^*(C) = G^{-1}\left(\frac{C}{6}\right)^{b}, \qquad a = \frac{\beta}{\alpha + \beta},\;\; b = \frac{\alpha}{\alpha + \beta},\;\; G = \left(\frac{\alpha A}{\beta B}\right)^{\frac{1}{\alpha+\beta}}.
+\]</span></p>
+<p>With Chinchilla’s fitted values, <span class="math inline">\(a = 0.28/0.62 = 0.45\)</span> and <span class="math inline">\(b = 0.55\)</span>. Because <span class="math inline">\(a \ne b\)</span>, the optimal ratio of tokens to parameters is not a constant: <span class="math inline">\(D^*/N^* = G^{-2}(C/6)^{b-a}\)</span> grows slowly with the budget. The well-known “20 tokens per parameter” is the ratio at Chinchilla’s own scale, not a law.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="126" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 125;"><span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>ratioTable <span class="op">=</span> {</span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> f <span class="op">=</span> S<span class="op">.</span><span class="at">fits</span><span class="op">.</span><span class="at">chinchilla</span><span class="op">,</span> rows <span class="op">=</span> [<span class="fl">1e21</span><span class="op">,</span> <span class="fl">1e22</span><span class="op">,</span> <span class="fl">5.8e23</span><span class="op">,</span> <span class="fl">1e24</span><span class="op">,</span> <span class="fl">1e25</span><span class="op">,</span> <span class="fl">1e26</span>]<span class="op">.</span><span class="fu">map</span>(C <span class="kw">=&gt;</span> {</span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> a <span class="op">=</span> f<span class="op">.</span><span class="at">beta</span> <span class="op">/</span> (f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">beta</span>)<span class="op">,</span> b <span class="op">=</span> f<span class="op">.</span><span class="at">alpha</span> <span class="op">/</span> (f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">beta</span>)<span class="op">,</span> G <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(f<span class="op">.</span><span class="at">alpha</span> <span class="op">*</span> f<span class="op">.</span><span class="at">A</span> <span class="op">/</span> (f<span class="op">.</span><span class="at">beta</span> <span class="op">*</span> f<span class="op">.</span><span class="at">B</span>)<span class="op">,</span> <span class="dv">1</span> <span class="op">/</span> (f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">beta</span>))<span class="op">;</span></span>
+<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> N <span class="op">=</span> G <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(C <span class="op">/</span> <span class="dv">6</span><span class="op">,</span> a)<span class="op">,</span> D <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(C <span class="op">/</span> <span class="dv">6</span><span class="op">,</span> b) <span class="op">/</span> G<span class="op">;</span></span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {C<span class="op">,</span> N<span class="op">,</span> D<span class="op">,</span> <span class="dt">L</span><span class="op">:</span> f<span class="op">.</span><span class="at">E</span> <span class="op">+</span> f<span class="op">.</span><span class="at">A</span> <span class="op">/</span> N <span class="op">**</span> f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">B</span> <span class="op">/</span> D <span class="op">**</span> f<span class="op">.</span><span class="at">beta</span>}<span class="op">;</span></span>
+<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-scroll"&gt;&lt;table class="table table-sm sc-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th class="num"&gt;Compute (FLOPs)&lt;/th&gt;&lt;th class="num"&gt;Optimal parameters&lt;/th&gt;&lt;th class="num"&gt;Optimal tokens&lt;/th&gt;&lt;th class="num"&gt;Tokens per parameter&lt;/th&gt;&lt;th class="num"&gt;Predicted loss&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">sci</span>(r<span class="op">.</span><span class="at">C</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">human</span>(r<span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">human</span>(r<span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">D</span> <span class="op">/</span> r<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">L</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Using the fitted surface (approach 3) at Chinchilla’s own budget of <span class="math inline">\(5.8\times10^{23}\)</span> FLOPs gives a smaller model trained on more tokens than Chinchilla itself; approaches 1 and 2 put the optimum at about 70 billion parameters, which is the model they built. The parametric fit is the one most often quoted, and also the one a 2024 replication by Tamay Besiroglu and colleagues at Epoch AI found problems with: refitting the paper’s own data, they obtained an estimate consistent with the other two approaches. Part 2 returns to this.</p>
+</section>
+<section id="why-kaplan-and-chinchilla-disagreed" class="level3">
+<h3 class="anchored" data-anchor-id="why-kaplan-and-chinchilla-disagreed">Why Kaplan and Chinchilla disagreed</h3>
+<p>Two 2024 papers explain the gap, from complementary directions. Tim Pearce and Jinyeop Song showed that most of it comes from what was counted: Kaplan used non-embedding parameters and worked at small scale, where the embedding matrices are a large share of the model. Simulating Chinchilla’s law under Kaplan’s conventions reproduces an exponent near Kaplan’s 0.73. Tomer Porian and colleagues reproduced Kaplan’s result directly and traced it to three details of the experiments: the compute of the final output layer was left out, the learning-rate warm-up was too long for the small models, and optimiser settings were not retuned with scale. Correct those and Kaplan’s own setup gives Chinchilla’s answer. Both papers recommend counting total parameters and total compute, and fitting with an irreducible-loss term, which Kaplan’s compute law lacked.</p>
+</section>
+</section>
+<section id="the-landscape" class="level2">
+<h2 class="anchored" data-anchor-id="the-landscape">The landscape</h2>
+<p>The explorer draws the loss surface <span class="math inline">\(L(N, D)\)</span> as contours, with lines of constant compute <span class="math inline">\(6ND = C\)</span> running diagonally and the compute-optimal frontier <span class="math inline">\(N^*(C)\)</span> through them. Choose a fit and a budget; the readout gives the optimum and what it costs to deviate from it.</p>
+<div class="sc-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="150" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 149;"><span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>viewof fitName <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">radio</span>(<span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">"Chinchilla, approach 3 (2022)"</span><span class="op">,</span> <span class="st">"chinchilla"</span>]<span class="op">,</span> [<span class="st">"Epoch AI refit (2024)"</span><span class="op">,</span> <span class="st">"epoch"</span>]])<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"chinchilla"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Fitted law"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="154" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 153;"><span id="cb4-154"><a href="#cb4-154" aria-hidden="true" tabindex="-1"></a>viewof logC <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">19</span><span class="op">,</span> <span class="dv">27</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">23.76</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.01</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Compute budget, log₁₀ FLOPs"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="158" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 157;"><span id="cb5-158"><a href="#cb5-158" aria-hidden="true" tabindex="-1"></a>viewof skew <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="op">-</span><span class="fl">1.5</span><span class="op">,</span> <span class="fl">1.5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.05</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Model size vs optimum, log₁₀ factor"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="166" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 165;"><span id="cb6-166"><a href="#cb6-166" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> S<span class="op">.</span><span class="at">fits</span>[fitName]</span>
+<span id="cb6-167"><a href="#cb6-167" aria-hidden="true" tabindex="-1"></a>Lf <span class="op">=</span> (N<span class="op">,</span> D) <span class="kw">=&gt;</span> fit<span class="op">.</span><span class="at">E</span> <span class="op">+</span> fit<span class="op">.</span><span class="at">A</span> <span class="op">/</span> N <span class="op">**</span> fit<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> fit<span class="op">.</span><span class="at">B</span> <span class="op">/</span> D <span class="op">**</span> fit<span class="op">.</span><span class="at">beta</span></span>
+<span id="cb6-168"><a href="#cb6-168" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> C <span class="kw">=&gt;</span> { <span class="kw">const</span> a <span class="op">=</span> fit<span class="op">.</span><span class="at">beta</span> <span class="op">/</span> (fit<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> fit<span class="op">.</span><span class="at">beta</span>)<span class="op">,</span> b <span class="op">=</span> fit<span class="op">.</span><span class="at">alpha</span> <span class="op">/</span> (fit<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> fit<span class="op">.</span><span class="at">beta</span>)<span class="op">,</span> G <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(fit<span class="op">.</span><span class="at">alpha</span> <span class="op">*</span> fit<span class="op">.</span><span class="at">A</span> <span class="op">/</span> (fit<span class="op">.</span><span class="at">beta</span> <span class="op">*</span> fit<span class="op">.</span><span class="at">B</span>)<span class="op">,</span> <span class="dv">1</span> <span class="op">/</span> (fit<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> fit<span class="op">.</span><span class="at">beta</span>))<span class="op">;</span></span>
+<span id="cb6-169"><a href="#cb6-169" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {<span class="dt">N</span><span class="op">:</span> G <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(C <span class="op">/</span> <span class="dv">6</span><span class="op">,</span> a)<span class="op">,</span> <span class="dt">D</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>(C <span class="op">/</span> <span class="dv">6</span><span class="op">,</span> b) <span class="op">/</span> G}<span class="op">;</span> }</span>
+<span id="cb6-170"><a href="#cb6-170" aria-hidden="true" tabindex="-1"></a>here <span class="op">=</span> { <span class="kw">const</span> C <span class="op">=</span> <span class="dv">10</span> <span class="op">**</span> logC<span class="op">,</span> o <span class="op">=</span> <span class="fu">opt</span>(C)<span class="op">,</span> N <span class="op">=</span> o<span class="op">.</span><span class="at">N</span> <span class="op">*</span> <span class="dv">10</span> <span class="op">**</span> skew<span class="op">,</span> D <span class="op">=</span> C <span class="op">/</span> (<span class="dv">6</span> <span class="op">*</span> N)<span class="op">;</span> <span class="cf">return</span> {C<span class="op">,</span> o<span class="op">,</span> N<span class="op">,</span> D<span class="op">,</span> <span class="dt">L</span><span class="op">:</span> <span class="fu">Lf</span>(N<span class="op">,</span> D)<span class="op">,</span> <span class="dt">Lo</span><span class="op">:</span> <span class="fu">Lf</span>(o<span class="op">.</span><span class="at">N</span><span class="op">,</span> o<span class="op">.</span><span class="at">D</span>)}<span class="op">;</span> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-6-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="173" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 172;"><span id="cb7-173"><a href="#cb7-173" aria-hidden="true" tabindex="-1"></a>landscape <span class="op">=</span> {</span>
+<span id="cb7-174"><a href="#cb7-174" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> nx <span class="op">=</span> <span class="dv">90</span><span class="op">,</span> ny <span class="op">=</span> <span class="dv">70</span><span class="op">,</span> lnN <span class="op">=</span> [<span class="dv">7</span><span class="op">,</span> <span class="dv">13</span>]<span class="op">,</span> lnD <span class="op">=</span> [<span class="dv">8</span><span class="op">,</span> <span class="dv">15</span>]<span class="op">,</span> grid <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb7-175"><a href="#cb7-175" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> ny<span class="op">;</span> j<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> nx<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb7-176"><a href="#cb7-176" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> x <span class="op">=</span> lnN[<span class="dv">0</span>] <span class="op">+</span> (lnN[<span class="dv">1</span>] <span class="op">-</span> lnN[<span class="dv">0</span>]) <span class="op">*</span> (i <span class="op">+</span> <span class="op">.</span><span class="dv">5</span>) <span class="op">/</span> nx<span class="op">,</span> y <span class="op">=</span> lnD[<span class="dv">0</span>] <span class="op">+</span> (lnD[<span class="dv">1</span>] <span class="op">-</span> lnD[<span class="dv">0</span>]) <span class="op">*</span> (j <span class="op">+</span> <span class="op">.</span><span class="dv">5</span>) <span class="op">/</span> ny<span class="op">;</span></span>
+<span id="cb7-177"><a href="#cb7-177" aria-hidden="true" tabindex="-1"></a>    grid<span class="op">.</span><span class="fu">push</span>(<span class="fu">Lf</span>(<span class="dv">10</span> <span class="op">**</span> x<span class="op">,</span> <span class="dv">10</span> <span class="op">**</span> y))<span class="op">;</span></span>
+<span id="cb7-178"><a href="#cb7-178" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-179"><a href="#cb7-179" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> iso <span class="op">=</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="dv">19</span><span class="op">,</span> <span class="dv">28</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> ({c<span class="op">,</span> <span class="dt">pts</span><span class="op">:</span> d3<span class="op">.</span><span class="fu">range</span>(lnN[<span class="dv">0</span>]<span class="op">,</span> lnN[<span class="dv">1</span>] <span class="op">+</span> <span class="op">.</span><span class="bn">01</span><span class="op">,</span> <span class="op">.</span><span class="dv">1</span>)<span class="op">.</span><span class="fu">map</span>(x <span class="kw">=&gt;</span> ({x<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> c <span class="op">-</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="dv">6</span>) <span class="op">-</span> x}))<span class="op">.</span><span class="fu">filter</span>(p <span class="kw">=&gt;</span> p<span class="op">.</span><span class="at">y</span> <span class="op">&gt;=</span> lnD[<span class="dv">0</span>] <span class="op">&amp;&amp;</span> p<span class="op">.</span><span class="at">y</span> <span class="op">&lt;=</span> lnD[<span class="dv">1</span>])}))<span class="op">;</span></span>
+<span id="cb7-180"><a href="#cb7-180" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> front <span class="op">=</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="dv">17</span><span class="op">,</span> <span class="dv">29</span><span class="op">,</span> <span class="op">.</span><span class="dv">1</span>)<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> { <span class="kw">const</span> o <span class="op">=</span> <span class="fu">opt</span>(<span class="dv">10</span> <span class="op">**</span> c)<span class="op">;</span> <span class="cf">return</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(o<span class="op">.</span><span class="at">N</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(o<span class="op">.</span><span class="at">D</span>)}<span class="op">;</span> })<span class="op">.</span><span class="fu">filter</span>(p <span class="kw">=&gt;</span> p<span class="op">.</span><span class="at">x</span> <span class="op">&gt;=</span> lnN[<span class="dv">0</span>] <span class="op">&amp;&amp;</span> p<span class="op">.</span><span class="at">x</span> <span class="op">&lt;=</span> lnN[<span class="dv">1</span>] <span class="op">&amp;&amp;</span> p<span class="op">.</span><span class="at">y</span> <span class="op">&gt;=</span> lnD[<span class="dv">0</span>] <span class="op">&amp;&amp;</span> p<span class="op">.</span><span class="at">y</span> <span class="op">&lt;=</span> lnD[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb7-181"><a href="#cb7-181" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> W <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">680</span>)<span class="op">;</span></span>
+<span id="cb7-182"><a href="#cb7-182" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> W<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> W <span class="op">*</span> <span class="fl">0.72</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">marginBottom</span><span class="op">:</span> <span class="dv">40</span><span class="op">,</span></span>
+<span id="cb7-183"><a href="#cb7-183" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">domain</span><span class="op">:</span> lnN<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"log₁₀ parameters N"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">domain</span><span class="op">:</span> lnD<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"log₁₀ training tokens D"</span>}<span class="op">,</span></span>
+<span id="cb7-184"><a href="#cb7-184" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">scheme</span><span class="op">:</span> <span class="st">"YlGnBu"</span><span class="op">,</span> <span class="dt">reverse</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Loss (nats per token)"</span>}<span class="op">,</span></span>
+<span id="cb7-185"><a href="#cb7-185" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb7-186"><a href="#cb7-186" aria-hidden="true" tabindex="-1"></a>      Plot<span class="op">.</span><span class="fu">contour</span>(grid<span class="op">,</span> {<span class="dt">width</span><span class="op">:</span> nx<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> ny<span class="op">,</span> <span class="dt">x1</span><span class="op">:</span> lnN[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">x2</span><span class="op">:</span> lnN[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">y1</span><span class="op">:</span> lnD[<span class="dv">0</span>]<span class="op">,</span> <span class="dt">y2</span><span class="op">:</span> lnD[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> Plot<span class="op">.</span><span class="at">identity</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"white"</span><span class="op">,</span> <span class="dt">strokeOpacity</span><span class="op">:</span> <span class="op">.</span><span class="dv">4</span><span class="op">,</span> <span class="dt">thresholds</span><span class="op">:</span> <span class="dv">18</span>})<span class="op">,</span></span>
+<span id="cb7-187"><a href="#cb7-187" aria-hidden="true" tabindex="-1"></a>      <span class="op">...</span>iso<span class="op">.</span><span class="fu">map</span>(s <span class="kw">=&gt;</span> Plot<span class="op">.</span><span class="fu">line</span>(s<span class="op">.</span><span class="at">pts</span><span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#555"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"3 3"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="op">.</span><span class="dv">8</span>}))<span class="op">,</span></span>
+<span id="cb7-188"><a href="#cb7-188" aria-hidden="true" tabindex="-1"></a>      <span class="op">...</span>iso<span class="op">.</span><span class="fu">map</span>(s <span class="kw">=&gt;</span> Plot<span class="op">.</span><span class="fu">text</span>(s<span class="op">.</span><span class="at">pts</span><span class="op">.</span><span class="fu">slice</span>(<span class="op">-</span><span class="dv">1</span>)<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="vs">`10^</span><span class="sc">${</span>s<span class="op">.</span><span class="at">c</span><span class="sc">}</span><span class="vs">`</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> <span class="op">-</span><span class="dv">4</span><span class="op">,</span> <span class="dt">dy</span><span class="op">:</span> <span class="op">-</span><span class="dv">6</span><span class="op">,</span> <span class="dt">fontSize</span><span class="op">:</span> <span class="dv">9</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#444"</span><span class="op">,</span> <span class="dt">textAnchor</span><span class="op">:</span> <span class="st">"end"</span>}))<span class="op">,</span></span>
+<span id="cb7-189"><a href="#cb7-189" aria-hidden="true" tabindex="-1"></a>      Plot<span class="op">.</span><span class="fu">line</span>(front<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">2.5</span>})<span class="op">,</span></span>
+<span id="cb7-190"><a href="#cb7-190" aria-hidden="true" tabindex="-1"></a>      Plot<span class="op">.</span><span class="fu">dot</span>([here]<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(d<span class="op">.</span><span class="at">N</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(d<span class="op">.</span><span class="at">D</span>)<span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">6</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"#e76f51"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"white"</span>})<span class="op">,</span></span>
+<span id="cb7-191"><a href="#cb7-191" aria-hidden="true" tabindex="-1"></a>      Plot<span class="op">.</span><span class="fu">dot</span>([{<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">70e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">1.4e12</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"Chinchilla"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">280e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">300e9</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"Gopher"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">175e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">300e9</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"GPT-3"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">8e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">15e12</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"Llama 3 8B"</span>}]<span class="op">,</span></span>
+<span id="cb7-192"><a href="#cb7-192" aria-hidden="true" tabindex="-1"></a>        {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="fl">3.5</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"black"</span>})<span class="op">,</span></span>
+<span id="cb7-193"><a href="#cb7-193" aria-hidden="true" tabindex="-1"></a>      Plot<span class="op">.</span><span class="fu">text</span>([{<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">70e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">1.4e12</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"Chinchilla"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">280e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">300e9</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"Gopher"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">175e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">300e9</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"GPT-3"</span>}<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">8e9</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(<span class="fl">15e12</span>)<span class="op">,</span> <span class="dt">l</span><span class="op">:</span> <span class="st">"Llama 3 8B"</span>}]<span class="op">,</span></span>
+<span id="cb7-194"><a href="#cb7-194" aria-hidden="true" tabindex="-1"></a>        {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">text</span><span class="op">:</span> <span class="st">"l"</span><span class="op">,</span> <span class="dt">dx</span><span class="op">:</span> <span class="dv">6</span><span class="op">,</span> <span class="dt">textAnchor</span><span class="op">:</span> <span class="st">"start"</span><span class="op">,</span> <span class="dt">fontSize</span><span class="op">:</span> <span class="dv">10</span>})</span>
+<span id="cb7-195"><a href="#cb7-195" aria-hidden="true" tabindex="-1"></a>    ]})<span class="op">;</span></span>
+<span id="cb7-196"><a href="#cb7-196" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb8" data-startfrom="201" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 200;"><span id="cb8-201"><a href="#cb8-201" aria-hidden="true" tabindex="-1"></a>landRead <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-panel"&gt;&lt;h4&gt;At </span><span class="sc">${</span><span class="fu">sci</span>(here<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> FLOPs&lt;/h4&gt;&lt;div class="sc-kpis"&gt;</span></span>
+<span id="cb8-202"><a href="#cb8-202" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Optimal size&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">human</span>(here<span class="op">.</span><span class="at">o</span><span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;trained on </span><span class="sc">${</span><span class="fu">human</span>(here<span class="op">.</span><span class="at">o</span><span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs"> tokens, </span><span class="sc">${</span><span class="fu">fmt</span>(here<span class="op">.</span><span class="at">o</span><span class="op">.</span><span class="at">D</span> <span class="op">/</span> here<span class="op">.</span><span class="at">o</span><span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> per parameter&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb8-203"><a href="#cb8-203" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Your choice&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">human</span>(here<span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;</span><span class="sc">${</span><span class="fu">human</span>(here<span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs"> tokens, </span><span class="sc">${</span><span class="fu">fmt</span>(here<span class="op">.</span><span class="at">D</span> <span class="op">/</span> here<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> per parameter&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb8-204"><a href="#cb8-204" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Loss&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(here<span class="op">.</span><span class="at">L</span><span class="op">,</span> <span class="dv">4</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;optimum </span><span class="sc">${</span><span class="fu">fmt</span>(here<span class="op">.</span><span class="at">Lo</span><span class="op">,</span> <span class="dv">4</span>)<span class="sc">}</span><span class="vs">; floor E = </span><span class="sc">${</span><span class="fu">fmt</span>(fit<span class="op">.</span><span class="at">E</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb8-205"><a href="#cb8-205" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div&gt;&lt;div class="k"&gt;Compute wasted&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> wasteRatio)<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">%&lt;/div&gt;&lt;div class="s"&gt;an optimal model reaches your loss with </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> wasteRatio<span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">% of the compute&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb8-206"><a href="#cb8-206" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/div&gt;&lt;/div&gt;`</span></span>
+<span id="cb8-207"><a href="#cb8-207" aria-hidden="true" tabindex="-1"></a>wasteRatio <span class="op">=</span> {</span>
+<span id="cb8-208"><a href="#cb8-208" aria-hidden="true" tabindex="-1"></a>  <span class="co">// compute an optimally allocated model needs to reach this loss</span></span>
+<span id="cb8-209"><a href="#cb8-209" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(here<span class="op">.</span><span class="at">L</span> <span class="op">-</span> here<span class="op">.</span><span class="at">Lo</span>) <span class="op">&lt;</span> <span class="fl">1e-9</span>) <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-210"><a href="#cb8-210" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> lo <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(here<span class="op">.</span><span class="at">C</span>) <span class="op">-</span> <span class="dv">4</span><span class="op">,</span> hi <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(here<span class="op">.</span><span class="at">C</span>)<span class="op">;</span></span>
+<span id="cb8-211"><a href="#cb8-211" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;</span> <span class="dv">60</span><span class="op">;</span> k<span class="op">++</span>) { <span class="kw">const</span> m <span class="op">=</span> (lo <span class="op">+</span> hi) <span class="op">/</span> <span class="dv">2</span><span class="op">,</span> o <span class="op">=</span> <span class="fu">opt</span>(<span class="dv">10</span> <span class="op">**</span> m)<span class="op">;</span> <span class="cf">if</span> (<span class="fu">Lf</span>(o<span class="op">.</span><span class="at">N</span><span class="op">,</span> o<span class="op">.</span><span class="at">D</span>) <span class="op">&gt;</span> here<span class="op">.</span><span class="at">L</span>) lo <span class="op">=</span> m<span class="op">;</span> <span class="cf">else</span> hi <span class="op">=</span> m<span class="op">;</span> }</span>
+<span id="cb8-212"><a href="#cb8-212" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="dv">10</span> <span class="op">**</span> ((lo <span class="op">+</span> hi) <span class="op">/</span> <span class="dv">2</span>) <span class="op">/</span> here<span class="op">.</span><span class="at">C</span><span class="op">;</span></span>
+<span id="cb8-213"><a href="#cb8-213" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-8-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-8-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p>The penalty for missing the optimum is gentle near it and steep far from it: a model twice or half the optimal size wastes only a few per cent of the compute, but GPT-3’s ratio of under two tokens per parameter is far up the slope. The dots mark some real models; their losses are not comparable with this surface, which was fitted to one dataset and tokeniser, but their positions show the history. Llama 3 8B sits far to the right of the frontier, trained on fifteen trillion tokens, deliberately: Part 2 explains why.</p>
+</section>
+<section id="planning-a-run" class="level2">
+<h2 class="anchored" data-anchor-id="planning-a-run">Planning a run</h2>
+<p>The same law turns hardware into a plan. A training cluster delivers its peak throughput times a utilisation factor (<em>model FLOPs utilisation</em>, typically 35–50% for large runs) for some number of days:</p>
+<div class="sc-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="224" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 223;"><span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a>viewof hw <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a>  <span class="dt">gpus</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">8</span><span class="op">,</span> <span class="dv">200000</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">16384</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">8</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"GPUs"</span>})<span class="op">,</span></span>
+<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a>  <span class="dt">peak</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">select</span>(<span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">"A100, 312 TFLOP/s (BF16)"</span><span class="op">,</span> <span class="fl">312e12</span>]<span class="op">,</span> [<span class="st">"H100, 989 TFLOP/s (BF16)"</span><span class="op">,</span> <span class="fl">989e12</span>]<span class="op">,</span> [<span class="st">"B200, 2,250 TFLOP/s (BF16)"</span><span class="op">,</span> <span class="fl">2250e12</span>]])<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">989e12</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Accelerator"</span>})</span>
+<span id="cb9-227"><a href="#cb9-227" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="231" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 230;"><span id="cb10-231"><a href="#cb10-231" aria-hidden="true" tabindex="-1"></a>viewof hw2 <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb10-232"><a href="#cb10-232" aria-hidden="true" tabindex="-1"></a>  <span class="dt">mfu</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="fl">0.1</span><span class="op">,</span> <span class="fl">0.7</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="fl">0.4</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.01</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Utilisation (MFU)"</span>})<span class="op">,</span></span>
+<span id="cb10-233"><a href="#cb10-233" aria-hidden="true" tabindex="-1"></a>  <span class="dt">days</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">180</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">54</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Days"</span>})</span>
+<span id="cb10-234"><a href="#cb10-234" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb11" data-startfrom="240" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 239;"><span id="cb11-240"><a href="#cb11-240" aria-hidden="true" tabindex="-1"></a>planView <span class="op">=</span> {</span>
+<span id="cb11-241"><a href="#cb11-241" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> C <span class="op">=</span> hw<span class="op">.</span><span class="at">gpus</span> <span class="op">*</span> hw<span class="op">.</span><span class="at">peak</span> <span class="op">*</span> hw2<span class="op">.</span><span class="at">mfu</span> <span class="op">*</span> hw2<span class="op">.</span><span class="at">days</span> <span class="op">*</span> <span class="dv">86400</span><span class="op">,</span> o <span class="op">=</span> <span class="fu">opt</span>(C)<span class="op">;</span></span>
+<span id="cb11-242"><a href="#cb11-242" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(hw<span class="op">.</span><span class="at">gpus</span>)<span class="sc">}</span><span class="vs"> GPUs for </span><span class="sc">${</span>hw2<span class="op">.</span><span class="at">days</span><span class="sc">}</span><span class="vs"> days at </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> hw2<span class="op">.</span><span class="at">mfu</span>)<span class="sc">}</span><span class="vs">% utilisation&lt;/h4&gt;&lt;div class="sc-kpis"&gt;</span></span>
+<span id="cb11-243"><a href="#cb11-243" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Compute&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">sci</span>(C<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> FLOPs&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb11-244"><a href="#cb11-244" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Compute-optimal size&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">human</span>(o<span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;</span><span class="sc">${</span>fitName <span class="op">===</span> <span class="st">"epoch"</span> <span class="op">?</span> <span class="st">"Epoch refit"</span> <span class="op">:</span> <span class="st">"Chinchilla fit"</span><span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb11-245"><a href="#cb11-245" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Tokens&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">human</span>(o<span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(o<span class="op">.</span><span class="at">D</span> <span class="op">/</span> o<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> per parameter&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb11-246"><a href="#cb11-246" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Predicted loss&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(<span class="fu">Lf</span>(o<span class="op">.</span><span class="at">N</span><span class="op">,</span> o<span class="op">.</span><span class="at">D</span>)<span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;on Chinchilla's data; floor </span><span class="sc">${</span><span class="fu">fmt</span>(fit<span class="op">.</span><span class="at">E</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb11-247"><a href="#cb11-247" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb11-248"><a href="#cb11-248" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-11" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The defaults approximate Meta’s account of Llama 3 405B: 16,384 H100s at about 40% utilisation, <span class="math inline">\(3.8\times10^{25}\)</span> FLOPs in total. Meta fitted its own scaling law on its own data, which put the optimum at that budget at 402 billion parameters on 16.55 trillion tokens; it trained 405 billion on 15.6 trillion. Notice how much the answer depends on the fit: the published constants above, from a different dataset, give a different optimum. Scaling laws transfer as shapes, not as numbers, and every laboratory refits them on its own data and tokeniser. The smaller Llama 3 models went far past any of these frontiers, deliberately.</p>
+</section>
+<section id="the-experiment" class="level2">
+<h2 class="anchored" data-anchor-id="the-experiment">The experiment</h2>
+<p>Everything above can be checked on a small scale. I trained a family of character-level transformers, built like GPT-2 (Pre-LN, GELU, learned positions, a context of 128 characters), on text8, the first 100 million characters of an English Wikipedia dump used in the <a href="../embeddings-part-1-words-to-vectors/">embeddings post</a>: 95 million characters for training, 5 million held out. Nine shapes from width 16 with 2 layers (6,600 non-embedding parameters) to width 192 with 6 layers (2.7 million), each trained at several of five compute budgets from <span class="math inline">\(10^{12}\)</span> to <span class="math inline">\(10^{14}\)</span> FLOPs, with the learning-rate schedule matched to the length of each run, as Chinchilla prescribed. The largest budget is a few trillionths of Llama 3 405B’s. The whole study, 35 runs, took <span><span id="ojs-element-id-1"></span></span> CPU-hours.</p>
+<p>Every run used the same batch of 32 sequences, 4,096 characters per optimiser step. That turned out to matter. A large model at a small budget gets very few steps, as few as 50, and its loss is then limited by the number of updates rather than by its size or its data: it has barely left the starting point. The first version of this study included such runs and the fits were nonsense. Runs with fewer than <span><span id="ojs-element-id-3"></span></span> steps are therefore excluded from every fit below (they appear as hollow circles on the iso-FLOP chart), leaving <span><span id="ojs-element-id-2"></span>.</span> This is not a detail: it is one of the two mechanisms Porian and colleagues found behind Kaplan’s numbers.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb12" data-startfrom="260" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 259;"><span id="cb12-260"><a href="#cb12-260" aria-hidden="true" tabindex="-1"></a>viewof curveX <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">radio</span>(<span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">"Training compute"</span><span class="op">,</span> <span class="st">"flops"</span>]<span class="op">,</span> [<span class="st">"Characters seen"</span><span class="op">,</span> <span class="st">"tokens"</span>]])<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"flops"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Horizontal axis"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-12" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb13" data-startfrom="264" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 263;"><span id="cb13-264"><a href="#cb13-264" aria-hidden="true" tabindex="-1"></a>curvePlot <span class="op">=</span> {</span>
+<span id="cb13-265"><a href="#cb13-265" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> pts <span class="op">=</span> S<span class="op">.</span><span class="at">runs</span><span class="op">.</span><span class="fu">filter</span>(r <span class="kw">=&gt;</span> r<span class="op">.</span><span class="at">used</span>)<span class="op">.</span><span class="fu">flatMap</span>(r <span class="kw">=&gt;</span> r<span class="op">.</span><span class="at">log</span><span class="op">.</span><span class="fu">map</span>(p <span class="kw">=&gt;</span> ({<span class="dt">x</span><span class="op">:</span> curveX <span class="op">===</span> <span class="st">"flops"</span> <span class="op">?</span> p<span class="op">.</span><span class="at">tokens</span> <span class="op">*</span> r<span class="op">.</span><span class="at">per_token</span> <span class="op">:</span> p<span class="op">.</span><span class="at">tokens</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> p<span class="op">.</span><span class="at">val</span><span class="op">,</span> <span class="dt">run</span><span class="op">:</span> <span class="vs">`</span><span class="sc">${</span>r<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs"> @ </span><span class="sc">${</span><span class="fu">sci</span>(r<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">`</span><span class="op">,</span> <span class="dt">N</span><span class="op">:</span> r<span class="op">.</span><span class="at">N</span>})))<span class="op">;</span></span>
+<span id="cb13-266"><a href="#cb13-266" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">700</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">340</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb13-267"><a href="#cb13-267" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> curveX <span class="op">===</span> <span class="st">"flops"</span> <span class="op">?</span> <span class="st">"Training compute (FLOPs)"</span> <span class="op">:</span> <span class="st">"Characters seen"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> curveX <span class="op">===</span> <span class="st">"flops"</span> <span class="op">?</span> pow10 <span class="op">:</span> <span class="st">"~s"</span>}<span class="op">,</span></span>
+<span id="cb13-268"><a href="#cb13-268" aria-hidden="true" tabindex="-1"></a>    <span class="dt">y</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Held-out loss (nats per character)"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> [<span class="fl">1.05</span><span class="op">,</span> <span class="fl">2.9</span>]}<span class="op">,</span></span>
+<span id="cb13-269"><a href="#cb13-269" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">scheme</span><span class="op">:</span> <span class="st">"Viridis"</span><span class="op">,</span> <span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Non-embedding parameters"</span>}<span class="op">,</span></span>
+<span id="cb13-270"><a href="#cb13-270" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"x"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"y"</span><span class="op">,</span> <span class="dt">z</span><span class="op">:</span> <span class="st">"run"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="fl">1.4</span><span class="op">,</span> <span class="dt">strokeOpacity</span><span class="op">:</span> <span class="op">.</span><span class="dv">85</span>})]})<span class="op">;</span></span>
+<span id="cb13-271"><a href="#cb13-271" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-13" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb14" data-startfrom="275" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 274;"><span id="cb14-275"><a href="#cb14-275" aria-hidden="true" tabindex="-1"></a><span class="fu">md</span><span class="vs">`On the compute axis, the curves form an envelope: at every level of compute, some size of model is lowest, and which one moves right as the compute grows. The best final loss at the largest budget was </span><span class="sc">${</span><span class="fu">fmt</span>(S<span class="op">.</span><span class="at">best_final</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs"> nats per character (</span><span class="sc">${</span><span class="fu">fmt</span>(S<span class="op">.</span><span class="at">best_final</span> <span class="op">/</span> <span class="bu">Math</span><span class="op">.</span><span class="cn">LN2</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> bits), against </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">log</span>(<span class="dv">27</span>)<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> nats for a uniform guess over the 27 characters.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-14" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<section id="iso-flop-curves" class="level3">
+<h3 class="anchored" data-anchor-id="iso-flop-curves">Iso-FLOP curves</h3>
+<p>Fix the compute, vary the size: Chinchilla’s approach 2. Each budget gives a U-shaped curve, too small a model under-fits and too large a one sees too little data, and a parabola in <span class="math inline">\(\log N\)</span> through the points locates the minimum.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb15" data-startfrom="283" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 282;"><span id="cb15-283"><a href="#cb15-283" aria-hidden="true" tabindex="-1"></a>isoPlot <span class="op">=</span> {</span>
+<span id="cb15-284"><a href="#cb15-284" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> pts <span class="op">=</span> S<span class="op">.</span><span class="at">runs</span><span class="op">.</span><span class="fu">filter</span>(r <span class="kw">=&gt;</span> r<span class="op">.</span><span class="at">used</span>)<span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> ({<span class="dt">N</span><span class="op">:</span> r<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dt">L</span><span class="op">:</span> r<span class="op">.</span><span class="at">final_val</span><span class="op">,</span> <span class="dt">C</span><span class="op">:</span> <span class="fu">sci</span>(r<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>)}))<span class="op">,</span> out <span class="op">=</span> S<span class="op">.</span><span class="at">runs</span><span class="op">.</span><span class="fu">filter</span>(r <span class="kw">=&gt;</span> <span class="op">!</span>r<span class="op">.</span><span class="at">used</span>)<span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> ({<span class="dt">N</span><span class="op">:</span> r<span class="op">.</span><span class="at">N</span><span class="op">,</span> <span class="dt">L</span><span class="op">:</span> r<span class="op">.</span><span class="at">final_val</span><span class="op">,</span> <span class="dt">C</span><span class="op">:</span> <span class="fu">sci</span>(r<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>)}))<span class="op">;</span></span>
+<span id="cb15-285"><a href="#cb15-285" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> curves <span class="op">=</span> S<span class="op">.</span><span class="at">isoflop</span><span class="op">.</span><span class="fu">flatMap</span>(c <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">range</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(c<span class="op">.</span><span class="at">Nmin</span>) <span class="op">-</span> <span class="op">.</span><span class="dv">15</span><span class="op">,</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">log10</span>(c<span class="op">.</span><span class="at">Nmax</span>) <span class="op">+</span> <span class="op">.</span><span class="dv">15</span><span class="op">,</span> <span class="op">.</span><span class="bn">02</span>)<span class="op">.</span><span class="fu">map</span>(x <span class="kw">=&gt;</span> ({<span class="dt">N</span><span class="op">:</span> <span class="dv">10</span> <span class="op">**</span> x<span class="op">,</span> <span class="dt">L</span><span class="op">:</span> c<span class="op">.</span><span class="at">p</span>[<span class="dv">0</span>] <span class="op">*</span> x <span class="op">*</span> x <span class="op">+</span> c<span class="op">.</span><span class="at">p</span>[<span class="dv">1</span>] <span class="op">*</span> x <span class="op">+</span> c<span class="op">.</span><span class="at">p</span>[<span class="dv">2</span>]<span class="op">,</span> <span class="dt">C</span><span class="op">:</span> <span class="fu">sci</span>(c<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>)})))<span class="op">;</span></span>
+<span id="cb15-286"><a href="#cb15-286" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mins <span class="op">=</span> S<span class="op">.</span><span class="at">isoflop</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> ({<span class="dt">N</span><span class="op">:</span> c<span class="op">.</span><span class="at">Nopt</span><span class="op">,</span> <span class="dt">L</span><span class="op">:</span> c<span class="op">.</span><span class="at">Lmin</span><span class="op">,</span> <span class="dt">C</span><span class="op">:</span> <span class="fu">sci</span>(c<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>)}))<span class="op">;</span></span>
+<span id="cb15-287"><a href="#cb15-287" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">700</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">320</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb15-288"><a href="#cb15-288" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">type</span><span class="op">:</span> <span class="st">"log"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Non-embedding parameters N"</span><span class="op">,</span> <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"~s"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"Final held-out loss (nats per character)"</span>}<span class="op">,</span></span>
+<span id="cb15-289"><a href="#cb15-289" aria-hidden="true" tabindex="-1"></a>    <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Compute"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> S<span class="op">.</span><span class="at">isoflop</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> <span class="fu">sci</span>(c<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>))}<span class="op">,</span></span>
+<span id="cb15-290"><a href="#cb15-290" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>(curves<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"L"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"C"</span><span class="op">,</span> <span class="dt">strokeOpacity</span><span class="op">:</span> <span class="op">.</span><span class="dv">7</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">dot</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"L"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"C"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">4</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">dot</span>(out<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"L"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"C"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span> <span class="dt">strokeOpacity</span><span class="op">:</span> <span class="op">.</span><span class="dv">6</span>})<span class="op">,</span></span>
+<span id="cb15-291"><a href="#cb15-291" aria-hidden="true" tabindex="-1"></a>            Plot<span class="op">.</span><span class="fu">dot</span>(mins<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"N"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"L"</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"C"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">8</span><span class="op">,</span> <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">symbol</span><span class="op">:</span> <span class="st">"times"</span>})]})<span class="op">;</span></span>
+<span id="cb15-292"><a href="#cb15-292" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-15" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb16" data-startfrom="296" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 295;"><span id="cb16-296"><a href="#cb16-296" aria-hidden="true" tabindex="-1"></a>isoText <span class="op">=</span> <span class="fu">md</span><span class="vs">`The minima (crosses) move to larger models as compute grows, but fast: fitting &lt;i&gt;N&lt;/i&gt;* ∝ &lt;i&gt;C&lt;/i&gt;&lt;sup&gt;&lt;i&gt;a&lt;/i&gt;&lt;/sup&gt; through them gives &lt;i&gt;a&lt;/i&gt; = </span><span class="sc">${</span><span class="fu">fmt</span>(S<span class="op">.</span><span class="at">frontier</span><span class="op">.</span><span class="at">a_iso</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">, not Chinchilla's 0.5 but closer to, even beyond, Kaplan's 0.73. The optimal number of characters per parameter falls from about </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(S<span class="op">.</span><span class="at">isoflop</span>[<span class="dv">0</span>]<span class="op">.</span><span class="at">ratio</span> <span class="op">/</span> <span class="dv">100</span>) <span class="op">*</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> at the smallest budget to about </span><span class="sc">${</span><span class="fu">fmt</span>(S<span class="op">.</span><span class="at">isoflop</span>[S<span class="op">.</span><span class="at">isoflop</span><span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]<span class="op">.</span><span class="at">ratio</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs"> at the largest, where Chinchilla would hold it constant.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-16" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>So a small study, done carefully by the standards of a blog post, reproduces Kaplan’s answer rather than Chinchilla’s. That is the disagreement of the previous section in miniature, and the causes are the ones Pearce and Song and Porian and colleagues identified. The models are tiny, where the attention cost and the non-embedding parameter count distort the bookkeeping. The batch size and learning rate were fixed across sizes rather than tuned for each, so the larger models at each budget, with the fewest steps, are handicapped even above the exclusion threshold, which pushes the optimum towards smaller models at small budgets and makes it run away as compute grows. And the smallest shapes have only two layers, which caps what they can learn from context however long they train: the two-layer model of width 32 improved by only 0.04 nats between <span class="math inline">\(10^{13}\)</span> and <span class="math inline">\(3\times10^{13}\)</span> FLOPs while the three-layer model beside it improved by 0.12. Kaplan’s own paper noted that models with only one or two layers fall off its trend. Chinchilla’s experiments avoided all three: larger models, tuned schedules, a wide spread of depths.</p>
+</section>
+<section id="the-fitted-surface" class="level3">
+<h3 class="anchored" data-anchor-id="the-fitted-surface">The fitted surface</h3>
+<p>Approach 3: fit <span class="math inline">\(L(N,D) = E + A/N^\alpha + B/D^\beta\)</span> to all <span><span id="ojs-element-id-4"></span></span> final losses that pass the step threshold, all at once, by minimising the Huber loss of the log-residuals, as Chinchilla did.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb17" data-startfrom="306" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 305;"><span id="cb17-306"><a href="#cb17-306" aria-hidden="true" tabindex="-1"></a>ourFit <span class="op">=</span> { <span class="kw">const</span> f <span class="op">=</span> S<span class="op">.</span><span class="at">fits</span><span class="op">.</span><span class="at">ours</span><span class="op">;</span> <span class="cf">return</span> <span class="fu">md</span><span class="vs">`The fit gives &lt;i&gt;E&lt;/i&gt; = </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">E</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">, &lt;i&gt;A&lt;/i&gt; = </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">A</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">, &lt;i&gt;B&lt;/i&gt; = </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">B</span><span class="op">,</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">, α = </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">alpha</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs"> and β = </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">beta</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">, with a root-mean-square error of </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">rmse</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs"> nats over the runs. The exponents give an allocation &lt;i&gt;a&lt;/i&gt; = β/(α + β) = </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">beta</span> <span class="op">/</span> (f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">beta</span>)<span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(f<span class="op">.</span><span class="at">beta</span> <span class="op">/</span> (f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">beta</span>) <span class="op">-</span> S<span class="op">.</span><span class="at">frontier</span><span class="op">.</span><span class="at">a_iso</span>) <span class="op">&lt;</span> <span class="fl">0.1</span> <span class="op">?</span> <span class="st">"consistent with"</span> <span class="op">:</span> <span class="st">"different from"</span><span class="sc">}</span><span class="vs"> the iso-FLOP estimate of </span><span class="sc">${</span><span class="fu">fmt</span>(S<span class="op">.</span><span class="at">frontier</span><span class="op">.</span><span class="at">a_iso</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs">. The floor is the weak point. An &lt;i&gt;E&lt;/i&gt; of </span><span class="sc">${</span><span class="fu">fmt</span>(f<span class="op">.</span><span class="at">E</span><span class="op">,</span> <span class="dv">2</span>)<span class="sc">}</span><span class="vs"> nats would mean lower-case Wikipedia is almost perfectly predictable at the character level, which it is not: the best published models on text8 reach about 1.1 bits (0.75 nats) per character. Two decades of compute and a handful of points per budget cannot separate a floor from a slow power-law decline, so the optimiser trades one for the other, a fragility of the same kind that Besiroglu and colleagues found when they refitted Chinchilla's own approach 3.`</span><span class="op">;</span> }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-17" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb18" data-startfrom="310" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 309;"><span id="cb18-310"><a href="#cb18-310" aria-hidden="true" tabindex="-1"></a>predPlot <span class="op">=</span> {</span>
+<span id="cb18-311"><a href="#cb18-311" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> f <span class="op">=</span> S<span class="op">.</span><span class="at">fits</span><span class="op">.</span><span class="at">ours</span><span class="op">,</span> pts <span class="op">=</span> S<span class="op">.</span><span class="at">runs</span><span class="op">.</span><span class="fu">filter</span>(r <span class="kw">=&gt;</span> r<span class="op">.</span><span class="at">used</span>)<span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> ({<span class="dt">pred</span><span class="op">:</span> f<span class="op">.</span><span class="at">E</span> <span class="op">+</span> f<span class="op">.</span><span class="at">A</span> <span class="op">/</span> r<span class="op">.</span><span class="at">N</span> <span class="op">**</span> f<span class="op">.</span><span class="at">alpha</span> <span class="op">+</span> f<span class="op">.</span><span class="at">B</span> <span class="op">/</span> r<span class="op">.</span><span class="at">tokens</span> <span class="op">**</span> f<span class="op">.</span><span class="at">beta</span><span class="op">,</span> <span class="dt">act</span><span class="op">:</span> r<span class="op">.</span><span class="at">final_val</span><span class="op">,</span> <span class="dt">C</span><span class="op">:</span> <span class="fu">sci</span>(r<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>)}))<span class="op">;</span></span>
+<span id="cb18-312"><a href="#cb18-312" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> lo <span class="op">=</span> d3<span class="op">.</span><span class="fu">min</span>(pts<span class="op">,</span> d <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(d<span class="op">.</span><span class="at">pred</span><span class="op">,</span> d<span class="op">.</span><span class="at">act</span>)) <span class="op">-</span> <span class="op">.</span><span class="bn">02</span><span class="op">,</span> hi <span class="op">=</span> d3<span class="op">.</span><span class="fu">max</span>(pts<span class="op">,</span> d <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(d<span class="op">.</span><span class="at">pred</span><span class="op">,</span> d<span class="op">.</span><span class="at">act</span>)) <span class="op">+</span> <span class="op">.</span><span class="bn">02</span><span class="op">;</span></span>
+<span id="cb18-313"><a href="#cb18-313" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Plot<span class="op">.</span><span class="fu">plot</span>({<span class="dt">width</span><span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(width<span class="op">,</span> <span class="dv">420</span>)<span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">380</span><span class="op">,</span> <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">55</span><span class="op">,</span> <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb18-314"><a href="#cb18-314" aria-hidden="true" tabindex="-1"></a>    <span class="dt">x</span><span class="op">:</span> {<span class="dt">domain</span><span class="op">:</span> [lo<span class="op">,</span> hi]<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Fitted loss"</span>}<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> {<span class="dt">domain</span><span class="op">:</span> [lo<span class="op">,</span> hi]<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Measured loss"</span>}<span class="op">,</span> <span class="dt">color</span><span class="op">:</span> {<span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Compute"</span><span class="op">,</span> <span class="dt">domain</span><span class="op">:</span> S<span class="op">.</span><span class="at">isoflop</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> <span class="fu">sci</span>(c<span class="op">.</span><span class="at">C</span><span class="op">,</span> <span class="dv">0</span>))}<span class="op">,</span></span>
+<span id="cb18-315"><a href="#cb18-315" aria-hidden="true" tabindex="-1"></a>    <span class="dt">marks</span><span class="op">:</span> [Plot<span class="op">.</span><span class="fu">line</span>([[lo<span class="op">,</span> lo]<span class="op">,</span> [hi<span class="op">,</span> hi]]<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"#999"</span><span class="op">,</span> <span class="dt">strokeDasharray</span><span class="op">:</span> <span class="st">"4 3"</span>})<span class="op">,</span> Plot<span class="op">.</span><span class="fu">dot</span>(pts<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> <span class="st">"pred"</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="st">"act"</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"C"</span><span class="op">,</span> <span class="dt">r</span><span class="op">:</span> <span class="dv">4</span>})]})<span class="op">;</span></span>
+<span id="cb18-316"><a href="#cb18-316" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-18" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="predicting-the-biggest-budget" class="level3">
+<h3 class="anchored" data-anchor-id="predicting-the-biggest-budget">Predicting the biggest budget</h3>
+<p>The test that matters is extrapolation. Fit the surface using only the four smaller budgets, then predict the runs at <span class="math inline">\(10^{14}\)</span> FLOPs, which the fit has never seen:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb19" data-startfrom="324" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 323;"><span id="cb19-324"><a href="#cb19-324" aria-hidden="true" tabindex="-1"></a>holdTable <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="sc-scroll"&gt;&lt;table class="table table-sm sc-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Model&lt;/th&gt;&lt;th class="num"&gt;Parameters&lt;/th&gt;&lt;th class="num"&gt;Characters&lt;/th&gt;&lt;th class="num"&gt;Predicted&lt;/th&gt;&lt;th class="num"&gt;Measured&lt;/th&gt;&lt;th class="num"&gt;Error&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb19-325"><a href="#cb19-325" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>S<span class="op">.</span><span class="at">holdout</span><span class="op">.</span><span class="at">rows</span><span class="op">.</span><span class="fu">map</span>(r <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>r<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">human</span>(r<span class="op">.</span><span class="at">N</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">human</span>(r<span class="op">.</span><span class="at">D</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">pred</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(r<span class="op">.</span><span class="at">act</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span>(r<span class="op">.</span><span class="at">pred</span> <span class="op">-</span> r<span class="op">.</span><span class="at">act</span> <span class="op">&gt;=</span> <span class="dv">0</span> <span class="op">?</span> <span class="st">"+"</span> <span class="op">:</span> <span class="st">""</span>) <span class="op">+</span> <span class="fu">fmt</span>(r<span class="op">.</span><span class="at">pred</span> <span class="op">-</span> r<span class="op">.</span><span class="at">act</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span></span>
+<span id="cb19-326"><a href="#cb19-326" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-19" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb20" data-startfrom="330" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 329;"><span id="cb20-330"><a href="#cb20-330" aria-hidden="true" tabindex="-1"></a>holdText <span class="op">=</span> <span class="fu">md</span><span class="vs">`The mean absolute error is </span><span class="sc">${</span><span class="fu">fmt</span>(S<span class="op">.</span><span class="at">holdout</span><span class="op">.</span><span class="at">mae</span><span class="op">,</span> <span class="dv">3</span>)<span class="sc">}</span><span class="vs"> nats per character, </span><span class="sc">${</span><span class="fu">fmt</span>(<span class="dv">100</span> <span class="op">*</span> S<span class="op">.</span><span class="at">holdout</span><span class="op">.</span><span class="at">mae_rel</span><span class="op">,</span> <span class="dv">1</span>)<span class="sc">}</span><span class="vs">% of the loss, from a fit to runs with at most a third of the compute, and every prediction is too optimistic. The cause is the floor: a fit with almost no irreducible loss expects the decline to continue undiminished, and the real curves are already starting to flatten. The shape of the law extrapolated; the numbers drifted. That is why the large laboratories fit across many decades of compute with each size's hyperparameters tuned, and why the GPT-4 and Llama 3 predictions in the earlier sections, made from runs a thousand to ten thousand times smaller, are more impressive than they look.`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-20" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="what-the-small-study-can-and-cant-show" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-small-study-can-and-cant-show">What the small study can and can’t show</h3>
+<p>Scale invariance cuts both ways. The same law that extrapolates from small runs is only an empirical regularity, and small runs have quirks the large ones do not: here the attention cost, <span class="math inline">\(6Ld\,T_{\text{ctx}}\)</span> per token, is a third of the total for the smallest model and is counted in the compute; the smallest models are inefficient on a CPU, so wall-clock time is not proportional to FLOPs; one seed per run leaves noise of a few thousandths of a nat; and character-level text8 has a different entropy and structure from tokenised web text, so the constants mean nothing outside this study. What does carry over is qualitative: loss falls as a power law in compute along an envelope of model sizes; at each budget the optimum is a U-shaped valley that moves predictably to larger models; and the allocation you measure depends on how carefully each size is trained, which is exactly how the field got Kaplan’s answer first and Chinchilla’s second. A better version of this experiment would tune the batch size and learning rate per model, use only models of three or more layers, and span three or four decades of compute; at these sizes that is a few days of CPU time rather than four hours.</p>
+</section>
+</section>
+<section id="terminology-and-where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="terminology-and-where-it-comes-from">Terminology and where it comes from</h2>
+<div class="sc-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Scaling law</strong></td>
+<td>Loss as a power law in parameters, data or compute</td>
+<td>From physics, where scaling laws relate quantities near critical points and across sizes; the machine-learning use dates from Joel Hestness and colleagues at Baidu (2017), who found power laws in error against dataset size in several domains.</td>
+</tr>
+<tr class="even">
+<td><strong>Power law</strong></td>
+<td><span class="math inline">\(y = ax^{-\alpha}\)</span></td>
+<td>Named for the power (exponent) of <span class="math inline">\(x\)</span>; such laws are central to Vilfredo Pareto’s income distributions (1896) and George Zipf’s word frequencies (1935, 1949).</td>
+</tr>
+<tr class="odd">
+<td><strong>Zipf’s law</strong></td>
+<td>The <span class="math inline">\(k\)</span>-th most frequent word has frequency <span class="math inline">\(\propto 1/k\)</span></td>
+<td>George Kingsley Zipf, <em>The Psycho-Biology of Language</em> (1935); observed earlier by Jean-Baptiste Estoup (1916).</td>
+</tr>
+<tr class="even">
+<td><strong>Compute-optimal</strong></td>
+<td>The allocation of a fixed budget that minimises loss</td>
+<td>Hoffmann and colleagues, 2022.</td>
+</tr>
+<tr class="odd">
+<td><strong>Iso-FLOP</strong></td>
+<td>A set of runs with the same total compute</td>
+<td>From the Greek <em>isos</em>, equal, as in isobar and isotherm.</td>
+</tr>
+<tr class="even">
+<td><strong>FLOP</strong></td>
+<td>One floating-point operation; FLOPs, many; FLOP/s, a rate</td>
+<td>From scientific computing benchmarks of the 1970s onward; the LINPACK benchmark (Jack Dongarra, 1979) made it the standard measure.</td>
+</tr>
+<tr class="odd">
+<td><strong>Lagrange multiplier</strong></td>
+<td>The constraint variable in constrained optimisation</td>
+<td>Joseph-Louis Lagrange, <em>Mécanique analytique</em>, 1788.</td>
+</tr>
+<tr class="even">
+<td><strong>Chinchilla</strong></td>
+<td>The 70B model, and by extension its allocation rule</td>
+<td>DeepMind named a series of its 2021–22 models after animals: Gopher, Chinchilla, Flamingo.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="method-and-sources" class="level2">
+<h2 class="anchored" data-anchor-id="method-and-sources">Method and sources</h2>
+<p><strong>Models.</strong> Decoder-only, Pre-LN, GELU, learned positions, untied output layer, heads of width 32, context 128 characters, vocabulary of 27 (letters and space). Non-embedding parameters <span class="math inline">\(N = L(12d^2 + 13d) + 2d\)</span>. AdamW with <span class="math inline">\(\beta = (0.9, 0.95)\)</span>, weight decay 0.1, gradient clipping at 1, batch 32 sequences (4,096 characters), learning rate <span class="math inline">\(\min(3\times10^{-3}, 3\times10^{-3}\sqrt{128/d})\)</span> with linear warm-up over 2% of steps and cosine decay to 10% over exactly the run’s length. PyTorch on one CPU core per run.</p>
+<p><strong>Compute.</strong> <span class="math inline">\(C = (6N + 6LdT_{\text{ctx}})D\)</span> per run, the second term counting attention. Budgets <span class="math inline">\(10^{12}\)</span>, <span class="math inline">\(3\times10^{12}\)</span>, <span class="math inline">\(10^{13}\)</span>, <span class="math inline">\(3\times10^{13}\)</span> and <span class="math inline">\(10^{14}\)</span>; nine shapes (width/layers 16/2, 24/2, 32/2, 48/3, 64/4, 96/4, 128/5, 160/6, 192/6), 35 runs in all; runs with fewer than 1,000 optimiser steps excluded from the fits; the number of characters <span class="math inline">\(D\)</span> chosen to meet the budget for each shape. Loss is measured on 256 fixed windows (32,768 characters) of the held-out 5 million.</p>
+<p><strong>Fits.</strong> Iso-FLOP: quadratic in <span class="math inline">\(\log_{10}N\)</span> through each budget’s final losses, minimum taken as <span class="math inline">\(N^*\)</span>, then a least-squares line through <span class="math inline">\((\log C, \log N^*)\)</span>. Surface: <span class="math inline">\(L = E + AN^{-\alpha} + BD^{-\beta}\)</span> fitted by minimising the Huber loss (<span class="math inline">\(\delta = 10^{-3}\)</span>) of <span class="math inline">\(\log L_{\text{fit}} - \log L\)</span> with L-BFGS from a grid of starting points, as in Chinchilla. Hold-out: the same fit to the <span class="math inline">\(10^{12}\)</span>–<span class="math inline">\(3\times10^{13}\)</span> runs only, evaluated on the <span class="math inline">\(10^{14}\)</span> runs.</p>
+<p><strong>Refits.</strong> The Epoch AI values in the explorer are their refit of Chinchilla’s approach 3 to data reconstructed from the paper’s figures: <span class="math inline">\(E = 1.817\)</span>, <span class="math inline">\(A = 482.0\)</span>, <span class="math inline">\(B = 2085.4\)</span>, <span class="math inline">\(\alpha = 0.348\)</span>, <span class="math inline">\(\beta = 0.366\)</span>, giving <span class="math inline">\(a = 0.51\)</span> and about 20 tokens per parameter at Chinchilla’s scale; Hoffmann and colleagues’ own approach-3 constants imply about 70. Kaplan’s constants are from section 1.2 of the paper (<span class="math inline">\(\alpha_N = 0.076\)</span>, <span class="math inline">\(\alpha_D = 0.095\)</span>, <span class="math inline">\(\alpha_C^{\min} = 0.050\)</span>); its Table 2 gives <span class="math inline">\(\alpha_D = 0.103\)</span> for the combined law.</p>
+<p>Sources:</p>
+<ul>
+<li>J. Kaplan and colleagues, <a href="https://arxiv.org/abs/2001.08361"><em>Scaling Laws for Neural Language Models</em></a>, 2020.</li>
+<li>J. Hoffmann and colleagues, <a href="https://arxiv.org/abs/2203.15556"><em>Training Compute-Optimal Large Language Models</em></a> (Chinchilla), 2022.</li>
+<li>T. Besiroglu and colleagues, <a href="https://arxiv.org/abs/2404.10102"><em>Chinchilla Scaling: A replication attempt</em></a>, Epoch AI, 2024.</li>
+<li>OpenAI, <a href="https://arxiv.org/abs/2303.08774"><em>GPT-4 Technical Report</em></a>, 2023, section 3.</li>
+<li>J. Hestness and colleagues, <a href="https://arxiv.org/abs/1712.00409"><em>Deep Learning Scaling is Predictable, Empirically</em></a>, 2017.</li>
+<li>U. Sharma, J. Kaplan, <a href="https://arxiv.org/abs/2004.10802"><em>A Neural Scaling Law from the Dimension of the Data Manifold</em></a>, 2020. Y. Bahri and colleagues, <a href="https://arxiv.org/abs/2102.06701"><em>Explaining Neural Scaling Laws</em></a>, 2021. E. Michaud and colleagues, <a href="https://arxiv.org/abs/2303.13506"><em>The Quantization Model of Neural Scaling</em></a>, 2023.</li>
+<li>Meta, <a href="https://arxiv.org/abs/2407.21783"><em>The Llama 3 Herd of Models</em></a>, 2024: training compute, hardware and tokens.</li>
+<li>T. Brown and colleagues, <a href="https://arxiv.org/abs/2005.14165"><em>Language Models are Few-Shot Learners</em></a> (GPT-3), 2020. J. Rae and colleagues, <a href="https://arxiv.org/abs/2112.11446"><em>Scaling Language Models</em></a> (Gopher), 2021.</li>
+<li>Data: <a href="https://mattmahoney.net/dc/textdata.html">text8</a>.</li>
+</ul>
+<p><strong>Next: <a href="../scaling-laws-part-2-beyond-chinchilla/">Part 2, beyond Chinchilla</a></strong>: overtraining, data limits, test-time compute, the 2026 frontier and how long it can last.</p>
+
+
+<div class="ojs-auto-generated hidden">
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6WyAgeyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiaW5saW5lIjoidHJ1ZSIsInNvdXJjZSI6Imh0bC5odG1sYDxzcGFuPiR7Zm10KFMudG90YWxfY3B1X2hvdXJzLCAxKX08L3NwYW4+YCIsICJjZWxsTmFtZSI6Im9qcy1lbGVtZW50LWlkLTEifSwgIHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImlubGluZSI6InRydWUiLCJzb3VyY2UiOiJodGwuaHRtbGA8c3Bhbj4ke1Mubl91c2VkfTwvc3Bhbj5gIiwgImNlbGxOYW1lIjoib2pzLWVsZW1lbnQtaWQtMiJ9LCAgeyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiaW5saW5lIjoidHJ1ZSIsInNvdXJjZSI6Imh0bC5odG1sYDxzcGFuPiR7Uy5taW5fc3RlcHMudG9Mb2NhbGVTdHJpbmcoXCJlbi1HQlwiKX08L3NwYW4+YCIsICJjZWxsTmFtZSI6Im9qcy1lbGVtZW50LWlkLTMifSwgIHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImlubGluZSI6InRydWUiLCJzb3VyY2UiOiJodGwuaHRtbGA8c3Bhbj4ke1Mubl91c2VkfTwvc3Bhbj5gIiwgImNlbGxOYW1lIjoib2pzLWVsZW1lbnQtaWQtNCJ9XX0=
+</script>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG5zY2kgPSAoeCwgZCA9IDEpID0+IHsgaWYgKCFpc0Zpbml0ZSh4KSB8fCB4ID09PSAwKSByZXR1cm4gU3RyaW5nKHgpOyBjb25zdCBlID0gTWF0aC5mbG9vcihNYXRoLmxvZzEwKE1hdGguYWJzKHgpKSksIG0gPSB4IC8gMTAgKiogZTsgcmV0dXJuIGAke2ZtdChtLCBkKX3DlzEwJHtTdHJpbmcoZSkuc3BsaXQoXCJcIikubWFwKGMgPT4gXCLigbDCucKywrPigbTigbXigbbigbfigbjigblcIltjXSA/PyAoYyA9PT0gXCItXCIgPyBcIuKBu1wiIDogYykpLmpvaW4oXCJcIil9YDsgfVxucG93MTAgPSBkID0+IHsgY29uc3QgZSA9IE1hdGgubG9nMTAoZCk7IHJldHVybiBNYXRoLmFicyhlIC0gTWF0aC5yb3VuZChlKSkgPCAxZS02ID8gc2NpKGQsIDApLnJlcGxhY2UoL14xw5cvLCBcIlwiKSA6IFwiXCI7IH1cbmh1bWFuID0gKHgpID0+IHsgY29uc3QgYSA9IE1hdGguYWJzKHgpOyByZXR1cm4gYSA+PSAxZTEyID8gZm10KHggLyAxZTEyLCAxKSArIFwiIHRyaWxsaW9uXCIgOiBhID49IDFlOSA/IGZtdCh4IC8gMWU5LCAxKSArIFwiIGJpbGxpb25cIiA6IGEgPj0gMWU2ID8gZm10KHggLyAxZTYsIDEpICsgXCIgbWlsbGlvblwiIDogYSA+PSAxZTMgPyBmbXQoeCAvIDFlMywgMCkgKyBcIiB0aG91c2FuZFwiIDogZm10KHgpOyB9XG5TID0gRmlsZUF0dGFjaG1lbnQoXCJkYXRhL3NjYWxpbmcuanNvblwiKS5qc29uKClcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InJhdGlvVGFibGUgPSB7XG4gIGNvbnN0IGYgPSBTLmZpdHMuY2hpbmNoaWxsYSwgcm93cyA9IFsxZTIxLCAxZTIyLCA1LjhlMjMsIDFlMjQsIDFlMjUsIDFlMjZdLm1hcChDID0+IHtcbiAgICBjb25zdCBhID0gZi5iZXRhIC8gKGYuYWxwaGEgKyBmLmJldGEpLCBiID0gZi5hbHBoYSAvIChmLmFscGhhICsgZi5iZXRhKSwgRyA9IE1hdGgucG93KGYuYWxwaGEgKiBmLkEgLyAoZi5iZXRhICogZi5CKSwgMSAvIChmLmFscGhhICsgZi5iZXRhKSk7XG4gICAgY29uc3QgTiA9IEcgKiBNYXRoLnBvdyhDIC8gNiwgYSksIEQgPSBNYXRoLnBvdyhDIC8gNiwgYikgLyBHO1xuICAgIHJldHVybiB7QywgTiwgRCwgTDogZi5FICsgZi5BIC8gTiAqKiBmLmFscGhhICsgZi5CIC8gRCAqKiBmLmJldGF9O1xuICB9KTtcbiAgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJzYy1zY3JvbGxcIj48dGFibGUgY2xhc3M9XCJ0YWJsZSB0YWJsZS1zbSBzYy10XCI+PHRoZWFkPjx0cj48dGggY2xhc3M9XCJudW1cIj5Db21wdXRlIChGTE9Qcyk8L3RoPjx0aCBjbGFzcz1cIm51bVwiPk9wdGltYWwgcGFyYW1ldGVyczwvdGg+PHRoIGNsYXNzPVwibnVtXCI+T3B0aW1hbCB0b2tlbnM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlRva2VucyBwZXIgcGFyYW1ldGVyPC90aD48dGggY2xhc3M9XCJudW1cIj5QcmVkaWN0ZWQgbG9zczwvdGg+PC90cj48L3RoZWFkPjx0Ym9keT5cbiAgJHtyb3dzLm1hcChyID0+IGh0bC5odG1sYDx0cj48dGQgY2xhc3M9XCJudW1cIj4ke3NjaShyLkMpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtodW1hbihyLk4pfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtodW1hbihyLkQpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoci5EIC8gci5OLCAwKX08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7Zm10KHIuTCwgMyl9PC90ZD48L3RyPmApfTwvdGJvZHk+PC90YWJsZT48L2Rpdj5gO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0zIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGZpdE5hbWUgPSBJbnB1dHMucmFkaW8obmV3IE1hcChbW1wiQ2hpbmNoaWxsYSwgYXBwcm9hY2ggMyAoMjAyMilcIiwgXCJjaGluY2hpbGxhXCJdLCBbXCJFcG9jaCBBSSByZWZpdCAoMjAyNClcIiwgXCJlcG9jaFwiXV0pLCB7dmFsdWU6IFwiY2hpbmNoaWxsYVwiLCBsYWJlbDogXCJGaXR0ZWQgbGF3XCJ9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGxvZ0MgPSBJbnB1dHMucmFuZ2UoWzE5LCAyN10sIHt2YWx1ZTogMjMuNzYsIHN0ZXA6IDAuMDEsIGxhYmVsOiBcIkNvbXB1dGUgYnVkZ2V0LCBsb2figoHigoAgRkxPUHNcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTUiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2Ygc2tldyA9IElucHV0cy5yYW5nZShbLTEuNSwgMS41XSwge3ZhbHVlOiAwLCBzdGVwOiAwLjA1LCBsYWJlbDogXCJNb2RlbCBzaXplIHZzIG9wdGltdW0sIGxvZ+KCgeKCgCBmYWN0b3JcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJmaXQgPSBTLmZpdHNbZml0TmFtZV1cbkxmID0gKE4sIEQpID0+IGZpdC5FICsgZml0LkEgLyBOICoqIGZpdC5hbHBoYSArIGZpdC5CIC8gRCAqKiBmaXQuYmV0YVxub3B0ID0gQyA9PiB7IGNvbnN0IGEgPSBmaXQuYmV0YSAvIChmaXQuYWxwaGEgKyBmaXQuYmV0YSksIGIgPSBmaXQuYWxwaGEgLyAoZml0LmFscGhhICsgZml0LmJldGEpLCBHID0gTWF0aC5wb3coZml0LmFscGhhICogZml0LkEgLyAoZml0LmJldGEgKiBmaXQuQiksIDEgLyAoZml0LmFscGhhICsgZml0LmJldGEpKTtcbiAgcmV0dXJuIHtOOiBHICogTWF0aC5wb3coQyAvIDYsIGEpLCBEOiBNYXRoLnBvdyhDIC8gNiwgYikgLyBHfTsgfVxuaGVyZSA9IHsgY29uc3QgQyA9IDEwICoqIGxvZ0MsIG8gPSBvcHQoQyksIE4gPSBvLk4gKiAxMCAqKiBza2V3LCBEID0gQyAvICg2ICogTik7IHJldHVybiB7QywgbywgTiwgRCwgTDogTGYoTiwgRCksIExvOiBMZihvLk4sIG8uRCl9OyB9XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJsYW5kc2NhcGUgPSB7XG4gIGNvbnN0IG54ID0gOTAsIG55ID0gNzAsIGxuTiA9IFs3LCAxM10sIGxuRCA9IFs4LCAxNV0sIGdyaWQgPSBbXTtcbiAgZm9yIChsZXQgaiA9IDA7IGogPCBueTsgaisrKSBmb3IgKGxldCBpID0gMDsgaSA8IG54OyBpKyspIHtcbiAgICBjb25zdCB4ID0gbG5OWzBdICsgKGxuTlsxXSAtIGxuTlswXSkgKiAoaSArIC41KSAvIG54LCB5ID0gbG5EWzBdICsgKGxuRFsxXSAtIGxuRFswXSkgKiAoaiArIC41KSAvIG55O1xuICAgIGdyaWQucHVzaChMZigxMCAqKiB4LCAxMCAqKiB5KSk7XG4gIH1cbiAgY29uc3QgaXNvID0gZDMucmFuZ2UoMTksIDI4LCAxKS5tYXAoYyA9PiAoe2MsIHB0czogZDMucmFuZ2UobG5OWzBdLCBsbk5bMV0gKyAuMDEsIC4xKS5tYXAoeCA9PiAoe3gsIHk6IGMgLSBNYXRoLmxvZzEwKDYpIC0geH0pKS5maWx0ZXIocCA9PiBwLnkgPj0gbG5EWzBdICYmIHAueSA8PSBsbkRbMV0pfSkpO1xuICBjb25zdCBmcm9udCA9IGQzLnJhbmdlKDE3LCAyOSwgLjEpLm1hcChjID0+IHsgY29uc3QgbyA9IG9wdCgxMCAqKiBjKTsgcmV0dXJuIHt4OiBNYXRoLmxvZzEwKG8uTiksIHk6IE1hdGgubG9nMTAoby5EKX07IH0pLmZpbHRlcihwID0+IHAueCA+PSBsbk5bMF0gJiYgcC54IDw9IGxuTlsxXSAmJiBwLnkgPj0gbG5EWzBdICYmIHAueSA8PSBsbkRbMV0pO1xuICBjb25zdCBXID0gTWF0aC5taW4od2lkdGgsIDY4MCk7XG4gIHJldHVybiBQbG90LnBsb3Qoe3dpZHRoOiBXLCBoZWlnaHQ6IFcgKiAwLjcyLCBtYXJnaW5MZWZ0OiA1NSwgbWFyZ2luQm90dG9tOiA0MCxcbiAgICB4OiB7ZG9tYWluOiBsbk4sIGxhYmVsOiBcImxvZ+KCgeKCgCBwYXJhbWV0ZXJzIE5cIn0sIHk6IHtkb21haW46IGxuRCwgbGFiZWw6IFwibG9n4oKB4oKAIHRyYWluaW5nIHRva2VucyBEXCJ9LFxuICAgIGNvbG9yOiB7dHlwZTogXCJsb2dcIiwgc2NoZW1lOiBcIllsR25CdVwiLCByZXZlcnNlOiB0cnVlLCBsZWdlbmQ6IHRydWUsIGxhYmVsOiBcIkxvc3MgKG5hdHMgcGVyIHRva2VuKVwifSxcbiAgICBtYXJrczogW1xuICAgICAgUGxvdC5jb250b3VyKGdyaWQsIHt3aWR0aDogbngsIGhlaWdodDogbnksIHgxOiBsbk5bMF0sIHgyOiBsbk5bMV0sIHkxOiBsbkRbMF0sIHkyOiBsbkRbMV0sIGZpbGw6IFBsb3QuaWRlbnRpdHksIHN0cm9rZTogXCJ3aGl0ZVwiLCBzdHJva2VPcGFjaXR5OiAuNCwgdGhyZXNob2xkczogMTh9KSxcbiAgICAgIC4uLmlzby5tYXAocyA9PiBQbG90LmxpbmUocy5wdHMsIHt4OiBcInhcIiwgeTogXCJ5XCIsIHN0cm9rZTogXCIjNTU1XCIsIHN0cm9rZURhc2hhcnJheTogXCIzIDNcIiwgc3Ryb2tlV2lkdGg6IC44fSkpLFxuICAgICAgLi4uaXNvLm1hcChzID0+IFBsb3QudGV4dChzLnB0cy5zbGljZSgtMSksIHt4OiBcInhcIiwgeTogXCJ5XCIsIHRleHQ6ICgpID0+IGAxMF4ke3MuY31gLCBkeDogLTQsIGR5OiAtNiwgZm9udFNpemU6IDksIGZpbGw6IFwiIzQ0NFwiLCB0ZXh0QW5jaG9yOiBcImVuZFwifSkpLFxuICAgICAgUGxvdC5saW5lKGZyb250LCB7eDogXCJ4XCIsIHk6IFwieVwiLCBzdHJva2U6IFwiI2U3NmY1MVwiLCBzdHJva2VXaWR0aDogMi41fSksXG4gICAgICBQbG90LmRvdChbaGVyZV0sIHt4OiBkID0+IE1hdGgubG9nMTAoZC5OKSwgeTogZCA9PiBNYXRoLmxvZzEwKGQuRCksIHI6IDYsIGZpbGw6IFwiI2U3NmY1MVwiLCBzdHJva2U6IFwid2hpdGVcIn0pLFxuICAgICAgUGxvdC5kb3QoW3t4OiBNYXRoLmxvZzEwKDcwZTkpLCB5OiBNYXRoLmxvZzEwKDEuNGUxMiksIGw6IFwiQ2hpbmNoaWxsYVwifSwge3g6IE1hdGgubG9nMTAoMjgwZTkpLCB5OiBNYXRoLmxvZzEwKDMwMGU5KSwgbDogXCJHb3BoZXJcIn0sIHt4OiBNYXRoLmxvZzEwKDE3NWU5KSwgeTogTWF0aC5sb2cxMCgzMDBlOSksIGw6IFwiR1BULTNcIn0sIHt4OiBNYXRoLmxvZzEwKDhlOSksIHk6IE1hdGgubG9nMTAoMTVlMTIpLCBsOiBcIkxsYW1hIDMgOEJcIn1dLFxuICAgICAgICB7eDogXCJ4XCIsIHk6IFwieVwiLCByOiAzLjUsIGZpbGw6IFwiYmxhY2tcIn0pLFxuICAgICAgUGxvdC50ZXh0KFt7eDogTWF0aC5sb2cxMCg3MGU5KSwgeTogTWF0aC5sb2cxMCgxLjRlMTIpLCBsOiBcIkNoaW5jaGlsbGFcIn0sIHt4OiBNYXRoLmxvZzEwKDI4MGU5KSwgeTogTWF0aC5sb2cxMCgzMDBlOSksIGw6IFwiR29waGVyXCJ9LCB7eDogTWF0aC5sb2cxMCgxNzVlOSksIHk6IE1hdGgubG9nMTAoMzAwZTkpLCBsOiBcIkdQVC0zXCJ9LCB7eDogTWF0aC5sb2cxMCg4ZTkpLCB5OiBNYXRoLmxvZzEwKDE1ZTEyKSwgbDogXCJMbGFtYSAzIDhCXCJ9XSxcbiAgICAgICAge3g6IFwieFwiLCB5OiBcInlcIiwgdGV4dDogXCJsXCIsIGR4OiA2LCB0ZXh0QW5jaG9yOiBcInN0YXJ0XCIsIGZvbnRTaXplOiAxMH0pXG4gICAgXX0pO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC04IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibGFuZFJlYWQgPSBodGwuaHRtbGA8ZGl2IGNsYXNzPVwic2MtcGFuZWxcIj48aDQ+QXQgJHtzY2koaGVyZS5DLCAyKX0gRkxPUHM8L2g0PjxkaXYgY2xhc3M9XCJzYy1rcGlzXCI+XG4gIDxkaXY+PGRpdiBjbGFzcz1cImtcIj5PcHRpbWFsIHNpemU8L2Rpdj48ZGl2IGNsYXNzPVwidlwiPiR7aHVtYW4oaGVyZS5vLk4pfTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+dHJhaW5lZCBvbiAke2h1bWFuKGhlcmUuby5EKX0gdG9rZW5zLCAke2ZtdChoZXJlLm8uRCAvIGhlcmUuby5OLCAwKX0gcGVyIHBhcmFtZXRlcjwvZGl2PjwvZGl2PlxuICA8ZGl2PjxkaXYgY2xhc3M9XCJrXCI+WW91ciBjaG9pY2U8L2Rpdj48ZGl2IGNsYXNzPVwidlwiPiR7aHVtYW4oaGVyZS5OKX08L2Rpdj48ZGl2IGNsYXNzPVwic1wiPiR7aHVtYW4oaGVyZS5EKX0gdG9rZW5zLCAke2ZtdChoZXJlLkQgLyBoZXJlLk4sIDApfSBwZXIgcGFyYW1ldGVyPC9kaXY+PC9kaXY+XG4gIDxkaXY+PGRpdiBjbGFzcz1cImtcIj5Mb3NzPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke2ZtdChoZXJlLkwsIDQpfTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+b3B0aW11bSAke2ZtdChoZXJlLkxvLCA0KX07IGZsb29yIEUgPSAke2ZtdChmaXQuRSwgMil9PC9kaXY+PC9kaXY+XG4gIDxkaXY+PGRpdiBjbGFzcz1cImtcIj5Db21wdXRlIHdhc3RlZDwvZGl2PjxkaXYgY2xhc3M9XCJ2XCI+JHtmbXQoMTAwICogKDEgLSB3YXN0ZVJhdGlvKSwgMCl9JTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+YW4gb3B0aW1hbCBtb2RlbCByZWFjaGVzIHlvdXIgbG9zcyB3aXRoICR7Zm10KDEwMCAqIHdhc3RlUmF0aW8sIDApfSUgb2YgdGhlIGNvbXB1dGU8L2Rpdj48L2Rpdj5cbjwvZGl2PjwvZGl2PmBcbndhc3RlUmF0aW8gPSB7XG4gIC8vIGNvbXB1dGUgYW4gb3B0aW1hbGx5IGFsbG9jYXRlZCBtb2RlbCBuZWVkcyB0byByZWFjaCB0aGlzIGxvc3NcbiAgaWYgKE1hdGguYWJzKGhlcmUuTCAtIGhlcmUuTG8pIDwgMWUtOSkgcmV0dXJuIDE7XG4gIGxldCBsbyA9IE1hdGgubG9nMTAoaGVyZS5DKSAtIDQsIGhpID0gTWF0aC5sb2cxMChoZXJlLkMpO1xuICBmb3IgKGxldCBrID0gMDsgayA8IDYwOyBrKyspIHsgY29uc3QgbSA9IChsbyArIGhpKSAvIDIsIG8gPSBvcHQoMTAgKiogbSk7IGlmIChMZihvLk4sIG8uRCkgPiBoZXJlLkwpIGxvID0gbTsgZWxzZSBoaSA9IG07IH1cbiAgcmV0dXJuIDEwICoqICgobG8gKyBoaSkgLyAyKSAvIGhlcmUuQztcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBodyA9IElucHV0cy5mb3JtKHtcbiAgZ3B1czogSW5wdXRzLnJhbmdlKFs4LCAyMDAwMDBdLCB7dmFsdWU6IDE2Mzg0LCBzdGVwOiA4LCBsYWJlbDogXCJHUFVzXCJ9KSxcbiAgcGVhazogSW5wdXRzLnNlbGVjdChuZXcgTWFwKFtbXCJBMTAwLCAzMTIgVEZMT1AvcyAoQkYxNilcIiwgMzEyZTEyXSwgW1wiSDEwMCwgOTg5IFRGTE9QL3MgKEJGMTYpXCIsIDk4OWUxMl0sIFtcIkIyMDAsIDIsMjUwIFRGTE9QL3MgKEJGMTYpXCIsIDIyNTBlMTJdXSksIHt2YWx1ZTogOTg5ZTEyLCBsYWJlbDogXCJBY2NlbGVyYXRvclwifSlcbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIGh3MiA9IElucHV0cy5mb3JtKHtcbiAgbWZ1OiBJbnB1dHMucmFuZ2UoWzAuMSwgMC43XSwge3ZhbHVlOiAwLjQsIHN0ZXA6IDAuMDEsIGxhYmVsOiBcIlV0aWxpc2F0aW9uIChNRlUpXCJ9KSxcbiAgZGF5czogSW5wdXRzLnJhbmdlKFsxLCAxODBdLCB7dmFsdWU6IDU0LCBzdGVwOiAxLCBsYWJlbDogXCJEYXlzXCJ9KVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTEiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJwbGFuVmlldyA9IHtcbiAgY29uc3QgQyA9IGh3LmdwdXMgKiBody5wZWFrICogaHcyLm1mdSAqIGh3Mi5kYXlzICogODY0MDAsIG8gPSBvcHQoQyk7XG4gIHJldHVybiBodGwuaHRtbGA8ZGl2IGNsYXNzPVwic2MtcGFuZWxcIj48aDQ+JHtmbXQoaHcuZ3B1cyl9IEdQVXMgZm9yICR7aHcyLmRheXN9IGRheXMgYXQgJHtmbXQoMTAwICogaHcyLm1mdSl9JSB1dGlsaXNhdGlvbjwvaDQ+PGRpdiBjbGFzcz1cInNjLWtwaXNcIj5cbiAgICA8ZGl2PjxkaXYgY2xhc3M9XCJrXCI+Q29tcHV0ZTwvZGl2PjxkaXYgY2xhc3M9XCJ2XCI+JHtzY2koQywgMil9IEZMT1BzPC9kaXY+PC9kaXY+XG4gICAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPkNvbXB1dGUtb3B0aW1hbCBzaXplPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke2h1bWFuKG8uTil9PC9kaXY+PGRpdiBjbGFzcz1cInNcIj4ke2ZpdE5hbWUgPT09IFwiZXBvY2hcIiA/IFwiRXBvY2ggcmVmaXRcIiA6IFwiQ2hpbmNoaWxsYSBmaXRcIn08L2Rpdj48L2Rpdj5cbiAgICA8ZGl2PjxkaXYgY2xhc3M9XCJrXCI+VG9rZW5zPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke2h1bWFuKG8uRCl9PC9kaXY+PGRpdiBjbGFzcz1cInNcIj4ke2ZtdChvLkQgLyBvLk4sIDApfSBwZXIgcGFyYW1ldGVyPC9kaXY+PC9kaXY+XG4gICAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPlByZWRpY3RlZCBsb3NzPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke2ZtdChMZihvLk4sIG8uRCksIDMpfTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+b24gQ2hpbmNoaWxsYSdzIGRhdGE7IGZsb29yICR7Zm10KGZpdC5FLCAyKX08L2Rpdj48L2Rpdj5cbiAgPC9kaXY+PC9kaXY+YDtcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2YgY3VydmVYID0gSW5wdXRzLnJhZGlvKG5ldyBNYXAoW1tcIlRyYWluaW5nIGNvbXB1dGVcIiwgXCJmbG9wc1wiXSwgW1wiQ2hhcmFjdGVycyBzZWVuXCIsIFwidG9rZW5zXCJdXSksIHt2YWx1ZTogXCJmbG9wc1wiLCBsYWJlbDogXCJIb3Jpem9udGFsIGF4aXNcIn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEzIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiY3VydmVQbG90ID0ge1xuICBjb25zdCBwdHMgPSBTLnJ1bnMuZmlsdGVyKHIgPT4gci51c2VkKS5mbGF0TWFwKHIgPT4gci5sb2cubWFwKHAgPT4gKHt4OiBjdXJ2ZVggPT09IFwiZmxvcHNcIiA/IHAudG9rZW5zICogci5wZXJfdG9rZW4gOiBwLnRva2VucywgeTogcC52YWwsIHJ1bjogYCR7ci5uYW1lfSBAICR7c2NpKHIuQywgMCl9YCwgTjogci5OfSkpKTtcbiAgcmV0dXJuIFBsb3QucGxvdCh7d2lkdGg6IE1hdGgubWluKHdpZHRoLCA3MDApLCBoZWlnaHQ6IDM0MCwgbWFyZ2luTGVmdDogNTUsIGdyaWQ6IHRydWUsXG4gICAgeDoge3R5cGU6IFwibG9nXCIsIGxhYmVsOiBjdXJ2ZVggPT09IFwiZmxvcHNcIiA/IFwiVHJhaW5pbmcgY29tcHV0ZSAoRkxPUHMpXCIgOiBcIkNoYXJhY3RlcnMgc2VlblwiLCB0aWNrRm9ybWF0OiBjdXJ2ZVggPT09IFwiZmxvcHNcIiA/IHBvdzEwIDogXCJ+c1wifSxcbiAgICB5OiB7dHlwZTogXCJsb2dcIiwgbGFiZWw6IFwiSGVsZC1vdXQgbG9zcyAobmF0cyBwZXIgY2hhcmFjdGVyKVwiLCBkb21haW46IFsxLjA1LCAyLjldfSxcbiAgICBjb2xvcjoge3R5cGU6IFwibG9nXCIsIHNjaGVtZTogXCJWaXJpZGlzXCIsIGxlZ2VuZDogdHJ1ZSwgbGFiZWw6IFwiTm9uLWVtYmVkZGluZyBwYXJhbWV0ZXJzXCJ9LFxuICAgIG1hcmtzOiBbUGxvdC5saW5lKHB0cywge3g6IFwieFwiLCB5OiBcInlcIiwgejogXCJydW5cIiwgc3Ryb2tlOiBcIk5cIiwgc3Ryb2tlV2lkdGg6IDEuNCwgc3Ryb2tlT3BhY2l0eTogLjg1fSldfSk7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE0IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoibWRgT24gdGhlIGNvbXB1dGUgYXhpcywgdGhlIGN1cnZlcyBmb3JtIGFuIGVudmVsb3BlOiBhdCBldmVyeSBsZXZlbCBvZiBjb21wdXRlLCBzb21lIHNpemUgb2YgbW9kZWwgaXMgbG93ZXN0LCBhbmQgd2hpY2ggb25lIG1vdmVzIHJpZ2h0IGFzIHRoZSBjb21wdXRlIGdyb3dzLiBUaGUgYmVzdCBmaW5hbCBsb3NzIGF0IHRoZSBsYXJnZXN0IGJ1ZGdldCB3YXMgJHtmbXQoUy5iZXN0X2ZpbmFsLCAzKX0gbmF0cyBwZXIgY2hhcmFjdGVyICgke2ZtdChTLmJlc3RfZmluYWwgLyBNYXRoLkxOMiwgMil9IGJpdHMpLCBhZ2FpbnN0ICR7Zm10KE1hdGgubG9nKDI3KSwgMil9IG5hdHMgZm9yIGEgdW5pZm9ybSBndWVzcyBvdmVyIHRoZSAyNyBjaGFyYWN0ZXJzLmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTUiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJpc29QbG90ID0ge1xuICBjb25zdCBwdHMgPSBTLnJ1bnMuZmlsdGVyKHIgPT4gci51c2VkKS5tYXAociA9PiAoe046IHIuTiwgTDogci5maW5hbF92YWwsIEM6IHNjaShyLkMsIDApfSkpLCBvdXQgPSBTLnJ1bnMuZmlsdGVyKHIgPT4gIXIudXNlZCkubWFwKHIgPT4gKHtOOiByLk4sIEw6IHIuZmluYWxfdmFsLCBDOiBzY2koci5DLCAwKX0pKTtcbiAgY29uc3QgY3VydmVzID0gUy5pc29mbG9wLmZsYXRNYXAoYyA9PiBkMy5yYW5nZShNYXRoLmxvZzEwKGMuTm1pbikgLSAuMTUsIE1hdGgubG9nMTAoYy5ObWF4KSArIC4xNSwgLjAyKS5tYXAoeCA9PiAoe046IDEwICoqIHgsIEw6IGMucFswXSAqIHggKiB4ICsgYy5wWzFdICogeCArIGMucFsyXSwgQzogc2NpKGMuQywgMCl9KSkpO1xuICBjb25zdCBtaW5zID0gUy5pc29mbG9wLm1hcChjID0+ICh7TjogYy5Ob3B0LCBMOiBjLkxtaW4sIEM6IHNjaShjLkMsIDApfSkpO1xuICByZXR1cm4gUGxvdC5wbG90KHt3aWR0aDogTWF0aC5taW4od2lkdGgsIDcwMCksIGhlaWdodDogMzIwLCBtYXJnaW5MZWZ0OiA1NSwgZ3JpZDogdHJ1ZSxcbiAgICB4OiB7dHlwZTogXCJsb2dcIiwgbGFiZWw6IFwiTm9uLWVtYmVkZGluZyBwYXJhbWV0ZXJzIE5cIiwgdGlja0Zvcm1hdDogXCJ+c1wifSwgeToge2xhYmVsOiBcIkZpbmFsIGhlbGQtb3V0IGxvc3MgKG5hdHMgcGVyIGNoYXJhY3RlcilcIn0sXG4gICAgY29sb3I6IHtsZWdlbmQ6IHRydWUsIGxhYmVsOiBcIkNvbXB1dGVcIiwgZG9tYWluOiBTLmlzb2Zsb3AubWFwKGMgPT4gc2NpKGMuQywgMCkpfSxcbiAgICBtYXJrczogW1Bsb3QubGluZShjdXJ2ZXMsIHt4OiBcIk5cIiwgeTogXCJMXCIsIHN0cm9rZTogXCJDXCIsIHN0cm9rZU9wYWNpdHk6IC43fSksIFBsb3QuZG90KHB0cywge3g6IFwiTlwiLCB5OiBcIkxcIiwgZmlsbDogXCJDXCIsIHI6IDR9KSwgUGxvdC5kb3Qob3V0LCB7eDogXCJOXCIsIHk6IFwiTFwiLCBzdHJva2U6IFwiQ1wiLCByOiA0LCBzdHJva2VPcGFjaXR5OiAuNn0pLFxuICAgICAgICAgICAgUGxvdC5kb3QobWlucywge3g6IFwiTlwiLCB5OiBcIkxcIiwgc3Ryb2tlOiBcIkNcIiwgcjogOCwgc3Ryb2tlV2lkdGg6IDIsIHN5bWJvbDogXCJ0aW1lc1wifSldfSk7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE2IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaXNvVGV4dCA9IG1kYFRoZSBtaW5pbWEgKGNyb3NzZXMpIG1vdmUgdG8gbGFyZ2VyIG1vZGVscyBhcyBjb21wdXRlIGdyb3dzLCBidXQgZmFzdDogZml0dGluZyA8aT5OPC9pPiog4oidIDxpPkM8L2k+PHN1cD48aT5hPC9pPjwvc3VwPiB0aHJvdWdoIHRoZW0gZ2l2ZXMgPGk+YTwvaT4gPSAke2ZtdChTLmZyb250aWVyLmFfaXNvLCAyKX0sIG5vdCBDaGluY2hpbGxhJ3MgMC41IGJ1dCBjbG9zZXIgdG8sIGV2ZW4gYmV5b25kLCBLYXBsYW4ncyAwLjczLiBUaGUgb3B0aW1hbCBudW1iZXIgb2YgY2hhcmFjdGVycyBwZXIgcGFyYW1ldGVyIGZhbGxzIGZyb20gYWJvdXQgJHtmbXQoTWF0aC5yb3VuZChTLmlzb2Zsb3BbMF0ucmF0aW8gLyAxMDApICogMTAwLCAwKX0gYXQgdGhlIHNtYWxsZXN0IGJ1ZGdldCB0byBhYm91dCAke2ZtdChTLmlzb2Zsb3BbUy5pc29mbG9wLmxlbmd0aCAtIDFdLnJhdGlvLCAwKX0gYXQgdGhlIGxhcmdlc3QsIHdoZXJlIENoaW5jaGlsbGEgd291bGQgaG9sZCBpdCBjb25zdGFudC5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTE3IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoib3VyRml0ID0geyBjb25zdCBmID0gUy5maXRzLm91cnM7IHJldHVybiBtZGBUaGUgZml0IGdpdmVzIDxpPkU8L2k+ID0gJHtmbXQoZi5FLCAyKX0sIDxpPkE8L2k+ID0gJHtmbXQoZi5BLCAyKX0sIDxpPkI8L2k+ID0gJHtmbXQoZi5CLCAwKX0sIM6xID0gJHtmbXQoZi5hbHBoYSwgMyl9IGFuZCDOsiA9ICR7Zm10KGYuYmV0YSwgMyl9LCB3aXRoIGEgcm9vdC1tZWFuLXNxdWFyZSBlcnJvciBvZiAke2ZtdChmLnJtc2UsIDMpfSBuYXRzIG92ZXIgdGhlIHJ1bnMuIFRoZSBleHBvbmVudHMgZ2l2ZSBhbiBhbGxvY2F0aW9uIDxpPmE8L2k+ID0gzrIvKM6xICsgzrIpID0gJHtmbXQoZi5iZXRhIC8gKGYuYWxwaGEgKyBmLmJldGEpLCAyKX0sICR7TWF0aC5hYnMoZi5iZXRhIC8gKGYuYWxwaGEgKyBmLmJldGEpIC0gUy5mcm9udGllci5hX2lzbykgPCAwLjEgPyBcImNvbnNpc3RlbnQgd2l0aFwiIDogXCJkaWZmZXJlbnQgZnJvbVwifSB0aGUgaXNvLUZMT1AgZXN0aW1hdGUgb2YgJHtmbXQoUy5mcm9udGllci5hX2lzbywgMil9LiBUaGUgZmxvb3IgaXMgdGhlIHdlYWsgcG9pbnQuIEFuIDxpPkU8L2k+IG9mICR7Zm10KGYuRSwgMil9IG5hdHMgd291bGQgbWVhbiBsb3dlci1jYXNlIFdpa2lwZWRpYSBpcyBhbG1vc3QgcGVyZmVjdGx5IHByZWRpY3RhYmxlIGF0IHRoZSBjaGFyYWN0ZXIgbGV2ZWwsIHdoaWNoIGl0IGlzIG5vdDogdGhlIGJlc3QgcHVibGlzaGVkIG1vZGVscyBvbiB0ZXh0OCByZWFjaCBhYm91dCAxLjEgYml0cyAoMC43NSBuYXRzKSBwZXIgY2hhcmFjdGVyLiBUd28gZGVjYWRlcyBvZiBjb21wdXRlIGFuZCBhIGhhbmRmdWwgb2YgcG9pbnRzIHBlciBidWRnZXQgY2Fubm90IHNlcGFyYXRlIGEgZmxvb3IgZnJvbSBhIHNsb3cgcG93ZXItbGF3IGRlY2xpbmUsIHNvIHRoZSBvcHRpbWlzZXIgdHJhZGVzIG9uZSBmb3IgdGhlIG90aGVyLCBhIGZyYWdpbGl0eSBvZiB0aGUgc2FtZSBraW5kIHRoYXQgQmVzaXJvZ2x1IGFuZCBjb2xsZWFndWVzIGZvdW5kIHdoZW4gdGhleSByZWZpdHRlZCBDaGluY2hpbGxhJ3Mgb3duIGFwcHJvYWNoIDMuYDsgfVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InByZWRQbG90ID0ge1xuICBjb25zdCBmID0gUy5maXRzLm91cnMsIHB0cyA9IFMucnVucy5maWx0ZXIociA9PiByLnVzZWQpLm1hcChyID0+ICh7cHJlZDogZi5FICsgZi5BIC8gci5OICoqIGYuYWxwaGEgKyBmLkIgLyByLnRva2VucyAqKiBmLmJldGEsIGFjdDogci5maW5hbF92YWwsIEM6IHNjaShyLkMsIDApfSkpO1xuICBjb25zdCBsbyA9IGQzLm1pbihwdHMsIGQgPT4gTWF0aC5taW4oZC5wcmVkLCBkLmFjdCkpIC0gLjAyLCBoaSA9IGQzLm1heChwdHMsIGQgPT4gTWF0aC5tYXgoZC5wcmVkLCBkLmFjdCkpICsgLjAyO1xuICByZXR1cm4gUGxvdC5wbG90KHt3aWR0aDogTWF0aC5taW4od2lkdGgsIDQyMCksIGhlaWdodDogMzgwLCBtYXJnaW5MZWZ0OiA1NSwgZ3JpZDogdHJ1ZSxcbiAgICB4OiB7ZG9tYWluOiBbbG8sIGhpXSwgbGFiZWw6IFwiRml0dGVkIGxvc3NcIn0sIHk6IHtkb21haW46IFtsbywgaGldLCBsYWJlbDogXCJNZWFzdXJlZCBsb3NzXCJ9LCBjb2xvcjoge2xlZ2VuZDogdHJ1ZSwgbGFiZWw6IFwiQ29tcHV0ZVwiLCBkb21haW46IFMuaXNvZmxvcC5tYXAoYyA9PiBzY2koYy5DLCAwKSl9LFxuICAgIG1hcmtzOiBbUGxvdC5saW5lKFtbbG8sIGxvXSwgW2hpLCBoaV1dLCB7c3Ryb2tlOiBcIiM5OTlcIiwgc3Ryb2tlRGFzaGFycmF5OiBcIjQgM1wifSksIFBsb3QuZG90KHB0cywge3g6IFwicHJlZFwiLCB5OiBcImFjdFwiLCBmaWxsOiBcIkNcIiwgcjogNH0pXX0pO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xOSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImhvbGRUYWJsZSA9IGh0bC5odG1sYDxkaXYgY2xhc3M9XCJzYy1zY3JvbGxcIj48dGFibGUgY2xhc3M9XCJ0YWJsZSB0YWJsZS1zbSBzYy10XCI+PHRoZWFkPjx0cj48dGg+TW9kZWw8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlBhcmFtZXRlcnM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkNoYXJhY3RlcnM8L3RoPjx0aCBjbGFzcz1cIm51bVwiPlByZWRpY3RlZDwvdGg+PHRoIGNsYXNzPVwibnVtXCI+TWVhc3VyZWQ8L3RoPjx0aCBjbGFzcz1cIm51bVwiPkVycm9yPC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAke1MuaG9sZG91dC5yb3dzLm1hcChyID0+IGh0bC5odG1sYDx0cj48dGQ+JHtyLm5hbWV9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2h1bWFuKHIuTil9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2h1bWFuKHIuRCl9PC90ZD48dGQgY2xhc3M9XCJudW1cIj4ke2ZtdChyLnByZWQsIDMpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoci5hY3QsIDMpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHsoci5wcmVkIC0gci5hY3QgPj0gMCA/IFwiK1wiIDogXCJcIikgKyBmbXQoci5wcmVkIC0gci5hY3QsIDMpfTwvdGQ+PC90cj5gKX1cbjwvdGJvZHk+PC90YWJsZT48L2Rpdj5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTIwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaG9sZFRleHQgPSBtZGBUaGUgbWVhbiBhYnNvbHV0ZSBlcnJvciBpcyAke2ZtdChTLmhvbGRvdXQubWFlLCAzKX0gbmF0cyBwZXIgY2hhcmFjdGVyLCAke2ZtdCgxMDAgKiBTLmhvbGRvdXQubWFlX3JlbCwgMSl9JSBvZiB0aGUgbG9zcywgZnJvbSBhIGZpdCB0byBydW5zIHdpdGggYXQgbW9zdCBhIHRoaXJkIG9mIHRoZSBjb21wdXRlLCBhbmQgZXZlcnkgcHJlZGljdGlvbiBpcyB0b28gb3B0aW1pc3RpYy4gVGhlIGNhdXNlIGlzIHRoZSBmbG9vcjogYSBmaXQgd2l0aCBhbG1vc3Qgbm8gaXJyZWR1Y2libGUgbG9zcyBleHBlY3RzIHRoZSBkZWNsaW5lIHRvIGNvbnRpbnVlIHVuZGltaW5pc2hlZCwgYW5kIHRoZSByZWFsIGN1cnZlcyBhcmUgYWxyZWFkeSBzdGFydGluZyB0byBmbGF0dGVuLiBUaGUgc2hhcGUgb2YgdGhlIGxhdyBleHRyYXBvbGF0ZWQ7IHRoZSBudW1iZXJzIGRyaWZ0ZWQuIFRoYXQgaXMgd2h5IHRoZSBsYXJnZSBsYWJvcmF0b3JpZXMgZml0IGFjcm9zcyBtYW55IGRlY2FkZXMgb2YgY29tcHV0ZSB3aXRoIGVhY2ggc2l6ZSdzIGh5cGVycGFyYW1ldGVycyB0dW5lZCwgYW5kIHdoeSB0aGUgR1BULTQgYW5kIExsYW1hIDMgcHJlZGljdGlvbnMgaW4gdGhlIGVhcmxpZXIgc2VjdGlvbnMsIG1hZGUgZnJvbSBydW5zIGEgdGhvdXNhbmQgdG8gdGVuIHRob3VzYW5kIHRpbWVzIHNtYWxsZXIsIGFyZSBtb3JlIGltcHJlc3NpdmUgdGhhbiB0aGV5IGxvb2suYFxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdmaXROYW1lJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2xvZ0MnKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnc2tldycpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdodycpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdodzInKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnY3VydmVYJykifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../ai/scaling-laws-part-1-power-laws";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
