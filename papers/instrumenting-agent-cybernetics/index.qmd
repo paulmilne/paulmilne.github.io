@@ -38,6 +38,8 @@ We package these as a **variety ledger**: a versioned registry of essential vari
 
 [Download the PDF](milne-2026-instrumenting-agent-cybernetics.pdf)
 
+**Related post:** [Why Merging Pairs Works](../../ai/byte-pair-encoding-statistics/#the-tokeniser-as-a-variety-ledger) measures the Enumeration Elasticity Theorem, Good–Turing missing mass and the MDL admission gate on a fully observable case: a language-model tokeniser, where byte-pair encoding turns out to be the theorem's architectural conclusion, an enumerated head with a class-independent fallback.
+
 ## Read it here
 
 ```{=html}

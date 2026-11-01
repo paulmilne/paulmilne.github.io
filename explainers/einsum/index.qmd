@@ -1,0 +1,375 @@
+---
+title: "Einsum: Index Notation for Tensor Operations"
+subtitle: "One rule that covers dot products, matrix multiplication, traces, transposes, batched products and multi-head attention, with a playground, the cost of contraction order, and why the gradient of an einsum is another einsum"
+description: "An explainer on einsum, the Einstein-summation notation used by NumPy, PyTorch and JAX: the one rule behind it, a catalogue of operations, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum and checked against matrix products, why contraction order matters (and how it gives linear attention), gradients, einops, and where the notation comes from."
+author: "Paul Milne"
+date: "2026-11-01"
+categories: [explainer, linear-algebra, tensors, ai]
+image: thumbnail.png
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.es-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.es-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.es-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.es-grid form { flex-wrap: wrap !important; }
+.es-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.es-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.es-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.es-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.es-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.es-kpis .s { font-size: .76rem; opacity: .7; }
+.es-arrs { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+.es-arr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
+.es-arr table { border-collapse: collapse; }
+.es-arr td { padding: .1rem .35rem; text-align: right; border: 1px solid var(--bs-border-color, #ddd); font-variant-numeric: tabular-nums; }
+.es-arr .cap { font-size: .72rem; opacity: .7; margin-bottom: .2rem; font-family: var(--bs-body-font-family); }
+.es-idx { display: flex; flex-wrap: wrap; gap: .4rem; margin: .3rem 0 .5rem; }
+.es-idx span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: .1rem .45rem; border-radius: 4px; font-size: .85rem; }
+.es-free { background: #2a9d8f33; } .es-sum { background: #e76f5133; }
+pre.es-code { font-size: .8rem; margin: .3rem 0 0; max-width: 100%; overflow-x: auto; }
+.es-err { color: #b5452b; font-size: .9rem; }
+table.es-t td.num, table.es-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.es-t td.mono, table.es-t code { white-space: nowrap; }
+.es-scroll { overflow-x: auto; max-width: 100%; }
+.es-scroll table { min-width: 560px; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+// ---- a small, general einsum in JavaScript -------------------------------------------------
+parseSpec = spec => {
+  const s = spec.replace(/\s+/g, "");
+  if (!/^[A-Za-z,]*(->[A-Za-z]*)?$/.test(s)) throw new Error("Use letters, commas and one '->', e.g. ij,jk->ik");
+  let [lhs, rhs] = s.split("->"); const ins = lhs.split(",");
+  if (ins.some(t => t === "") && ins.length > 1) throw new Error("An operand has no indices");
+  const count = {}; for (const c of ins.join("")) count[c] = (count[c] || 0) + 1;
+  if (rhs === undefined) rhs = Object.keys(count).filter(c => count[c] === 1).sort().join("");
+  for (const c of rhs) if (!(c in count)) throw new Error(`Output index '${c}' does not appear in any input`);
+  if (new Set(rhs).size !== rhs.length) throw new Error("An output index is repeated");
+  const letters = [...new Set(ins.join("") + rhs)];
+  return {ins, out: rhs, letters, summed: letters.filter(c => !rhs.includes(c))};
+}
+einsum = (spec, ...ts) => {
+  const p = parseSpec(spec);
+  if (ts.length !== p.ins.length) throw new Error(`Spec has ${p.ins.length} operands, got ${ts.length}`);
+  const size = {};
+  p.ins.forEach((idx, k) => {
+    if (idx.length !== ts[k].shape.length) throw new Error(`Operand ${k + 1} has ${ts[k].shape.length} axes but '${idx}' names ${idx.length}`);
+    [...idx].forEach((c, a) => { const n = ts[k].shape[a]; if (size[c] !== undefined && size[c] !== n) throw new Error(`Index '${c}' has size ${size[c]} in one place and ${n} in another`); size[c] = n; });
+  });
+  const L = p.letters, nL = L.length, dims = L.map(c => size[c]);
+  const total = dims.reduce((a, b) => a * b, 1);
+  if (total > 3e6) throw new Error(`That is ${fmt(total)} terms; keep it under 3 million here`);
+  const strides = (shape) => { const s = new Array(shape.length); let m = 1; for (let i = shape.length - 1; i >= 0; i--) { s[i] = m; m *= shape[i]; } return s; };
+  const opStride = p.ins.map((idx, k) => { const st = strides(ts[k].shape), v = new Array(nL).fill(0); [...idx].forEach((c, a) => v[L.indexOf(c)] += st[a]); return v; });
+  const oshape = [...p.out].map(c => size[c]), ost = strides(oshape), outStride = new Array(nL).fill(0);
+  [...p.out].forEach((c, a) => outStride[L.indexOf(c)] = ost[a]);
+  const out = new Float64Array(oshape.reduce((a, b) => a * b, 1)), ctr = new Array(nL).fill(0);
+  const off = p.ins.map(() => 0); let oo = 0;
+  for (let t = 0; t < total; t++) {
+    let v = 1; for (let k = 0; k < ts.length; k++) v *= ts[k].data[off[k]];
+    out[oo] += v;
+    for (let i = nL - 1; i >= 0; i--) {                       // odometer increment
+      ctr[i]++; for (let k = 0; k < ts.length; k++) off[k] += opStride[k][i]; oo += outStride[i];
+      if (ctr[i] < dims[i]) break;
+      for (let k = 0; k < ts.length; k++) off[k] -= opStride[k][i] * dims[i]; oo -= outStride[i] * dims[i]; ctr[i] = 0;
+    }
+  }
+  return {shape: oshape, data: out, size, terms: total, p};
+}
+rng = seed => { let s = seed >>> 0 || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+tensor = (shape, r, ints = true) => { const n = shape.reduce((a, b) => a * b, 1), d = new Float64Array(n); for (let i = 0; i < n; i++) d[i] = ints ? Math.floor(r() * 7) - 3 : r() * 2 - 1; return {shape, data: d}; }
+showArr = (t, cap) => {
+  const sh = t.shape, n = v => Number.isInteger(v) ? String(v) : fmt(v, 2);
+  let body;
+  if (sh.length === 0) body = htl.html`<table><tr><td>${n(t.data[0])}</td></tr></table>`;
+  else if (sh.length === 1 && sh[0] <= 12) body = htl.html`<table><tr>${[...t.data].map(v => htl.html`<td>${n(v)}</td>`)}</tr></table>`;
+  else if (sh.length === 2 && sh[0] <= 10 && sh[1] <= 10) body = htl.html`<table>${d3.range(sh[0]).map(i => htl.html`<tr>${d3.range(sh[1]).map(j => htl.html`<td>${n(t.data[i * sh[1] + j])}</td>`)}</tr>`)}</table>`;
+  else body = htl.html`<div style="opacity:.75">${sh.length}-axis array, ${fmt(t.data.length)} entries: ${[...t.data.slice(0, 8)].map(n).join(", ")}${t.data.length > 8 ? ", …" : ""}</div>`;
+  return htl.html`<div class="es-arr"><div class="cap">${cap} · shape (${sh.join(", ")})</div>${body}</div>`;
+}
+loopCode = (p, size, names) => {
+  const lines = [], pad = d => "    ".repeat(d), O = p.out.length ? `${names.out}[${[...p.out].join(", ")}]` : names.out;
+  lines.push(`${names.out} = zeros(${p.out.length ? "(" + [...p.out].map(c => size[c]).join(", ") + (p.out.length === 1 ? ",)" : ")") : "()"})`);
+  let d = 0;
+  for (const c of p.out) lines.push(`${pad(d++)}for ${c} in range(${size[c]}):`);
+  for (const c of p.summed) lines.push(`${pad(d++)}for ${c} in range(${size[c]}):        # summed`);
+  const prod = p.ins.map((idx, k) => `${names.ins[k]}[${[...idx].join(", ")}]`).join(" * ");
+  lines.push(`${pad(d)}${O} += ${prod}`);
+  return lines.join("\n");
+}
+```
+
+Every deep-learning library has a function that does nearly all of linear algebra from a short string. In NumPy, PyTorch and JAX it is called `einsum`, and
+
+```python
+C = einsum("ij,jk->ik", A, B)
+```
+
+is matrix multiplication. The string names the axes of each operand with letters and says which letters survive into the result. It is worth learning properly, because once it is familiar the shapes in a model like a transformer stop being something to track in comments and become part of the code. This explainer covers the rule, a catalogue of the operations it expresses, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum, why the order of a contraction matters, and what its gradient is. It is a companion to [the transformer series](../../ai/transformer-part-1-operation-by-operation/), which writes the same operations as matrix products.
+
+## The rule
+
+Write a letter for every axis of every operand. Then:
+
+1. A letter that appears in the **output** is a *free* index: the result has an axis for it.
+2. A letter that appears in the inputs but **not in the output** is *summed*: the result is added up over every value it takes.
+3. Each entry of the result is the sum, over all the summed letters, of the **product** of the corresponding entries of the inputs.
+
+Formally, for a spec `in₁,in₂,…->out`,
+
+$$
+\text{out}[\text{free}] = \sum_{\text{summed}} \;\prod_{k} \text{in}_k[\text{its letters}].
+$$
+
+So `"ij,jk->ik"` is $C_{ik} = \sum_j A_{ij} B_{jk}$: *i* and *k* are free, *j* is summed. Letters that share a name must have the same size, since they range over the same values. Nothing else is needed. In particular, a letter can be shared between inputs and still survive, in which case the inputs are paired along that axis rather than summed over it, which is how batching works: `"bij,bjk->bik"` multiplies each of the *b* matrix pairs separately.
+
+If the `->` and output are omitted, NumPy and PyTorch use an implicit rule: the output is every letter that appears exactly once, in alphabetical order. That makes `"ij,jk"` a matrix product but `"ba"` a transpose and `"ab"` not, which is a reason to always write the output.
+
+## A catalogue
+
+```{ojs}
+//| output: false
+presets = [
+  ["Dot product", "i,i->", "4,4", "$\\sum_i a_i b_i$"],
+  ["Outer product", "i,j->ij", "3,4", "$a_i b_j$"],
+  ["Matrix–vector", "ij,j->i", "3x4,4", "$\\sum_j A_{ij} x_j$"],
+  ["Row vector × matrix", "i,ij->j", "3,3x4", "$\\sum_i x_i W_{ij}$"],
+  ["Matrix product", "ij,jk->ik", "2x3,3x4", "$\\sum_j A_{ij} B_{jk}$"],
+  ["Transpose", "ij->ji", "2x3", "$A_{ji}$"],
+  ["Trace", "ii->", "4x4", "$\\sum_i A_{ii}$"],
+  ["Diagonal", "ii->i", "4x4", "$A_{ii}$"],
+  ["Row sums", "ij->i", "3x4", "$\\sum_j A_{ij}$"],
+  ["Sum of everything", "ij->", "3x4", "$\\sum_{ij} A_{ij}$"],
+  ["Elementwise product", "ij,ij->ij", "3x3,3x3", "$A_{ij} B_{ij}$"],
+  ["Frobenius inner product", "ij,ij->", "3x3,3x3", "$\\sum_{ij} A_{ij} B_{ij}$"],
+  ["Bilinear form", "i,ij,j->", "3,3x3,3", "$\\sum_{ij} x_i A_{ij} y_j$"],
+  ["Batched matrix product", "bij,bjk->bik", "2x2x3,2x3x2", "$\\sum_j A_{bij} B_{bjk}$"],
+  ["Attention scores, one head", "qd,kd->qk", "4x3,5x3", "$\\sum_d Q_{qd} K_{kd}$"],
+  ["Attention scores, all heads", "qhd,khd->hqk", "4x2x3,5x2x3", "$\\sum_d Q_{qhd} K_{khd}$"],
+  ["Tensor product of matrices", "ij,kl->ikjl", "2x2,2x2", "$A_{ij} B_{kl}$"]
+]
+```
+
+```{ojs}
+catTable = htl.html`<div class="es-scroll"><table class="table table-sm es-t"><thead><tr><th>Operation</th><th>Einsum</th><th>Meaning</th><th>Summed</th></tr></thead><tbody>
+  ${presets.map(([n, s, , m]) => { const p = parseSpec(s); return htl.html`<tr><td>${n}</td><td><code>${s}</code></td><td>${tex(Object.assign([m.slice(1, -1)], {raw: [m.slice(1, -1)]}))}</td><td><code>${p.summed.join(", ") || "–"}</code></td></tr>`; })}
+</tbody></table></div>`
+```
+
+Three things in that list go beyond physics' summation convention. A letter repeated *within* one operand, as in `ii`, walks the diagonal. A letter can appear in three or more operands, as in the bilinear form. And a letter shared by two inputs can be kept, as in batching and the elementwise product, which the classical convention cannot express at all.
+
+## Playground
+
+Choose an operation or type your own. Shapes are given per operand, axes separated by `x`, operands by commas. The inputs are filled with small random integers so the arithmetic can be checked by hand; the playground shows the free and summed indices, the loops the einsum stands for, and the result.
+
+::: {.es-grid}
+
+```{ojs}
+viewof preset = Inputs.select(presets, {format: d => `${d[0]}: ${d[1]}`, value: presets[4], label: "Start from"})
+```
+
+```{ojs}
+viewof play = Inputs.form({
+  spec: Inputs.text({value: preset[1], label: "Einsum"}),
+  shapes: Inputs.text({value: preset[2], label: "Shapes"}),
+  seed: Inputs.range([1, 99], {value: 7, step: 1, label: "Random seed"})
+})
+```
+
+:::
+
+```{ojs}
+playView = {
+  try {
+    const shapes = play.shapes.replace(/\s+/g, "").split(",").map(s => s === "" ? [] : s.split(/[x×*]/).map(Number));
+    if (shapes.some(sh => sh.some(n => !Number.isInteger(n) || n < 1 || n > 64))) throw new Error("Each axis size must be a whole number from 1 to 64");
+    const r = rng(play.seed), ins = shapes.map(sh => tensor(sh, r));
+    const res = einsum(play.spec, ...ins), p = res.p;
+    const names = {ins: p.ins.map((_, k) => "ABCDEFG"[k]), out: "R"};
+    const mults = res.terms * Math.max(1, p.ins.length - 1);
+    return htl.html`<div class="es-panel"><h4>${p.ins.join(", ")} → ${p.out || "scalar"}</h4>
+      <div class="es-idx">${p.letters.map(c => htl.html`<span class="${p.out.includes(c) ? "es-free" : "es-sum"}">${c} = ${res.size[c]} · ${p.out.includes(c) ? "free" : "summed"}</span>`)}</div>
+      <div class="es-kpis"><div><div class="k">Result shape</div><div class="v">(${res.shape.join(", ")})</div></div>
+        <div><div class="k">Terms in the sum</div><div class="v">${fmt(res.terms)}</div><div class="s">product of all index sizes</div></div>
+        <div><div class="k">Multiplications</div><div class="v">${fmt(mults)}</div><div class="s">done naively, in one loop nest</div></div></div>
+      <pre class="es-code"><code>${loopCode(p, res.size, names)}</code></pre>
+      <div class="es-arrs" style="margin-top:.6rem">${ins.map((t, k) => showArr(t, `${names.ins[k]} · '${p.ins[k]}'`))}${showArr(res, `R · '${p.out}'`)}</div></div>`;
+  } catch (e) { return htl.html`<div class="es-panel es-err">${e.message}</div>`; }
+}
+```
+
+The loop nest is the whole meaning of an einsum: one loop per distinct letter, the free letters outermost because they index the result, the summed letters inside, and a single multiply–accumulate in the middle. The number of terms is the product of the sizes of *all* the letters, which is why the count jumps when you add an index. Libraries do not run this loop; they rearrange the axes and hand the work to optimised matrix-multiplication routines, but the result is defined by it.
+
+## Multi-head attention in four lines
+
+Attention is where einsum earns its keep, because the head axis makes plain matrix notation awkward. In the row-vector convention of the transformer series, with sequence positions *t* (or *q* and *k* when queries and keys are distinguished), model width *m*, heads *h* and head width *d*, and weight tensors $W_Q, W_K, W_V \in \mathbb R^{m \times h \times d}$ and $W_O \in \mathbb R^{h \times d \times m}$:
+
+```python
+Q = einsum("tm,mhd->thd", X, W_Q)            # project every position into every head
+K = einsum("tm,mhd->thd", X, W_K)
+V = einsum("tm,mhd->thd", X, W_V)
+S = einsum("qhd,khd->hqk", Q, K) / sqrt(d)   # scores: one T×T matrix per head
+A = softmax(S + causal_mask, axis=-1)
+Y = einsum("hqk,khd,hdm->qm", A, V, W_O)     # mix values, then project heads back and sum them
+```
+
+Each line says exactly what is contracted. The score line sums over the head width *d* only, and keeps the head axis while moving it to the front. The last line sums over keys *k*, head width *d* and heads *h* in one statement; summing over *h* is precisely "concatenate the heads and multiply by $W_O$", without the concatenation. The matrix version of the same computation needs a reshape from $T \times hd$ to $T \times h \times d$, two transposes to bring the head axis forward, and the reverse on the way out, and those are where shape bugs live. Add a batch letter *b* to every operand except the weights, or write `...`, and nothing else changes.
+
+The computation below builds a random sequence and weights in your browser, runs the einsum version through the small einsum function this page uses, runs the matrix version with explicit reshapes and slices, and compares them:
+
+```{ojs}
+viewof att = Inputs.form({T: Inputs.range([2, 10], {value: 6, step: 1, label: "Sequence length T"}), h: Inputs.range([1, 4], {value: 2, step: 1, label: "Heads h"}), d: Inputs.range([1, 8], {value: 4, step: 1, label: "Head width d"})})
+```
+
+```{ojs}
+attCheck = {
+  const {T, h, d} = att, m = h * d, r = rng(11), X = tensor([T, m], r, false);
+  const WQ = tensor([m, h, d], r, false), WK = tensor([m, h, d], r, false), WV = tensor([m, h, d], r, false), WO = tensor([h, d, m], r, false);
+  const softmaxRows = (S, H) => { const out = new Float64Array(S.data.length);
+    for (let hh = 0; hh < H; hh++) for (let q = 0; q < T; q++) { let mx = -Infinity; const base = (hh * T + q) * T;
+      for (let k = 0; k <= q; k++) mx = Math.max(mx, S.data[base + k]); let z = 0;
+      for (let k = 0; k <= q; k++) { out[base + k] = Math.exp(S.data[base + k] - mx); z += out[base + k]; }
+      for (let k = 0; k <= q; k++) out[base + k] /= z; }
+    return {shape: S.shape, data: out}; };
+  // einsum version
+  const Q = einsum("tm,mhd->thd", X, WQ), K = einsum("tm,mhd->thd", X, WK), V = einsum("tm,mhd->thd", X, WV);
+  const S = einsum("qhd,khd->hqk", Q, K); S.data.forEach((v, i) => S.data[i] = v / Math.sqrt(d));
+  const A = softmaxRows(S, h), Y = einsum("hqk,khd,hdm->qm", A, V, WO);
+  // matrix version: per head, Q_h = X W_Q[:, h, :], scores = Q_h K_hᵀ, out_h = P V_h, concat, then concat · W_O(reshaped)
+  const mm = (a, ar, ac, b, bc) => { const o = new Float64Array(ar * bc); for (let i = 0; i < ar; i++) for (let k = 0; k < ac; k++) { const av = a[i * ac + k]; for (let j = 0; j < bc; j++) o[i * bc + j] += av * b[k * bc + j]; } return o; };
+  const slice = (W, hh) => { const o = new Float64Array(m * d); for (let i = 0; i < m; i++) for (let j = 0; j < d; j++) o[i * d + j] = W.data[(i * h + hh) * d + j]; return o; };
+  const concat = new Float64Array(T * m);
+  for (let hh = 0; hh < h; hh++) {
+    const Qh = mm(X.data, T, m, slice(WQ, hh), d), Kh = mm(X.data, T, m, slice(WK, hh), d), Vh = mm(X.data, T, m, slice(WV, hh), d);
+    const KhT = new Float64Array(d * T); for (let i = 0; i < T; i++) for (let j = 0; j < d; j++) KhT[j * T + i] = Kh[i * d + j];
+    const Sh = mm(Qh, T, d, KhT, T).map(v => v / Math.sqrt(d)), P = softmaxRows({shape: [1, T, T], data: Sh}, 1).data;
+    const Oh = mm(P, T, T, Vh, d); for (let i = 0; i < T; i++) for (let j = 0; j < d; j++) concat[i * m + hh * d + j] = Oh[i * d + j];
+  }
+  const Ym = mm(concat, T, m, WO.data, m);   // W_O (h, d, m) read as an (h·d) × m matrix
+  const err = d3.max(Ym, (v, i) => Math.abs(v - Y.data[i]));
+  return htl.html`<div class="es-panel"><h4>Multi-head attention, T = ${T}, h = ${h}, d = ${d}, m = ${m}</h4><div class="es-kpis">
+    <div><div class="k">Output shape</div><div class="v">(${Y.shape.join(", ")})</div></div>
+    <div><div class="k">Largest difference</div><div class="v">${err.toExponential(1)}</div><div class="s">einsum against reshape-and-matmul</div></div>
+    <div><div class="k">Score tensor</div><div class="v">(${S.shape.join(", ")})</div><div class="s">one T × T matrix per head</div></div></div></div>`;
+}
+```
+
+The two agree to rounding error. Reading $W_O$, a tensor of shape $(h, d, m)$, as a matrix of shape $(hd) \times m$ is exactly what makes the concatenation unnecessary: the row-major layout puts head 0's $d$ rows first, then head 1's, the same order as the concatenated head outputs.
+
+## The order of a contraction
+
+An einsum with three or more operands can be evaluated in one loop nest, but that is rarely the cheap way. Take a chain of three matrices, `"ij,jk,kl->il"`. The single loop nest touches every combination of *i, j, k, l*: $IJKL$ multiplications, twice. Contracting a pair first and then the third is the familiar matrix-chain problem: $(AB)C$ costs $IJK + IKL$, and $A(BC)$ costs $JKL + IJL$.
+
+The same choice has a famous instance inside attention. Drop the softmax, so that attention becomes $(QK^\top)V$, a plain three-way contraction `"qd,kd,ke->qe"` over sequence length $T$ and head width $d$. Contracting queries with keys first builds the $T \times T$ score matrix, costing about $2T^2 d$. Contracting keys with values first builds a $d \times d$ summary, `"kd,ke->de"`, and costs about $2Td^2$: linear in sequence length. That reordering is the whole idea of *linear attention* (Angelos Katharopoulos and colleagues, 2020), and the softmax, which is not multilinear, is exactly what prevents it in a standard transformer.
+
+::: {.es-grid}
+
+```{ojs}
+viewof chain = Inputs.form({
+  ex: Inputs.radio(new Map([["Matrix chain ij,jk,kl->il", "chain"], ["Attention without softmax qd,kd,ke->qe", "attn"]]), {value: "attn", label: "Contraction"}),
+  a: Inputs.range([1, 5], {value: 4, step: 0.1, label: "First size, log₁₀ (I, or T)"}),
+  b: Inputs.range([1, 5], {value: 2, step: 0.1, label: "Second size, log₁₀ (J, or d)"}),
+  c: Inputs.range([1, 5], {value: 3, step: 0.1, label: "Third size, log₁₀ (K)"}),
+  dd: Inputs.range([1, 5], {value: 1, step: 0.1, label: "Fourth size, log₁₀ (L)"})
+})
+```
+
+:::
+
+```{ojs}
+chainView = {
+  const P = x => Math.round(10 ** x), sci = x => x >= 1e5 ? x.toExponential(1).replace("e+", "×10^") : fmt(x);
+  let rows, title;
+  if (chain.ex === "chain") {
+    const [I, J, K, L] = [P(chain.a), P(chain.b), P(chain.c), P(chain.dd)];
+    title = `I = ${fmt(I)}, J = ${fmt(J)}, K = ${fmt(K)}, L = ${fmt(L)}`;
+    rows = [["One loop nest", 2 * I * J * K * L], ["(AB)C: ij,jk->ik then ik,kl->il", I * J * K + I * K * L], ["A(BC): jk,kl->jl then ij,jl->il", J * K * L + I * J * L]];
+  } else {
+    const [T, d] = [P(chain.a), P(chain.b)];
+    title = `T = ${fmt(T)} positions, d = ${fmt(d)}`;
+    rows = [["One loop nest", 2 * T * T * d * d], ["(QKᵀ)V: scores first, T × T", 2 * T * T * d], ["Q(KᵀV): summary first, d × d", 2 * T * d * d]];
+  }
+  const best = d3.min(rows, r => r[1]);
+  return htl.html`<div class="es-panel"><h4>${title}</h4><table class="table table-sm es-t" style="margin:0"><thead><tr><th>Order</th><th class="num">Multiplications</th><th class="num">× best</th></tr></thead><tbody>
+    ${rows.map(([n, c]) => htl.html`<tr style="${c === best ? "font-weight:650" : ""}"><td>${n}</td><td class="num">${sci(c)}</td><td class="num">${fmt(c / best, c / best < 10 ? 1 : 0)}</td></tr>`)}</tbody></table>
+    ${chain.ex === "attn" ? htl.html`<p class="es-note" style="font-size:.82rem;opacity:.75;margin:.4rem 0 0">Only the first two sliders are used: T and d.</p>` : ""}</div>`;
+}
+```
+
+For a chain, dynamic programming finds the best order in polynomial time. For a general network of contractions, finding the cheapest order is NP-hard, a result due to Chi-Chung Lam, P. Sadayappan and Rephael Wenger (1997), so libraries use heuristics. NumPy's `einsum` does so when called with `optimize=True`, and Daniel Smith and Johnnie Gray's `opt_einsum` package (2018), which PyTorch uses when it is installed, offers greedy, dynamic-programming and randomised searches. Large tensor-network simulations of quantum circuits live or die by this choice.
+
+## Gradients are einsums too
+
+An einsum is linear in each operand separately, so its derivative with respect to one operand is the einsum with that operand removed. For a scalar loss $\mathcal L$ and $C$ = `einsum("ij,jk->ik", A, B)`,
+
+$$
+\frac{\partial \mathcal L}{\partial A_{ij}} = \sum_k \frac{\partial \mathcal L}{\partial C_{ik}} \, B_{jk}, \qquad\text{that is}\qquad \bar A = \texttt{einsum("ik,jk->ij"}, \bar C, B\texttt{)}.
+$$
+
+The rule in general: to get the gradient for one operand, **swap it with the output**. Its index string becomes the new output, and the output's string, carrying the incoming gradient $\bar C$, takes its place among the inputs. Summed letters become free and free letters become summed as needed, automatically.
+
+::: {.es-scroll}
+| Forward | Gradient for the first operand | Gradient for the second operand |
+|---|---|---|
+| `ij,jk->ik` | `ik,jk->ij` ($\bar C B^\top$) | `ij,ik->jk` ($A^\top \bar C$) |
+| `i,i->` | `,i->i` ($\bar c\, b$) | `i,->i` ($a\, \bar c$) |
+| `i,j->ij` | `ij,j->i` | `i,ij->j` |
+| `bij,bjk->bik` | `bik,bjk->bij` | `bij,bik->bjk` |
+| `qhd,khd->hqk` | `hqk,khd->qhd` | `qhd,hqk->khd` |
+:::
+
+The rule needs two provisos. If an operand has a letter that appears nowhere else, such as *j* in `"ij->i"`, the forward pass summed it away, and the gradient must broadcast it back, so the backward einsum has to be told that letter's size. And a letter repeated within one operand, as in a trace, puts the gradient on a diagonal and zeros elsewhere. Automatic-differentiation systems handle both; the table covers the cases that matter in practice.
+
+## In practice
+
+**The same string everywhere.** `numpy.einsum`, `torch.einsum`, `jax.numpy.einsum` and `tf.einsum` accept the same notation. All support `...` for "any leading axes", so `"...ij,...jk->...ik"` is a matrix product broadcast over any batch shape. Under the hood, a two-operand einsum is turned into a transpose, a reshape and a single batched matrix multiplication whenever possible, so it runs at the speed of the matrix-multiplication routine; an einsum is not slow because it is written as a string.
+
+**einops.** Alex Rogozhnikov's `einops` library (2018; ICLR 2022) took the idea further with named axes, grouping in parentheses, and separate verbs for rearranging, reducing and repeating. Splitting and merging heads becomes
+
+```python
+Q = rearrange(Q, "b t (h d) -> b h t d", h=n_heads)   # split heads
+Y = rearrange(Y, "b h t d -> b t (h d)")              # merge them back
+```
+
+and the reshape that the matrix version of attention needs is stated, checked against the sizes, and documented in one line. Its `einsum` accepts whole words for axes, `"batch head query dim, batch head key dim -> batch head query key"`, at the cost of length.
+
+**What einsum cannot do.** It only multiplies and adds, so every operation it expresses is multilinear. Softmax, normalisation, activation functions, maxima and anything else nonlinear sit between einsums. It also has no notion of a metric: physics' distinction between upper and lower indices, which records how a quantity changes under a change of coordinates, has no counterpart, and the string says nothing about what the axes mean.
+
+## Where it comes from
+
+Albert Einstein introduced the convention in 1916, in *Die Grundlage der allgemeinen Relativitätstheorie*, to tame equations of general relativity in which nearly every term was a sum over repeated coordinate indices: write the index twice, once up and once down, and drop the summation sign. It built on the absolute differential calculus of Gregorio Ricci-Curbastro and Tullio Levi-Civita (1900). The computing version keeps the idea of summing over repeated letters and drops the rest. NumPy added `einsum` in version 1.6, in 2011, and the deep-learning libraries followed. Tim Rocktäschel's 2018 blog post *Einsum is All You Need* did much to make it everyday deep-learning vocabulary.
+
+::: {.es-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Einsum** | Function evaluating a sum of products over named indices | *Ein*stein *sum*mation; NumPy 1.6, 2011. |
+| **Free index** | A letter that survives into the output | From tensor calculus: an index not bound by a sum, free to take any value. |
+| **Dummy index** | A summed letter | Also called a bound index; its name does not matter, like a variable of integration. |
+| **Contraction** | Summing over a shared index, reducing the number of axes | Tensor calculus: contracting a tensor lowers its rank by two in the classical setting. |
+| **Tensor** | Here, an array with any number of axes | Latin *tendere*, to stretch, via Woldemar Voigt's 1898 use for the stress in crystals. |
+| **Tensor network** | A graph of tensors with shared indices as edges | Physics of many-body quantum systems, from the 1990s. |
+:::
+
+## Sources
+
+- A. Einstein, [*Die Grundlage der allgemeinen Relativitätstheorie*](https://einsteinpapers.press.princeton.edu/vol6-doc/385), *Annalen der Physik* 49, 1916.
+- NumPy, [*1.6.0 release notes*](https://numpy.org/devdocs/release/1.6.0-notes.html) (2011), and [`numpy.einsum`](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html).
+- D. G. A. Smith, J. Gray, [*opt_einsum: A Python package for optimizing contraction order for einsum-like expressions*](https://joss.theoj.org/papers/10.21105/joss.00753), *Journal of Open Source Software* 3(26), 2018.
+- C.-C. Lam, P. Sadayappan, R. Wenger, *On optimizing a class of multi-dimensional loops with reduction for parallel execution*, *Parallel Processing Letters*, 1997.
+- A. Rogozhnikov, [*Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation*](https://openreview.net/forum?id=oapKSVM2bcj), ICLR 2022.
+- A. Katharopoulos, A. Vyas, N. Pappas, F. Fleuret, [*Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*](https://arxiv.org/abs/2006.16236), ICML 2020.
+- T. Rocktäschel, [*Einsum is All You Need*](https://rockt.github.io/2018/04/30/einsum), 2018.
+
+**Related:** [The Transformer, Part 1](../../ai/transformer-part-1-operation-by-operation/) for the same operations as matrix products, with every shape.

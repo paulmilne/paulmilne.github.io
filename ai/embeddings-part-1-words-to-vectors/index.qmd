@@ -116,7 +116,7 @@ bpeTable = {
 }
 ```
 
-Sixteen thousand merges bring the average to 1.16 tokens a word, against 5.88 symbols a word with characters alone. That is the trade the vocabulary size controls.
+Sixteen thousand merges bring the average to 1.16 tokens a word, against 5.88 symbols a word with characters alone. That is the trade the vocabulary size controls. Why so simple a rule works as well as it does is the subject of [a separate post on the statistics of BPE](../byte-pair-encoding-statistics/).
 
 GPT-2 made two changes. It works on **bytes** rather than characters, so the 256 possible bytes are the starting alphabet and no input can ever be unrepresentable: an emoji or a Chinese character is just a few bytes. And before merging, the text is split by a regular expression into words, numbers and punctuation, with a leading space kept attached to the word that follows it. GPT-2's 50,257 tokens are the 256 bytes, 50,000 merges and one end-of-text marker. Its vocabulary therefore has `" token"` (with the space) and `"token"` (without) as different tokens with different embeddings. Here is GPT-2's tokeniser next to the one used by GPT-4o, which has about four times the vocabulary:
 

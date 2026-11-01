@@ -1,0 +1,6 @@
+gain 16384 95e6 runs/gain_full.json
+freq 16384 95e6 runs/freq_full.json
+pmi 4096 95e6 runs/pmi_full.json
+freq 16384 1e7 runs/freq_1e7.json
+freq 16384 1e6 runs/freq_1e6.json
+freq 16384 1e5 runs/freq_1e5.json

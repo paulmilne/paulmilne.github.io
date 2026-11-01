@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-7f537555e85d979099ed792706140d7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -370,7 +370,7 @@ span.math.display { display: block; overflow-x: auto; max-width: 100%; }
 <p>This is the first of three posts. This one takes the architecture apart operation by operation: what every tensor is, what shape it has, what each equation computes and why it was chosen. <a href="../transformer-part-2-inside-gpt-2/">Part 2</a> runs a real trained transformer, GPT-2, and looks inside it. <a href="../transformer-part-3-advances/">Part 3</a> covers what has changed since 2017. The two <a href="../embeddings-part-1-words-to-vectors/">embedding posts</a> cover the first and last steps, turning text into vectors and back, in more depth.</p>
 <section id="notation" class="level2">
 <h2 class="anchored" data-anchor-id="notation">Notation</h2>
-<p>Everything here uses the <strong>row-vector convention</strong>, the one in the original paper and in essentially all code: a token’s vector is a row, and a linear layer is <span class="math inline">\(\mathbf x W + \mathbf b\)</span> with <span class="math inline">\(W \in \mathbb R^{d_{\text{in}}\times d_{\text{out}}}\)</span>. Stacking the <span class="math inline">\(T\)</span> token vectors of a sequence as the rows of a matrix gives <span class="math inline">\(X \in \mathbb R^{T\times d}\)</span>, and a layer applied to every token at once is just <span class="math inline">\(XW\)</span>. With a batch of <span class="math inline">\(B\)</span> sequences, the activations are a three-way tensor of shape <span class="math inline">\((B, T, d)\)</span>.</p>
+<p>Everything here uses the <strong>row-vector convention</strong>, the one in the original paper and in essentially all code: a token’s vector is a row, and a linear layer is <span class="math inline">\(\mathbf x W + \mathbf b\)</span> with <span class="math inline">\(W \in \mathbb R^{d_{\text{in}}\times d_{\text{out}}}\)</span>. Stacking the <span class="math inline">\(T\)</span> token vectors of a sequence as the rows of a matrix gives <span class="math inline">\(X \in \mathbb R^{T\times d}\)</span>, and a layer applied to every token at once is just <span class="math inline">\(XW\)</span>. With a batch of <span class="math inline">\(B\)</span> sequences, the activations are a three-way tensor of shape <span class="math inline">\((B, T, d)\)</span>. Most implementations write these products with <code>einsum</code>, which names every axis in a short string; <a href="../../explainers/einsum/">a separate explainer</a> covers that notation and writes the attention layer below in it.</p>
 <div class="tf-scroll">
 <table class="caption-top table">
 <thead>

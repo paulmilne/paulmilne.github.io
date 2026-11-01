@@ -134,13 +134,13 @@ window.Quarto = {
 <link rel="stylesheet" href="../styles.css">
 <meta property="og:title" content="AI – math-blog">
 <meta property="og:description" content="Notes, explainers and experiments on artificial intelligence.">
-<meta property="og:image" content="https://paulmilne.github.io/ai/embeddings-part-1-words-to-vectors/thumbnail.png">
+<meta property="og:image" content="https://paulmilne.github.io/ai/byte-pair-encoding-statistics/thumbnail.png">
 <meta property="og:site_name" content="math-blog">
 <meta property="og:image:height" content="500">
 <meta property="og:image:width" content="800">
 <meta name="twitter:title" content="AI – math-blog">
 <meta name="twitter:description" content="Notes, explainers and experiments on artificial intelligence.">
-<meta name="twitter:image" content="https://paulmilne.github.io/ai/embeddings-part-1-words-to-vectors/thumbnail.png">
+<meta name="twitter:image" content="https://paulmilne.github.io/ai/byte-pair-encoding-statistics/thumbnail.png">
 <meta name="twitter:image-height" content="500">
 <meta name="twitter:image-width" content="800">
 <meta name="twitter:card" content="summary_large_image">
@@ -253,7 +253,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(7)</span></div><div class="category" data-category="YWk=">ai <span class="quarto-category-count">(7)</span></div><div class="category" data-category="ZW1iZWRkaW5ncw==">embeddings <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Zm9yZWNhc3Rpbmc=">forecasting <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aGlzdG9yeQ==">history <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW5mb3JtYXRpb24tcmV0cmlldmFs">information-retrieval <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW50ZXJwcmV0YWJpbGl0eQ==">interpretability <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGFuZ3VhZ2UtbW9kZWxz">language-models <span class="quarto-category-count">(7)</span></div><div class="category" data-category="bGluZWFyLWFsZ2VicmE=">linear-algebra <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c2NhbGluZy1sYXdz">scaling-laws <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c3RhdGlzdGljcw==">statistics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="dHJhbnNmb3JtZXJz">transformers <span class="quarto-category-count">(3)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(8)</span></div><div class="category" data-category="YWk=">ai <span class="quarto-category-count">(8)</span></div><div class="category" data-category="ZW1iZWRkaW5ncw==">embeddings <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Zm9yZWNhc3Rpbmc=">forecasting <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aGlzdG9yeQ==">history <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW5mb3JtYXRpb24tcmV0cmlldmFs">information-retrieval <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW5mb3JtYXRpb24tdGhlb3J5">information-theory <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW50ZXJwcmV0YWJpbGl0eQ==">interpretability <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGFuZ3VhZ2UtbW9kZWxz">language-models <span class="quarto-category-count">(8)</span></div><div class="category" data-category="bGluZWFyLWFsZ2VicmE=">linear-algebra <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c2NhbGluZy1sYXdz">scaling-laws <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c3RhdGlzdGljcw==">statistics <span class="quarto-category-count">(2)</span></div><div class="category" data-category="dG9rZW5pc2F0aW9u">tokenisation <span class="quarto-category-count">(1)</span></div><div class="category" data-category="dHJhbnNmb3JtZXJz">transformers <span class="quarto-category-count">(3)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -268,7 +268,48 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="YWklMkNlbWJlZGRpbmdzJTJDbGFuZ3VhZ2UtbW9kZWxzJTJDbGluZWFyLWFsZ2VicmE=" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793456081743" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="32" data-listing-word-count-sort="6229">
+<div class="quarto-post image-right" data-index="0" data-categories="YWklMkN0b2tlbmlzYXRpb24lMkNpbmZvcm1hdGlvbi10aGVvcnklMkNsYW5ndWFnZS1tb2RlbHMlMkNzdGF0aXN0aWNz" data-listing-date-sort="1793491200000" data-listing-file-modified-sort="1793525488319" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="28" data-listing-word-count-sort="5598">
+<div class="thumbnail"><a href="../ai/byte-pair-encoding-statistics/index.html" class="no-external">
+
+<img loading="lazy" src="../ai/byte-pair-encoding-statistics/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../ai/byte-pair-encoding-statistics/index.html" class="no-external">Why Merging Pairs Works: The Statistics of Byte-Pair Encoding</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../ai/byte-pair-encoding-statistics/index.html" class="no-external">Tokenisation as compression: what a single merge saves, why counting pairs is nearly the right rule, where greed goes wrong, what Zipf’s law has to do with it, and how the vocabulary should grow with the data</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('YWk='); return false;">ai</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('dG9rZW5pc2F0aW9u'); return false;">tokenisation</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aW5mb3JtYXRpb24tdGhlb3J5'); return false;">information-theory</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('bGFuZ3VhZ2UtbW9kZWxz'); return false;">language-models</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c3RhdGlzdGljcw=='); return false;">statistics</div>
+
+</div>
+<div class="delink listing-description"><a href="../ai/byte-pair-encoding-statistics/index.html" class="no-external">
+<p>Byte-pair encoding builds a tokeniser by repeatedly merging the most frequent pair of symbols. This post asks why so crude a rule works so well: tokenisation as half of a code, a derivation showing that a merge saves about count × (PMI − 1) nats, three merge rules trained and compared on text8, a three-word corpus on which greedy merging fails, Zipf’s law and Rényi efficiency, and how the best vocabulary size grows with the training data.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../ai/byte-pair-encoding-statistics/index.html" class="no-external">
+<div class="listing-date">
+Nov 1, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="YWklMkNlbWJlZGRpbmdzJTJDbGFuZ3VhZ2UtbW9kZWxzJTJDbGluZWFyLWFsZ2VicmE=" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793525528973" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="32" data-listing-word-count-sort="6252">
 <div class="thumbnail"><a href="../ai/embeddings-part-1-words-to-vectors/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/embeddings-part-1-words-to-vectors/thumbnail.png" class="thumbnail-image">
@@ -307,7 +348,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="YWklMkNlbWJlZGRpbmdzJTJDbGFuZ3VhZ2UtbW9kZWxzJTJDaW5mb3JtYXRpb24tcmV0cmlldmFs" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793455646762" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="28" data-listing-word-count-sort="5562">
+<div class="quarto-post image-right" data-index="2" data-categories="YWklMkNlbWJlZGRpbmdzJTJDbGFuZ3VhZ2UtbW9kZWxzJTJDaW5mb3JtYXRpb24tcmV0cmlldmFs" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793455646762" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="28" data-listing-word-count-sort="5562">
 <div class="thumbnail"><a href="../ai/embeddings-part-2-search-and-retrieval/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/embeddings-part-2-search-and-retrieval/thumbnail.png" class="thumbnail-image">
@@ -346,7 +387,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="YWklMkNzY2FsaW5nLWxhd3MlMkNsYW5ndWFnZS1tb2RlbHMlMkNzdGF0aXN0aWNz" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793471730473" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="28" data-listing-word-count-sort="5444">
+<div class="quarto-post image-right" data-index="3" data-categories="YWklMkNzY2FsaW5nLWxhd3MlMkNsYW5ndWFnZS1tb2RlbHMlMkNzdGF0aXN0aWNz" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793471730473" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="28" data-listing-word-count-sort="5444">
 <div class="thumbnail"><a href="../ai/scaling-laws-part-1-power-laws/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/scaling-laws-part-1-power-laws/thumbnail.png" class="thumbnail-image">
@@ -385,7 +426,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="3" data-categories="YWklMkNzY2FsaW5nLWxhd3MlMkNsYW5ndWFnZS1tb2RlbHMlMkNmb3JlY2FzdGluZw==" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793471666374" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="26" data-listing-word-count-sort="5158">
+<div class="quarto-post image-right" data-index="4" data-categories="YWklMkNzY2FsaW5nLWxhd3MlMkNsYW5ndWFnZS1tb2RlbHMlMkNmb3JlY2FzdGluZw==" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793471666374" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="26" data-listing-word-count-sort="5158">
 <div class="thumbnail"><a href="../ai/scaling-laws-part-2-beyond-chinchilla/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/scaling-laws-part-2-beyond-chinchilla/thumbnail.png" class="thumbnail-image">
@@ -424,7 +465,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="4" data-categories="YWklMkN0cmFuc2Zvcm1lcnMlMkNsYW5ndWFnZS1tb2RlbHMlMkNsaW5lYXItYWxnZWJyYQ==" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793459156006" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="36" data-listing-word-count-sort="7020">
+<div class="quarto-post image-right" data-index="5" data-categories="YWklMkN0cmFuc2Zvcm1lcnMlMkNsYW5ndWFnZS1tb2RlbHMlMkNsaW5lYXItYWxnZWJyYQ==" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793459156006" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="36" data-listing-word-count-sort="7020">
 <div class="thumbnail"><a href="../ai/transformer-part-1-operation-by-operation/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/transformer-part-1-operation-by-operation/thumbnail.png" class="thumbnail-image">
@@ -463,7 +504,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="5" data-categories="YWklMkN0cmFuc2Zvcm1lcnMlMkNsYW5ndWFnZS1tb2RlbHMlMkNpbnRlcnByZXRhYmlsaXR5" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793459156012" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="16" data-listing-word-count-sort="3099">
+<div class="quarto-post image-right" data-index="6" data-categories="YWklMkN0cmFuc2Zvcm1lcnMlMkNsYW5ndWFnZS1tb2RlbHMlMkNpbnRlcnByZXRhYmlsaXR5" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793459156012" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="16" data-listing-word-count-sort="3099">
 <div class="thumbnail"><a href="../ai/transformer-part-2-inside-gpt-2/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/transformer-part-2-inside-gpt-2/thumbnail.png" class="thumbnail-image">
@@ -502,7 +543,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="6" data-categories="YWklMkN0cmFuc2Zvcm1lcnMlMkNsYW5ndWFnZS1tb2RlbHMlMkNoaXN0b3J5" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793459156017" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="27" data-listing-word-count-sort="5396">
+<div class="quarto-post image-right" data-index="7" data-categories="YWklMkN0cmFuc2Zvcm1lcnMlMkNsYW5ndWFnZS1tb2RlbHMlMkNoaXN0b3J5" data-listing-date-sort="1793404800000" data-listing-file-modified-sort="1793459156017" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="27" data-listing-word-count-sort="5396">
 <div class="thumbnail"><a href="../ai/transformer-part-3-advances/index.html" class="no-external">
 
 <img loading="lazy" src="../ai/transformer-part-3-advances/thumbnail.png" class="thumbnail-image">

@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-01">
+<meta name="description" content="An explainer on einsum, the Einstein-summation notation used by NumPy, PyTorch and JAX: the one rule behind it, a catalogue of operations, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum and checked against matrix products, why contraction order matters (and how it gives linear attention), gradients, einops, and where the notation comes from.">
+
+<title>Einsum: Index Notation for Tensor Operations – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Einsum: Index Notation for Tensor Operations – math-blog">
+<meta property="og:description" content="An explainer on einsum, the Einstein-summation notation used by NumPy, PyTorch and JAX: the one rule behind it, a catalogue of operations, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum and checked against matrix products, why contraction order matters (and how it gives linear attention), gradients, einops, and where the notation comes from.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/einsum/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="Einsum: Index Notation for Tensor Operations – math-blog">
+<meta name="twitter:description" content="An explainer on einsum, the Einstein-summation notation used by NumPy, PyTorch and JAX: the one rule behind it, a catalogue of operations, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum and checked against matrix products, why contraction order matters (and how it gives linear attention), gradients, einops, and where the notation comes from.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/einsum/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Einsum: Index Notation for Tensor Operations</h1>
+            <p class="subtitle lead">One rule that covers dot products, matrix multiplication, traces, transposes, batched products and multi-head attention, with a playground, the cost of contraction order, and why the gradient of an einsum is another einsum</p>
+                  <div>
+        <div class="description">
+          An explainer on einsum, the Einstein-summation notation used by NumPy, PyTorch and JAX: the one rule behind it, a catalogue of operations, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum and checked against matrix products, why contraction order matters (and how it gives linear attention), gradients, einops, and where the notation comes from.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">linear-algebra</div>
+                <div class="quarto-category">tensors</div>
+                <div class="quarto-category">ai</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 1, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-rule" id="toc-the-rule" class="nav-link active" data-scroll-target="#the-rule">The rule</a></li>
+  <li><a href="#a-catalogue" id="toc-a-catalogue" class="nav-link" data-scroll-target="#a-catalogue">A catalogue</a></li>
+  <li><a href="#playground" id="toc-playground" class="nav-link" data-scroll-target="#playground">Playground</a></li>
+  <li><a href="#multi-head-attention-in-four-lines" id="toc-multi-head-attention-in-four-lines" class="nav-link" data-scroll-target="#multi-head-attention-in-four-lines">Multi-head attention in four lines</a></li>
+  <li><a href="#the-order-of-a-contraction" id="toc-the-order-of-a-contraction" class="nav-link" data-scroll-target="#the-order-of-a-contraction">The order of a contraction</a></li>
+  <li><a href="#gradients-are-einsums-too" id="toc-gradients-are-einsums-too" class="nav-link" data-scroll-target="#gradients-are-einsums-too">Gradients are einsums too</a></li>
+  <li><a href="#in-practice" id="toc-in-practice" class="nav-link" data-scroll-target="#in-practice">In practice</a></li>
+  <li><a href="#where-it-comes-from" id="toc-where-it-comes-from" class="nav-link" data-scroll-target="#where-it-comes-from">Where it comes from</a></li>
+  <li><a href="#sources" id="toc-sources" class="nav-link" data-scroll-target="#sources">Sources</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.es-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.es-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.es-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.es-grid form { flex-wrap: wrap !important; }
+.es-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.es-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.es-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.es-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.es-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.es-kpis .s { font-size: .76rem; opacity: .7; }
+.es-arrs { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+.es-arr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
+.es-arr table { border-collapse: collapse; }
+.es-arr td { padding: .1rem .35rem; text-align: right; border: 1px solid var(--bs-border-color, #ddd); font-variant-numeric: tabular-nums; }
+.es-arr .cap { font-size: .72rem; opacity: .7; margin-bottom: .2rem; font-family: var(--bs-body-font-family); }
+.es-idx { display: flex; flex-wrap: wrap; gap: .4rem; margin: .3rem 0 .5rem; }
+.es-idx span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: .1rem .45rem; border-radius: 4px; font-size: .85rem; }
+.es-free { background: #2a9d8f33; } .es-sum { background: #e76f5133; }
+pre.es-code { font-size: .8rem; margin: .3rem 0 0; max-width: 100%; overflow-x: auto; }
+.es-err { color: #b5452b; font-size: .9rem; }
+table.es-t td.num, table.es-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.es-t td.mono, table.es-t code { white-space: nowrap; }
+.es-scroll { overflow-x: auto; max-width: 100%; }
+.es-scroll table { min-width: 560px; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="49" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 48;"><span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>fmt <span class="op">=</span> (x<span class="op">,</span> d <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> x<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"en-GB"</span><span class="op">,</span> {<span class="dt">maximumFractionDigits</span><span class="op">:</span> d<span class="op">,</span> <span class="dt">minimumFractionDigits</span><span class="op">:</span> d})</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="co">// ---- a small, general einsum in JavaScript -------------------------------------------------</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>parseSpec <span class="op">=</span> spec <span class="kw">=&gt;</span> {</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> s <span class="op">=</span> spec<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">\s+</span><span class="ss">/g</span><span class="op">,</span> <span class="st">""</span>)<span class="op">;</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span><span class="ss">/</span><span class="sc">^[A-Za-z,]*(</span><span class="ss">-&gt;</span><span class="sc">[A-Za-z]*)?$</span><span class="ss">/</span><span class="op">.</span><span class="fu">test</span>(s)) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">"Use letters, commas and one '-&gt;', e.g. ij,jk-&gt;ik"</span>)<span class="op">;</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> [lhs<span class="op">,</span> rhs] <span class="op">=</span> s<span class="op">.</span><span class="fu">split</span>(<span class="st">"-&gt;"</span>)<span class="op">;</span> <span class="kw">const</span> ins <span class="op">=</span> lhs<span class="op">.</span><span class="fu">split</span>(<span class="st">","</span>)<span class="op">;</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (ins<span class="op">.</span><span class="fu">some</span>(t <span class="kw">=&gt;</span> t <span class="op">===</span> <span class="st">""</span>) <span class="op">&amp;&amp;</span> ins<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">1</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">"An operand has no indices"</span>)<span class="op">;</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> count <span class="op">=</span> {}<span class="op">;</span> <span class="cf">for</span> (<span class="kw">const</span> c <span class="kw">of</span> ins<span class="op">.</span><span class="fu">join</span>(<span class="st">""</span>)) count[c] <span class="op">=</span> (count[c] <span class="op">||</span> <span class="dv">0</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (rhs <span class="op">===</span> <span class="kw">undefined</span>) rhs <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(count)<span class="op">.</span><span class="fu">filter</span>(c <span class="kw">=&gt;</span> count[c] <span class="op">===</span> <span class="dv">1</span>)<span class="op">.</span><span class="fu">sort</span>()<span class="op">.</span><span class="fu">join</span>(<span class="st">""</span>)<span class="op">;</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> c <span class="kw">of</span> rhs) <span class="cf">if</span> (<span class="op">!</span>(c <span class="kw">in</span> count)) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="vs">`Output index '</span><span class="sc">${</span>c<span class="sc">}</span><span class="vs">' does not appear in any input`</span>)<span class="op">;</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="kw">new</span> <span class="bu">Set</span>(rhs)<span class="op">.</span><span class="at">size</span> <span class="op">!==</span> rhs<span class="op">.</span><span class="at">length</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">"An output index is repeated"</span>)<span class="op">;</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> letters <span class="op">=</span> [<span class="op">...</span><span class="kw">new</span> <span class="bu">Set</span>(ins<span class="op">.</span><span class="fu">join</span>(<span class="st">""</span>) <span class="op">+</span> rhs)]<span class="op">;</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {ins<span class="op">,</span> <span class="dt">out</span><span class="op">:</span> rhs<span class="op">,</span> letters<span class="op">,</span> <span class="dt">summed</span><span class="op">:</span> letters<span class="op">.</span><span class="fu">filter</span>(c <span class="kw">=&gt;</span> <span class="op">!</span>rhs<span class="op">.</span><span class="fu">includes</span>(c))}<span class="op">;</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>einsum <span class="op">=</span> (spec<span class="op">,</span> <span class="op">...</span>ts) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> p <span class="op">=</span> <span class="fu">parseSpec</span>(spec)<span class="op">;</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (ts<span class="op">.</span><span class="at">length</span> <span class="op">!==</span> p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="at">length</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="vs">`Spec has </span><span class="sc">${</span>p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs"> operands, got </span><span class="sc">${</span>ts<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> size <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>  p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="fu">forEach</span>((idx<span class="op">,</span> k) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (idx<span class="op">.</span><span class="at">length</span> <span class="op">!==</span> ts[k]<span class="op">.</span><span class="at">shape</span><span class="op">.</span><span class="at">length</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="vs">`Operand </span><span class="sc">${</span>k <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="vs"> has </span><span class="sc">${</span>ts[k]<span class="op">.</span><span class="at">shape</span><span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs"> axes but '</span><span class="sc">${</span>idx<span class="sc">}</span><span class="vs">' names </span><span class="sc">${</span>idx<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    [<span class="op">...</span>idx]<span class="op">.</span><span class="fu">forEach</span>((c<span class="op">,</span> a) <span class="kw">=&gt;</span> { <span class="kw">const</span> n <span class="op">=</span> ts[k]<span class="op">.</span><span class="at">shape</span>[a]<span class="op">;</span> <span class="cf">if</span> (size[c] <span class="op">!==</span> <span class="kw">undefined</span> <span class="op">&amp;&amp;</span> size[c] <span class="op">!==</span> n) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="vs">`Index '</span><span class="sc">${</span>c<span class="sc">}</span><span class="vs">' has size </span><span class="sc">${</span>size[c]<span class="sc">}</span><span class="vs"> in one place and </span><span class="sc">${</span>n<span class="sc">}</span><span class="vs"> in another`</span>)<span class="op">;</span> size[c] <span class="op">=</span> n<span class="op">;</span> })<span class="op">;</span></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> L <span class="op">=</span> p<span class="op">.</span><span class="at">letters</span><span class="op">,</span> nL <span class="op">=</span> L<span class="op">.</span><span class="at">length</span><span class="op">,</span> dims <span class="op">=</span> L<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> size[c])<span class="op">;</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> total <span class="op">=</span> dims<span class="op">.</span><span class="fu">reduce</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">*</span> b<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (total <span class="op">&gt;</span> <span class="fl">3e6</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="vs">`That is </span><span class="sc">${</span><span class="fu">fmt</span>(total)<span class="sc">}</span><span class="vs"> terms; keep it under 3 million here`</span>)<span class="op">;</span></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> strides <span class="op">=</span> (shape) <span class="kw">=&gt;</span> { <span class="kw">const</span> s <span class="op">=</span> <span class="kw">new</span> <span class="bu">Array</span>(shape<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> <span class="kw">let</span> m <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> shape<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--</span>) { s[i] <span class="op">=</span> m<span class="op">;</span> m <span class="op">*=</span> shape[i]<span class="op">;</span> } <span class="cf">return</span> s<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> opStride <span class="op">=</span> p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="fu">map</span>((idx<span class="op">,</span> k) <span class="kw">=&gt;</span> { <span class="kw">const</span> st <span class="op">=</span> <span class="fu">strides</span>(ts[k]<span class="op">.</span><span class="at">shape</span>)<span class="op">,</span> v <span class="op">=</span> <span class="kw">new</span> <span class="bu">Array</span>(nL)<span class="op">.</span><span class="fu">fill</span>(<span class="dv">0</span>)<span class="op">;</span> [<span class="op">...</span>idx]<span class="op">.</span><span class="fu">forEach</span>((c<span class="op">,</span> a) <span class="kw">=&gt;</span> v[L<span class="op">.</span><span class="fu">indexOf</span>(c)] <span class="op">+=</span> st[a])<span class="op">;</span> <span class="cf">return</span> v<span class="op">;</span> })<span class="op">;</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> oshape <span class="op">=</span> [<span class="op">...</span>p<span class="op">.</span><span class="at">out</span>]<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> size[c])<span class="op">,</span> ost <span class="op">=</span> <span class="fu">strides</span>(oshape)<span class="op">,</span> outStride <span class="op">=</span> <span class="kw">new</span> <span class="bu">Array</span>(nL)<span class="op">.</span><span class="fu">fill</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>  [<span class="op">...</span>p<span class="op">.</span><span class="at">out</span>]<span class="op">.</span><span class="fu">forEach</span>((c<span class="op">,</span> a) <span class="kw">=&gt;</span> outStride[L<span class="op">.</span><span class="fu">indexOf</span>(c)] <span class="op">=</span> ost[a])<span class="op">;</span></span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> out <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(oshape<span class="op">.</span><span class="fu">reduce</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">*</span> b<span class="op">,</span> <span class="dv">1</span>))<span class="op">,</span> ctr <span class="op">=</span> <span class="kw">new</span> <span class="bu">Array</span>(nL)<span class="op">.</span><span class="fu">fill</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> off <span class="op">=</span> p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="fu">map</span>(() <span class="kw">=&gt;</span> <span class="dv">0</span>)<span class="op">;</span> <span class="kw">let</span> oo <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> t <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> t <span class="op">&lt;</span> total<span class="op">;</span> t<span class="op">++</span>) {</span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> v <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;</span> ts<span class="op">.</span><span class="at">length</span><span class="op">;</span> k<span class="op">++</span>) v <span class="op">*=</span> ts[k]<span class="op">.</span><span class="at">data</span>[off[k]]<span class="op">;</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>    out[oo] <span class="op">+=</span> v<span class="op">;</span></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> nL <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--</span>) {                       <span class="co">// odometer increment</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>      ctr[i]<span class="op">++;</span> <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;</span> ts<span class="op">.</span><span class="at">length</span><span class="op">;</span> k<span class="op">++</span>) off[k] <span class="op">+=</span> opStride[k][i]<span class="op">;</span> oo <span class="op">+=</span> outStride[i]<span class="op">;</span></span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (ctr[i] <span class="op">&lt;</span> dims[i]) <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;</span> ts<span class="op">.</span><span class="at">length</span><span class="op">;</span> k<span class="op">++</span>) off[k] <span class="op">-=</span> opStride[k][i] <span class="op">*</span> dims[i]<span class="op">;</span> oo <span class="op">-=</span> outStride[i] <span class="op">*</span> dims[i]<span class="op">;</span> ctr[i] <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {<span class="dt">shape</span><span class="op">:</span> oshape<span class="op">,</span> <span class="dt">data</span><span class="op">:</span> out<span class="op">,</span> size<span class="op">,</span> <span class="dt">terms</span><span class="op">:</span> total<span class="op">,</span> p}<span class="op">;</span></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> seed <span class="kw">=&gt;</span> { <span class="kw">let</span> s <span class="op">=</span> seed <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span> <span class="op">||</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">return</span> () <span class="kw">=&gt;</span> (s <span class="op">=</span> (s <span class="op">*</span> <span class="dv">1664525</span> <span class="op">+</span> <span class="dv">1013904223</span>) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span>) <span class="op">/</span> <span class="dv">4294967296</span><span class="op">;</span> }</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>tensor <span class="op">=</span> (shape<span class="op">,</span> r<span class="op">,</span> ints <span class="op">=</span> <span class="kw">true</span>) <span class="kw">=&gt;</span> { <span class="kw">const</span> n <span class="op">=</span> shape<span class="op">.</span><span class="fu">reduce</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">*</span> b<span class="op">,</span> <span class="dv">1</span>)<span class="op">,</span> d <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(n)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++</span>) d[i] <span class="op">=</span> ints <span class="op">?</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="fu">r</span>() <span class="op">*</span> <span class="dv">7</span>) <span class="op">-</span> <span class="dv">3</span> <span class="op">:</span> <span class="fu">r</span>() <span class="op">*</span> <span class="dv">2</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> <span class="cf">return</span> {shape<span class="op">,</span> <span class="dt">data</span><span class="op">:</span> d}<span class="op">;</span> }</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>showArr <span class="op">=</span> (t<span class="op">,</span> cap) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> sh <span class="op">=</span> t<span class="op">.</span><span class="at">shape</span><span class="op">,</span> n <span class="op">=</span> v <span class="kw">=&gt;</span> <span class="bu">Number</span><span class="op">.</span><span class="fu">isInteger</span>(v) <span class="op">?</span> <span class="bu">String</span>(v) <span class="op">:</span> <span class="fu">fmt</span>(v<span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> body<span class="op">;</span></span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (sh<span class="op">.</span><span class="at">length</span> <span class="op">===</span> <span class="dv">0</span>) body <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table&gt;&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span><span class="fu">n</span>(t<span class="op">.</span><span class="at">data</span>[<span class="dv">0</span>])<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (sh<span class="op">.</span><span class="at">length</span> <span class="op">===</span> <span class="dv">1</span> <span class="op">&amp;&amp;</span> sh[<span class="dv">0</span>] <span class="op">&lt;=</span> <span class="dv">12</span>) body <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table&gt;&lt;tr&gt;</span><span class="sc">${</span>[<span class="op">...</span>t<span class="op">.</span><span class="at">data</span>]<span class="op">.</span><span class="fu">map</span>(v <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;td&gt;</span><span class="sc">${</span><span class="fu">n</span>(v)<span class="sc">}</span><span class="vs">&lt;/td&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tr&gt;&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (sh<span class="op">.</span><span class="at">length</span> <span class="op">===</span> <span class="dv">2</span> <span class="op">&amp;&amp;</span> sh[<span class="dv">0</span>] <span class="op">&lt;=</span> <span class="dv">10</span> <span class="op">&amp;&amp;</span> sh[<span class="dv">1</span>] <span class="op">&lt;=</span> <span class="dv">10</span>) body <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;table&gt;</span><span class="sc">${</span>d3<span class="op">.</span><span class="fu">range</span>(sh[<span class="dv">0</span>])<span class="op">.</span><span class="fu">map</span>(i <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;</span><span class="sc">${</span>d3<span class="op">.</span><span class="fu">range</span>(sh[<span class="dv">1</span>])<span class="op">.</span><span class="fu">map</span>(j <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;td&gt;</span><span class="sc">${</span><span class="fu">n</span>(t<span class="op">.</span><span class="at">data</span>[i <span class="op">*</span> sh[<span class="dv">1</span>] <span class="op">+</span> j])<span class="sc">}</span><span class="vs">&lt;/td&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/table&gt;`</span><span class="op">;</span></span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> body <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div style="opacity:.75"&gt;</span><span class="sc">${</span>sh<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs">-axis array, </span><span class="sc">${</span><span class="fu">fmt</span>(t<span class="op">.</span><span class="at">data</span><span class="op">.</span><span class="at">length</span>)<span class="sc">}</span><span class="vs"> entries: </span><span class="sc">${</span>[<span class="op">...</span>t<span class="op">.</span><span class="at">data</span><span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">8</span>)]<span class="op">.</span><span class="fu">map</span>(n)<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}${</span>t<span class="op">.</span><span class="at">data</span><span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">8</span> <span class="op">?</span> <span class="st">", …"</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="es-arr"&gt;&lt;div class="cap"&gt;</span><span class="sc">${</span>cap<span class="sc">}</span><span class="vs"> · shape (</span><span class="sc">${</span>sh<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">)&lt;/div&gt;</span><span class="sc">${</span>body<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a>loopCode <span class="op">=</span> (p<span class="op">,</span> size<span class="op">,</span> names) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> lines <span class="op">=</span> []<span class="op">,</span> pad <span class="op">=</span> d <span class="kw">=&gt;</span> <span class="st">"    "</span><span class="op">.</span><span class="fu">repeat</span>(d)<span class="op">,</span> O <span class="op">=</span> p<span class="op">.</span><span class="at">out</span><span class="op">.</span><span class="at">length</span> <span class="op">?</span> <span class="vs">`</span><span class="sc">${</span>names<span class="op">.</span><span class="at">out</span><span class="sc">}</span><span class="vs">[</span><span class="sc">${</span>[<span class="op">...</span>p<span class="op">.</span><span class="at">out</span>]<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">]`</span> <span class="op">:</span> names<span class="op">.</span><span class="at">out</span><span class="op">;</span></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a>  lines<span class="op">.</span><span class="fu">push</span>(<span class="vs">`</span><span class="sc">${</span>names<span class="op">.</span><span class="at">out</span><span class="sc">}</span><span class="vs"> = zeros(</span><span class="sc">${</span>p<span class="op">.</span><span class="at">out</span><span class="op">.</span><span class="at">length</span> <span class="op">?</span> <span class="st">"("</span> <span class="op">+</span> [<span class="op">...</span>p<span class="op">.</span><span class="at">out</span>]<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> size[c])<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>) <span class="op">+</span> (p<span class="op">.</span><span class="at">out</span><span class="op">.</span><span class="at">length</span> <span class="op">===</span> <span class="dv">1</span> <span class="op">?</span> <span class="st">",)"</span> <span class="op">:</span> <span class="st">")"</span>) <span class="op">:</span> <span class="st">"()"</span><span class="sc">}</span><span class="vs">)`</span>)<span class="op">;</span></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> d <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> c <span class="kw">of</span> p<span class="op">.</span><span class="at">out</span>) lines<span class="op">.</span><span class="fu">push</span>(<span class="vs">`</span><span class="sc">${</span><span class="fu">pad</span>(d<span class="op">++</span>)<span class="sc">}</span><span class="vs">for </span><span class="sc">${</span>c<span class="sc">}</span><span class="vs"> in range(</span><span class="sc">${</span>size[c]<span class="sc">}</span><span class="vs">):`</span>)<span class="op">;</span></span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> c <span class="kw">of</span> p<span class="op">.</span><span class="at">summed</span>) lines<span class="op">.</span><span class="fu">push</span>(<span class="vs">`</span><span class="sc">${</span><span class="fu">pad</span>(d<span class="op">++</span>)<span class="sc">}</span><span class="vs">for </span><span class="sc">${</span>c<span class="sc">}</span><span class="vs"> in range(</span><span class="sc">${</span>size[c]<span class="sc">}</span><span class="vs">):        # summed`</span>)<span class="op">;</span></span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> prod <span class="op">=</span> p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="fu">map</span>((idx<span class="op">,</span> k) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>names<span class="op">.</span><span class="at">ins</span>[k]<span class="sc">}</span><span class="vs">[</span><span class="sc">${</span>[<span class="op">...</span>idx]<span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">]`</span>)<span class="op">.</span><span class="fu">join</span>(<span class="st">" * "</span>)<span class="op">;</span></span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a>  lines<span class="op">.</span><span class="fu">push</span>(<span class="vs">`</span><span class="sc">${</span><span class="fu">pad</span>(d)<span class="sc">}${</span>O<span class="sc">}</span><span class="vs"> += </span><span class="sc">${</span>prod<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> lines<span class="op">.</span><span class="fu">join</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)<span class="op">;</span></span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<p>Every deep-learning library has a function that does nearly all of linear algebra from a short string. In NumPy, PyTorch and JAX it is called <code>einsum</code>, and</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> einsum(<span class="st">"ij,jk-&gt;ik"</span>, A, B)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>is matrix multiplication. The string names the axes of each operand with letters and says which letters survive into the result. It is worth learning properly, because once it is familiar the shapes in a model like a transformer stop being something to track in comments and become part of the code. This explainer covers the rule, a catalogue of the operations it expresses, a playground that evaluates any einsum in your browser and shows the loops it stands for, multi-head attention written in einsum, why the order of a contraction matters, and what its gradient is. It is a companion to <a href="../../ai/transformer-part-1-operation-by-operation/">the transformer series</a>, which writes the same operations as matrix products.</p>
+<section id="the-rule" class="level2">
+<h2 class="anchored" data-anchor-id="the-rule">The rule</h2>
+<p>Write a letter for every axis of every operand. Then:</p>
+<ol type="1">
+<li>A letter that appears in the <strong>output</strong> is a <em>free</em> index: the result has an axis for it.</li>
+<li>A letter that appears in the inputs but <strong>not in the output</strong> is <em>summed</em>: the result is added up over every value it takes.</li>
+<li>Each entry of the result is the sum, over all the summed letters, of the <strong>product</strong> of the corresponding entries of the inputs.</li>
+</ol>
+<p>Formally, for a spec <code>in₁,in₂,…-&gt;out</code>,</p>
+<p><span class="math display">\[
+\text{out}[\text{free}] = \sum_{\text{summed}} \;\prod_{k} \text{in}_k[\text{its letters}].
+\]</span></p>
+<p>So <code>"ij,jk-&gt;ik"</code> is <span class="math inline">\(C_{ik} = \sum_j A_{ij} B_{jk}\)</span>: <em>i</em> and <em>k</em> are free, <em>j</em> is summed. Letters that share a name must have the same size, since they range over the same values. Nothing else is needed. In particular, a letter can be shared between inputs and still survive, in which case the inputs are paired along that axis rather than summed over it, which is how batching works: <code>"bij,bjk-&gt;bik"</code> multiplies each of the <em>b</em> matrix pairs separately.</p>
+<p>If the <code>-&gt;</code> and output are omitted, NumPy and PyTorch use an implicit rule: the output is every letter that appears exactly once, in alphabetical order. That makes <code>"ij,jk"</code> a matrix product but <code>"ba"</code> a transpose and <code>"ab"</code> not, which is a reason to always write the output.</p>
+</section>
+<section id="a-catalogue" class="level2">
+<h2 class="anchored" data-anchor-id="a-catalogue">A catalogue</h2>
+<div class="cell hidden">
+<div class="sourceCode cell-code hidden" id="cb3" data-startfrom="143" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 142;"><span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>presets <span class="op">=</span> [</span>
+<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Dot product"</span><span class="op">,</span> <span class="st">"i,i-&gt;"</span><span class="op">,</span> <span class="st">"4,4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_i a_i b_i$"</span>]<span class="op">,</span></span>
+<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Outer product"</span><span class="op">,</span> <span class="st">"i,j-&gt;ij"</span><span class="op">,</span> <span class="st">"3,4"</span><span class="op">,</span> <span class="st">"$a_i b_j$"</span>]<span class="op">,</span></span>
+<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Matrix–vector"</span><span class="op">,</span> <span class="st">"ij,j-&gt;i"</span><span class="op">,</span> <span class="st">"3x4,4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_j A_{ij} x_j$"</span>]<span class="op">,</span></span>
+<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Row vector × matrix"</span><span class="op">,</span> <span class="st">"i,ij-&gt;j"</span><span class="op">,</span> <span class="st">"3,3x4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_i x_i W_{ij}$"</span>]<span class="op">,</span></span>
+<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Matrix product"</span><span class="op">,</span> <span class="st">"ij,jk-&gt;ik"</span><span class="op">,</span> <span class="st">"2x3,3x4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_j A_{ij} B_{jk}$"</span>]<span class="op">,</span></span>
+<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Transpose"</span><span class="op">,</span> <span class="st">"ij-&gt;ji"</span><span class="op">,</span> <span class="st">"2x3"</span><span class="op">,</span> <span class="st">"$A_{ji}$"</span>]<span class="op">,</span></span>
+<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Trace"</span><span class="op">,</span> <span class="st">"ii-&gt;"</span><span class="op">,</span> <span class="st">"4x4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_i A_{ii}$"</span>]<span class="op">,</span></span>
+<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Diagonal"</span><span class="op">,</span> <span class="st">"ii-&gt;i"</span><span class="op">,</span> <span class="st">"4x4"</span><span class="op">,</span> <span class="st">"$A_{ii}$"</span>]<span class="op">,</span></span>
+<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Row sums"</span><span class="op">,</span> <span class="st">"ij-&gt;i"</span><span class="op">,</span> <span class="st">"3x4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_j A_{ij}$"</span>]<span class="op">,</span></span>
+<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Sum of everything"</span><span class="op">,</span> <span class="st">"ij-&gt;"</span><span class="op">,</span> <span class="st">"3x4"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_{ij} A_{ij}$"</span>]<span class="op">,</span></span>
+<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Elementwise product"</span><span class="op">,</span> <span class="st">"ij,ij-&gt;ij"</span><span class="op">,</span> <span class="st">"3x3,3x3"</span><span class="op">,</span> <span class="st">"$A_{ij} B_{ij}$"</span>]<span class="op">,</span></span>
+<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Frobenius inner product"</span><span class="op">,</span> <span class="st">"ij,ij-&gt;"</span><span class="op">,</span> <span class="st">"3x3,3x3"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_{ij} A_{ij} B_{ij}$"</span>]<span class="op">,</span></span>
+<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Bilinear form"</span><span class="op">,</span> <span class="st">"i,ij,j-&gt;"</span><span class="op">,</span> <span class="st">"3,3x3,3"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_{ij} x_i A_{ij} y_j$"</span>]<span class="op">,</span></span>
+<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Batched matrix product"</span><span class="op">,</span> <span class="st">"bij,bjk-&gt;bik"</span><span class="op">,</span> <span class="st">"2x2x3,2x3x2"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_j A_{bij} B_{bjk}$"</span>]<span class="op">,</span></span>
+<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Attention scores, one head"</span><span class="op">,</span> <span class="st">"qd,kd-&gt;qk"</span><span class="op">,</span> <span class="st">"4x3,5x3"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_d Q_{qd} K_{kd}$"</span>]<span class="op">,</span></span>
+<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Attention scores, all heads"</span><span class="op">,</span> <span class="st">"qhd,khd-&gt;hqk"</span><span class="op">,</span> <span class="st">"4x2x3,5x2x3"</span><span class="op">,</span> <span class="st">"$</span><span class="sc">\\</span><span class="st">sum_d Q_{qhd} K_{khd}$"</span>]<span class="op">,</span></span>
+<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a>  [<span class="st">"Tensor product of matrices"</span><span class="op">,</span> <span class="st">"ij,kl-&gt;ikjl"</span><span class="op">,</span> <span class="st">"2x2,2x2"</span><span class="op">,</span> <span class="st">"$A_{ij} B_{kl}$"</span>]</span>
+<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb4" data-startfrom="165" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 164;"><span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a>catTable <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="es-scroll"&gt;&lt;table class="table table-sm es-t"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Operation&lt;/th&gt;&lt;th&gt;Einsum&lt;/th&gt;&lt;th&gt;Meaning&lt;/th&gt;&lt;th&gt;Summed&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb4-166"><a href="#cb4-166" aria-hidden="true" tabindex="-1"></a><span class="vs">  </span><span class="sc">${</span>presets<span class="op">.</span><span class="fu">map</span>(([n<span class="op">,</span> s<span class="op">,</span> <span class="op">,</span> m]) <span class="kw">=&gt;</span> { <span class="kw">const</span> p <span class="op">=</span> <span class="fu">parseSpec</span>(s)<span class="op">;</span> <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr&gt;&lt;td&gt;</span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td&gt;&lt;code&gt;</span><span class="sc">${</span>s<span class="sc">}</span><span class="vs">&lt;/code&gt;&lt;/td&gt;&lt;td&gt;</span><span class="sc">${</span><span class="fu">tex</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">assign</span>([m<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span><span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)]<span class="op">,</span> {<span class="dt">raw</span><span class="op">:</span> [m<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span><span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)]}))<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td&gt;&lt;code&gt;</span><span class="sc">${</span>p<span class="op">.</span><span class="at">summed</span><span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>) <span class="op">||</span> <span class="st">"–"</span><span class="sc">}</span><span class="vs">&lt;/code&gt;&lt;/td&gt;&lt;/tr&gt;`</span><span class="op">;</span> })<span class="sc">}</span></span>
+<span id="cb4-167"><a href="#cb4-167" aria-hidden="true" tabindex="-1"></a><span class="vs">&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Three things in that list go beyond physics’ summation convention. A letter repeated <em>within</em> one operand, as in <code>ii</code>, walks the diagonal. A letter can appear in three or more operands, as in the bilinear form. And a letter shared by two inputs can be kept, as in batching and the elementwise product, which the classical convention cannot express at all.</p>
+</section>
+<section id="playground" class="level2">
+<h2 class="anchored" data-anchor-id="playground">Playground</h2>
+<p>Choose an operation or type your own. Shapes are given per operand, axes separated by <code>x</code>, operands by commas. The inputs are filled with small random integers so the arithmetic can be checked by hand; the playground shows the free and summed indices, the loops the einsum stands for, and the result.</p>
+<div class="es-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb5" data-startfrom="179" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 178;"><span id="cb5-179"><a href="#cb5-179" aria-hidden="true" tabindex="-1"></a>viewof preset <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(presets<span class="op">,</span> {<span class="dt">format</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d[<span class="dv">0</span>]<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span>d[<span class="dv">1</span>]<span class="sc">}</span><span class="vs">`</span><span class="op">,</span> <span class="dt">value</span><span class="op">:</span> presets[<span class="dv">4</span>]<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Start from"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb6" data-startfrom="183" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 182;"><span id="cb6-183"><a href="#cb6-183" aria-hidden="true" tabindex="-1"></a>viewof play <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb6-184"><a href="#cb6-184" aria-hidden="true" tabindex="-1"></a>  <span class="dt">spec</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> preset[<span class="dv">1</span>]<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Einsum"</span>})<span class="op">,</span></span>
+<span id="cb6-185"><a href="#cb6-185" aria-hidden="true" tabindex="-1"></a>  <span class="dt">shapes</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">text</span>({<span class="dt">value</span><span class="op">:</span> preset[<span class="dv">2</span>]<span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Shapes"</span>})<span class="op">,</span></span>
+<span id="cb6-186"><a href="#cb6-186" aria-hidden="true" tabindex="-1"></a>  <span class="dt">seed</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">99</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">7</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Random seed"</span>})</span>
+<span id="cb6-187"><a href="#cb6-187" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb7" data-startfrom="193" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 192;"><span id="cb7-193"><a href="#cb7-193" aria-hidden="true" tabindex="-1"></a>playView <span class="op">=</span> {</span>
+<span id="cb7-194"><a href="#cb7-194" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb7-195"><a href="#cb7-195" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> shapes <span class="op">=</span> play<span class="op">.</span><span class="at">shapes</span><span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">\s+</span><span class="ss">/g</span><span class="op">,</span> <span class="st">""</span>)<span class="op">.</span><span class="fu">split</span>(<span class="st">","</span>)<span class="op">.</span><span class="fu">map</span>(s <span class="kw">=&gt;</span> s <span class="op">===</span> <span class="st">""</span> <span class="op">?</span> [] <span class="op">:</span> s<span class="op">.</span><span class="fu">split</span>(<span class="ss">/</span><span class="sc">[x×*]</span><span class="ss">/</span>)<span class="op">.</span><span class="fu">map</span>(<span class="bu">Number</span>))<span class="op">;</span></span>
+<span id="cb7-196"><a href="#cb7-196" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (shapes<span class="op">.</span><span class="fu">some</span>(sh <span class="kw">=&gt;</span> sh<span class="op">.</span><span class="fu">some</span>(n <span class="kw">=&gt;</span> <span class="op">!</span><span class="bu">Number</span><span class="op">.</span><span class="fu">isInteger</span>(n) <span class="op">||</span> n <span class="op">&lt;</span> <span class="dv">1</span> <span class="op">||</span> n <span class="op">&gt;</span> <span class="dv">64</span>))) <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">"Each axis size must be a whole number from 1 to 64"</span>)<span class="op">;</span></span>
+<span id="cb7-197"><a href="#cb7-197" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> r <span class="op">=</span> <span class="fu">rng</span>(play<span class="op">.</span><span class="at">seed</span>)<span class="op">,</span> ins <span class="op">=</span> shapes<span class="op">.</span><span class="fu">map</span>(sh <span class="kw">=&gt;</span> <span class="fu">tensor</span>(sh<span class="op">,</span> r))<span class="op">;</span></span>
+<span id="cb7-198"><a href="#cb7-198" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> res <span class="op">=</span> <span class="fu">einsum</span>(play<span class="op">.</span><span class="at">spec</span><span class="op">,</span> <span class="op">...</span>ins)<span class="op">,</span> p <span class="op">=</span> res<span class="op">.</span><span class="at">p</span><span class="op">;</span></span>
+<span id="cb7-199"><a href="#cb7-199" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> names <span class="op">=</span> {<span class="dt">ins</span><span class="op">:</span> p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="fu">map</span>((_<span class="op">,</span> k) <span class="kw">=&gt;</span> <span class="st">"ABCDEFG"</span>[k])<span class="op">,</span> <span class="dt">out</span><span class="op">:</span> <span class="st">"R"</span>}<span class="op">;</span></span>
+<span id="cb7-200"><a href="#cb7-200" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> mults <span class="op">=</span> res<span class="op">.</span><span class="at">terms</span> <span class="op">*</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(<span class="dv">1</span><span class="op">,</span> p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb7-201"><a href="#cb7-201" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="es-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span>p<span class="op">.</span><span class="at">ins</span><span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs"> → </span><span class="sc">${</span>p<span class="op">.</span><span class="at">out</span> <span class="op">||</span> <span class="st">"scalar"</span><span class="sc">}</span><span class="vs">&lt;/h4&gt;</span></span>
+<span id="cb7-202"><a href="#cb7-202" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;div class="es-idx"&gt;</span><span class="sc">${</span>p<span class="op">.</span><span class="at">letters</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;span class="</span><span class="sc">${</span>p<span class="op">.</span><span class="at">out</span><span class="op">.</span><span class="fu">includes</span>(c) <span class="op">?</span> <span class="st">"es-free"</span> <span class="op">:</span> <span class="st">"es-sum"</span><span class="sc">}</span><span class="vs">"&gt;</span><span class="sc">${</span>c<span class="sc">}</span><span class="vs"> = </span><span class="sc">${</span>res<span class="op">.</span><span class="at">size</span>[c]<span class="sc">}</span><span class="vs"> · </span><span class="sc">${</span>p<span class="op">.</span><span class="at">out</span><span class="op">.</span><span class="fu">includes</span>(c) <span class="op">?</span> <span class="st">"free"</span> <span class="op">:</span> <span class="st">"summed"</span><span class="sc">}</span><span class="vs">&lt;/span&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;</span></span>
+<span id="cb7-203"><a href="#cb7-203" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;div class="es-kpis"&gt;&lt;div&gt;&lt;div class="k"&gt;Result shape&lt;/div&gt;&lt;div class="v"&gt;(</span><span class="sc">${</span>res<span class="op">.</span><span class="at">shape</span><span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">)&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb7-204"><a href="#cb7-204" aria-hidden="true" tabindex="-1"></a><span class="vs">        &lt;div&gt;&lt;div class="k"&gt;Terms in the sum&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(res<span class="op">.</span><span class="at">terms</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;product of all index sizes&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb7-205"><a href="#cb7-205" aria-hidden="true" tabindex="-1"></a><span class="vs">        &lt;div&gt;&lt;div class="k"&gt;Multiplications&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(mults)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;done naively, in one loop nest&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb7-206"><a href="#cb7-206" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;pre class="es-code"&gt;&lt;code&gt;</span><span class="sc">${</span><span class="fu">loopCode</span>(p<span class="op">,</span> res<span class="op">.</span><span class="at">size</span><span class="op">,</span> names)<span class="sc">}</span><span class="vs">&lt;/code&gt;&lt;/pre&gt;</span></span>
+<span id="cb7-207"><a href="#cb7-207" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;div class="es-arrs" style="margin-top:.6rem"&gt;</span><span class="sc">${</span>ins<span class="op">.</span><span class="fu">map</span>((t<span class="op">,</span> k) <span class="kw">=&gt;</span> <span class="fu">showArr</span>(t<span class="op">,</span> <span class="vs">`</span><span class="sc">${</span>names<span class="op">.</span><span class="at">ins</span>[k]<span class="sc">}</span><span class="vs"> · '</span><span class="sc">${</span>p<span class="op">.</span><span class="at">ins</span>[k]<span class="sc">}</span><span class="vs">'`</span>))<span class="sc">}${</span><span class="fu">showArr</span>(res<span class="op">,</span> <span class="vs">`R · '</span><span class="sc">${</span>p<span class="op">.</span><span class="at">out</span><span class="sc">}</span><span class="vs">'`</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb7-208"><a href="#cb7-208" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (e) { <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="es-panel es-err"&gt;</span><span class="sc">${</span>e<span class="op">.</span><span class="at">message</span><span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span> }</span>
+<span id="cb7-209"><a href="#cb7-209" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The loop nest is the whole meaning of an einsum: one loop per distinct letter, the free letters outermost because they index the result, the summed letters inside, and a single multiply–accumulate in the middle. The number of terms is the product of the sizes of <em>all</em> the letters, which is why the count jumps when you add an index. Libraries do not run this loop; they rearrange the axes and hand the work to optimised matrix-multiplication routines, but the result is defined by it.</p>
+</section>
+<section id="multi-head-attention-in-four-lines" class="level2">
+<h2 class="anchored" data-anchor-id="multi-head-attention-in-four-lines">Multi-head attention in four lines</h2>
+<p>Attention is where einsum earns its keep, because the head axis makes plain matrix notation awkward. In the row-vector convention of the transformer series, with sequence positions <em>t</em> (or <em>q</em> and <em>k</em> when queries and keys are distinguished), model width <em>m</em>, heads <em>h</em> and head width <em>d</em>, and weight tensors <span class="math inline">\(W_Q, W_K, W_V \in \mathbb R^{m \times h \times d}\)</span> and <span class="math inline">\(W_O \in \mathbb R^{h \times d \times m}\)</span>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Q <span class="op">=</span> einsum(<span class="st">"tm,mhd-&gt;thd"</span>, X, W_Q)            <span class="co"># project every position into every head</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> einsum(<span class="st">"tm,mhd-&gt;thd"</span>, X, W_K)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>V <span class="op">=</span> einsum(<span class="st">"tm,mhd-&gt;thd"</span>, X, W_V)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> einsum(<span class="st">"qhd,khd-&gt;hqk"</span>, Q, K) <span class="op">/</span> sqrt(d)   <span class="co"># scores: one T×T matrix per head</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> softmax(S <span class="op">+</span> causal_mask, axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> einsum(<span class="st">"hqk,khd,hdm-&gt;qm"</span>, A, V, W_O)     <span class="co"># mix values, then project heads back and sum them</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Each line says exactly what is contracted. The score line sums over the head width <em>d</em> only, and keeps the head axis while moving it to the front. The last line sums over keys <em>k</em>, head width <em>d</em> and heads <em>h</em> in one statement; summing over <em>h</em> is precisely “concatenate the heads and multiply by <span class="math inline">\(W_O\)</span>”, without the concatenation. The matrix version of the same computation needs a reshape from <span class="math inline">\(T \times hd\)</span> to <span class="math inline">\(T \times h \times d\)</span>, two transposes to bring the head axis forward, and the reverse on the way out, and those are where shape bugs live. Add a batch letter <em>b</em> to every operand except the weights, or write <code>...</code>, and nothing else changes.</p>
+<p>The computation below builds a random sequence and weights in your browser, runs the einsum version through the small einsum function this page uses, runs the matrix version with explicit reshapes and slices, and compares them:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb9" data-startfrom="232" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 231;"><span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a>viewof att <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({<span class="dt">T</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">2</span><span class="op">,</span> <span class="dv">10</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">6</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Sequence length T"</span>})<span class="op">,</span> <span class="dt">h</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Heads h"</span>})<span class="op">,</span> <span class="dt">d</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">8</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Head width d"</span>})})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb10" data-startfrom="236" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 235;"><span id="cb10-236"><a href="#cb10-236" aria-hidden="true" tabindex="-1"></a>attCheck <span class="op">=</span> {</span>
+<span id="cb10-237"><a href="#cb10-237" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> {T<span class="op">,</span> h<span class="op">,</span> d} <span class="op">=</span> att<span class="op">,</span> m <span class="op">=</span> h <span class="op">*</span> d<span class="op">,</span> r <span class="op">=</span> <span class="fu">rng</span>(<span class="dv">11</span>)<span class="op">,</span> X <span class="op">=</span> <span class="fu">tensor</span>([T<span class="op">,</span> m]<span class="op">,</span> r<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb10-238"><a href="#cb10-238" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> WQ <span class="op">=</span> <span class="fu">tensor</span>([m<span class="op">,</span> h<span class="op">,</span> d]<span class="op">,</span> r<span class="op">,</span> <span class="kw">false</span>)<span class="op">,</span> WK <span class="op">=</span> <span class="fu">tensor</span>([m<span class="op">,</span> h<span class="op">,</span> d]<span class="op">,</span> r<span class="op">,</span> <span class="kw">false</span>)<span class="op">,</span> WV <span class="op">=</span> <span class="fu">tensor</span>([m<span class="op">,</span> h<span class="op">,</span> d]<span class="op">,</span> r<span class="op">,</span> <span class="kw">false</span>)<span class="op">,</span> WO <span class="op">=</span> <span class="fu">tensor</span>([h<span class="op">,</span> d<span class="op">,</span> m]<span class="op">,</span> r<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb10-239"><a href="#cb10-239" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> softmaxRows <span class="op">=</span> (S<span class="op">,</span> H) <span class="kw">=&gt;</span> { <span class="kw">const</span> out <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(S<span class="op">.</span><span class="at">data</span><span class="op">.</span><span class="at">length</span>)<span class="op">;</span></span>
+<span id="cb10-240"><a href="#cb10-240" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> hh <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> hh <span class="op">&lt;</span> H<span class="op">;</span> hh<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> q <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> q <span class="op">&lt;</span> T<span class="op">;</span> q<span class="op">++</span>) { <span class="kw">let</span> mx <span class="op">=</span> <span class="op">-</span><span class="kw">Infinity</span><span class="op">;</span> <span class="kw">const</span> base <span class="op">=</span> (hh <span class="op">*</span> T <span class="op">+</span> q) <span class="op">*</span> T<span class="op">;</span></span>
+<span id="cb10-241"><a href="#cb10-241" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;=</span> q<span class="op">;</span> k<span class="op">++</span>) mx <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(mx<span class="op">,</span> S<span class="op">.</span><span class="at">data</span>[base <span class="op">+</span> k])<span class="op">;</span> <span class="kw">let</span> z <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb10-242"><a href="#cb10-242" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;=</span> q<span class="op">;</span> k<span class="op">++</span>) { out[base <span class="op">+</span> k] <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">exp</span>(S<span class="op">.</span><span class="at">data</span>[base <span class="op">+</span> k] <span class="op">-</span> mx)<span class="op">;</span> z <span class="op">+=</span> out[base <span class="op">+</span> k]<span class="op">;</span> }</span>
+<span id="cb10-243"><a href="#cb10-243" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;=</span> q<span class="op">;</span> k<span class="op">++</span>) out[base <span class="op">+</span> k] <span class="op">/=</span> z<span class="op">;</span> }</span>
+<span id="cb10-244"><a href="#cb10-244" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="dt">shape</span><span class="op">:</span> S<span class="op">.</span><span class="at">shape</span><span class="op">,</span> <span class="dt">data</span><span class="op">:</span> out}<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb10-245"><a href="#cb10-245" aria-hidden="true" tabindex="-1"></a>  <span class="co">// einsum version</span></span>
+<span id="cb10-246"><a href="#cb10-246" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> Q <span class="op">=</span> <span class="fu">einsum</span>(<span class="st">"tm,mhd-&gt;thd"</span><span class="op">,</span> X<span class="op">,</span> WQ)<span class="op">,</span> K <span class="op">=</span> <span class="fu">einsum</span>(<span class="st">"tm,mhd-&gt;thd"</span><span class="op">,</span> X<span class="op">,</span> WK)<span class="op">,</span> V <span class="op">=</span> <span class="fu">einsum</span>(<span class="st">"tm,mhd-&gt;thd"</span><span class="op">,</span> X<span class="op">,</span> WV)<span class="op">;</span></span>
+<span id="cb10-247"><a href="#cb10-247" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> S <span class="op">=</span> <span class="fu">einsum</span>(<span class="st">"qhd,khd-&gt;hqk"</span><span class="op">,</span> Q<span class="op">,</span> K)<span class="op">;</span> S<span class="op">.</span><span class="at">data</span><span class="op">.</span><span class="fu">forEach</span>((v<span class="op">,</span> i) <span class="kw">=&gt;</span> S<span class="op">.</span><span class="at">data</span>[i] <span class="op">=</span> v <span class="op">/</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(d))<span class="op">;</span></span>
+<span id="cb10-248"><a href="#cb10-248" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> A <span class="op">=</span> <span class="fu">softmaxRows</span>(S<span class="op">,</span> h)<span class="op">,</span> Y <span class="op">=</span> <span class="fu">einsum</span>(<span class="st">"hqk,khd,hdm-&gt;qm"</span><span class="op">,</span> A<span class="op">,</span> V<span class="op">,</span> WO)<span class="op">;</span></span>
+<span id="cb10-249"><a href="#cb10-249" aria-hidden="true" tabindex="-1"></a>  <span class="co">// matrix version: per head, Q_h = X W_Q[:, h, :], scores = Q_h K_hᵀ, out_h = P V_h, concat, then concat · W_O(reshaped)</span></span>
+<span id="cb10-250"><a href="#cb10-250" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mm <span class="op">=</span> (a<span class="op">,</span> ar<span class="op">,</span> ac<span class="op">,</span> b<span class="op">,</span> bc) <span class="kw">=&gt;</span> { <span class="kw">const</span> o <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(ar <span class="op">*</span> bc)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> ar<span class="op">;</span> i<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> k <span class="op">&lt;</span> ac<span class="op">;</span> k<span class="op">++</span>) { <span class="kw">const</span> av <span class="op">=</span> a[i <span class="op">*</span> ac <span class="op">+</span> k]<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> bc<span class="op">;</span> j<span class="op">++</span>) o[i <span class="op">*</span> bc <span class="op">+</span> j] <span class="op">+=</span> av <span class="op">*</span> b[k <span class="op">*</span> bc <span class="op">+</span> j]<span class="op">;</span> } <span class="cf">return</span> o<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb10-251"><a href="#cb10-251" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> slice <span class="op">=</span> (W<span class="op">,</span> hh) <span class="kw">=&gt;</span> { <span class="kw">const</span> o <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(m <span class="op">*</span> d)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> m<span class="op">;</span> i<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> d<span class="op">;</span> j<span class="op">++</span>) o[i <span class="op">*</span> d <span class="op">+</span> j] <span class="op">=</span> W<span class="op">.</span><span class="at">data</span>[(i <span class="op">*</span> h <span class="op">+</span> hh) <span class="op">*</span> d <span class="op">+</span> j]<span class="op">;</span> <span class="cf">return</span> o<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb10-252"><a href="#cb10-252" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> concat <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(T <span class="op">*</span> m)<span class="op">;</span></span>
+<span id="cb10-253"><a href="#cb10-253" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> hh <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> hh <span class="op">&lt;</span> h<span class="op">;</span> hh<span class="op">++</span>) {</span>
+<span id="cb10-254"><a href="#cb10-254" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> Qh <span class="op">=</span> <span class="fu">mm</span>(X<span class="op">.</span><span class="at">data</span><span class="op">,</span> T<span class="op">,</span> m<span class="op">,</span> <span class="fu">slice</span>(WQ<span class="op">,</span> hh)<span class="op">,</span> d)<span class="op">,</span> Kh <span class="op">=</span> <span class="fu">mm</span>(X<span class="op">.</span><span class="at">data</span><span class="op">,</span> T<span class="op">,</span> m<span class="op">,</span> <span class="fu">slice</span>(WK<span class="op">,</span> hh)<span class="op">,</span> d)<span class="op">,</span> Vh <span class="op">=</span> <span class="fu">mm</span>(X<span class="op">.</span><span class="at">data</span><span class="op">,</span> T<span class="op">,</span> m<span class="op">,</span> <span class="fu">slice</span>(WV<span class="op">,</span> hh)<span class="op">,</span> d)<span class="op">;</span></span>
+<span id="cb10-255"><a href="#cb10-255" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> KhT <span class="op">=</span> <span class="kw">new</span> <span class="bu">Float64Array</span>(d <span class="op">*</span> T)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> T<span class="op">;</span> i<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> d<span class="op">;</span> j<span class="op">++</span>) KhT[j <span class="op">*</span> T <span class="op">+</span> i] <span class="op">=</span> Kh[i <span class="op">*</span> d <span class="op">+</span> j]<span class="op">;</span></span>
+<span id="cb10-256"><a href="#cb10-256" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> Sh <span class="op">=</span> <span class="fu">mm</span>(Qh<span class="op">,</span> T<span class="op">,</span> d<span class="op">,</span> KhT<span class="op">,</span> T)<span class="op">.</span><span class="fu">map</span>(v <span class="kw">=&gt;</span> v <span class="op">/</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">sqrt</span>(d))<span class="op">,</span> P <span class="op">=</span> <span class="fu">softmaxRows</span>({<span class="dt">shape</span><span class="op">:</span> [<span class="dv">1</span><span class="op">,</span> T<span class="op">,</span> T]<span class="op">,</span> <span class="dt">data</span><span class="op">:</span> Sh}<span class="op">,</span> <span class="dv">1</span>)<span class="op">.</span><span class="at">data</span><span class="op">;</span></span>
+<span id="cb10-257"><a href="#cb10-257" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> Oh <span class="op">=</span> <span class="fu">mm</span>(P<span class="op">,</span> T<span class="op">,</span> T<span class="op">,</span> Vh<span class="op">,</span> d)<span class="op">;</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> T<span class="op">;</span> i<span class="op">++</span>) <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> d<span class="op">;</span> j<span class="op">++</span>) concat[i <span class="op">*</span> m <span class="op">+</span> hh <span class="op">*</span> d <span class="op">+</span> j] <span class="op">=</span> Oh[i <span class="op">*</span> d <span class="op">+</span> j]<span class="op">;</span></span>
+<span id="cb10-258"><a href="#cb10-258" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-259"><a href="#cb10-259" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> Ym <span class="op">=</span> <span class="fu">mm</span>(concat<span class="op">,</span> T<span class="op">,</span> m<span class="op">,</span> WO<span class="op">.</span><span class="at">data</span><span class="op">,</span> m)<span class="op">;</span>   <span class="co">// W_O (h, d, m) read as an (h·d) × m matrix</span></span>
+<span id="cb10-260"><a href="#cb10-260" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> err <span class="op">=</span> d3<span class="op">.</span><span class="fu">max</span>(Ym<span class="op">,</span> (v<span class="op">,</span> i) <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">abs</span>(v <span class="op">-</span> Y<span class="op">.</span><span class="at">data</span>[i]))<span class="op">;</span></span>
+<span id="cb10-261"><a href="#cb10-261" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="es-panel"&gt;&lt;h4&gt;Multi-head attention, T = </span><span class="sc">${</span>T<span class="sc">}</span><span class="vs">, h = </span><span class="sc">${</span>h<span class="sc">}</span><span class="vs">, d = </span><span class="sc">${</span>d<span class="sc">}</span><span class="vs">, m = </span><span class="sc">${</span>m<span class="sc">}</span><span class="vs">&lt;/h4&gt;&lt;div class="es-kpis"&gt;</span></span>
+<span id="cb10-262"><a href="#cb10-262" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Output shape&lt;/div&gt;&lt;div class="v"&gt;(</span><span class="sc">${</span>Y<span class="op">.</span><span class="at">shape</span><span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">)&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb10-263"><a href="#cb10-263" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Largest difference&lt;/div&gt;&lt;div class="v"&gt;</span><span class="sc">${</span>err<span class="op">.</span><span class="fu">toExponential</span>(<span class="dv">1</span>)<span class="sc">}</span><span class="vs">&lt;/div&gt;&lt;div class="s"&gt;einsum against reshape-and-matmul&lt;/div&gt;&lt;/div&gt;</span></span>
+<span id="cb10-264"><a href="#cb10-264" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div&gt;&lt;div class="k"&gt;Score tensor&lt;/div&gt;&lt;div class="v"&gt;(</span><span class="sc">${</span>S<span class="op">.</span><span class="at">shape</span><span class="op">.</span><span class="fu">join</span>(<span class="st">", "</span>)<span class="sc">}</span><span class="vs">)&lt;/div&gt;&lt;div class="s"&gt;one T × T matrix per head&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb10-265"><a href="#cb10-265" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The two agree to rounding error. Reading <span class="math inline">\(W_O\)</span>, a tensor of shape <span class="math inline">\((h, d, m)\)</span>, as a matrix of shape <span class="math inline">\((hd) \times m\)</span> is exactly what makes the concatenation unnecessary: the row-major layout puts head 0’s <span class="math inline">\(d\)</span> rows first, then head 1’s, the same order as the concatenated head outputs.</p>
+</section>
+<section id="the-order-of-a-contraction" class="level2">
+<h2 class="anchored" data-anchor-id="the-order-of-a-contraction">The order of a contraction</h2>
+<p>An einsum with three or more operands can be evaluated in one loop nest, but that is rarely the cheap way. Take a chain of three matrices, <code>"ij,jk,kl-&gt;il"</code>. The single loop nest touches every combination of <em>i, j, k, l</em>: <span class="math inline">\(IJKL\)</span> multiplications, twice. Contracting a pair first and then the third is the familiar matrix-chain problem: <span class="math inline">\((AB)C\)</span> costs <span class="math inline">\(IJK + IKL\)</span>, and <span class="math inline">\(A(BC)\)</span> costs <span class="math inline">\(JKL + IJL\)</span>.</p>
+<p>The same choice has a famous instance inside attention. Drop the softmax, so that attention becomes <span class="math inline">\((QK^\top)V\)</span>, a plain three-way contraction <code>"qd,kd,ke-&gt;qe"</code> over sequence length <span class="math inline">\(T\)</span> and head width <span class="math inline">\(d\)</span>. Contracting queries with keys first builds the <span class="math inline">\(T \times T\)</span> score matrix, costing about <span class="math inline">\(2T^2 d\)</span>. Contracting keys with values first builds a <span class="math inline">\(d \times d\)</span> summary, <code>"kd,ke-&gt;de"</code>, and costs about <span class="math inline">\(2Td^2\)</span>: linear in sequence length. That reordering is the whole idea of <em>linear attention</em> (Angelos Katharopoulos and colleagues, 2020), and the softmax, which is not multilinear, is exactly what prevents it in a standard transformer.</p>
+<div class="es-grid">
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb11" data-startfrom="279" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 278;"><span id="cb11-279"><a href="#cb11-279" aria-hidden="true" tabindex="-1"></a>viewof chain <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">form</span>({</span>
+<span id="cb11-280"><a href="#cb11-280" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ex</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">radio</span>(<span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">"Matrix chain ij,jk,kl-&gt;il"</span><span class="op">,</span> <span class="st">"chain"</span>]<span class="op">,</span> [<span class="st">"Attention without softmax qd,kd,ke-&gt;qe"</span><span class="op">,</span> <span class="st">"attn"</span>]])<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"attn"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Contraction"</span>})<span class="op">,</span></span>
+<span id="cb11-281"><a href="#cb11-281" aria-hidden="true" tabindex="-1"></a>  <span class="dt">a</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"First size, log₁₀ (I, or T)"</span>})<span class="op">,</span></span>
+<span id="cb11-282"><a href="#cb11-282" aria-hidden="true" tabindex="-1"></a>  <span class="dt">b</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Second size, log₁₀ (J, or d)"</span>})<span class="op">,</span></span>
+<span id="cb11-283"><a href="#cb11-283" aria-hidden="true" tabindex="-1"></a>  <span class="dt">c</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Third size, log₁₀ (K)"</span>})<span class="op">,</span></span>
+<span id="cb11-284"><a href="#cb11-284" aria-hidden="true" tabindex="-1"></a>  <span class="dt">dd</span><span class="op">:</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="fl">0.1</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"Fourth size, log₁₀ (L)"</span>})</span>
+<span id="cb11-285"><a href="#cb11-285" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb12" data-startfrom="291" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 290;"><span id="cb12-291"><a href="#cb12-291" aria-hidden="true" tabindex="-1"></a>chainView <span class="op">=</span> {</span>
+<span id="cb12-292"><a href="#cb12-292" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> P <span class="op">=</span> x <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(<span class="dv">10</span> <span class="op">**</span> x)<span class="op">,</span> sci <span class="op">=</span> x <span class="kw">=&gt;</span> x <span class="op">&gt;=</span> <span class="fl">1e5</span> <span class="op">?</span> x<span class="op">.</span><span class="fu">toExponential</span>(<span class="dv">1</span>)<span class="op">.</span><span class="fu">replace</span>(<span class="st">"e+"</span><span class="op">,</span> <span class="st">"×10^"</span>) <span class="op">:</span> <span class="fu">fmt</span>(x)<span class="op">;</span></span>
+<span id="cb12-293"><a href="#cb12-293" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> rows<span class="op">,</span> title<span class="op">;</span></span>
+<span id="cb12-294"><a href="#cb12-294" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (chain<span class="op">.</span><span class="at">ex</span> <span class="op">===</span> <span class="st">"chain"</span>) {</span>
+<span id="cb12-295"><a href="#cb12-295" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> [I<span class="op">,</span> J<span class="op">,</span> K<span class="op">,</span> L] <span class="op">=</span> [<span class="fu">P</span>(chain<span class="op">.</span><span class="at">a</span>)<span class="op">,</span> <span class="fu">P</span>(chain<span class="op">.</span><span class="at">b</span>)<span class="op">,</span> <span class="fu">P</span>(chain<span class="op">.</span><span class="at">c</span>)<span class="op">,</span> <span class="fu">P</span>(chain<span class="op">.</span><span class="at">dd</span>)]<span class="op">;</span></span>
+<span id="cb12-296"><a href="#cb12-296" aria-hidden="true" tabindex="-1"></a>    title <span class="op">=</span> <span class="vs">`I = </span><span class="sc">${</span><span class="fu">fmt</span>(I)<span class="sc">}</span><span class="vs">, J = </span><span class="sc">${</span><span class="fu">fmt</span>(J)<span class="sc">}</span><span class="vs">, K = </span><span class="sc">${</span><span class="fu">fmt</span>(K)<span class="sc">}</span><span class="vs">, L = </span><span class="sc">${</span><span class="fu">fmt</span>(L)<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb12-297"><a href="#cb12-297" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> [[<span class="st">"One loop nest"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> I <span class="op">*</span> J <span class="op">*</span> K <span class="op">*</span> L]<span class="op">,</span> [<span class="st">"(AB)C: ij,jk-&gt;ik then ik,kl-&gt;il"</span><span class="op">,</span> I <span class="op">*</span> J <span class="op">*</span> K <span class="op">+</span> I <span class="op">*</span> K <span class="op">*</span> L]<span class="op">,</span> [<span class="st">"A(BC): jk,kl-&gt;jl then ij,jl-&gt;il"</span><span class="op">,</span> J <span class="op">*</span> K <span class="op">*</span> L <span class="op">+</span> I <span class="op">*</span> J <span class="op">*</span> L]]<span class="op">;</span></span>
+<span id="cb12-298"><a href="#cb12-298" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb12-299"><a href="#cb12-299" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> [T<span class="op">,</span> d] <span class="op">=</span> [<span class="fu">P</span>(chain<span class="op">.</span><span class="at">a</span>)<span class="op">,</span> <span class="fu">P</span>(chain<span class="op">.</span><span class="at">b</span>)]<span class="op">;</span></span>
+<span id="cb12-300"><a href="#cb12-300" aria-hidden="true" tabindex="-1"></a>    title <span class="op">=</span> <span class="vs">`T = </span><span class="sc">${</span><span class="fu">fmt</span>(T)<span class="sc">}</span><span class="vs"> positions, d = </span><span class="sc">${</span><span class="fu">fmt</span>(d)<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb12-301"><a href="#cb12-301" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> [[<span class="st">"One loop nest"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> T <span class="op">*</span> T <span class="op">*</span> d <span class="op">*</span> d]<span class="op">,</span> [<span class="st">"(QKᵀ)V: scores first, T × T"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> T <span class="op">*</span> T <span class="op">*</span> d]<span class="op">,</span> [<span class="st">"Q(KᵀV): summary first, d × d"</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> T <span class="op">*</span> d <span class="op">*</span> d]]<span class="op">;</span></span>
+<span id="cb12-302"><a href="#cb12-302" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-303"><a href="#cb12-303" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> best <span class="op">=</span> d3<span class="op">.</span><span class="fu">min</span>(rows<span class="op">,</span> r <span class="kw">=&gt;</span> r[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb12-304"><a href="#cb12-304" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="es-panel"&gt;&lt;h4&gt;</span><span class="sc">${</span>title<span class="sc">}</span><span class="vs">&lt;/h4&gt;&lt;table class="table table-sm es-t" style="margin:0"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Order&lt;/th&gt;&lt;th class="num"&gt;Multiplications&lt;/th&gt;&lt;th class="num"&gt;× best&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;</span></span>
+<span id="cb12-305"><a href="#cb12-305" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>rows<span class="op">.</span><span class="fu">map</span>(([n<span class="op">,</span> c]) <span class="kw">=&gt;</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;tr style="</span><span class="sc">${</span>c <span class="op">===</span> best <span class="op">?</span> <span class="st">"font-weight:650"</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">"&gt;&lt;td&gt;</span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">sci</span>(c)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;td class="num"&gt;</span><span class="sc">${</span><span class="fu">fmt</span>(c <span class="op">/</span> best<span class="op">,</span> c <span class="op">/</span> best <span class="op">&lt;</span> <span class="dv">10</span> <span class="op">?</span> <span class="dv">1</span> <span class="op">:</span> <span class="dv">0</span>)<span class="sc">}</span><span class="vs">&lt;/td&gt;&lt;/tr&gt;`</span>)<span class="sc">}</span><span class="vs">&lt;/tbody&gt;&lt;/table&gt;</span></span>
+<span id="cb12-306"><a href="#cb12-306" aria-hidden="true" tabindex="-1"></a><span class="vs">    </span><span class="sc">${</span>chain<span class="op">.</span><span class="at">ex</span> <span class="op">===</span> <span class="st">"attn"</span> <span class="op">?</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;p class="es-note" style="font-size:.82rem;opacity:.75;margin:.4rem 0 0"&gt;Only the first two sliders are used: T and d.&lt;/p&gt;`</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb12-307"><a href="#cb12-307" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>For a chain, dynamic programming finds the best order in polynomial time. For a general network of contractions, finding the cheapest order is NP-hard, a result due to Chi-Chung Lam, P. Sadayappan and Rephael Wenger (1997), so libraries use heuristics. NumPy’s <code>einsum</code> does so when called with <code>optimize=True</code>, and Daniel Smith and Johnnie Gray’s <code>opt_einsum</code> package (2018), which PyTorch uses when it is installed, offers greedy, dynamic-programming and randomised searches. Large tensor-network simulations of quantum circuits live or die by this choice.</p>
+</section>
+<section id="gradients-are-einsums-too" class="level2">
+<h2 class="anchored" data-anchor-id="gradients-are-einsums-too">Gradients are einsums too</h2>
+<p>An einsum is linear in each operand separately, so its derivative with respect to one operand is the einsum with that operand removed. For a scalar loss <span class="math inline">\(\mathcal L\)</span> and <span class="math inline">\(C\)</span> = <code>einsum("ij,jk-&gt;ik", A, B)</code>,</p>
+<p><span class="math display">\[
+\frac{\partial \mathcal L}{\partial A_{ij}} = \sum_k \frac{\partial \mathcal L}{\partial C_{ik}} \, B_{jk}, \qquad\text{that is}\qquad \bar A = \texttt{einsum("ik,jk-&gt;ij"}, \bar C, B\texttt{)}.
+\]</span></p>
+<p>The rule in general: to get the gradient for one operand, <strong>swap it with the output</strong>. Its index string becomes the new output, and the output’s string, carrying the incoming gradient <span class="math inline">\(\bar C\)</span>, takes its place among the inputs. Summed letters become free and free letters become summed as needed, automatically.</p>
+<div class="es-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Forward</th>
+<th>Gradient for the first operand</th>
+<th>Gradient for the second operand</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ij,jk-&gt;ik</code></td>
+<td><code>ik,jk-&gt;ij</code> (<span class="math inline">\(\bar C B^\top\)</span>)</td>
+<td><code>ij,ik-&gt;jk</code> (<span class="math inline">\(A^\top \bar C\)</span>)</td>
+</tr>
+<tr class="even">
+<td><code>i,i-&gt;</code></td>
+<td><code>,i-&gt;i</code> (<span class="math inline">\(\bar c\, b\)</span>)</td>
+<td><code>i,-&gt;i</code> (<span class="math inline">\(a\, \bar c\)</span>)</td>
+</tr>
+<tr class="odd">
+<td><code>i,j-&gt;ij</code></td>
+<td><code>ij,j-&gt;i</code></td>
+<td><code>i,ij-&gt;j</code></td>
+</tr>
+<tr class="even">
+<td><code>bij,bjk-&gt;bik</code></td>
+<td><code>bik,bjk-&gt;bij</code></td>
+<td><code>bij,bik-&gt;bjk</code></td>
+</tr>
+<tr class="odd">
+<td><code>qhd,khd-&gt;hqk</code></td>
+<td><code>hqk,khd-&gt;qhd</code></td>
+<td><code>qhd,hqk-&gt;khd</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The rule needs two provisos. If an operand has a letter that appears nowhere else, such as <em>j</em> in <code>"ij-&gt;i"</code>, the forward pass summed it away, and the gradient must broadcast it back, so the backward einsum has to be told that letter’s size. And a letter repeated within one operand, as in a trace, puts the gradient on a diagonal and zeros elsewhere. Automatic-differentiation systems handle both; the table covers the cases that matter in practice.</p>
+</section>
+<section id="in-practice" class="level2">
+<h2 class="anchored" data-anchor-id="in-practice">In practice</h2>
+<p><strong>The same string everywhere.</strong> <code>numpy.einsum</code>, <code>torch.einsum</code>, <code>jax.numpy.einsum</code> and <code>tf.einsum</code> accept the same notation. All support <code>...</code> for “any leading axes”, so <code>"...ij,...jk-&gt;...ik"</code> is a matrix product broadcast over any batch shape. Under the hood, a two-operand einsum is turned into a transpose, a reshape and a single batched matrix multiplication whenever possible, so it runs at the speed of the matrix-multiplication routine; an einsum is not slow because it is written as a string.</p>
+<p><strong>einops.</strong> Alex Rogozhnikov’s <code>einops</code> library (2018; ICLR 2022) took the idea further with named axes, grouping in parentheses, and separate verbs for rearranging, reducing and repeating. Splitting and merging heads becomes</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>Q <span class="op">=</span> rearrange(Q, <span class="st">"b t (h d) -&gt; b h t d"</span>, h<span class="op">=</span>n_heads)   <span class="co"># split heads</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> rearrange(Y, <span class="st">"b h t d -&gt; b t (h d)"</span>)              <span class="co"># merge them back</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>and the reshape that the matrix version of attention needs is stated, checked against the sizes, and documented in one line. Its <code>einsum</code> accepts whole words for axes, <code>"batch head query dim, batch head key dim -&gt; batch head query key"</code>, at the cost of length.</p>
+<p><strong>What einsum cannot do.</strong> It only multiplies and adds, so every operation it expresses is multilinear. Softmax, normalisation, activation functions, maxima and anything else nonlinear sit between einsums. It also has no notion of a metric: physics’ distinction between upper and lower indices, which records how a quantity changes under a change of coordinates, has no counterpart, and the string says nothing about what the axes mean.</p>
+</section>
+<section id="where-it-comes-from" class="level2">
+<h2 class="anchored" data-anchor-id="where-it-comes-from">Where it comes from</h2>
+<p>Albert Einstein introduced the convention in 1916, in <em>Die Grundlage der allgemeinen Relativitätstheorie</em>, to tame equations of general relativity in which nearly every term was a sum over repeated coordinate indices: write the index twice, once up and once down, and drop the summation sign. It built on the absolute differential calculus of Gregorio Ricci-Curbastro and Tullio Levi-Civita (1900). The computing version keeps the idea of summing over repeated letters and drops the rest. NumPy added <code>einsum</code> in version 1.6, in 2011, and the deep-learning libraries followed. Tim Rocktäschel’s 2018 blog post <em>Einsum is All You Need</em> did much to make it everyday deep-learning vocabulary.</p>
+<div class="es-scroll">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Einsum</strong></td>
+<td>Function evaluating a sum of products over named indices</td>
+<td><em>Ein</em>stein <em>sum</em>mation; NumPy 1.6, 2011.</td>
+</tr>
+<tr class="even">
+<td><strong>Free index</strong></td>
+<td>A letter that survives into the output</td>
+<td>From tensor calculus: an index not bound by a sum, free to take any value.</td>
+</tr>
+<tr class="odd">
+<td><strong>Dummy index</strong></td>
+<td>A summed letter</td>
+<td>Also called a bound index; its name does not matter, like a variable of integration.</td>
+</tr>
+<tr class="even">
+<td><strong>Contraction</strong></td>
+<td>Summing over a shared index, reducing the number of axes</td>
+<td>Tensor calculus: contracting a tensor lowers its rank by two in the classical setting.</td>
+</tr>
+<tr class="odd">
+<td><strong>Tensor</strong></td>
+<td>Here, an array with any number of axes</td>
+<td>Latin <em>tendere</em>, to stretch, via Woldemar Voigt’s 1898 use for the stress in crystals.</td>
+</tr>
+<tr class="even">
+<td><strong>Tensor network</strong></td>
+<td>A graph of tensors with shared indices as edges</td>
+<td>Physics of many-body quantum systems, from the 1990s.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="sources" class="level2">
+<h2 class="anchored" data-anchor-id="sources">Sources</h2>
+<ul>
+<li>A. Einstein, <a href="https://einsteinpapers.press.princeton.edu/vol6-doc/385"><em>Die Grundlage der allgemeinen Relativitätstheorie</em></a>, <em>Annalen der Physik</em> 49, 1916.</li>
+<li>NumPy, <a href="https://numpy.org/devdocs/release/1.6.0-notes.html"><em>1.6.0 release notes</em></a> (2011), and <a href="https://numpy.org/doc/stable/reference/generated/numpy.einsum.html"><code>numpy.einsum</code></a>.</li>
+<li>D. G. A. Smith, J. Gray, <a href="https://joss.theoj.org/papers/10.21105/joss.00753"><em>opt_einsum: A Python package for optimizing contraction order for einsum-like expressions</em></a>, <em>Journal of Open Source Software</em> 3(26), 2018.</li>
+<li>C.-C. Lam, P. Sadayappan, R. Wenger, <em>On optimizing a class of multi-dimensional loops with reduction for parallel execution</em>, <em>Parallel Processing Letters</em>, 1997.</li>
+<li>A. Rogozhnikov, <a href="https://openreview.net/forum?id=oapKSVM2bcj"><em>Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation</em></a>, ICLR 2022.</li>
+<li>A. Katharopoulos, A. Vyas, N. Pappas, F. Fleuret, <a href="https://arxiv.org/abs/2006.16236"><em>Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention</em></a>, ICML 2020.</li>
+<li>T. Rocktäschel, <a href="https://rockt.github.io/2018/04/30/einsum"><em>Einsum is All You Need</em></a>, 2018.</li>
+</ul>
+<p><strong>Related:</strong> <a href="../../ai/transformer-part-1-operation-by-operation/">The Transformer, Part 1</a> for the same operations as matrix products, with every shape.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImZtdCA9ICh4LCBkID0gMCkgPT4geC50b0xvY2FsZVN0cmluZyhcImVuLUdCXCIsIHttYXhpbXVtRnJhY3Rpb25EaWdpdHM6IGQsIG1pbmltdW1GcmFjdGlvbkRpZ2l0czogZH0pXG4vLyAtLS0tIGEgc21hbGwsIGdlbmVyYWwgZWluc3VtIGluIEphdmFTY3JpcHQgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxucGFyc2VTcGVjID0gc3BlYyA9PiB7XG4gIGNvbnN0IHMgPSBzcGVjLnJlcGxhY2UoL1xccysvZywgXCJcIik7XG4gIGlmICghL15bQS1aYS16LF0qKC0+W0EtWmEtel0qKT8kLy50ZXN0KHMpKSB0aHJvdyBuZXcgRXJyb3IoXCJVc2UgbGV0dGVycywgY29tbWFzIGFuZCBvbmUgJy0+JywgZS5nLiBpaixqay0+aWtcIik7XG4gIGxldCBbbGhzLCByaHNdID0gcy5zcGxpdChcIi0+XCIpOyBjb25zdCBpbnMgPSBsaHMuc3BsaXQoXCIsXCIpO1xuICBpZiAoaW5zLnNvbWUodCA9PiB0ID09PSBcIlwiKSAmJiBpbnMubGVuZ3RoID4gMSkgdGhyb3cgbmV3IEVycm9yKFwiQW4gb3BlcmFuZCBoYXMgbm8gaW5kaWNlc1wiKTtcbiAgY29uc3QgY291bnQgPSB7fTsgZm9yIChjb25zdCBjIG9mIGlucy5qb2luKFwiXCIpKSBjb3VudFtjXSA9IChjb3VudFtjXSB8fCAwKSArIDE7XG4gIGlmIChyaHMgPT09IHVuZGVmaW5lZCkgcmhzID0gT2JqZWN0LmtleXMoY291bnQpLmZpbHRlcihjID0+IGNvdW50W2NdID09PSAxKS5zb3J0KCkuam9pbihcIlwiKTtcbiAgZm9yIChjb25zdCBjIG9mIHJocykgaWYgKCEoYyBpbiBjb3VudCkpIHRocm93IG5ldyBFcnJvcihgT3V0cHV0IGluZGV4ICcke2N9JyBkb2VzIG5vdCBhcHBlYXIgaW4gYW55IGlucHV0YCk7XG4gIGlmIChuZXcgU2V0KHJocykuc2l6ZSAhPT0gcmhzLmxlbmd0aCkgdGhyb3cgbmV3IEVycm9yKFwiQW4gb3V0cHV0IGluZGV4IGlzIHJlcGVhdGVkXCIpO1xuICBjb25zdCBsZXR0ZXJzID0gWy4uLm5ldyBTZXQoaW5zLmpvaW4oXCJcIikgKyByaHMpXTtcbiAgcmV0dXJuIHtpbnMsIG91dDogcmhzLCBsZXR0ZXJzLCBzdW1tZWQ6IGxldHRlcnMuZmlsdGVyKGMgPT4gIXJocy5pbmNsdWRlcyhjKSl9O1xufVxuZWluc3VtID0gKHNwZWMsIC4uLnRzKSA9PiB7XG4gIGNvbnN0IHAgPSBwYXJzZVNwZWMoc3BlYyk7XG4gIGlmICh0cy5sZW5ndGggIT09IHAuaW5zLmxlbmd0aCkgdGhyb3cgbmV3IEVycm9yKGBTcGVjIGhhcyAke3AuaW5zLmxlbmd0aH0gb3BlcmFuZHMsIGdvdCAke3RzLmxlbmd0aH1gKTtcbiAgY29uc3Qgc2l6ZSA9IHt9O1xuICBwLmlucy5mb3JFYWNoKChpZHgsIGspID0+IHtcbiAgICBpZiAoaWR4Lmxlbmd0aCAhPT0gdHNba10uc2hhcGUubGVuZ3RoKSB0aHJvdyBuZXcgRXJyb3IoYE9wZXJhbmQgJHtrICsgMX0gaGFzICR7dHNba10uc2hhcGUubGVuZ3RofSBheGVzIGJ1dCAnJHtpZHh9JyBuYW1lcyAke2lkeC5sZW5ndGh9YCk7XG4gICAgWy4uLmlkeF0uZm9yRWFjaCgoYywgYSkgPT4geyBjb25zdCBuID0gdHNba10uc2hhcGVbYV07IGlmIChzaXplW2NdICE9PSB1bmRlZmluZWQgJiYgc2l6ZVtjXSAhPT0gbikgdGhyb3cgbmV3IEVycm9yKGBJbmRleCAnJHtjfScgaGFzIHNpemUgJHtzaXplW2NdfSBpbiBvbmUgcGxhY2UgYW5kICR7bn0gaW4gYW5vdGhlcmApOyBzaXplW2NdID0gbjsgfSk7XG4gIH0pO1xuICBjb25zdCBMID0gcC5sZXR0ZXJzLCBuTCA9IEwubGVuZ3RoLCBkaW1zID0gTC5tYXAoYyA9PiBzaXplW2NdKTtcbiAgY29uc3QgdG90YWwgPSBkaW1zLnJlZHVjZSgoYSwgYikgPT4gYSAqIGIsIDEpO1xuICBpZiAodG90YWwgPiAzZTYpIHRocm93IG5ldyBFcnJvcihgVGhhdCBpcyAke2ZtdCh0b3RhbCl9IHRlcm1zOyBrZWVwIGl0IHVuZGVyIDMgbWlsbGlvbiBoZXJlYCk7XG4gIGNvbnN0IHN0cmlkZXMgPSAoc2hhcGUpID0+IHsgY29uc3QgcyA9IG5ldyBBcnJheShzaGFwZS5sZW5ndGgpOyBsZXQgbSA9IDE7IGZvciAobGV0IGkgPSBzaGFwZS5sZW5ndGggLSAxOyBpID49IDA7IGktLSkgeyBzW2ldID0gbTsgbSAqPSBzaGFwZVtpXTsgfSByZXR1cm4gczsgfTtcbiAgY29uc3Qgb3BTdHJpZGUgPSBwLmlucy5tYXAoKGlkeCwgaykgPT4geyBjb25zdCBzdCA9IHN0cmlkZXModHNba10uc2hhcGUpLCB2ID0gbmV3IEFycmF5KG5MKS5maWxsKDApOyBbLi4uaWR4XS5mb3JFYWNoKChjLCBhKSA9PiB2W0wuaW5kZXhPZihjKV0gKz0gc3RbYV0pOyByZXR1cm4gdjsgfSk7XG4gIGNvbnN0IG9zaGFwZSA9IFsuLi5wLm91dF0ubWFwKGMgPT4gc2l6ZVtjXSksIG9zdCA9IHN0cmlkZXMob3NoYXBlKSwgb3V0U3RyaWRlID0gbmV3IEFycmF5KG5MKS5maWxsKDApO1xuICBbLi4ucC5vdXRdLmZvckVhY2goKGMsIGEpID0+IG91dFN0cmlkZVtMLmluZGV4T2YoYyldID0gb3N0W2FdKTtcbiAgY29uc3Qgb3V0ID0gbmV3IEZsb2F0NjRBcnJheShvc2hhcGUucmVkdWNlKChhLCBiKSA9PiBhICogYiwgMSkpLCBjdHIgPSBuZXcgQXJyYXkobkwpLmZpbGwoMCk7XG4gIGNvbnN0IG9mZiA9IHAuaW5zLm1hcCgoKSA9PiAwKTsgbGV0IG9vID0gMDtcbiAgZm9yIChsZXQgdCA9IDA7IHQgPCB0b3RhbDsgdCsrKSB7XG4gICAgbGV0IHYgPSAxOyBmb3IgKGxldCBrID0gMDsgayA8IHRzLmxlbmd0aDsgaysrKSB2ICo9IHRzW2tdLmRhdGFbb2ZmW2tdXTtcbiAgICBvdXRbb29dICs9IHY7XG4gICAgZm9yIChsZXQgaSA9IG5MIC0gMTsgaSA+PSAwOyBpLS0pIHsgICAgICAgICAgICAgICAgICAgICAgIC8vIG9kb21ldGVyIGluY3JlbWVudFxuICAgICAgY3RyW2ldKys7IGZvciAobGV0IGsgPSAwOyBrIDwgdHMubGVuZ3RoOyBrKyspIG9mZltrXSArPSBvcFN0cmlkZVtrXVtpXTsgb28gKz0gb3V0U3RyaWRlW2ldO1xuICAgICAgaWYgKGN0cltpXSA8IGRpbXNbaV0pIGJyZWFrO1xuICAgICAgZm9yIChsZXQgayA9IDA7IGsgPCB0cy5sZW5ndGg7IGsrKykgb2ZmW2tdIC09IG9wU3RyaWRlW2tdW2ldICogZGltc1tpXTsgb28gLT0gb3V0U3RyaWRlW2ldICogZGltc1tpXTsgY3RyW2ldID0gMDtcbiAgICB9XG4gIH1cbiAgcmV0dXJuIHtzaGFwZTogb3NoYXBlLCBkYXRhOiBvdXQsIHNpemUsIHRlcm1zOiB0b3RhbCwgcH07XG59XG5ybmcgPSBzZWVkID0+IHsgbGV0IHMgPSBzZWVkID4+PiAwIHx8IDE7IHJldHVybiAoKSA9PiAocyA9IChzICogMTY2NDUyNSArIDEwMTM5MDQyMjMpID4+PiAwKSAvIDQyOTQ5NjcyOTY7IH1cbnRlbnNvciA9IChzaGFwZSwgciwgaW50cyA9IHRydWUpID0+IHsgY29uc3QgbiA9IHNoYXBlLnJlZHVjZSgoYSwgYikgPT4gYSAqIGIsIDEpLCBkID0gbmV3IEZsb2F0NjRBcnJheShuKTsgZm9yIChsZXQgaSA9IDA7IGkgPCBuOyBpKyspIGRbaV0gPSBpbnRzID8gTWF0aC5mbG9vcihyKCkgKiA3KSAtIDMgOiByKCkgKiAyIC0gMTsgcmV0dXJuIHtzaGFwZSwgZGF0YTogZH07IH1cbnNob3dBcnIgPSAodCwgY2FwKSA9PiB7XG4gIGNvbnN0IHNoID0gdC5zaGFwZSwgbiA9IHYgPT4gTnVtYmVyLmlzSW50ZWdlcih2KSA/IFN0cmluZyh2KSA6IGZtdCh2LCAyKTtcbiAgbGV0IGJvZHk7XG4gIGlmIChzaC5sZW5ndGggPT09IDApIGJvZHkgPSBodGwuaHRtbGA8dGFibGU+PHRyPjx0ZD4ke24odC5kYXRhWzBdKX08L3RkPjwvdHI+PC90YWJsZT5gO1xuICBlbHNlIGlmIChzaC5sZW5ndGggPT09IDEgJiYgc2hbMF0gPD0gMTIpIGJvZHkgPSBodGwuaHRtbGA8dGFibGU+PHRyPiR7Wy4uLnQuZGF0YV0ubWFwKHYgPT4gaHRsLmh0bWxgPHRkPiR7bih2KX08L3RkPmApfTwvdHI+PC90YWJsZT5gO1xuICBlbHNlIGlmIChzaC5sZW5ndGggPT09IDIgJiYgc2hbMF0gPD0gMTAgJiYgc2hbMV0gPD0gMTApIGJvZHkgPSBodGwuaHRtbGA8dGFibGU+JHtkMy5yYW5nZShzaFswXSkubWFwKGkgPT4gaHRsLmh0bWxgPHRyPiR7ZDMucmFuZ2Uoc2hbMV0pLm1hcChqID0+IGh0bC5odG1sYDx0ZD4ke24odC5kYXRhW2kgKiBzaFsxXSArIGpdKX08L3RkPmApfTwvdHI+YCl9PC90YWJsZT5gO1xuICBlbHNlIGJvZHkgPSBodGwuaHRtbGA8ZGl2IHN0eWxlPVwib3BhY2l0eTouNzVcIj4ke3NoLmxlbmd0aH0tYXhpcyBhcnJheSwgJHtmbXQodC5kYXRhLmxlbmd0aCl9IGVudHJpZXM6ICR7Wy4uLnQuZGF0YS5zbGljZSgwLCA4KV0ubWFwKG4pLmpvaW4oXCIsIFwiKX0ke3QuZGF0YS5sZW5ndGggPiA4ID8gXCIsIOKAplwiIDogXCJcIn08L2Rpdj5gO1xuICByZXR1cm4gaHRsLmh0bWxgPGRpdiBjbGFzcz1cImVzLWFyclwiPjxkaXYgY2xhc3M9XCJjYXBcIj4ke2NhcH0gwrcgc2hhcGUgKCR7c2guam9pbihcIiwgXCIpfSk8L2Rpdj4ke2JvZHl9PC9kaXY+YDtcbn1cbmxvb3BDb2RlID0gKHAsIHNpemUsIG5hbWVzKSA9PiB7XG4gIGNvbnN0IGxpbmVzID0gW10sIHBhZCA9IGQgPT4gXCIgICAgXCIucmVwZWF0KGQpLCBPID0gcC5vdXQubGVuZ3RoID8gYCR7bmFtZXMub3V0fVske1suLi5wLm91dF0uam9pbihcIiwgXCIpfV1gIDogbmFtZXMub3V0O1xuICBsaW5lcy5wdXNoKGAke25hbWVzLm91dH0gPSB6ZXJvcygke3Aub3V0Lmxlbmd0aCA/IFwiKFwiICsgWy4uLnAub3V0XS5tYXAoYyA9PiBzaXplW2NdKS5qb2luKFwiLCBcIikgKyAocC5vdXQubGVuZ3RoID09PSAxID8gXCIsKVwiIDogXCIpXCIpIDogXCIoKVwifSlgKTtcbiAgbGV0IGQgPSAwO1xuICBmb3IgKGNvbnN0IGMgb2YgcC5vdXQpIGxpbmVzLnB1c2goYCR7cGFkKGQrKyl9Zm9yICR7Y30gaW4gcmFuZ2UoJHtzaXplW2NdfSk6YCk7XG4gIGZvciAoY29uc3QgYyBvZiBwLnN1bW1lZCkgbGluZXMucHVzaChgJHtwYWQoZCsrKX1mb3IgJHtjfSBpbiByYW5nZSgke3NpemVbY119KTogICAgICAgICMgc3VtbWVkYCk7XG4gIGNvbnN0IHByb2QgPSBwLmlucy5tYXAoKGlkeCwgaykgPT4gYCR7bmFtZXMuaW5zW2tdfVske1suLi5pZHhdLmpvaW4oXCIsIFwiKX1dYCkuam9pbihcIiAqIFwiKTtcbiAgbGluZXMucHVzaChgJHtwYWQoZCl9JHtPfSArPSAke3Byb2R9YCk7XG4gIHJldHVybiBsaW5lcy5qb2luKFwiXFxuXCIpO1xufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0yIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoicHJlc2V0cyA9IFtcbiAgW1wiRG90IHByb2R1Y3RcIiwgXCJpLGktPlwiLCBcIjQsNFwiLCBcIiRcXFxcc3VtX2kgYV9pIGJfaSRcIl0sXG4gIFtcIk91dGVyIHByb2R1Y3RcIiwgXCJpLGotPmlqXCIsIFwiMyw0XCIsIFwiJGFfaSBiX2okXCJdLFxuICBbXCJNYXRyaXjigJN2ZWN0b3JcIiwgXCJpaixqLT5pXCIsIFwiM3g0LDRcIiwgXCIkXFxcXHN1bV9qIEFfe2lqfSB4X2okXCJdLFxuICBbXCJSb3cgdmVjdG9yIMOXIG1hdHJpeFwiLCBcImksaWotPmpcIiwgXCIzLDN4NFwiLCBcIiRcXFxcc3VtX2kgeF9pIFdfe2lqfSRcIl0sXG4gIFtcIk1hdHJpeCBwcm9kdWN0XCIsIFwiaWosamstPmlrXCIsIFwiMngzLDN4NFwiLCBcIiRcXFxcc3VtX2ogQV97aWp9IEJfe2prfSRcIl0sXG4gIFtcIlRyYW5zcG9zZVwiLCBcImlqLT5qaVwiLCBcIjJ4M1wiLCBcIiRBX3tqaX0kXCJdLFxuICBbXCJUcmFjZVwiLCBcImlpLT5cIiwgXCI0eDRcIiwgXCIkXFxcXHN1bV9pIEFfe2lpfSRcIl0sXG4gIFtcIkRpYWdvbmFsXCIsIFwiaWktPmlcIiwgXCI0eDRcIiwgXCIkQV97aWl9JFwiXSxcbiAgW1wiUm93IHN1bXNcIiwgXCJpai0+aVwiLCBcIjN4NFwiLCBcIiRcXFxcc3VtX2ogQV97aWp9JFwiXSxcbiAgW1wiU3VtIG9mIGV2ZXJ5dGhpbmdcIiwgXCJpai0+XCIsIFwiM3g0XCIsIFwiJFxcXFxzdW1fe2lqfSBBX3tpan0kXCJdLFxuICBbXCJFbGVtZW50d2lzZSBwcm9kdWN0XCIsIFwiaWosaWotPmlqXCIsIFwiM3gzLDN4M1wiLCBcIiRBX3tpan0gQl97aWp9JFwiXSxcbiAgW1wiRnJvYmVuaXVzIGlubmVyIHByb2R1Y3RcIiwgXCJpaixpai0+XCIsIFwiM3gzLDN4M1wiLCBcIiRcXFxcc3VtX3tpan0gQV97aWp9IEJfe2lqfSRcIl0sXG4gIFtcIkJpbGluZWFyIGZvcm1cIiwgXCJpLGlqLGotPlwiLCBcIjMsM3gzLDNcIiwgXCIkXFxcXHN1bV97aWp9IHhfaSBBX3tpan0geV9qJFwiXSxcbiAgW1wiQmF0Y2hlZCBtYXRyaXggcHJvZHVjdFwiLCBcImJpaixiamstPmJpa1wiLCBcIjJ4MngzLDJ4M3gyXCIsIFwiJFxcXFxzdW1faiBBX3tiaWp9IEJfe2Jqa30kXCJdLFxuICBbXCJBdHRlbnRpb24gc2NvcmVzLCBvbmUgaGVhZFwiLCBcInFkLGtkLT5xa1wiLCBcIjR4Myw1eDNcIiwgXCIkXFxcXHN1bV9kIFFfe3FkfSBLX3trZH0kXCJdLFxuICBbXCJBdHRlbnRpb24gc2NvcmVzLCBhbGwgaGVhZHNcIiwgXCJxaGQsa2hkLT5ocWtcIiwgXCI0eDJ4Myw1eDJ4M1wiLCBcIiRcXFxcc3VtX2QgUV97cWhkfSBLX3traGR9JFwiXSxcbiAgW1wiVGVuc29yIHByb2R1Y3Qgb2YgbWF0cmljZXNcIiwgXCJpaixrbC0+aWtqbFwiLCBcIjJ4MiwyeDJcIiwgXCIkQV97aWp9IEJfe2tsfSRcIl1cbl1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNhdFRhYmxlID0gaHRsLmh0bWxgPGRpdiBjbGFzcz1cImVzLXNjcm9sbFwiPjx0YWJsZSBjbGFzcz1cInRhYmxlIHRhYmxlLXNtIGVzLXRcIj48dGhlYWQ+PHRyPjx0aD5PcGVyYXRpb248L3RoPjx0aD5FaW5zdW08L3RoPjx0aD5NZWFuaW5nPC90aD48dGg+U3VtbWVkPC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAke3ByZXNldHMubWFwKChbbiwgcywgLCBtXSkgPT4geyBjb25zdCBwID0gcGFyc2VTcGVjKHMpOyByZXR1cm4gaHRsLmh0bWxgPHRyPjx0ZD4ke259PC90ZD48dGQ+PGNvZGU+JHtzfTwvY29kZT48L3RkPjx0ZD4ke3RleChPYmplY3QuYXNzaWduKFttLnNsaWNlKDEsIC0xKV0sIHtyYXc6IFttLnNsaWNlKDEsIC0xKV19KSl9PC90ZD48dGQ+PGNvZGU+JHtwLnN1bW1lZC5qb2luKFwiLCBcIikgfHwgXCLigJNcIn08L2NvZGU+PC90ZD48L3RyPmA7IH0pfVxuPC90Ym9keT48L3RhYmxlPjwvZGl2PmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBwcmVzZXQgPSBJbnB1dHMuc2VsZWN0KHByZXNldHMsIHtmb3JtYXQ6IGQgPT4gYCR7ZFswXX06ICR7ZFsxXX1gLCB2YWx1ZTogcHJlc2V0c1s0XSwgbGFiZWw6IFwiU3RhcnQgZnJvbVwifSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBwbGF5ID0gSW5wdXRzLmZvcm0oe1xuICBzcGVjOiBJbnB1dHMudGV4dCh7dmFsdWU6IHByZXNldFsxXSwgbGFiZWw6IFwiRWluc3VtXCJ9KSxcbiAgc2hhcGVzOiBJbnB1dHMudGV4dCh7dmFsdWU6IHByZXNldFsyXSwgbGFiZWw6IFwiU2hhcGVzXCJ9KSxcbiAgc2VlZDogSW5wdXRzLnJhbmdlKFsxLCA5OV0sIHt2YWx1ZTogNywgc3RlcDogMSwgbGFiZWw6IFwiUmFuZG9tIHNlZWRcIn0pXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC02IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoicGxheVZpZXcgPSB7XG4gIHRyeSB7XG4gICAgY29uc3Qgc2hhcGVzID0gcGxheS5zaGFwZXMucmVwbGFjZSgvXFxzKy9nLCBcIlwiKS5zcGxpdChcIixcIikubWFwKHMgPT4gcyA9PT0gXCJcIiA/IFtdIDogcy5zcGxpdCgvW3jDlypdLykubWFwKE51bWJlcikpO1xuICAgIGlmIChzaGFwZXMuc29tZShzaCA9PiBzaC5zb21lKG4gPT4gIU51bWJlci5pc0ludGVnZXIobikgfHwgbiA8IDEgfHwgbiA+IDY0KSkpIHRocm93IG5ldyBFcnJvcihcIkVhY2ggYXhpcyBzaXplIG11c3QgYmUgYSB3aG9sZSBudW1iZXIgZnJvbSAxIHRvIDY0XCIpO1xuICAgIGNvbnN0IHIgPSBybmcocGxheS5zZWVkKSwgaW5zID0gc2hhcGVzLm1hcChzaCA9PiB0ZW5zb3Ioc2gsIHIpKTtcbiAgICBjb25zdCByZXMgPSBlaW5zdW0ocGxheS5zcGVjLCAuLi5pbnMpLCBwID0gcmVzLnA7XG4gICAgY29uc3QgbmFtZXMgPSB7aW5zOiBwLmlucy5tYXAoKF8sIGspID0+IFwiQUJDREVGR1wiW2tdKSwgb3V0OiBcIlJcIn07XG4gICAgY29uc3QgbXVsdHMgPSByZXMudGVybXMgKiBNYXRoLm1heCgxLCBwLmlucy5sZW5ndGggLSAxKTtcbiAgICByZXR1cm4gaHRsLmh0bWxgPGRpdiBjbGFzcz1cImVzLXBhbmVsXCI+PGg0PiR7cC5pbnMuam9pbihcIiwgXCIpfSDihpIgJHtwLm91dCB8fCBcInNjYWxhclwifTwvaDQ+XG4gICAgICA8ZGl2IGNsYXNzPVwiZXMtaWR4XCI+JHtwLmxldHRlcnMubWFwKGMgPT4gaHRsLmh0bWxgPHNwYW4gY2xhc3M9XCIke3Aub3V0LmluY2x1ZGVzKGMpID8gXCJlcy1mcmVlXCIgOiBcImVzLXN1bVwifVwiPiR7Y30gPSAke3Jlcy5zaXplW2NdfSDCtyAke3Aub3V0LmluY2x1ZGVzKGMpID8gXCJmcmVlXCIgOiBcInN1bW1lZFwifTwvc3Bhbj5gKX08L2Rpdj5cbiAgICAgIDxkaXYgY2xhc3M9XCJlcy1rcGlzXCI+PGRpdj48ZGl2IGNsYXNzPVwia1wiPlJlc3VsdCBzaGFwZTwvZGl2PjxkaXYgY2xhc3M9XCJ2XCI+KCR7cmVzLnNoYXBlLmpvaW4oXCIsIFwiKX0pPC9kaXY+PC9kaXY+XG4gICAgICAgIDxkaXY+PGRpdiBjbGFzcz1cImtcIj5UZXJtcyBpbiB0aGUgc3VtPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4ke2ZtdChyZXMudGVybXMpfTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+cHJvZHVjdCBvZiBhbGwgaW5kZXggc2l6ZXM8L2Rpdj48L2Rpdj5cbiAgICAgICAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPk11bHRpcGxpY2F0aW9uczwvZGl2PjxkaXYgY2xhc3M9XCJ2XCI+JHtmbXQobXVsdHMpfTwvZGl2PjxkaXYgY2xhc3M9XCJzXCI+ZG9uZSBuYWl2ZWx5LCBpbiBvbmUgbG9vcCBuZXN0PC9kaXY+PC9kaXY+PC9kaXY+XG4gICAgICA8cHJlIGNsYXNzPVwiZXMtY29kZVwiPjxjb2RlPiR7bG9vcENvZGUocCwgcmVzLnNpemUsIG5hbWVzKX08L2NvZGU+PC9wcmU+XG4gICAgICA8ZGl2IGNsYXNzPVwiZXMtYXJyc1wiIHN0eWxlPVwibWFyZ2luLXRvcDouNnJlbVwiPiR7aW5zLm1hcCgodCwgaykgPT4gc2hvd0Fycih0LCBgJHtuYW1lcy5pbnNba119IMK3ICcke3AuaW5zW2tdfSdgKSl9JHtzaG93QXJyKHJlcywgYFIgwrcgJyR7cC5vdXR9J2ApfTwvZGl2PjwvZGl2PmA7XG4gIH0gY2F0Y2ggKGUpIHsgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJlcy1wYW5lbCBlcy1lcnJcIj4ke2UubWVzc2FnZX08L2Rpdj5gOyB9XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2YgYXR0ID0gSW5wdXRzLmZvcm0oe1Q6IElucHV0cy5yYW5nZShbMiwgMTBdLCB7dmFsdWU6IDYsIHN0ZXA6IDEsIGxhYmVsOiBcIlNlcXVlbmNlIGxlbmd0aCBUXCJ9KSwgaDogSW5wdXRzLnJhbmdlKFsxLCA0XSwge3ZhbHVlOiAyLCBzdGVwOiAxLCBsYWJlbDogXCJIZWFkcyBoXCJ9KSwgZDogSW5wdXRzLnJhbmdlKFsxLCA4XSwge3ZhbHVlOiA0LCBzdGVwOiAxLCBsYWJlbDogXCJIZWFkIHdpZHRoIGRcIn0pfSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImF0dENoZWNrID0ge1xuICBjb25zdCB7VCwgaCwgZH0gPSBhdHQsIG0gPSBoICogZCwgciA9IHJuZygxMSksIFggPSB0ZW5zb3IoW1QsIG1dLCByLCBmYWxzZSk7XG4gIGNvbnN0IFdRID0gdGVuc29yKFttLCBoLCBkXSwgciwgZmFsc2UpLCBXSyA9IHRlbnNvcihbbSwgaCwgZF0sIHIsIGZhbHNlKSwgV1YgPSB0ZW5zb3IoW20sIGgsIGRdLCByLCBmYWxzZSksIFdPID0gdGVuc29yKFtoLCBkLCBtXSwgciwgZmFsc2UpO1xuICBjb25zdCBzb2Z0bWF4Um93cyA9IChTLCBIKSA9PiB7IGNvbnN0IG91dCA9IG5ldyBGbG9hdDY0QXJyYXkoUy5kYXRhLmxlbmd0aCk7XG4gICAgZm9yIChsZXQgaGggPSAwOyBoaCA8IEg7IGhoKyspIGZvciAobGV0IHEgPSAwOyBxIDwgVDsgcSsrKSB7IGxldCBteCA9IC1JbmZpbml0eTsgY29uc3QgYmFzZSA9IChoaCAqIFQgKyBxKSAqIFQ7XG4gICAgICBmb3IgKGxldCBrID0gMDsgayA8PSBxOyBrKyspIG14ID0gTWF0aC5tYXgobXgsIFMuZGF0YVtiYXNlICsga10pOyBsZXQgeiA9IDA7XG4gICAgICBmb3IgKGxldCBrID0gMDsgayA8PSBxOyBrKyspIHsgb3V0W2Jhc2UgKyBrXSA9IE1hdGguZXhwKFMuZGF0YVtiYXNlICsga10gLSBteCk7IHogKz0gb3V0W2Jhc2UgKyBrXTsgfVxuICAgICAgZm9yIChsZXQgayA9IDA7IGsgPD0gcTsgaysrKSBvdXRbYmFzZSArIGtdIC89IHo7IH1cbiAgICByZXR1cm4ge3NoYXBlOiBTLnNoYXBlLCBkYXRhOiBvdXR9OyB9O1xuICAvLyBlaW5zdW0gdmVyc2lvblxuICBjb25zdCBRID0gZWluc3VtKFwidG0sbWhkLT50aGRcIiwgWCwgV1EpLCBLID0gZWluc3VtKFwidG0sbWhkLT50aGRcIiwgWCwgV0spLCBWID0gZWluc3VtKFwidG0sbWhkLT50aGRcIiwgWCwgV1YpO1xuICBjb25zdCBTID0gZWluc3VtKFwicWhkLGtoZC0+aHFrXCIsIFEsIEspOyBTLmRhdGEuZm9yRWFjaCgodiwgaSkgPT4gUy5kYXRhW2ldID0gdiAvIE1hdGguc3FydChkKSk7XG4gIGNvbnN0IEEgPSBzb2Z0bWF4Um93cyhTLCBoKSwgWSA9IGVpbnN1bShcImhxayxraGQsaGRtLT5xbVwiLCBBLCBWLCBXTyk7XG4gIC8vIG1hdHJpeCB2ZXJzaW9uOiBwZXIgaGVhZCwgUV9oID0gWCBXX1FbOiwgaCwgOl0sIHNjb3JlcyA9IFFfaCBLX2jhtYAsIG91dF9oID0gUCBWX2gsIGNvbmNhdCwgdGhlbiBjb25jYXQgwrcgV19PKHJlc2hhcGVkKVxuICBjb25zdCBtbSA9IChhLCBhciwgYWMsIGIsIGJjKSA9PiB7IGNvbnN0IG8gPSBuZXcgRmxvYXQ2NEFycmF5KGFyICogYmMpOyBmb3IgKGxldCBpID0gMDsgaSA8IGFyOyBpKyspIGZvciAobGV0IGsgPSAwOyBrIDwgYWM7IGsrKykgeyBjb25zdCBhdiA9IGFbaSAqIGFjICsga107IGZvciAobGV0IGogPSAwOyBqIDwgYmM7IGorKykgb1tpICogYmMgKyBqXSArPSBhdiAqIGJbayAqIGJjICsgal07IH0gcmV0dXJuIG87IH07XG4gIGNvbnN0IHNsaWNlID0gKFcsIGhoKSA9PiB7IGNvbnN0IG8gPSBuZXcgRmxvYXQ2NEFycmF5KG0gKiBkKTsgZm9yIChsZXQgaSA9IDA7IGkgPCBtOyBpKyspIGZvciAobGV0IGogPSAwOyBqIDwgZDsgaisrKSBvW2kgKiBkICsgal0gPSBXLmRhdGFbKGkgKiBoICsgaGgpICogZCArIGpdOyByZXR1cm4gbzsgfTtcbiAgY29uc3QgY29uY2F0ID0gbmV3IEZsb2F0NjRBcnJheShUICogbSk7XG4gIGZvciAobGV0IGhoID0gMDsgaGggPCBoOyBoaCsrKSB7XG4gICAgY29uc3QgUWggPSBtbShYLmRhdGEsIFQsIG0sIHNsaWNlKFdRLCBoaCksIGQpLCBLaCA9IG1tKFguZGF0YSwgVCwgbSwgc2xpY2UoV0ssIGhoKSwgZCksIFZoID0gbW0oWC5kYXRhLCBULCBtLCBzbGljZShXViwgaGgpLCBkKTtcbiAgICBjb25zdCBLaFQgPSBuZXcgRmxvYXQ2NEFycmF5KGQgKiBUKTsgZm9yIChsZXQgaSA9IDA7IGkgPCBUOyBpKyspIGZvciAobGV0IGogPSAwOyBqIDwgZDsgaisrKSBLaFRbaiAqIFQgKyBpXSA9IEtoW2kgKiBkICsgal07XG4gICAgY29uc3QgU2ggPSBtbShRaCwgVCwgZCwgS2hULCBUKS5tYXAodiA9PiB2IC8gTWF0aC5zcXJ0KGQpKSwgUCA9IHNvZnRtYXhSb3dzKHtzaGFwZTogWzEsIFQsIFRdLCBkYXRhOiBTaH0sIDEpLmRhdGE7XG4gICAgY29uc3QgT2ggPSBtbShQLCBULCBULCBWaCwgZCk7IGZvciAobGV0IGkgPSAwOyBpIDwgVDsgaSsrKSBmb3IgKGxldCBqID0gMDsgaiA8IGQ7IGorKykgY29uY2F0W2kgKiBtICsgaGggKiBkICsgal0gPSBPaFtpICogZCArIGpdO1xuICB9XG4gIGNvbnN0IFltID0gbW0oY29uY2F0LCBULCBtLCBXTy5kYXRhLCBtKTsgICAvLyBXX08gKGgsIGQsIG0pIHJlYWQgYXMgYW4gKGjCt2QpIMOXIG0gbWF0cml4XG4gIGNvbnN0IGVyciA9IGQzLm1heChZbSwgKHYsIGkpID0+IE1hdGguYWJzKHYgLSBZLmRhdGFbaV0pKTtcbiAgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJlcy1wYW5lbFwiPjxoND5NdWx0aS1oZWFkIGF0dGVudGlvbiwgVCA9ICR7VH0sIGggPSAke2h9LCBkID0gJHtkfSwgbSA9ICR7bX08L2g0PjxkaXYgY2xhc3M9XCJlcy1rcGlzXCI+XG4gICAgPGRpdj48ZGl2IGNsYXNzPVwia1wiPk91dHB1dCBzaGFwZTwvZGl2PjxkaXYgY2xhc3M9XCJ2XCI+KCR7WS5zaGFwZS5qb2luKFwiLCBcIil9KTwvZGl2PjwvZGl2PlxuICAgIDxkaXY+PGRpdiBjbGFzcz1cImtcIj5MYXJnZXN0IGRpZmZlcmVuY2U8L2Rpdj48ZGl2IGNsYXNzPVwidlwiPiR7ZXJyLnRvRXhwb25lbnRpYWwoMSl9PC9kaXY+PGRpdiBjbGFzcz1cInNcIj5laW5zdW0gYWdhaW5zdCByZXNoYXBlLWFuZC1tYXRtdWw8L2Rpdj48L2Rpdj5cbiAgICA8ZGl2PjxkaXYgY2xhc3M9XCJrXCI+U2NvcmUgdGVuc29yPC9kaXY+PGRpdiBjbGFzcz1cInZcIj4oJHtTLnNoYXBlLmpvaW4oXCIsIFwiKX0pPC9kaXY+PGRpdiBjbGFzcz1cInNcIj5vbmUgVCDDlyBUIG1hdHJpeCBwZXIgaGVhZDwvZGl2PjwvZGl2PjwvZGl2PjwvZGl2PmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2YgY2hhaW4gPSBJbnB1dHMuZm9ybSh7XG4gIGV4OiBJbnB1dHMucmFkaW8obmV3IE1hcChbW1wiTWF0cml4IGNoYWluIGlqLGprLGtsLT5pbFwiLCBcImNoYWluXCJdLCBbXCJBdHRlbnRpb24gd2l0aG91dCBzb2Z0bWF4IHFkLGtkLGtlLT5xZVwiLCBcImF0dG5cIl1dKSwge3ZhbHVlOiBcImF0dG5cIiwgbGFiZWw6IFwiQ29udHJhY3Rpb25cIn0pLFxuICBhOiBJbnB1dHMucmFuZ2UoWzEsIDVdLCB7dmFsdWU6IDQsIHN0ZXA6IDAuMSwgbGFiZWw6IFwiRmlyc3Qgc2l6ZSwgbG9n4oKB4oKAIChJLCBvciBUKVwifSksXG4gIGI6IElucHV0cy5yYW5nZShbMSwgNV0sIHt2YWx1ZTogMiwgc3RlcDogMC4xLCBsYWJlbDogXCJTZWNvbmQgc2l6ZSwgbG9n4oKB4oKAIChKLCBvciBkKVwifSksXG4gIGM6IElucHV0cy5yYW5nZShbMSwgNV0sIHt2YWx1ZTogMywgc3RlcDogMC4xLCBsYWJlbDogXCJUaGlyZCBzaXplLCBsb2figoHigoAgKEspXCJ9KSxcbiAgZGQ6IElucHV0cy5yYW5nZShbMSwgNV0sIHt2YWx1ZTogMSwgc3RlcDogMC4xLCBsYWJlbDogXCJGb3VydGggc2l6ZSwgbG9n4oKB4oKAIChMKVwifSlcbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiY2hhaW5WaWV3ID0ge1xuICBjb25zdCBQID0geCA9PiBNYXRoLnJvdW5kKDEwICoqIHgpLCBzY2kgPSB4ID0+IHggPj0gMWU1ID8geC50b0V4cG9uZW50aWFsKDEpLnJlcGxhY2UoXCJlK1wiLCBcIsOXMTBeXCIpIDogZm10KHgpO1xuICBsZXQgcm93cywgdGl0bGU7XG4gIGlmIChjaGFpbi5leCA9PT0gXCJjaGFpblwiKSB7XG4gICAgY29uc3QgW0ksIEosIEssIExdID0gW1AoY2hhaW4uYSksIFAoY2hhaW4uYiksIFAoY2hhaW4uYyksIFAoY2hhaW4uZGQpXTtcbiAgICB0aXRsZSA9IGBJID0gJHtmbXQoSSl9LCBKID0gJHtmbXQoSil9LCBLID0gJHtmbXQoSyl9LCBMID0gJHtmbXQoTCl9YDtcbiAgICByb3dzID0gW1tcIk9uZSBsb29wIG5lc3RcIiwgMiAqIEkgKiBKICogSyAqIExdLCBbXCIoQUIpQzogaWosamstPmlrIHRoZW4gaWssa2wtPmlsXCIsIEkgKiBKICogSyArIEkgKiBLICogTF0sIFtcIkEoQkMpOiBqayxrbC0+amwgdGhlbiBpaixqbC0+aWxcIiwgSiAqIEsgKiBMICsgSSAqIEogKiBMXV07XG4gIH0gZWxzZSB7XG4gICAgY29uc3QgW1QsIGRdID0gW1AoY2hhaW4uYSksIFAoY2hhaW4uYildO1xuICAgIHRpdGxlID0gYFQgPSAke2ZtdChUKX0gcG9zaXRpb25zLCBkID0gJHtmbXQoZCl9YDtcbiAgICByb3dzID0gW1tcIk9uZSBsb29wIG5lc3RcIiwgMiAqIFQgKiBUICogZCAqIGRdLCBbXCIoUUvhtYApVjogc2NvcmVzIGZpcnN0LCBUIMOXIFRcIiwgMiAqIFQgKiBUICogZF0sIFtcIlEoS+G1gFYpOiBzdW1tYXJ5IGZpcnN0LCBkIMOXIGRcIiwgMiAqIFQgKiBkICogZF1dO1xuICB9XG4gIGNvbnN0IGJlc3QgPSBkMy5taW4ocm93cywgciA9PiByWzFdKTtcbiAgcmV0dXJuIGh0bC5odG1sYDxkaXYgY2xhc3M9XCJlcy1wYW5lbFwiPjxoND4ke3RpdGxlfTwvaDQ+PHRhYmxlIGNsYXNzPVwidGFibGUgdGFibGUtc20gZXMtdFwiIHN0eWxlPVwibWFyZ2luOjBcIj48dGhlYWQ+PHRyPjx0aD5PcmRlcjwvdGg+PHRoIGNsYXNzPVwibnVtXCI+TXVsdGlwbGljYXRpb25zPC90aD48dGggY2xhc3M9XCJudW1cIj7DlyBiZXN0PC90aD48L3RyPjwvdGhlYWQ+PHRib2R5PlxuICAgICR7cm93cy5tYXAoKFtuLCBjXSkgPT4gaHRsLmh0bWxgPHRyIHN0eWxlPVwiJHtjID09PSBiZXN0ID8gXCJmb250LXdlaWdodDo2NTBcIiA6IFwiXCJ9XCI+PHRkPiR7bn08L3RkPjx0ZCBjbGFzcz1cIm51bVwiPiR7c2NpKGMpfTwvdGQ+PHRkIGNsYXNzPVwibnVtXCI+JHtmbXQoYyAvIGJlc3QsIGMgLyBiZXN0IDwgMTAgPyAxIDogMCl9PC90ZD48L3RyPmApfTwvdGJvZHk+PC90YWJsZT5cbiAgICAke2NoYWluLmV4ID09PSBcImF0dG5cIiA/IGh0bC5odG1sYDxwIGNsYXNzPVwiZXMtbm90ZVwiIHN0eWxlPVwiZm9udC1zaXplOi44MnJlbTtvcGFjaXR5Oi43NTttYXJnaW46LjRyZW0gMCAwXCI+T25seSB0aGUgZmlyc3QgdHdvIHNsaWRlcnMgYXJlIHVzZWQ6IFQgYW5kIGQuPC9wPmAgOiBcIlwifTwvZGl2PmA7XG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3ByZXNldCcpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdwbGF5JykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ2F0dCcpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdjaGFpbicpIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../explainers/einsum";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

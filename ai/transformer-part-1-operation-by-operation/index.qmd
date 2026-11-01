@@ -59,7 +59,7 @@ This is the first of three posts. This one takes the architecture apart operatio
 
 ## Notation
 
-Everything here uses the **row-vector convention**, the one in the original paper and in essentially all code: a token's vector is a row, and a linear layer is $\mathbf x W + \mathbf b$ with $W \in \mathbb R^{d_{\text{in}}\times d_{\text{out}}}$. Stacking the $T$ token vectors of a sequence as the rows of a matrix gives $X \in \mathbb R^{T\times d}$, and a layer applied to every token at once is just $XW$. With a batch of $B$ sequences, the activations are a three-way tensor of shape $(B, T, d)$.
+Everything here uses the **row-vector convention**, the one in the original paper and in essentially all code: a token's vector is a row, and a linear layer is $\mathbf x W + \mathbf b$ with $W \in \mathbb R^{d_{\text{in}}\times d_{\text{out}}}$. Stacking the $T$ token vectors of a sequence as the rows of a matrix gives $X \in \mathbb R^{T\times d}$, and a layer applied to every token at once is just $XW$. With a batch of $B$ sequences, the activations are a three-way tensor of shape $(B, T, d)$. Most implementations write these products with `einsum`, which names every axis in a short string; [a separate explainer](../../explainers/einsum/) covers that notation and writes the attention layer below in it.
 
 ::: {.tf-scroll}
 | Symbol | Meaning | 2017 base model | GPT-2 small |

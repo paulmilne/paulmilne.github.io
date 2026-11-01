@@ -1,0 +1,449 @@
+---
+title: "Why Merging Pairs Works: The Statistics of Byte-Pair Encoding"
+subtitle: "Tokenisation as compression: what a single merge saves, why counting pairs is nearly the right rule, where greed goes wrong, what Zipf's law has to do with it, and how the vocabulary should grow with the data"
+description: "Byte-pair encoding builds a tokeniser by repeatedly merging the most frequent pair of symbols. This post asks why so crude a rule works so well: tokenisation as half of a code, a derivation showing that a merge saves about count × (PMI − 1) nats, three merge rules trained and compared on text8, a three-word corpus on which greedy merging fails, Zipf's law and Rényi efficiency, and how the best vocabulary size grows with the training data."
+author: "Paul Milne"
+date: "2026-11-01"
+categories: [ai, tokenisation, information-theory, language-models, statistics]
+image: thumbnail.png
+resources:
+  - data/bpe.json
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.bp-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.bp-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.bp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.bp-grid form { flex-wrap: wrap !important; }
+.bp-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.bp-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.bp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.bp-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.bp-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.bp-kpis .s { font-size: .76rem; opacity: .7; }
+.bp-toks { display: flex; flex-wrap: wrap; gap: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88rem; line-height: 1.9; }
+.bp-toks span { padding: 0 .25rem; border-radius: 3px; white-space: pre; }
+.bp-step { display: grid; grid-template-columns: 7.5rem 1fr; gap: .2rem .6rem; align-items: center; margin: .2rem 0; }
+.bp-step .lab { font-size: .78rem; opacity: .7; }
+table.bp-t td.num, table.bp-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.bp-t td.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.bp-scroll { overflow-x: auto; max-width: 100%; }
+.bp-scroll table { min-width: 560px; }
+.bp-note { font-size: .82rem; opacity: .75; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+B = FileAttachment("data/bpe.json").json()
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+palette = ["#e9c46a66", "#2a9d8f44", "#e76f5144", "#8ab17d66", "#6fa8dc55", "#b388eb55", "#f4a26166"]
+tokSpans = (toks) => htl.html`<div class="bp-toks">${toks.map((t, i) => htl.html`<span style="background:${palette[i % palette.length]}">${t.replace(/_/g, "␣")}</span>`)}</div>`
+show = t => t.replace(/_/g, "␣")
+ruleName = ({freq: "Count (BPE)", gain: "Exact code-length gain", pmi: "Association (PMI)"})
+ruleColour = ({freq: "#1d3557", gain: "#e76f51", pmi: "#8ab17d"})
+at = (run, k) => run.reduce((best, r) => Math.abs(Math.log((r.k || 1) / (k || 1))) < Math.abs(Math.log((best.k || 1) / (k || 1))) ? r : best)
+last = run => run[run.length - 1]
+```
+
+[Part 1 of the embeddings series](../embeddings-part-1-words-to-vectors/#cutting-text-into-tokens) showed how byte-pair encoding builds a tokeniser: start from single characters, find the most frequent adjacent pair, merge it into a new symbol, and repeat until the vocabulary is the size you want. GPT-2's 50,000 merges were learned this way, and so, with refinements, were the tokenisers of most large language models since.
+
+It is a strange rule to have won. It knows nothing about words, morphology or meaning; it never looks at whether a merge helps the model that will be trained on the tokens; and it is greedy, committing to each merge for ever. This post asks why it works anyway. The short answer is that a tokeniser is half of a compression code, that merging the most frequent pair is a cheap approximation to the merge that most shortens that code, and that the approximation is good because word frequencies follow Zipf's law. The long answer has a derivation, three merge rules trained on the same hundred million characters, a three-word corpus on which greed fails, and a measurement of how large a vocabulary a given amount of text can support.
+
+Everything is measured on text8, the 100-million-character Wikipedia sample used throughout the embeddings and scaling posts: the first 95 million characters to learn merges, the last 5 million held out to measure them. As in Part 1, a word boundary is a symbol of its own, shown here as ␣, so the starting alphabet is 27 symbols.
+
+## A tokeniser is half of a code
+
+Shannon's source coding theorem says that the cheapest lossless encoding of a text, under a probability model $q$, costs $-\log_2 q(\text{text})$ bits, and that no code can beat the entropy of the true source on average. A language model is such a $q$: its training loss, the cross-entropy in nats per token, is exactly the length of the code it would assign to the text, divided by the number of tokens.
+
+A tokeniser $\tau$ maps a string to a sequence of tokens and back without loss, so it changes nothing about the probability of the string: $q(\text{text}) = q(\tau(\text{text}))$. The model–tokeniser pair is one code, and the natural tokeniser-free measure of it is **bits per character**: total code length divided by the number of characters. A perfect model reaches the entropy of the text whatever tokeniser it uses.
+
+So why tokenise at all? Two reasons, both practical:
+
+- **Sequence length is cost.** A transformer's compute and memory scale with the number of tokens, and its context window is counted in tokens. Fewer characters per token means more text per forward pass and per context. Matthias Gallé (2019) found that, for a fixed vocabulary size, the tokeniser that needed fewer tokens to cover the test set gave better translations: shorter sequences were the best single predictor.
+- **Statistics the model does not have to learn.** With characters alone, a model must learn from scratch that *t*, *h*, *e*, *␣* nearly always travel together. A vocabulary that already contains *the␣* has absorbed that regularity before training starts, and the model spends its capacity elsewhere.
+
+The second reason can be measured directly. Take the simplest possible model over a vocabulary, a **unigram** model that gives each token its frequency in the training text and ignores context completely. Its code length per character measures how much of the text's structure the vocabulary alone has captured. With the 27 single characters it is the entropy of English letter frequencies; every merge can lower it, because a token like *the␣* costs far fewer bits than the four letters spelled separately under a model that cannot see context.
+
+```{ojs}
+unigramIntro = {
+  const f = B.runs.freq, a = f[0], z = last(f);
+  return md`On the held-out text, the unigram model over the 27 characters costs **${fmt(a.bpc_ho, 2)} bits per character** (against ${fmt(Math.log2(27), 2)} for a uniform guess). After ${fmt(z.k)} BPE merges, the same context-blind model costs **${fmt(z.bpc_ho, 2)} bits per character**, at ${fmt(z.cpt_ho, 2)} characters per token. For scale, the best small transformer in the [scaling-laws experiment](../scaling-laws-part-1-power-laws/#the-experiment), trained on the same text with 128 characters of context, reached ${fmt(1.3373 / Math.LN2, 2)} bits, and the best published models on text8 about 1.1. A model that cannot see a single neighbouring token, given a good vocabulary, ends up within ${fmt(z.bpc_ho - 1.3373 / Math.LN2, 2)} bits of that small transformer: most of what it learned about short-range structure, the vocabulary has learned by counting.`;
+}
+```
+
+## What a merge saves
+
+Here is the central calculation. Train a unigram model on the tokenised training text by counting: token $t$ appears $n_t$ times out of $N$, and gets probability $n_t/N$. The code length of the training text under its own counts is
+
+$$
+L = -\sum_t n_t \ln \frac{n_t}{N} = N \ln N - \sum_t n_t \ln n_t \quad \text{nats.}
+$$
+
+Now merge the pair $(a, b)$, which occurs $m$ times. Every occurrence becomes one token $ab$, so $n_a$ and $n_b$ each fall by $m$, a new token with count $m$ appears, and $N$ falls by $m$. Writing $g(x) = x \ln x$, the change is exact:
+
+$$
+\Delta L = \big[g(N-m) - g(N)\big] - \big[g(n_a - m) - g(n_a)\big] - \big[g(n_b - m) - g(n_b)\big] - g(m).
+$$
+
+When $m$ is small next to $n_a$, $n_b$ and $N$, a first-order expansion, $g(x - m) - g(x) \approx -m(\ln x + 1)$, gives
+
+$$
+\Delta L \approx -m\left[\ln\frac{m N}{n_a n_b} - 1\right] = -m\,\big(\operatorname{PMI}(a, b) - 1\big),
+$$
+
+where $\operatorname{PMI}(a,b) = \ln \dfrac{m/N}{(n_a/N)(n_b/N)}$ is the **pointwise mutual information** of the pair: how many times more often $a$ is followed by $b$ than chance would predict, on a log scale. So:
+
+::: {.callout-note appearance="simple"}
+**A merge saves about $m\,(\operatorname{PMI} - 1)$ nats: its count times how surprising the pair is, less a fixed charge of one nat per occurrence.**
+:::
+
+The charge of one nat is the price of the extra symbol: the new token takes probability mass that the code would otherwise have spent on $a$ and $b$. A pair that occurs no more often than chance, PMI near zero, makes the code *longer*. A pair has to occur at least $e \approx 2.7$ times more often than chance before merging it pays.
+
+Each factor on its own gives a familiar rule:
+
+- Rank pairs by the **count** $m$ alone: that is BPE. It maximises the drop in the number of tokens, since every merge removes exactly $m$ of them, and ignores association.
+- Rank pairs by **association** alone, $m/(n_a n_b)$, which orders pairs exactly as PMI does: that is the score Hugging Face's documentation gives for WordPiece, the tokeniser of BERT, a likelihood-flavoured cousin of BPE.
+- Rank by the **product**, the exact $\Delta L$: the greedy minimiser of the unigram code length.
+
+The calculator shows the exact change and the approximation for any counts:
+
+::: {.bp-grid}
+
+```{ojs}
+viewof dl = Inputs.form({
+  m: Inputs.range([1, 50000], {value: 20000, step: 1, label: "Pair count m"}),
+  na: Inputs.range([1000, 2000000], {value: 300000, step: 1000, label: "Count of a"}),
+  nb: Inputs.range([1000, 2000000], {value: 200000, step: 1000, label: "Count of b"}),
+  logN: Inputs.range([5, 9], {value: 7.5, step: 0.05, label: "Tokens in the text, log₁₀ N"})
+})
+```
+
+:::
+
+```{ojs}
+dlView = {
+  const g = x => x > 0 ? x * Math.log(x) : 0, N = 10 ** dl.logN, m = Math.min(dl.m, dl.na, dl.nb);
+  const exact = (g(N - m) - g(N)) - (g(dl.na - m) - g(dl.na)) - (g(dl.nb - m) - g(dl.nb)) - g(m);
+  const pmi = Math.log(m * N / (dl.na * dl.nb)), approx = -m * (pmi - 1);
+  return htl.html`<div class="bp-panel"><h4>Merging a pair seen ${fmt(m)} times</h4><div class="bp-kpis">
+    <div><div class="k">PMI</div><div class="v">${fmt(pmi, 2)} nats</div><div class="s">${fmt(Math.exp(pmi), 1)}× chance</div></div>
+    <div><div class="k">Exact ΔL</div><div class="v">${exact < 0 ? "−" : "+"}${fmt(Math.abs(exact) / Math.LN2 / 1000, 1)} kbit</div><div class="s">${exact < 0 ? "the code gets shorter" : "the code gets longer"}</div></div>
+    <div><div class="k">m (PMI − 1)</div><div class="v">${approx < 0 ? "−" : "+"}${fmt(Math.abs(approx) / Math.LN2 / 1000, 1)} kbit</div><div class="s">first-order approximation</div></div>
+    <div><div class="k">Tokens saved</div><div class="v">${fmt(m)}</div><div class="s">what BPE maximises</div></div>
+  </div></div>`;
+}
+```
+
+## Three rules on the same text
+
+The derivation predicts that counting alone should do well but not best, and that association alone should do badly. I trained all three rules on text8, with the same starting alphabet, the same tie-breaking, and the same held-out text. The exact-gain rule rescans every candidate pair at every step; the association rule only considers pairs seen at least twice. Their first merges:
+
+```{ojs}
+firstTable = {
+  const n = 12, rows = d3.range(n).map(i => [i + 1, ...["freq", "gain", "pmi"].map(r => B.first[r][i])]);
+  return htl.html`<div class="bp-scroll"><table class="table table-sm bp-t"><thead><tr><th class="num">Merge</th>${["freq", "gain", "pmi"].map(r => htl.html`<th>${ruleName[r]}</th>`)}</tr></thead><tbody>
+    ${rows.map(([i, ...ms]) => htl.html`<tr><td class="num">${i}</td>${ms.map(m => htl.html`<td class="mono">${show(m[0])} + ${show(m[1])} <span class="bp-note">(${fmt(m[2])})</span></td>`)}</tr>`)}
+  </tbody></table></div>`;
+}
+```
+
+```{ojs}
+firstText = {
+  const o = B.overlap, f = last(B.runs.freq), g = last(B.runs.gain);
+  return md`The two rules that care about counts make different choices. Counting starts with the commonest pairs whatever they make, word endings such as *e␣* and *s␣* first. Exact gain prefers pairs that build whole units, *th*, then *the*, then *the␣*, *and*, *of␣*, *ing*: frequent and strongly associated, exactly the product the derivation says to maximise. They agree on only ${fmt(100 * o[0].frac, 0)}% of their first ${fmt(o[0].n)} tokens and ${fmt(100 * o[o.length - 1].frac, 0)}% of their first ${fmt(o[o.length - 1].n)}, yet after ${fmt(f.k)} merges their held-out code lengths differ by ${fmt(100 * (f.bpc_ho - g.bpc_ho) / g.bpc_ho, 1)}%. Association alone starts sensibly with *q* + *u*, a pair that is both common and inseparable, and then goes after fragments of a few rare words, seen only a handful of times: enormous PMI, almost no effect on the text.`;
+}
+```
+
+How they compare as the vocabulary grows:
+
+```{ojs}
+viewof metric = Inputs.select(new Map([
+  ["Held-out bits per character (unigram model)", "bpc_ho"],
+  ["Characters per token (held-out)", "cpt_ho"],
+  ["Rényi efficiency (α = 2.5)", "renyi"],
+  ["Held-out words that are a single token", "single_ho"]
+]), {label: "Measure", value: "bpc_ho"})
+```
+
+```{ojs}
+rulesPlot = {
+  const pts = ["freq", "gain", "pmi"].flatMap(r => B.runs[r].filter(d => d.k > 0).map(d => ({k: d.k, v: d[metric], r: ruleName[r]})));
+  return Plot.plot({width: Math.min(width, 680), height: 300, marginLeft: 55, grid: true,
+    x: {type: "log", label: "Merges learned"}, y: {label: null, tickFormat: metric === "single_ho" ? ".0%" : undefined},
+    color: {legend: true, domain: Object.values(ruleName), range: Object.values(ruleColour)},
+    marks: [Plot.line(pts, {x: "k", y: "v", stroke: "r", strokeWidth: 2.2}), Plot.tip(pts, Plot.pointerX({x: "k", y: "v", stroke: "r", title: d => `${d.r}\n${fmt(d.k)} merges: ${metric === "single_ho" ? fmt(100 * d.v, 1) + "%" : fmt(d.v, 3)}`}))]});
+}
+```
+
+```{ojs}
+rulesText = {
+  const K = 2048, f = at(B.runs.freq, K), g = at(B.runs.gain, K), p = at(B.runs.pmi, K);
+  return md`At ${fmt(f.k)} merges, counting gives ${fmt(f.cpt_ho, 2)} characters per token and ${fmt(f.bpc_ho, 3)} bits per character; exact gain gives ${fmt(g.cpt_ho, 2)} characters per token and ${fmt(g.bpc_ho, 3)} bits; association gives ${fmt(p.cpt_ho, 2)} and ${fmt(p.bpc_ho, 3)}. Each rule wins on the quantity it optimises: counting on sequence length, gain on code length. But the gap between them is small, ${fmt(100 * (f.bpc_ho - g.bpc_ho) / g.bpc_ho, 1)}% in bits, while association alone barely moves either.`;
+}
+```
+
+Why is counting so close to the exact rule? Write the gain on a log scale: $\ln(\text{gain}) = \ln m + \ln(\operatorname{PMI} - 1)$. Among the pairs worth merging, PMI ranges over a few nats, so $\ln(\operatorname{PMI} - 1)$ varies by a factor of a few. Counts range over many orders of magnitude, because symbol frequencies follow Zipf's law: in text8 the commonest pair at the start, *e␣*, occurs millions of times, the thousandth candidate thousands of times. The ranking by the product is dominated by the factor that varies most, so ranking by count alone gets most of the big merges right and differs mainly in the order and in marginal choices whose effect is small either way. The count is the dominant term of the exact rule.
+
+That is also why BPE's choices look linguistic though the rule knows no linguistics. Word endings, common words and productive suffixes are what occur most often, and frequent sequences in natural language are frequent precisely because they are units.
+
+## Where greed goes wrong
+
+BPE never reconsiders a merge, and merges interfere: merging one pair destroys occurrences of every pair that overlapped it. So the greedy sequence need not be the best sequence of the same length. Searching small random corpora exhaustively turns up examples quickly. Here is one with three words and two merges, where the goal is simply the fewest tokens:
+
+::: {.bp-grid}
+
+```{ojs}
+viewof toy = Inputs.form({
+  words: Inputs.text({value: "bdb dddd abddd", label: "Corpus (words separated by spaces)"}),
+  k: Inputs.range([1, 3], {value: 2, step: 1, label: "Merges"})
+})
+```
+
+:::
+
+```{ojs}
+//| output: false
+toyFns = {
+  const apply = (w, a, b) => { const o = []; for (let i = 0; i < w.length; i++) { if (i < w.length - 1 && w[i] === a && w[i + 1] === b) { o.push(a + b); i++; } else o.push(w[i]); } return o; };
+  const cands = ws => { const c = new Map(); for (const w of ws) { const seen = new Set(); for (let i = 0; i < w.length - 1; i++) { const key = w[i] + "\u0000" + w[i + 1]; if (seen.has(key)) continue; seen.add(key); c.set(key, (c.get(key) || 0) + (w.length - apply(w, w[i], w[i + 1]).length)); } } return c; };
+  const total = ws => ws.reduce((s, w) => s + w.length, 0);
+  const step = (ws, key) => { const [a, b] = key.split("\u0000"); return ws.map(w => apply(w, a, b)); };
+  const greedy = (ws, k) => { const path = [ws]; let seq = []; for (let i = 0; i < k; i++) { const c = cands(ws); if (!c.size) break; let best = null; for (const [key, v] of c) if (!best || v > best[1] || (v === best[1] && key < best[0])) best = [key, v]; ws = step(ws, best[0]); seq.push(best[0]); path.push(ws); } return {seq, path, n: total(ws)}; };
+  const opt = (ws, k) => { if (k === 0) return {seq: [], n: total(ws)}; let best = {seq: [], n: total(ws)}; for (const key of cands(ws).keys()) { const r = opt(step(ws, key), k - 1); if (r.n < best.n) best = {seq: [key, ...r.seq], n: r.n}; } return best; };
+  const replay = (ws, seq) => { const path = [ws]; for (const key of seq) { ws = step(ws, key); path.push(ws); } return path; };
+  return {greedy, opt, replay, cands};
+}
+```
+
+```{ojs}
+toyView = {
+  const ws = toy.words.toLowerCase().replace(/[^a-z ]/g, "").split(/\s+/).filter(Boolean).slice(0, 6).map(w => [...w.slice(0, 10)]);
+  if (!ws.length) return htl.html`<p class="bp-note">Type a few short words.</p>`;
+  const g = toyFns.greedy(ws, toy.k), o = toyFns.opt(ws, toy.k), op = toyFns.replay(ws, o.seq);
+  const lab = key => key.split("\u0000").map(show).join(" + ");
+  const row = (title, seq, path) => htl.html`<div class="bp-panel"><h4>${title}: ${fmt(path[path.length - 1].reduce((s, w) => s + w.length, 0))} tokens</h4>
+    ${path.map((p, i) => htl.html`<div class="bp-step"><div class="lab">${i === 0 ? "start" : "merge " + lab(seq[i - 1])}</div><div class="bp-toks" style="gap:3px 14px">${p.map(w => htl.html`<span style="padding:0;display:inline-flex;gap:3px">${w.map((t, j) => htl.html`<span style="background:${palette[(t.length > 1 ? 2 : 0) + (j % 2)]}">${t}</span>`)}</span>`)}</div></div>`)}</div>`;
+  return htl.html`${row("Greedy (BPE)", g.seq, g.path)}${row("Best possible", o.seq, op)}<p class="bp-note">${g.n > o.n ? `Greedy is ${g.n - o.n} token${g.n - o.n > 1 ? "s" : ""} worse than the best ${toy.k}-merge sequence.` : "Here greedy finds a best sequence."}</p>`;
+}
+```
+
+Greedy takes *d + d* first, because it occurs three times; but doing so breaks up the two occurrences of *b + d*, so the second merge saves only one more token. Taking *b + d* first and *d + d* second saves five. On real text the effect is the same in kind and small in size, because the pairs that matter most rarely overlap the very top pair.
+
+Vilém Zouhar and colleagues (2023) put this on a formal footing. They defined BPE's objective as *compression utility*, the number of symbols saved by a merge sequence, and analysed it with the tools used for **submodular** functions, those with diminishing returns, for which greedy algorithms come with guarantees. Merges are not exactly submodular, because one merge can also *create* opportunities for another (*th* then *the*), so their bound depends on a measure of that interaction, the curvature $\sigma$ of the optimal sequence: greedy BPE achieves at least $\frac{1}{\sigma}\left(1 - e^{-\sigma}\right)$ of the optimal compression. With $\sigma$ estimated at about 2.5 from exhaustive search on short strings, that is about 0.37. They also gave a faster implementation, $O(N \log M)$ rather than $O(NM)$ for a text of length $N$ and $M$ merges. Later work tightened the picture. László Kozma and Johannes Voderholzer (2024) proved that finding the optimal merge sequence is APX-complete (no polynomial algorithm can approximate it arbitrarily well unless P = NP) and that BPE's worst-case ratio lies between 0.333 and 0.625; Philip Whittington, Gregor Bachmann and Tiago Pimentel (2025) proved that the decision versions of tokenisation, by vocabulary or by merges, are NP-complete. Greedy merging is, provably, a reasonable approximation to a hard problem.
+
+## Zipf's law and the efficiency of a vocabulary
+
+The reason a few thousand symbols can encode most of a language is that word frequency is wildly unequal. The plot shows the frequency of each token against its rank, on log scales, at different points in training:
+
+```{ojs}
+zipfPlot = {
+  const pts = B.zipf.flatMap(z => z.pts.map(([r, f]) => ({r, f, k: `${fmt(z.k)} merges`})));
+  return Plot.plot({width: Math.min(width, 640), height: 300, marginLeft: 60, grid: true,
+    x: {type: "log", label: "Rank of token"}, y: {type: "log", label: "Share of all tokens", tickFormat: "~e"},
+    color: {legend: true, scheme: "viridis", domain: B.zipf.map(z => `${fmt(z.k)} merges`)},
+    marks: [Plot.line(pts, {x: "r", y: "f", stroke: "k", strokeWidth: 2})]});
+}
+```
+
+```{ojs}
+zipfText = {
+  const z = last(B.runs.freq);
+  return md`As merges accumulate, the curve straightens into the shape George Zipf described for words: frequency roughly proportional to 1/rank<sup><i>s</i></sup>. The fitted exponent over ranks 10 to 2,000 is ${fmt(z.zipf, 2)} at ${fmt(z.k)} merges (Zipf's classic value for words is about 1). A Zipfian vocabulary is what makes BPE economical: the top few hundred tokens cover most of any text, and a long tail of pieces covers everything else. On the held-out text, ${fmt(100 * z.single_ho, 0)}% of word occurrences are a single token at ${fmt(z.k)} merges.`;
+}
+```
+
+That inequality has a cost as well as a benefit. A vocabulary in which a few tokens take most of the probability wastes the capacity of the rest: each of the $V$ rows of the embedding table needs enough examples to be learned, and rare tokens get few. Zouhar and colleagues proposed in a companion paper, *Tokenization and the Noiseless Channel* (2023), to measure a tokeniser by its **Rényi efficiency**,
+
+$$
+\text{eff}_\alpha = \frac{H_\alpha(p)}{\log V}, \qquad H_\alpha(p) = \frac{1}{1-\alpha}\log \sum_t p_t^{\alpha},
+$$
+
+the Rényi entropy of the token distribution relative to its maximum. Raising probabilities to the power $\alpha > 1$ weights the frequent tokens heavily, so a vocabulary in which a few tokens dominate scores poorly, while dividing by $\log V$ charges for every rarely used row. They argued it penalises vocabularies with either very high- or very low-frequency tokens. Across machine-translation models trained with different tokenisers, with $\alpha = 2.5$ chosen by search, its correlation with BLEU score was 0.78, against 0.56 for Shannon efficiency and −0.32 for sequence length. A 2025 study by Yanjin He, Qingkai Zeng and Meng Jiang similarly found pretrained models performing best when their token frequencies follow Zipf's law most closely. On text8 (select it in the chart above) it rises over the first few hundred merges, as merging common letters with each other evens out the distribution, and then falls steadily: each new token is rarer than the last, so the vocabulary carries more and more rows that are hardly used. That is one side of the trade-off that sets the vocabulary size, and association-only merging, which creates nothing but rare tokens, scores worst of all.
+
+## How big should the vocabulary be?
+
+On the training text, every merge lowers the unigram code length: the data can always be compressed further by memorising more of it. One would expect held-out text to show the usual signature of overfitting, a code length that falls and then rises once the vocabulary outgrows the data. Here are BPE runs learned from 100 thousand, 1 million, 10 million and 95 million characters, each measured on the same held-out 5 million:
+
+```{ojs}
+//| output: false
+sizeRuns = [["p1e5", "100 thousand"], ["p1e6", "1 million"], ["p1e7", "10 million"], ["freq", "95 million"]]
+```
+
+```{ojs}
+viewof sizeView = Inputs.radio(new Map([["Held-out code length", "ho"], ["Two-part code: data + vocabulary", "mdl"], ["Frequency of the newest token", "new"]]), {value: "ho", label: "Show"})
+```
+
+```{ojs}
+sizePlot = {
+  const col = {legend: true, label: "Characters used to learn merges", domain: sizeRuns.map(r => r[1]), scheme: "viridis"};
+  if (sizeView === "new") {
+    const pts = sizeRuns.flatMap(([key, lab]) => B.newest[key].map(([k, c]) => ({k, c, s: lab})));
+    return Plot.plot({width: Math.min(width, 680), height: 320, marginLeft: 60, grid: true, color: col,
+      x: {type: "log", label: "Merge number"}, y: {type: "log", label: "Occurrences of that merge's pair in the training text"},
+      marks: [Plot.line(pts, {x: "k", y: "c", stroke: "s", strokeWidth: 2})]});
+  }
+  const val = (key, d) => sizeView === "ho" ? d.bpc_ho : (d.bpc * B.Ctr[key] + d.k * (2 * Math.log2(d.V) + 0.5 * Math.log2(d.T))) / B.Ctr[key];
+  const pts = sizeRuns.flatMap(([key, lab]) => B.runs[key].filter(d => d.k > 0).map(d => ({k: d.k, v: val(key, d), s: lab})));
+  const best = sizeRuns.map(([key, lab]) => { const b = d3.least(B.runs[key].filter(d => d.k > 0), d => val(key, d)); return {k: b.k, v: val(key, b), s: lab}; });
+  return Plot.plot({width: Math.min(width, 680), height: 320, marginLeft: 55, grid: true, color: col,
+    x: {type: "log", label: "Merges learned"}, y: {label: sizeView === "ho" ? "Held-out bits per character (unigram)" : "Total code length, bits per training character"},
+    marks: [Plot.line(pts, {x: "k", y: "v", stroke: "s", strokeWidth: 2}), Plot.dot(best, {x: "k", y: "v", fill: "s", r: 6, stroke: "white"})]});
+}
+```
+
+```{ojs}
+sizeText = {
+  const kmax = key => last(B.runs[key]).k;
+  const mdl = key => d3.least(B.runs[key].filter(d => d.k > 0), d => d.bpc * B.Ctr[key] + d.k * (2 * Math.log2(d.V) + 0.5 * Math.log2(d.T))).k;
+  const lastN = key => last(B.newest[key])[1];
+  const ends = sizeRuns.map(([key]) => [kmax(key), mdl(key)]);
+  return md`The held-out curves (the first view) never turn up. Every curve lies above the next, so at any vocabulary size merges learned from more text code new text better, and the small corpora simply run out of pairs seen at least twice: ${fmt(kmax("p1e5"))} merges from 100 thousand characters. But no curve rises. A merge learned from too little text is wasted on new text rather than harmful, because the held-out words fall back to the smaller pieces the vocabulary still contains, and a code length never pays for an entry it does not use.
+
+What held-out code length leaves out is the cost of the vocabulary itself. The **minimum description length** principle counts it: the best model is the one that minimises the length of the data's code *plus* the length of the model's description. Here the model is the list of merges and their probabilities; naming a merge costs about 2 log₂ <i>V</i> bits (which two existing symbols) and stating its probability about ½ log₂ <i>T</i> bits, the standard MDL price of one parameter estimated from <i>T</i> observations. With that charge (the second view), the total has a minimum: about ${fmt(ends[0][1])} merges for 100 thousand characters, ${fmt(ends[1][1])} for a million, ${ends[2][1] >= kmax("p1e7") ? "beyond the " + fmt(kmax("p1e7")) + " I trained" : "about " + fmt(ends[2][1])} for ten million. The optimum grows with the data, which is the shape of a scaling law for vocabulary size.
+
+The third view shows the quantity that matters most for a neural model: how often the newest token occurs. Each merge is rarer than the last, roughly as a power of the merge number. From 95 million characters, the ${fmt(kmax("freq"))}th merge's pair occurs ${fmt(lastN("freq"))} times; from a million, the last merges occur twice. In a language model every token is a row of the embedding table and a column of the output layer, and a row is only as good as the number of times it was seen in training. The real trade-off is between shorter sequences and more, rarer rows, and it can only be settled with the model in the loop.`;
+}
+```
+
+That is what has been measured for real language models, with the model's own loss in place of the unigram code. Chaofan Tao and colleagues (2024) fitted scaling laws for vocabulary size and found that larger models deserve larger vocabularies, and that most models of the time used vocabularies smaller than optimal. By their estimate, Llama 2 70B's vocabulary should have been at least 216,000 tokens, seven times its 32,000. Vocabularies have grown: GPT-2 used about 50,000 tokens, Llama 2 32,000, GPT-4 about 100,000, Llama 3 128,000 (100,000 from OpenAI's tiktoken vocabulary plus 28,000 added for other languages, raising English compression from 3.17 to 3.94 characters per token) and GPT-4o about 200,000. On text8 the larger ones gain little, because their extra tokens are spent on capital letters, punctuation, code and other languages that text8 does not contain:
+
+```{ojs}
+gptTable = {
+  const rows = [["Our BPE, " + fmt(last(B.runs.freq).k) + " merges", fmt(27 + last(B.runs.freq).k), last(B.runs.freq).cpt_ho],
+    ["GPT-2 (r50k_base)", "50,257", B.gpt.r50k_base.cpt], ["GPT-4 (cl100k_base)", "about 100,000", B.gpt.cl100k_base.cpt], ["GPT-4o (o200k_base)", "about 200,000", B.gpt.o200k_base.cpt]];
+  return htl.html`<div class="bp-scroll"><table class="table table-sm bp-t"><thead><tr><th>Tokeniser</th><th class="num">Vocabulary</th><th class="num">Characters per token on held-out text8</th></tr></thead><tbody>
+    ${rows.map(r => htl.html`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${fmt(r[2], 2)}</td></tr>`)}</tbody></table></div>`;
+}
+```
+
+A tokeniser fitted to the text it will encode needs far fewer tokens for the same compression, which is the case for building domain- and language-specific vocabularies, and the root of the unfairness that Aleksandar Petrov and colleagues (2023) measured across languages: a vocabulary learned mostly from English spends most of its tokens on English, so the same sentence in another language can take up to 15 times as many tokens, costing more and fitting less into the context.
+
+## The tokeniser as a variety ledger
+
+Everything above has a counterpart in a problem I have written about elsewhere: how an AI agent should cope with an environment that throws up more kinds of situation than it can list. In [*Instrumenting Agent Cybernetics*](../../papers/instrumenting-agent-cybernetics/) the agent keeps a **variety ledger**, a list of the classes of situation it recognises and the response mapped to each, after Ross Ashby's law of requisite variety: a regulator must have at least as much variety as the disturbances it faces. The paper's central result, the **Enumeration Elasticity Theorem**, says how fast extending the ledger shrinks the traffic it cannot handle. If class frequencies follow a Zipf law and new classes keep appearing at the rate given by Heaps' law, $D_n \propto n^{\beta}$, then a $\lambda$-fold increase in the effort spent extending the ledger cuts the unhandled fraction only by $\lambda^{1-\beta}$. As $\beta \to 1$, extension stops paying, and the paper concludes that the deficit must then be met by an architectural move instead: shrinking the variety at the input, or a fallback whose coverage does not depend on the list at all.
+
+A vocabulary is a variety ledger for text, and the history of tokenisation is that argument played out. Until 2016, neural translation systems used a fixed list of the commonest words and mapped everything else to a single unknown-word token, `UNK`: pure enumeration, with `UNK` as the unhandled residual. Text8 lets us measure how well that could ever have worked.
+
+```{ojs}
+//| output: false
+L = B.L
+```
+
+```{ojs}
+viewof ledgerView = Inputs.radio(new Map([["New words keep arriving (Heaps)", "heaps"], ["Unhandled words against vocabulary size", "resid"]]), {value: "resid", label: "Show"})
+```
+
+```{ojs}
+ledgerPlot = {
+  if (ledgerView === "heaps") {
+    const pts = L.heaps.map(([n, d]) => ({n, d}));
+    const n0 = 1e6, d0 = d3.least(L.heaps, ([n]) => Math.abs(Math.log(n / n0)))[1];
+    const line = [1e3, 1.6e7].map(n => ({n, d: d0 * (n / n0) ** L.beta_hi}));
+    return Plot.plot({width: Math.min(width, 640), height: 290, marginLeft: 60, grid: true,
+      x: {type: "log", label: "Words read"}, y: {type: "log", label: "Distinct words seen"},
+      marks: [Plot.line(pts, {x: "n", y: "d", stroke: "#1d3557", strokeWidth: 2.5}), Plot.line(line, {x: "n", y: "d", stroke: "#e76f51", strokeDasharray: "5 4"}),
+              Plot.text([line[1]], {x: "n", y: "d", text: () => `slope β = ${fmt(L.beta_hi, 2)}`, dy: -10, textAnchor: "end", fill: "#b5452b"})]});
+  }
+  const word = L.resid.map(([K, r]) => ({K, v: r, s: "Word list: words that become UNK"}));
+  const bpe = B.runs.freq.filter(d => d.k >= 10).map(d => ({K: d.V, v: 1 - d.single_ho, s: "BPE: words split into pieces (none lost)"}));
+  const K0 = 9077, r0 = Object.fromEntries(L.resid)[K0], a = L.alpha - 1;
+  const theory = [300, 2e5].map(K => ({K, v: r0 * (K / K0) ** (-a), s: `Theorem slope, α − 1 = ${fmt(a, 2)}`}));
+  return Plot.plot({width: Math.min(width, 680), height: 320, marginLeft: 60, grid: true,
+    x: {type: "log", label: "Vocabulary size"}, y: {type: "log", label: "Share of held-out word occurrences", tickFormat: "~%"},
+    color: {legend: true, domain: [word[0].s, bpe[0].s, theory[0].s], range: ["#1d3557", "#2a9d8f", "#e76f51"]},
+    marks: [Plot.line(word, {x: "K", y: "v", stroke: "s", strokeWidth: 2.5}), Plot.line(bpe, {x: "K", y: "v", stroke: "s", strokeWidth: 2.5}),
+            Plot.line(theory, {x: "K", y: "v", stroke: "s", strokeDasharray: "5 4"})]});
+}
+```
+
+```{ojs}
+ledgerText = {
+  const R = Object.fromEntries(L.resid), sl = L.slopes;
+  const at = K => R[d3.least(Object.keys(R).map(Number), k => Math.abs(Math.log(k / K)))];
+  return md`The two quantities the theorem needs are both measurable. Distinct words accumulate as a power of words read, with exponent β = ${fmt(L.beta_all, 2)} over the whole of the training text and ${fmt(L.beta_hi, 2)} beyond the first million words; the rank–frequency slope of word counts gives a Zipf exponent α = ${fmt(L.alpha, 2)}, and 1/α = ${fmt(1 / L.alpha, 2)}, the relation β ≈ 1/α the theorem assumes. So the elasticity is η = 1 − β ≈ ${fmt(1 - L.beta_all, 2)} to ${fmt(1 - L.beta_hi, 2)}: doubling the investment in the word list cuts the unknown-word rate by only about a fifth to a quarter.
+
+On held-out text, a list of the top 1,000 words leaves ${fmt(100 * at(1000), 0)}% of word occurrences as UNK; 10,000 leaves ${fmt(100 * at(10000), 0)}%; 100,000 still leaves ${fmt(100 * at(100000), 1)}%, every one of them a rare name, technical term or inflection that a translation system would most need to get right. The local slope of the curve is ${fmt(sl[0][2], 2)} between a thousand and ten thousand words and ${fmt(sl[1][2], 2)} between ten and a hundred thousand, either side of the slope α − 1 = ${fmt(L.alpha - 1, 2)} that a Zipf law with this exponent implies and on which the theorem rests.`;
+}
+```
+
+BPE is the paper's architectural conclusion, reached in 2016 for exactly this reason. Sennrich and colleagues' paper was titled *Neural Machine Translation of Rare Words with Subword Units*: the head of the distribution is enumerated as whole tokens, and everything else falls back to characters (bytes, from GPT-2 on), a decomposition whose coverage does not depend on the vocabulary at all. The unhandled residual is zero by construction at every vocabulary size. What the vocabulary buys is no longer coverage but efficiency: the green curve in the chart is the share of words that cost more than one token, the price of the fallback, and it runs a little above the word list's residual. The ledger decides how cheaply each word is handled, not whether it is.
+
+The other instruments carry over too:
+
+```{ojs}
+gtTable = htl.html`<div class="bp-scroll"><table class="table table-sm bp-t"><thead><tr><th class="num">Training words read</th><th class="num">Distinct words</th><th class="num">Good–Turing estimate of unseen mass</th><th class="num">Actual unseen rate, held-out text</th><th class="num">Same, shuffled control</th></tr></thead><tbody>
+  ${L.gt.map(r => { const c = L.gt_shuffled.find(x => x.n === r.n); return htl.html`<tr><td class="num">${fmt(r.n)}</td><td class="num">${fmt(r.types)}</td><td class="num">${fmt(100 * r.gt, 2)}%</td><td class="num">${fmt(100 * r.actual, 2)}%</td><td class="num">${c ? fmt(100 * c.gt, 2) + "% vs " + fmt(100 * c.actual, 2) + "%" : "–"}</td></tr>`; })}
+</tbody></table></div>`
+```
+
+- **Missing mass.** The plug-in estimate of the chance that the next word has never been seen is zero: every word observed has been observed. The Good–Turing estimate, the number of words seen exactly once divided by the number of words read, is the paper's open-world correction, and it is far closer. But on text8 it still underestimates the real unknown-word rate in the held-out text by a factor of 1.5 to 2.3. The last column shows why: shuffle the training words into random order and test on another random sample, and Good–Turing is almost exact. The held-out text is a different stretch of Wikipedia, on different topics, and Good–Turing assumes that what comes next is drawn from the same distribution as what came before. A deployed agent's disturbances drift in the same way, so the estimator should be read as a floor.
+- **The admission gates.** The paper admits a new distinction into the ledger only if it passes a statistical gate, including a minimum-description-length test that its information gain exceeds the cost of the extra entry. That is the two-part code that gave the optimal vocabulary size above. BPE's own requirement that a pair occur at least twice is the paper's minimum-leaf rule; the association-only rule, which fills the vocabulary with fragments of words seen a handful of times, is the "statistically real but semantically vacuous" structure the gates exist to keep out; and glitch tokens are ledger entries admitted without the data to support them.
+- **The channel.** The paper treats the context window as a channel of finite capacity, with disturbance entropy that exceeds it necessarily surfacing as output entropy. Compression is the lever on that capacity: at about five characters per token, a context window of a given length carries five times the text it would carry in characters.
+
+## Beyond greedy merging
+
+The derivation also explains the alternatives:
+
+- **The unigram tokeniser.** Taku Kudo (2018) turned the code-length view into the algorithm itself: start from a large candidate vocabulary, fit a unigram model by expectation–maximisation over all segmentations, and prune the tokens whose removal increases the likelihood least, until the target size is reached. Segmentation is then the most probable one under the model, found by the Viterbi algorithm, rather than a replay of merges. Kudo also sampled segmentations during training (*subword regularisation*) so the model sees words cut in several ways. Kaj Bostrom and Greg Durrett (2020) found unigram tokenisation matched or beat BPE for pretraining, with tokens that line up better with morphology. SentencePiece, which implements both, underlies many open models.
+- **BPE-dropout.** Ivan Provilkov and colleagues (2020) kept BPE but randomly skipped merges during training, a cheap way to get the same regularisation, worth up to 3 BLEU points in translation.
+- **No tokeniser.** Byte-level models such as ByT5 (2022) remove the vocabulary and pay in sequence length. Meta's Byte Latent Transformer (2024) groups bytes into patches of varying length, with a small model's next-byte entropy deciding where a patch ends: a learned, dynamic version of what BPE does statically, spending more computation where the text is less predictable. Its authors report it as the first byte-level model to match tokeniser-based models at scale, in a compute-controlled study up to 8 billion parameters.
+
+The failure modes covered in [Part 1](../embeddings-part-1-words-to-vectors/#cutting-text-into-tokens), numbers split at arbitrary points and glitch tokens that the tokeniser learned but the model never saw, are consequences of the same design: the tokeniser is fitted once, to one corpus, by a rule that sees only counts.
+
+## Terminology and where it comes from
+
+::: {.bp-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **Byte-pair encoding** | Tokeniser built by repeatedly merging the most frequent adjacent pair | Philip Gage, *A New Algorithm for Data Compression*, *The C Users Journal*, 1994; adapted to subword units by Rico Sennrich, Barry Haddow and Alexandra Birch, 2016, who replaced Gage's unused bytes with new symbols. |
+| **Token** | One unit of the vocabulary | Old English *tācen*, a sign; in computing, a lexical unit since early compilers. |
+| **Source coding theorem** | No lossless code beats the entropy on average | Claude Shannon, *A Mathematical Theory of Communication*, 1948. |
+| **Pointwise mutual information** | $\ln \frac{p(a,b)}{p(a)p(b)}$ for one pair of outcomes | Robert Fano, *Transmission of Information*, 1961; brought into word statistics by Kenneth Church and Patrick Hanks, 1990. |
+| **Minimum description length** | Choose the model that minimises the total code length of model plus data | Jorma Rissanen, 1978. |
+| **Submodularity** | Diminishing returns: adding an item helps less the more you already have | From combinatorial optimisation; the greedy guarantee is due to George Nemhauser, Laurence Wolsey and Marshall Fisher, 1978. |
+| **Zipf's law** | Frequency inversely proportional to a power of rank | George Kingsley Zipf, 1935 and 1949, after Jean-Baptiste Estoup's observation of 1916. |
+| **Rényi entropy** | A family of entropies indexed by $\alpha$, with Shannon's at $\alpha = 1$ | Alfréd Rényi, 1961. |
+| **Requisite variety** | A regulator needs at least as much variety as the disturbances it must counter | W. Ross Ashby, *An Introduction to Cybernetics*, 1956. |
+| **Heaps' law** | Distinct items grow as a power of items seen | Harold Heaps, 1978, after Gustav Herdan's 1960 work on vocabulary growth. |
+| **Good–Turing estimate** | Unseen mass ≈ items seen once ÷ items seen | I. J. Good, 1953, crediting Alan Turing's wartime work on the Enigma codebooks. |
+| **Viterbi algorithm** | Dynamic programming for the most probable path | Andrew Viterbi, 1967, for decoding convolutional codes. |
+:::
+
+## Method and sources
+
+**Training.** Classic BPE in the style of Sennrich and colleagues: the 95 million training characters split into words, each word ending in a boundary symbol ␣, merges never crossing words, pair counts weighted by word frequency and updated incrementally after each merge, ties broken by the pair's characters. The three rules differ only in how the next pair is chosen: largest count; largest $m/(n_a n_b)$ among pairs with $m \ge 2$; largest exact decrease in unigram code length, using the formula above with the exact counts, evaluated for every candidate pair at every step. The held-out words are segmented with the same merges in the same order.
+
+**Measures.** Unigram code length on held-out text uses token counts from the training text with add-½ smoothing over the vocabulary, so unseen tokens are coded at a finite cost. Characters include one boundary per word. Rényi efficiency uses training-text token frequencies and $\log V$ with $V$ the vocabulary size including the 27 starting symbols. The Zipf exponent is a least-squares slope over ranks 10 to 2,000. The GPT tokenisers were run on the held-out text with the `gpt-tokenizer` package's `r50k_base`, `cl100k_base` and `o200k_base` encodings.
+
+**The variety ledger.** Words are the space-separated strings of text8. Heaps' exponent is the least-squares slope of log distinct words against log words read over the training text (from 1,000 words, and from a million). The word list is the top $K$ training words by count; its residual is the share of held-out word occurrences outside it. Good–Turing uses $N_1/n$ on prefixes of the training text; the shuffled control draws training and test words at random from a shuffled pool of the first two million.
+
+**The greedy counterexample** was found by exhaustive search over random corpora of up to four words from a four-letter alphabet, counting merges without overlap; the page reruns the exhaustive search in your browser for whatever corpus you type.
+
+Sources:
+
+- P. Gage, [*A New Algorithm for Data Compression*](https://www.derczynski.com/papers/archive/BPE_Gage.pdf), *The C Users Journal* 12(2), 1994.
+- R. Sennrich, B. Haddow, A. Birch, [*Neural Machine Translation of Rare Words with Subword Units*](https://arxiv.org/abs/1508.07909), ACL 2016.
+- C. E. Shannon, [*A Mathematical Theory of Communication*](https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf), 1948.
+- V. Zouhar and colleagues, [*A Formal Perspective on Byte-Pair Encoding*](https://arxiv.org/abs/2306.16837), 2023; [*Tokenization and the Noiseless Channel*](https://aclanthology.org/2023.acl-long.284/), ACL 2023.
+- L. Kozma, J. Voderholzer, [*Theoretical Analysis of Byte-Pair Encoding*](https://arxiv.org/abs/2411.08671), 2024. P. Whittington, G. Bachmann, T. Pimentel, [*Tokenisation is NP-Complete*](https://aclanthology.org/2025.acl-long.1365/), ACL 2025.
+- Y. He, Q. Zeng, M. Jiang, [*Pre-trained Models Perform the Best When Token Distributions Follow Zipf's Law*](https://arxiv.org/abs/2507.22543), 2025.
+- M. Gallé, [*Investigating the Effectiveness of BPE: The Power of Shorter Sequences*](https://aclanthology.org/D19-1141/), EMNLP 2019.
+- T. Kudo, [*Subword Regularization*](https://arxiv.org/abs/1804.10959), ACL 2018; T. Kudo, J. Richardson, [*SentencePiece*](https://arxiv.org/abs/1808.06226), 2018.
+- K. Bostrom, G. Durrett, [*Byte Pair Encoding is Suboptimal for Language Model Pretraining*](https://arxiv.org/abs/2004.03720), Findings of EMNLP 2020.
+- I. Provilkov, D. Emelianenko, E. Voita, [*BPE-Dropout*](https://arxiv.org/abs/1910.13267), ACL 2020.
+- C. Tao and colleagues, [*Scaling Laws with Vocabulary*](https://arxiv.org/abs/2407.13623), NeurIPS 2024.
+- A. Petrov and colleagues, [*Language Model Tokenizers Introduce Unfairness Between Languages*](https://arxiv.org/abs/2305.15425), NeurIPS 2023.
+- L. Xue and colleagues, [*ByT5*](https://arxiv.org/abs/2105.13626), TACL 2022; A. Pagnoni and colleagues, [*Byte Latent Transformer*](https://arxiv.org/abs/2412.09871), 2024.
+- P. Milne, [*Instrumenting Agent Cybernetics: Open-World Estimation of Requisite Variety in Deployed Agents*](../../papers/instrumenting-agent-cybernetics/), 2026. H. S. Heaps, *Information Retrieval: Computational and Theoretical Aspects*, 1978. I. J. Good, [*The Population Frequencies of Species and the Estimation of Population Parameters*](https://doi.org/10.1093/biomet/40.3-4.237), *Biometrika*, 1953.
+- K. W. Church, P. Hanks, [*Word Association Norms, Mutual Information, and Lexicography*](https://aclanthology.org/J90-1003/), 1990.
+
+**Related: [Embeddings, Part 1](../embeddings-part-1-words-to-vectors/)** for how BPE is applied and what happens to the tokens next.
