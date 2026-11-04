@@ -1,65 +1,17 @@
 [
   {
-    "listing": "/space/index.html",
+    "listing": "/papers/index.html",
     "items": [
-      "/space/tindall-vent-bent-descent-lament/index.html",
-      "/space/apollo-11-part-4-rendezvous-return-and-entry/index.html",
-      "/space/apollo-11-part-2-translunar-coast/index.html",
-      "/space/apollo-11-part-3-descent-and-landing/index.html",
-      "/space/apollo-11-part-1-launch-to-tli/index.html"
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   },
   {
-    "listing": "/sci-fi/index.html",
+    "listing": "/index.html",
     "items": [
-      "/sci-fi/gargantua/index.html",
-      "/sci-fi/martian-tripod/index.html"
-    ]
-  },
-  {
-    "listing": "/probability/index.html",
-    "items": [
-      "/probability/pearl-causal-inference/index.html",
-      "/probability/birthday-paradox/index.html",
-      "/probability/prosecutors-fallacy/index.html"
-    ]
-  },
-  {
-    "listing": "/mechanics/index.html",
-    "items": [
-      "/mechanics/sailing-part-2-tacking-gybing-tide/index.html",
-      "/mechanics/sailing-part-1-two-wings/index.html",
-      "/mechanics/lego-numbers/index.html",
-      "/mechanics/lego-orrery/index.html",
-      "/mechanics/lego-solar-system/index.html",
-      "/mechanics/meccano-shovel/index.html"
-    ]
-  },
-  {
-    "listing": "/ai/index.html",
-    "items": [
-      "/ai/byte-pair-encoding-statistics/index.html",
-      "/ai/embeddings-part-1-words-to-vectors/index.html",
-      "/ai/embeddings-part-2-search-and-retrieval/index.html",
-      "/ai/scaling-laws-part-1-power-laws/index.html",
-      "/ai/scaling-laws-part-2-beyond-chinchilla/index.html",
-      "/ai/transformer-part-1-operation-by-operation/index.html",
-      "/ai/transformer-part-2-inside-gpt-2/index.html",
-      "/ai/transformer-part-3-advances/index.html"
-    ]
-  },
-  {
-    "listing": "/astronomy/index.html",
-    "items": [
-      "/astronomy/lx90-schmidt-cassegrain/index.html"
-    ]
-  },
-  {
-    "listing": "/cosmology/index.html",
-    "items": [
-      "/cosmology/many-worlds/index.html",
-      "/cosmology/rees-six-numbers/index.html",
-      "/cosmology/stellar-nucleosynthesis/index.html"
+      "/posts/diffusion-phase-transition/index.html",
+      "/posts/rg-diffusion-phase-transitions/index.html",
+      "/posts/welcome/index.html"
     ]
   },
   {
@@ -83,18 +35,70 @@
     ]
   },
   {
-    "listing": "/index.html",
+    "listing": "/cosmology/index.html",
     "items": [
-      "/posts/diffusion-phase-transition/index.html",
-      "/posts/rg-diffusion-phase-transitions/index.html",
-      "/posts/welcome/index.html"
+      "/cosmology/many-worlds/index.html",
+      "/cosmology/rees-six-numbers/index.html",
+      "/cosmology/stellar-nucleosynthesis/index.html"
     ]
   },
   {
-    "listing": "/papers/index.html",
+    "listing": "/astronomy/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html",
-      "/papers/rg-critical-phenomena/index.html"
+      "/astronomy/lx90-schmidt-cassegrain/index.html"
+    ]
+  },
+  {
+    "listing": "/ai/index.html",
+    "items": [
+      "/ai/byte-pair-encoding-statistics/index.html",
+      "/ai/embeddings-part-1-words-to-vectors/index.html",
+      "/ai/embeddings-part-2-search-and-retrieval/index.html",
+      "/ai/scaling-laws-part-1-power-laws/index.html",
+      "/ai/scaling-laws-part-2-beyond-chinchilla/index.html",
+      "/ai/transformer-part-1-operation-by-operation/index.html",
+      "/ai/transformer-part-2-inside-gpt-2/index.html",
+      "/ai/transformer-part-3-advances/index.html"
+    ]
+  },
+  {
+    "listing": "/electronics/index.html",
+    "items": []
+  },
+  {
+    "listing": "/mechanics/index.html",
+    "items": [
+      "/mechanics/sailing-part-2-tacking-gybing-tide/index.html",
+      "/mechanics/sailing-part-1-two-wings/index.html",
+      "/mechanics/lego-numbers/index.html",
+      "/mechanics/lego-orrery/index.html",
+      "/mechanics/lego-solar-system/index.html",
+      "/mechanics/meccano-shovel/index.html"
+    ]
+  },
+  {
+    "listing": "/probability/index.html",
+    "items": [
+      "/probability/pearl-causal-inference/index.html",
+      "/probability/birthday-paradox/index.html",
+      "/probability/prosecutors-fallacy/index.html"
+    ]
+  },
+  {
+    "listing": "/sci-fi/index.html",
+    "items": [
+      "/sci-fi/gargantua/index.html",
+      "/sci-fi/martian-tripod/index.html"
+    ]
+  },
+  {
+    "listing": "/space/index.html",
+    "items": [
+      "/space/tindall-vent-bent-descent-lament/index.html",
+      "/space/apollo-11-part-4-rendezvous-return-and-entry/index.html",
+      "/space/apollo-11-part-2-translunar-coast/index.html",
+      "/space/apollo-11-part-3-descent-and-landing/index.html",
+      "/space/apollo-11-part-1-launch-to-tli/index.html"
     ]
   }
 ]

@@ -13,6 +13,7 @@ project:
     - "astronomy/**"
     - "sci-fi/**"
     - "mechanics/**"
+    - "electronics/**"
     - "papers/**"
     - "ai/**"
     - "space/**"
@@ -23,7 +24,7 @@ project:
 website:
   title: "math-blog"
   site-url: "https://paulmilne.github.io"
-  description: "Paul Milne's blog on mathematics, physics and engineering, worked through in code: probability and statistics, cosmology and astronomy, mechanics and spaceflight, AI, paper reproductions and original research."
+  description: "Paul Milne's blog on mathematics, physics and engineering, worked through in code: probability and statistics, cosmology and astronomy, mechanics, electronics and spaceflight, AI, paper reproductions and original research."
   open-graph: true
   twitter-card: true
   navbar:
@@ -44,6 +45,8 @@ website:
         text: Sci-Fi
       - href: mechanics/index.qmd
         text: Mechanics
+      - href: electronics/index.qmd
+        text: Electronics
       - href: ai/index.qmd
         text: AI
       - href: space/index.qmd
