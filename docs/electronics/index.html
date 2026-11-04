@@ -80,9 +80,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-categories"],
+      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -134,10 +134,16 @@ window.Quarto = {
 <link rel="stylesheet" href="../styles.css">
 <meta property="og:title" content="Electronics – math-blog">
 <meta property="og:description" content="Circuits, oscillators, radio and instrumentation: analogue and digital electronics, modelled and measured.">
+<meta property="og:image" content="https://paulmilne.github.io/electronics/quadcopters-kalman/thumbnail.png">
 <meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="800">
 <meta name="twitter:title" content="Electronics – math-blog">
 <meta name="twitter:description" content="Circuits, oscillators, radio and instrumentation: analogue and digital electronics, modelled and measured.">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://paulmilne.github.io/electronics/quadcopters-kalman/thumbnail.png">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -251,7 +257,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(0)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Y29udHJvbA==">control <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZHJvbmVz">drones <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZWxlY3Ryb25pY3M=">electronics <span class="quarto-category-count">(2)</span></div><div class="category" data-category="a2FsbWFuLWZpbHRlcg==">kalman-filter <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bWF0bGFi">matlab <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bm1y">nmr <span class="quarto-category-count">(1)</span></div><div class="category" data-category="b3NjaWxsYXRvcnM=">oscillators <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2Vuc29ycw==">sensors <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxpbms=">simulink <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -266,7 +272,88 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="ZWxlY3Ryb25pY3MlMkNubXIlMkNvc2NpbGxhdG9ycyUyQ21hdGxhYiUyQ3NpbXVsaW5r" data-listing-date-sort="1793750400000" data-listing-file-modified-sort="1793788911947" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="37" data-listing-word-count-sort="7237">
+<div class="thumbnail"><a href="../electronics/nmr-marginal-oscillator/index.html" class="no-external">
 
+<img loading="lazy" src="../electronics/nmr-marginal-oscillator/setup_3d_overview.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../electronics/nmr-marginal-oscillator/index.html" class="no-external">A JFET Hartley Marginal-Oscillator NMR Spectrometer</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../electronics/nmr-marginal-oscillator/index.html" class="no-external">Physics, electronics and a MATLAB / Simulink system model</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZWxlY3Ryb25pY3M='); return false;">electronics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('bm1y'); return false;">nmr</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('b3NjaWxsYXRvcnM='); return false;">oscillators</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('bWF0bGFi'); return false;">matlab</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c2ltdWxpbms='); return false;">simulink</div>
+
+</div>
+<div class="delink listing-description"><a href="../electronics/nmr-marginal-oscillator/index.html" class="no-external">
+<p>A continuous-wave proton NMR spectrometer built around a JFET Hartley oscillator run at the edge of oscillation: Bloch equations and the isochromat ensemble, how absorbing spins load the tank, the circuit, a permanent magnet with Rose-rim pole caps calculated by finite differences, and a MATLAB / Simulink model that predicts the scope and lock-in traces. With interactive 3D models of the spins and the magnet.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../electronics/nmr-marginal-oscillator/index.html" class="no-external">
+<div class="listing-date">
+Nov 4, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="ZWxlY3Ryb25pY3MlMkNjb250cm9sJTJDa2FsbWFuLWZpbHRlciUyQ3NlbnNvcnMlMkNkcm9uZXM=" data-listing-date-sort="1793750400000" data-listing-file-modified-sort="1793827421758" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="29" data-listing-word-count-sort="5603">
+<div class="thumbnail"><a href="../electronics/quadcopters-kalman/index.html" class="no-external">
+
+<img loading="lazy" src="../electronics/quadcopters-kalman/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../electronics/quadcopters-kalman/index.html" class="no-external">Quadcopters: Four Fixed Rotors, Cheap Sensors and the Kalman Filter</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../electronics/quadcopters-kalman/index.html" class="no-external">How the smartphone made the drone, how a fixed-pitch rotor makes lift, how four of them steer in three dimensions, and how filtering noisy gyroscopes and accelerometers keeps an unstable machine in the air</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZWxlY3Ryb25pY3M='); return false;">electronics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Y29udHJvbA=='); return false;">control</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('a2FsbWFuLWZpbHRlcg=='); return false;">kalman-filter</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c2Vuc29ycw=='); return false;">sensors</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZHJvbmVz'); return false;">drones</div>
+
+</div>
+<div class="delink listing-description"><a href="../electronics/quadcopters-kalman/index.html" class="no-external">
+<p>The technologies behind the explosion of inexpensive quadcopters, momentum theory for a fixed-pitch rotor, the mixer that turns four rotor speeds into thrust and three torques, why a quadcopter is unstable, and how complementary and Kalman filters fuse gyroscope and accelerometer data for a cascaded flight controller. With a flyable 3D quadcopter, a hover calculator and live estimator simulations.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../electronics/quadcopters-kalman/index.html" class="no-external">
+<div class="listing-date">
+Nov 4, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
 </div>
 <div class="listing-no-matching d-none">No matching items</div>
 </div></main> <!-- /main -->

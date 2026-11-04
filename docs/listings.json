@@ -63,7 +63,10 @@
   },
   {
     "listing": "/electronics/index.html",
-    "items": []
+    "items": [
+      "/electronics/nmr-marginal-oscillator/index.html",
+      "/electronics/quadcopters-kalman/index.html"
+    ]
   },
   {
     "listing": "/mechanics/index.html",

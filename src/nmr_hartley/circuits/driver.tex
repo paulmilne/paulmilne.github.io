@@ -1,0 +1,49 @@
+\documentclass[border=6pt]{standalone}
+\usepackage[siunitx,american]{circuitikz}
+\usetikzlibrary{calc}
+\begin{document}
+\begin{circuitikz}[line width=0.6pt]
+  % ---- U3A: inverting summer, gain -0.1 (generator volts -> current setpoint) ----
+  \node[op amp] (A) at (3,0) {};
+  \node[font=\small] at (A.center) {\ \ U3A};
+  \draw (A.-) -- ++(-0.6,0) coordinate (SJ) node[circ] {};
+  \draw (SJ) |- ++(0,0.8) coordinate (S1);
+  \draw (S1) to[R, l_={$R_a$ \SI{10}{k\ohm}}, -o] ++(-3,0) node[left] {$v_\mathrm{mod}$ (gen CH1)};
+  \draw (SJ) |- ++(0,1.9) coordinate (S2);
+  \draw (S2) to[R, l_={$R_b$ \SI{10}{k\ohm}}, -o] ++(-3,0) node[left] {$v_\mathrm{sweep}$ (gen CH2)};
+  \draw (S2) -- ++(1.2,0) to[R, l={$R_c$ \SI{1}{k\ohm}}] (S2 -| A.out) -- (A.out);
+  \draw (A.+) -- ++(-0.3,0) node[ground] {};
+
+  % ---- U3B: V-to-I with push-pull booster ----
+  \draw (A.out) -- ++(0.6,0) coordinate (V1) node[above] {$v_1$};
+  \node[op amp, noinv input up, anchor=+] (B) at ($(V1)+(0.9,0)$) {};
+  \node[font=\small] at (B.center) {\ \ U3B};
+  \draw (V1) -- (B.+);
+  \draw (B.out) -- ++(0.8,0) coordinate (BB) node[circ] {};
+  \node[npn, anchor=B] (QN) at ($(BB)+(0.7,1.2)$) {};
+  \node[pnp, anchor=B] (QP) at ($(BB)+(0.7,-1.2)$) {};
+  \draw (BB) |- (QN.B);  \draw (BB) |- (QP.B);
+  \node[right, font=\small] at (QN.east) {Q2 BD139};
+  \node[right, font=\small] at (QP.east) {Q3 BD140};
+  \draw (QN.C) -- ++(0,0.4) node[vcc] {$+\SI{12}{V}$};
+  \draw (QP.C) -- ++(0,-0.4) node[vee] {$-\SI{12}{V}$};
+  \draw (QN.E) -- (QP.E) coordinate[midway] (EM);
+  \draw (EM) node[circ] {} -- ++(2.6,0) coordinate (C0)
+        to[L, l={coil A}] ++(0,-2.2) to[L, l={coil B}] ++(0,-2.2) coordinate (CS);
+  \draw (CS) node[circ] {} to[R, l={$R_\mathrm{sense}$ \SI{1}{\ohm}}] ++(0,-2) node[ground] {};
+  \draw (CS) -- ++(1.2,0) coordinate (P) node[circ] {} to[short, -o] ++(1.0,0) node[right] {CH1};
+
+  % feedback from sense resistor to U3B(-), routed along the bottom
+  \draw (B.-) -- ++(-0.4,0) coordinate (NI);
+  \draw (P) -- ++(0,-3.0) coordinate (PB) to[R, l={$R_\mathrm{fb}$ \SI{1}{k\ohm}}] (PB -| NI) -- (NI);
+  % local compensation: U3B output to (-)
+  \draw (NI) node[circ] {} -- ++(0,-1.0) coordinate (CC1) node[circ] {}
+        to[C, l_={$C_\mathrm{c}$ \SI{1}{nF}}] (CC1 -| BB) -- (BB);
+
+  % annotations
+  \node[gray, font=\small] at ($(A)+(0,-1.8)$) {$v_1=-(v_\mathrm{mod}+v_\mathrm{sweep})/10$};
+  \node[gray, font=\small, align=left, anchor=north west] at ($(A.- |- PB)+(-3.5,-0.6)$)
+       {$I_\mathrm{coil}=v_1/R_\mathrm{sense}$: \SI{100}{mA} per volt from the generator,
+        $\approx\SI{72}{\micro T/V}$ in free space (calibrate in the magnet)};
+\end{circuitikz}
+\end{document}

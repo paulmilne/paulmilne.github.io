@@ -1,0 +1,29 @@
+Ref,Function,Value,Manufacturer part,RS stock no.,Pack qty,Unit price GBP (ex VAT),Pack price GBP (ex VAT),Stock status (2026-11-03),Notes
+Q1,Oscillator JFET,J310 (SOT-23),onsemi MMBFJ310LT1G,773-7813,10,0.106,1.06,In stock,SMD only at RS - mount dead-bug on copper-clad; alt TO-92 J113 806-1766 (50 x 0.247)
+Ct,Tank tuning trimmer,5-60 pF PTFE,Vishay BFC280908003,038-1419,5,12.12,60.60,In stock,Only in-stock trimmer at RS; RS PRO ceramic trimmers being discontinued
+Cp,Tank fixed padder,47 pF C0G 200 V,KEMET C322C470J2G5TA,538-1528,5,0.324,1.62,In stock,With Ct gives ~52-107 pF; L ~0.8 uH for 20 MHz
+Cg,Gate coupling,100 pF C0G 50 V,Vishay K101J15C0GF5TH5,852-3217,1,0.18,0.18,In stock,
+Rg / R1,Gate leak; detector DC return,100 kOhm 1% 0.6 W,Vishay MRS25000C1003FCT00,683-2923,25,0.087,2.18,In stock,Need 2
+RS,Marginality (source) control,1 kOhm 25-turn trimmer,Bourns 3296Y-1-102LF,522-0063,1,1.53,1.53,In stock,
+Cb,Supply bypass / op-amp decoupling,100 nF X7R 50 V,KEMET C322C104K5R5TA,538-1433,5,0.654,3.27,In stock,Need 3
+Cbulk,Supply reservoir,10 uF 25 V electrolytic,Panasonic EEAFC1E100,449-1006,5,0.278,1.39,In stock,
+Cc,Detector coupling,10 pF C0G 50 V,KEMET C315C100J5G5TA,146-3557,20,0.128,2.56,In stock,
+D1,Envelope detector,Schottky 30 V DO-35,STMicroelectronics BAT43,251-3025,10,0.045,0.45,Last stock,Alt BAT85S-TR 180-8714 (100 x 0.237 limited stock)
+Cf,Detector filter,1 nF C0G 200 V,KEMET C322C102J2G5TA,538-1382,5,0.398,1.99,In stock,Rf*Cf = 47 us
+Rf,Detector load,47 kOhm 1% 0.6 W,TE LR1F47K,014-8893,10,0.05,0.50,In stock,
+U1,Preamp op-amp,NE5532P dual low-noise,Texas Instruments NE5532P,197-7391,10,0.431,4.31,In stock,Needs +/-12 V or mid-rail bias
+Cin,Preamp AC coupling,10 uF 25 V bipolar,Panasonic ECEA1EN100U,176-3783,25,0.127,3.18,In stock,Non-polar; with Rin gives 1.9 Hz
+Rin,Preamp input bias,8.2 kOhm 1% 0.6 W,TE LR1F8K2,014-8714,10,0.096,0.96,In stock,
+Rg(pre),Preamp gain set,1 kOhm 1% 0.6 W,TE LR1F1K0,125-1159,20,0.077,1.54,In stock,Need 2 (one in series with Rf)
+Rf(pre),Preamp feedback,18 kOhm 1% 0.6 W,TE LR1F18K,014-8792,10,0.062,0.62,In stock,18k + 1k in series = 19 kOhm -> gain 20
+Cf(pre),First 1 kHz pole,8.2 nF polypropylene,KEMET R75TI182050H3J,212-6779,10,0.299,2.99,In stock,1.6 kV rating - physically large but only 8.2 nF film in stock
+R2,Second 1 kHz pole,1.6 kOhm 1% 0.6 W,TE LR1F1K6,014-8556,10,0.076,0.76,In stock,
+C2,Second 1 kHz pole,100 nF film 63 V,WIMA MKS2D031001A00KI00,108-2700,5,0.50,2.50,In stock,
+U3,Coil driver op-amp,NE5532P,Texas Instruments NE5532P,197-7391,0,0,0,In stock,Second NE5532 from the U1 pack of 10
+Q2,Driver push-pull NPN,BD139,STMicroelectronics BD139,168-6075,50,0.228,11.40,In stock,Clip-on heatsink
+Q3,Driver push-pull PNP,BD140,STMicroelectronics BD140,168-6074,50,0.244,12.20,In stock,Clip-on heatsink
+Ra/Rb,Driver summing inputs,10 kOhm 1% 0.6 W,TE LR1F10K,125-1164,20,0.075,1.50,In stock,Need 2
+Rc/Rfb,Driver gain and feedback,1 kOhm 1%,TE LR1F1K0,125-1159,0,0,0,In stock,From the 1 kOhm pack (need 4 in total)
+Cc(drv),Driver compensation,1 nF C0G,KEMET C322C102J2G5TA,538-1382,0,0,0,In stock,From the 1 nF pack (need 2 in total)
+Rsense,Coil current sense (CH1),1 Ohm 1% 1 W,Vishay CPF11R0000FKE14,830-6937,1,6.13,6.13,In stock,
+Wire,Sample coil + Helmholtz coils,0.56 mm enamelled Cu 200 m,RS PRO,035-7750,1,25.68,25.68,In stock,Optional 1 mm wire 035-7788 (80 m 23.77) for a stiffer sample coil

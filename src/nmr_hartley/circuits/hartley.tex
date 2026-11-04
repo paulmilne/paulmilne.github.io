@@ -1,0 +1,41 @@
+\documentclass[border=6pt]{standalone}
+\usepackage[siunitx,american]{circuitikz}
+\usetikzlibrary{calc}
+\begin{document}
+\begin{circuitikz}[line width=0.6pt]
+  % ---- tank: tapped sample coil || tuning trimmer || fixed padder ----
+  \draw (0,6) coordinate (T) to[L, l_={$L_1$\\ \SI{0.6}{\micro H}}, align=center] (0,3) coordinate (TAP)
+                             to[L, l_={$L_2$\\ \SI{0.2}{\micro H}}, align=center] (0,0) coordinate (G0);
+  \draw (T) -- (-2.2,6) to[vC, l_={$C_\mathrm{t}$\\ 5--\SI{60}{pF}}, align=center] (-2.2,0) -- (G0);
+  \draw (-2.2,6) node[circ] {} -- (-4.4,6) to[C, l_={$C_\mathrm{p}$\\ \SI{47}{pF}}, align=center] (-4.4,0) -- (-2.2,0) node[circ] {};
+  \draw (G0) node[ground] {};
+  \draw[dashed, rounded corners, gray] (-1.25,-0.2) rectangle (0.75,6.2);
+  \node[gray, font=\small, align=left, anchor=west] at (0.85,0.5) {sample coil\\ $\approx$8 turns, \SI{0.56}{mm}\\ on \SI{10}{mm} tube};
+  \draw (TAP) node[circ] {} node[above right, font=\small] {tap ($\approx$2 turns)};
+
+  % ---- gate-leak network ----
+  \draw (T) to[C, l={$C_g$ \SI{100}{pF}}, *-] (3.2,6) coordinate (GN);
+  \draw (GN) node[circ] {} to[R, l_={$R_g$\\ \SI{100}{k\ohm}}, align=center] ++(0,-1.8) node[ground] {};
+
+  % ---- JFET source follower ----
+  \node[njfet, anchor=G] (J) at (4.4,6) {};
+  \node[right, font=\small] at (J.east) {$Q_1$ J310};
+  \draw (GN) -- (J.G);
+  \draw (J.D) -- ++(0,0.9) coordinate (DN) node[vcc] {$+\SI{12}{V}$};
+  \draw (DN) node[circ] {} -- ++(1.4,0) to[C, l={$C_b$\\ \SI{100}{nF}}, align=center] ++(0,-1.6) node[ground] {};
+  \draw (J.S) to[vR, l={$R_S$ \SI{1}{k\ohm}}] (J.S |- TAP) -- (TAP);
+  \node[font=\small, align=left, anchor=west] at ($(J.S |- TAP)+(1.0,0.5)$)
+       {25-turn: sets\\ marginality $\varepsilon$};
+
+  % ---- diode envelope detector ----
+  \draw (T) -- (0,9.6) -- (8.3,9.6) to[C, l={$C_c$ \SI{10}{pF}}] (9.9,9.6) coordinate (DA);
+  \draw (DA) node[circ] {} to[R, l_={$R_1$\\ \SI{100}{k\ohm}}, align=center] ++(0,-2) node[ground] {};
+  \draw (DA) to[D*, l={$D_1$ BAT43}] (12.1,9.6) coordinate (DO);
+  \draw (DO) node[circ] {} to[C, l_={$C_f$\\ \SI{1}{nF}}, align=center] ++(0,-2) node[ground] {};
+  \draw (DO) -- (13.7,9.6) coordinate (DR) node[circ] {}
+             to[R, l={$R_f$\\ \SI{47}{k\ohm}}, align=center] ++(0,-2) node[ground] {};
+  \draw (DR) to[short, -o] (15.1,9.6) node[right] {$v_\mathrm{det}$};
+  \node[gray, font=\small] at (11.1,11.0) {envelope detector};
+  \node[gray, font=\small] at (2,10.0) {RF $\approx 20$ MHz, $A\approx0.5$ V};
+\end{circuitikz}
+\end{document}

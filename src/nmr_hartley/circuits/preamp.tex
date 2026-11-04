@@ -1,0 +1,29 @@
+\documentclass[border=6pt]{standalone}
+\usepackage[siunitx,american]{circuitikz}
+\begin{document}
+\begin{circuitikz}[line width=0.6pt]
+  % AC coupling (2 Hz high-pass)
+  \draw (0,0) node[left] {$v_\mathrm{det}$} to[short, o-] (0.4,0)
+        to[C, l=$C_\mathrm{in}$\\ \SI{10}{\micro F}, align=center] (2.6,0) coordinate (IN);
+  \draw (IN) node[circ] {} to[R, l_=$R_\mathrm{in}$\\ \SI{8.2}{\kilo\ohm}, align=center] ++(0,-2.2) node[ground] {};
+
+  % non-inverting stage, gain 1+Rf/Rg = 20, first pole via Cf
+  \node[op amp, noinv input up, anchor=+] (A) at (4,0) {};
+  \draw (IN) -- (A.+);
+  \draw (A.-) |- ++(0,-1.4) coordinate (FB);
+  \draw (FB) node[circ] {} to[R, l_=$R_g$\\ \SI{1}{\kilo\ohm}, align=center] ++(0,-1.8) node[ground] {};
+  \draw (A.out) -- ++(0.5,0) coordinate (O1) node[circ] {};
+  \draw (FB) -- ++(0.6,0) coordinate (F1) to[R, l_=$R_f$ \SI{19}{\kilo\ohm}] (O1 |- FB) coordinate (F2);
+  \draw (F1) node[circ] {} -- ++(0,-1.4) coordinate (C1) to[C, l_=$C_f$ \SI{8.2}{\nano F}] (C1 -| F2) -- (F2);
+  \draw (F2) node[circ] {} -- (O1);
+
+  % second pole (passive RC)
+  \draw (O1) to[R, l=$R_2$\\ \SI{1.6}{\kilo\ohm}, align=center] ++(2.4,0) coordinate (O2);
+  \draw (O2) node[circ] {} to[C, l=$C_2$\\ \SI{100}{\nano F}, align=center] ++(0,-2.2) node[ground] {};
+  \draw (O2) to[short, -o] ++(1.2,0) node[right] {CH2 / lock-in};
+
+  \node[gray, font=\small, align=center] at (1.5,1.6) {high-pass\\ $f_{hp}\approx\SI{2}{Hz}$};
+  \node[gray, font=\small, align=center] at (4.6,1.6) {$G=1+R_f/R_g=20$\\ pole $\approx\SI{1}{kHz}$};
+  \node[gray, font=\small, align=center] at (8.2,1.6) {pole\\ $\approx\SI{1}{kHz}$};
+\end{circuitikz}
+\end{document}
