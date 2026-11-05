@@ -41,6 +41,7 @@ span.math.display { display: block; overflow-x: auto; max-width: 100%; }
 .qd-m { text-align: center; font-size: .72rem; line-height: 1.1; }
 .qd-bar { width: 22px; height: 60px; border: 1px solid #bbb; border-radius: 3px; position: relative; margin: 0 auto .2rem; background: #fafafa; }
 .qd-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #e9c46a; border-radius: 2px; }
+.qd-cmd { position: absolute; left: -4px; right: -4px; height: 2px; background: #1d3557; }
 .qd-readout { font-size: .85rem; font-variant-numeric: tabular-nums; opacity: .85; }
 .qd-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: .2rem 1.2rem; font-size: .88rem; }
 .qd-controls label { display: grid; grid-template-columns: 9rem minmax(80px, 1fr) 3.2rem; align-items: center; gap: .4rem; }
@@ -85,7 +86,7 @@ The common thread is the trade the quadcopter makes: no mechanical complexity, i
 
 ## How a fixed rotor makes lift
 
-A propeller pushes air down; by Newton's third law the air pushes the propeller up. The simplest quantitative model, **momentum theory**, treats the rotor as an *actuator disc* of area $A$ that adds momentum to the air passing through it, ignoring the blades entirely. In hover, air arrives from rest far above, passes the disc at the *induced velocity* $v_i$, and leaves far below at $2v_i$ (the contraction of the slipstream is what doubles it). The mass flow through the disc is $\dot m = \rho A v_i$, and the thrust is the rate at which momentum leaves:
+A propeller pushes air down; by Newton's third law the air pushes the propeller up. The simplest quantitative model, **momentum theory**, treats the rotor as an *actuator disc* of area $A$ that adds momentum to the air passing through it, ignoring the blades entirely. In hover, air arrives from rest far above, passes the disc at the *induced velocity* $v_i$, and leaves far below at $2v_i$; conservation of momentum and energy together require the doubling, and because the air speeds up the slipstream must contract below the disc. The mass flow through the disc is $\dot m = \rho A v_i$, and the thrust is the rate at which momentum leaves:
 
 $$
 T = \dot m \cdot 2 v_i = 2\rho A v_i^2, \qquad\text{so}\qquad v_i = \sqrt{\frac{T}{2\rho A}}.
@@ -172,7 +173,7 @@ $$
 
 Four inputs give six motions by chaining them: a torque changes the angular rate, the rate changes the tilt, the tilt changes the horizontal acceleration, which changes velocity and position. From rotor speed to sideways position is **four integrations**. The rotational part obeys Euler's equations, $J\dot{\boldsymbol\omega} + \boldsymbol\omega \times J\boldsymbol\omega = \boldsymbol\tau$, which for gentle flight reduce to $J\dot\omega = \tau$ on each axis.
 
-Fly one. The sticks command roll and pitch *angles*, a yaw *rate* and throttle; a controller (next section) turns those into torques, the mixer into four rotor thrusts, shown as the yellow arrows and the bars. Drag to orbit the camera. Then try the two switches: introduce a few per cent of mismatch in one motor, and turn the stabilisation off.
+Fly one. The sticks command roll and pitch *angles*, a yaw *rate* and throttle; a controller (next section) turns those into torques, the mixer into four rotor thrusts, shown as the yellow arrows and the bars (the yellow fill is the thrust each motor delivers, the dark tick the thrust it was commanded to give). A little random turbulence pushes on the airframe throughout. Drag to orbit the camera. Then try the two switches: introduce a few per cent of mismatch in one motor, and turn the stabilisation off.
 
 ```{ojs}
 quadView = {
@@ -183,7 +184,7 @@ quadView = {
 }
 ```
 
-With stabilisation on, the craft holds its attitude and a mismatched motor just makes the controller run that motor harder: the bar for the front-left rotor rises to compensate. With stabilisation off, the sticks set torque directly, as a pilot with no electronics would have to, and even with perfectly matched motors the craft cannot be held level for long: any small torque integrates into a rate, the rate into an angle, and the tilted thrust into a sideways slide. With a little mismatch it flips within a second or two. That is what the electronics are for.
+With stabilisation on, the craft shrugs off the turbulence and holds its attitude and height. A mismatched motor just makes the controller ask more of it: the front-left motor's commanded thrust rises above the others (the readout gives the numbers) while the thrust it actually delivers ends up almost equal to theirs, because the torques can only balance if the four delivered thrusts are equal. Two small imperfections remain, and both teach something. The craft settles a fraction of a degree off level, and it turns slowly, a degree or two per second at 5% mismatch: the yaw loop, like the others here, is purely proportional, so it needs a persistent error to produce a persistent correcting torque. Real flight controllers add an integral term for exactly this reason. With stabilisation off, the sticks set torque directly, as a pilot with no electronics would have to, and even with perfectly matched motors the craft cannot be held level for long: the turbulence's small torques integrate into a rate, the rate into an angle, and the tilted thrust into a sideways slide that ends on the ground. With a few per cent of mismatch it tips past 45° in under two seconds. That is what the electronics are for.
 
 ## Why a quadcopter is unstable
 
@@ -263,7 +264,7 @@ $$
 
 The *Kalman gain* $K$ is the heart of it. When the prediction is uncertain relative to the measurement, $K$ is large and the filter believes the accelerometer; when the measurement is noisy relative to the prediction, $K$ is small and it believes the gyroscope. For linear models with Gaussian noise this is the minimum-mean-square-error estimator, and the best linear one whatever the noise distribution. Two things make it better than the complementary filter here. Its second state learns the gyroscope bias from the persistent disagreement between the integrated gyro and the accelerometer, and subtracts it. And its gain is derived from the noise levels rather than guessed. In fact, run long enough with fixed noise levels, $K$ settles to a constant and the angle update becomes exactly a complementary filter, with the crossover set optimally by the ratio of the noise variances and with an integral term for the bias: the complementary filter is the steady-state Kalman filter for a particular choice of $\mathsf Q$ and $\mathsf R$.
 
-Below, a simulated quadcopter rolls through a sequence of manoeuvres. The same noisy gyroscope and accelerometer data go into four estimators: the gyro integrated alone, the accelerometer alone, a complementary filter, and the two-state Kalman filter.
+Below, a simulated quadcopter rolls through a sequence of manoeuvres. The same noisy gyroscope and accelerometer data go into four estimators: the gyro integrated alone, the accelerometer alone, a complementary filter, and the two-state Kalman filter. Halfway through, the gyroscope's bias jumps, as it might when the sensor warms up.
 
 ::: {.qc-grid}
 
@@ -271,6 +272,7 @@ Below, a simulated quadcopter rolls through a sequence of manoeuvres. The same n
 viewof att = Inputs.form({
   biasDeg: Inputs.range([0, 10], {value: 3, step: 0.5, label: "Gyro bias (°/s)"}),
   accNoiseDeg: Inputs.range([1, 20], {value: 6, step: 0.5, label: "Accelerometer noise (°)"}),
+  biasStepDeg: Inputs.range([-6, 6], {value: 3, step: 0.5, label: "Bias jump at 10 s (°/s)"}),
   accelErr: Inputs.range([0, 3], {value: 1, step: 0.1, label: "Manoeuvre error in accelerometer (×)"}),
   alpha: Inputs.range([0.95, 0.999], {value: 0.995, step: 0.001, label: "Complementary α"}),
   rDeg: Inputs.range([1, 30], {value: 6, step: 0.5, label: "Kalman's assumed accelerometer noise (°)"}),
@@ -313,7 +315,7 @@ biasPlot = Plot.plot({width: Math.min(width, 720), height: 170, marginLeft: 50, 
           Plot.text([{t: attRun.t.at(-1), v: attRun.biasEst.at(-1)}], {x: "t", y: "v", text: () => "Kalman's estimate", textAnchor: "end", dy: -10, fill: "#1d3557"})]})
 ```
 
-The integrated gyroscope tracks every manoeuvre's shape and walks steadily away; the accelerometer is centred on the truth but too noisy to fly on. The complementary filter tracks well but sits a little off when the bias is large, by roughly the bias times its time constant. The Kalman filter learns the bias within a few seconds (the lower chart) and then tracks both fast and slow motion. Raise the bias to see the complementary filter's offset grow while the Kalman filter's does not; set Kalman's assumed accelerometer noise far from the real value to see that the filter is only as good as its noise model: too small and it chases the accelerometer's noise, too large and it reacts slowly.
+The integrated gyroscope tracks every manoeuvre's shape and walks steadily away; the accelerometer is centred on the truth but too noisy to fly on. The complementary filter tracks well but sits a little off when the bias is large, by roughly the bias times its time constant, and the offset grows when the bias jumps. The Kalman filter learns the bias in about a second (the lower chart), re-learns it after the jump, and tracks both fast and slow motion. Raise the bias to see the complementary filter's offset grow while the Kalman filter's does not. Then set Kalman's assumed accelerometer noise far from the real value to see that the filter is only as good as its noise model: too small and it chases the accelerometer's noise, too large and it trusts the gyroscope too long, taking several times longer to notice the bias jump. Its error is smallest when the assumed noise is near the true one.
 
 ### In three dimensions
 
@@ -358,7 +360,7 @@ plPlots = {
 }
 ```
 
-With the Kalman filter, or with the complementary filter, the flight is almost indistinguishable from flying with perfect knowledge of the angle. With the gyroscope alone the attitude estimate drifts; the controller holds the *estimated* angle level, so the real craft tilts by the accumulated error and accelerates away, and the position loop cannot save it once the hidden tilt is large. With the accelerometer alone it flies, but the noise goes straight into the attitude loop and the craft twitches through every manoeuvre: the tilt trace is ragged, and on a real machine that noise would heat the motors and blur the camera.
+With the Kalman filter, or with the complementary filter, the flight is almost indistinguishable from flying with perfect knowledge of the angle and rate. (The Kalman filter has one quiet advantage: because it estimates the gyroscope's bias, the rate loop can subtract it too; the other estimators feed the rate loop the raw, biased gyroscope.) With the gyroscope alone the attitude estimate drifts; the controller holds the *estimated* angle level, so the real craft tilts by the accumulated error and accelerates away, and the position loop cannot save it once the hidden tilt is large. With the accelerometer alone it flies, but the noise goes straight into the attitude loop and the craft twitches through every manoeuvre: the tilt trace is ragged, and on a real machine that noise would heat the motors and blur the camera.
 
 Two practical points sit outside these simple models. First, the rate loop uses the gyroscope directly and runs fastest, so its enemy is not bias but vibration: propellers and motors shake the frame at their rotation frequencies and harmonics, hundreds of hertz, aliasing into the measurement. Modern firmware filters the gyroscope with low-pass and notch filters whose centre frequencies follow the measured speed of each motor, which is why speed feedback from the motor controllers mattered so much. Second, the accelerometer's weakness in accelerated flight is why serious autopilots fuse GNSS velocity and model the rotor drag explicitly rather than trusting tilt from the accelerometer.
 
@@ -381,7 +383,7 @@ Two practical points sit outside these simple models. First, the rate loop uses 
 
 ## Method and sources
 
-**Simulations.** All three run in your browser from [`quadsim.js`](quadsim.js) and [`quad3d.js`](quad3d.js). The hover calculator applies momentum theory with the stated figure of merit, 80% electrical efficiency, air density 1.225 kg/m³ and $C_T = 0.1$ for the speed. The 3D quadcopter is a rigid body (mass 0.6 kg, inertia 0.004, 0.004, 0.007 kg m², arm 0.11 m, torque-to-thrust ratio 0.016 m) integrated at about 1 kHz, with an angle controller on roll and pitch, a rate controller on yaw and light aerodynamic damping; with stabilisation off the sticks set torques directly. The attitude simulation runs at 500 Hz for 20 s: the true angle follows a second-order response to a sequence of targets; the gyroscope adds a bias (with a slow random walk) and white noise of 1.5°/s; the accelerometer angle adds white noise and an error proportional to angular acceleration standing in for linear acceleration. The Kalman filter uses the two-state model above with process noise of 0.5°/√s on the angle and 0.05 °/s/√s on the bias. The planar simulation flies a 0.6 kg craft through four waypoints with a cascaded PD controller, rotor drag of 0.25 N s/m, and the same sensor models; it stops if the craft hits the ground, tilts past 80° or leaves the area.
+**Simulations.** All three run in your browser from [`quadsim.js`](quadsim.js) and [`quad3d.js`](quad3d.js). The hover calculator applies momentum theory with the stated figure of merit, 80% electrical efficiency, air density 1.225 kg/m³ and $C_T = 0.1$ for the speed. The 3D quadcopter is a rigid body (mass 0.6 kg, inertia 0.004, 0.004, 0.007 kg m², arm 0.11 m, torque-to-thrust ratio 0.016 m) integrated at about 1 kHz, with proportional angle control on roll and pitch, proportional rate control on yaw, height hold (proportional on height and vertical speed) when the throttle is centred, light aerodynamic damping, and turbulence modelled as a random torque with a 0.5 s correlation time and a standard deviation of 0.75 mN m on roll and pitch; with stabilisation off the sticks set torques directly. With the throttle fully down on the ground the motors stop. Real rotors turn at 150–300 revolutions per second, far faster than the screen refreshes, so the blades are drawn at a slowed rate that rises with thrust. Motor mismatch scales the front-left motor's delivered thrust below its command. The attitude simulation runs at 500 Hz for 20 s: the true angle follows a second-order response to a sequence of targets; the gyroscope adds a bias (with a slow random walk) and white noise of 1.5°/s; the accelerometer angle adds white noise and an error proportional to angular acceleration standing in for linear acceleration; at 10 s the bias jumps by the chosen amount. The Kalman filter uses the two-state model above with process noise on the angle matching the gyroscope's white noise (1.5°/s × √Δt ≈ 0.067°/√s) and 0.5 °/s/√s on the bias, generous enough to follow a sudden jump. The planar simulation flies a 0.6 kg craft through four waypoints with a cascaded controller (PD on position, proportional on attitude and rate, position and velocity measured exactly), rotor drag of 0.25 N s/m, and the same sensor models without the bias jump; "perfect knowledge" gives the controller the true angle and rate. It stops if the craft hits the ground, tilts past 80° or leaves the area.
 
 Sources:
 

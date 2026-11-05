@@ -14,9 +14,14 @@ const D2R = Math.PI / 180;
 // ---------- 1. one-axis attitude estimation ------------------------------------------------
 // True roll angle follows a manoeuvre profile; gyro = rate + bias + noise; accelerometer-derived
 // angle = angle + noise + error from linear acceleration. Four estimators run on the same data.
+// Halfway through, the gyro bias jumps by biasStepDeg (a temperature change, say) so that the
+// speed with which each estimator re-learns it is visible.
+// The Kalman filter's angle process noise defaults to what the gyro's white noise actually
+// contributes per step, gyroNoise * sqrt(dt), so that its model matches the simulated sensor.
 export function attitudeRun(p) {
-  const {seed = 1, T = 20, dt = 0.002, biasDeg = 3, gyroNoiseDeg = 1.5, accNoiseDeg = 6, accelErr = 1,
-         alpha = 0.995, qAngleDeg = 0.5, qBiasDeg = 0.05, rDeg = 6} = p;
+  const {seed = 1, T = 20, dt = 0.002, biasDeg = 3, biasStepDeg = 3, gyroNoiseDeg = 1.5, accNoiseDeg = 6, accelErr = 1,
+         alpha = 0.995, qBiasDeg = 0.5, rDeg = 6} = p;
+  const qAngleDeg = p.qAngleDeg ?? gyroNoiseDeg * Math.sqrt(dt);
   const R = rng(seed), n = Math.round(T / dt), every = 10;
   // manoeuvre: smoothed sequence of target angles
   const targets = [0, 15, -10, 25, 0, -20, 10, 0, 30, -5];
@@ -31,6 +36,7 @@ export function attitudeRun(p) {
     const wn = 6, zeta = 0.7, acc = wn * wn * (tgt - th) - 2 * zeta * wn * w;
     w += acc * dt; th += w * dt;
     b += R.n() * 0.02 * D2R * Math.sqrt(dt);                       // slow bias random walk
+    if (k === Math.round(n / 2)) b += biasStepDeg * D2R;             // sudden bias change
     const gyro = w + b + R.n() * gyroNoiseDeg * D2R;
     const accAng = th + R.n() * accNoiseDeg * D2R + accelErr * 0.004 * acc; // linear accel corrupts tilt
     // estimators
@@ -54,10 +60,13 @@ export function attitudeRun(p) {
 
 // ---------- 2. planar quadcopter in closed loop ---------------------------------------------
 // Side view: position (x, z), pitch angle th. Two thrusts at +/- l. Cascaded control:
-// position PD -> desired tilt -> attitude P on the ESTIMATED angle -> rate PD on the gyro.
+// position PD -> desired tilt -> attitude P on the ESTIMATED angle -> rate P on the gyro
+// (bias-corrected by the Kalman filter, which estimates it; true rate for "perfect knowledge").
+// Position and velocity are taken as measured exactly, standing in for GNSS or a motion-capture system.
 export function planarRun(p) {
   const {seed = 2, T = 40, dt = 0.002, est = "kf", biasDeg = 3, gyroNoiseDeg = 1.5, accNoiseDeg = 6,
-         alpha = 0.995, qAngleDeg = 0.5, qBiasDeg = 0.05, rDeg = 6, useGps = true} = p;
+         alpha = 0.995, qBiasDeg = 0.5, rDeg = 6} = p;
+  const qAngleDeg = p.qAngleDeg ?? gyroNoiseDeg * Math.sqrt(dt);
   const R = rng(seed), n = Math.round(T / dt), m = 0.6, g = 9.81, l = 0.11, J = 0.004, drag = 0.25;
   const way = [[0, 2], [4, 2], [4, 4], [0, 4], [0, 2]];
   let x = 0, z = 2, vx = 0, vz = 0, th = 0, w = 0, b = biasDeg * D2R;
@@ -81,12 +90,12 @@ export function planarRun(p) {
     kf = [kf[0] + K0 * yv, kf[1] + K1 * yv];
     P = [[(1 - K0) * P00, (1 - K0) * P01], [P01 - K1 * P00, P11 - K1 * P01]];
     const thEst = est === "gyro" ? gyroInt : est === "acc" ? accAng : est === "comp" ? comp : est === "truth" ? th : kf[0];
-    // control (position measured by GPS-like sensor if useGps, else by integrating the estimated tilt)
+    // control
     const ex = tx - x, ez = tz - z;
     const thDes = Math.max(-0.5, Math.min(0.5, (0.9 * ex - 1.3 * vx) / g));     // pitch forward to move +x
     const Tz = m * (g + 3 * ez - 2.5 * vz) / Math.max(0.5, Math.cos(th));
     const wDes = 8 * (thDes - thEst);
-    const rateEst = est === "kf" ? gyro - kf[1] : gyro;                          // only the KF knows the bias
+    const rateEst = est === "kf" ? gyro - kf[1] : est === "truth" ? w : gyro;   // only the KF estimates the bias
     const tau = J * 60 * (wDes - rateEst);
     let T1 = Tz / 2 - tau / (2 * l), T2 = Tz / 2 + tau / (2 * l);
     T1 = Math.max(0, Math.min(8, T1)); T2 = Math.max(0, Math.min(8, T2));

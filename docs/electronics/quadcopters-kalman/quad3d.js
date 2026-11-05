@@ -4,7 +4,7 @@ export function mountQuad(host, THREE) {
   host.innerHTML = `
   <div class="qd-view"></div>
   <div class="qd-hud">
-    <div class="qd-motors">${["FL", "FR", "RR", "RL"].map((m, i) => `<div class="qd-m"><div class="qd-bar"><div class="qd-fill" data-m="${i}"></div></div><span>${m}<br><small>${i % 2 ? "CCW" : "CW"}</small></span></div>`).join("")}</div>
+    <div class="qd-motors">${["FL", "FR", "RR", "RL"].map((m, i) => `<div class="qd-m"><div class="qd-bar"><div class="qd-fill" data-m="${i}"></div><div class="qd-cmd"></div></div><span>${m}<br><small>${i % 2 ? "CCW" : "CW"}</small></span></div>`).join("")}</div>
     <div class="qd-readout"></div>
   </div>
   <div class="qd-controls">
@@ -28,18 +28,18 @@ export function mountQuad(host, THREE) {
   const quad = new THREE.Group(); world.add(quad);
   const arm = 0.11, a = arm / Math.SQRT2, scale = 4;  // drawn 4x size for visibility
   const pos = [[a, a], [a, -a], [-a, -a], [-a, a]];     // FL, FR, RR, RL
-  const spin = [1, -1, 1, -1];                            // CW (viewed from above) = -z rotation; store sign for drawing
+  const spin = [-1, 1, -1, 1];                            // CW viewed from above is a negative rotation about z
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.07 * scale, 0.05 * scale, 0.025 * scale), new THREE.MeshStandardMaterial({color: 0x333a44}));
   quad.add(body);
   const nose = new THREE.Mesh(new THREE.ConeGeometry(0.012 * scale, 0.04 * scale, 12), new THREE.MeshStandardMaterial({color: 0xe76f51}));
   nose.rotation.z = -Math.PI / 2; nose.position.x = 0.055 * scale; quad.add(nose);
-  const discs = [], arrows = [];
+  const discs = [], arrows = [], rotorDiscs = [];
   pos.forEach(([x, y], i) => {
     const armM = new THREE.Mesh(new THREE.CylinderGeometry(0.004 * scale, 0.004 * scale, arm * scale, 8), new THREE.MeshStandardMaterial({color: 0x555555}));
     armM.position.set(x * scale / 2, y * scale / 2, 0); armM.rotation.z = Math.atan2(y, x) - Math.PI / 2; quad.add(armM);
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.0635 * scale, 0.0635 * scale, 0.002 * scale, 32),
       new THREE.MeshStandardMaterial({color: i % 2 ? 0x2a9d8f : 0x6fa8dc, transparent: true, opacity: 0.45}));
-    disc.rotation.x = Math.PI / 2; disc.position.set(x * scale, y * scale, 0.02 * scale); quad.add(disc);
+    disc.rotation.x = Math.PI / 2; disc.position.set(x * scale, y * scale, 0.02 * scale); quad.add(disc); rotorDiscs.push(disc);
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.12 * scale, 0.01 * scale, 0.003 * scale), new THREE.MeshStandardMaterial({color: 0x222222}));
     blade.position.copy(disc.position); quad.add(blade); discs.push(blade);
     const ar = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(x * scale, y * scale, 0.03 * scale), 0.3, 0xe9c46a, 0.06, 0.04);
@@ -52,7 +52,11 @@ export function mountQuad(host, THREE) {
   // physics
   const m = 0.6, g = 9.81, J = [0.004, 0.004, 0.007], kQ = 0.016, Tmax = 4.5, D2R = Math.PI / 180;
   let s;
-  const reset = () => { s = {p: [0, 0, 1.5], v: [0, 0, 0], R: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], w: [0, 0, 0], T: [0, 0, 0, 0], blade: [0, 0, 0, 0]}; trailCount = 0; };
+  const reset = () => { s = {p: [0, 0, 1.5], v: [0, 0, 0], R: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], w: [0, 0, 0], T: [0, 0, 0, 0], Tcmd: [0, 0, 0, 0], blade: [0, 0, 0, 0], gust: [0, 0, 0], zHold: null}; trailCount = 0; };
+  // turbulence: an Ornstein-Uhlenbeck torque (correlation time 0.5 s). Large enough to tip the uncontrolled craft within
+  // seconds, small enough that the controller holds attitude to a few hundredths of a degree
+  const gauss = () => { let u = 0, v = 0; while (u === 0) u = Math.random(); v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const gustTau = 0.5, gustSd = [7.5e-4, 7.5e-4, 2.5e-4];
   reset();
   const c = {thr: 0, roll: 0, pitch: 0, yaw: 0, mis: 0, stab: true};
   host.querySelectorAll("input[type=range]").forEach(inp => {
@@ -70,11 +74,15 @@ export function mountQuad(host, THREE) {
     // body rates in body frame are s.w. In x-forward, y-left, z-up axes a positive rotation about x lowers the right side (roll right)
     // and a positive rotation about y lowers the nose (pitch forward).
     let thrust = m * g * (1 + 0.6 * c.thr), tau;
+    s.gust = s.gust.map((x, i) => x - x / gustTau * dt + gustSd[i] * Math.sqrt(2 * dt / gustTau) * gauss());
     if (c.stab) {
       const rollDes = c.roll * D2R, pitchDes = c.pitch * D2R, rDes = [8 * (rollDes - e.roll), 8 * (pitchDes - e.pitch), c.yaw * D2R];
       tau = [0, 1, 2].map(i => J[i] * (i === 2 ? 6 : 40) * (rDes[i] - s.w[i]));
       thrust /= Math.max(0.6, s.R[2][2]);
-      thrust += m * 2 * (0 - s.v[2]) * (Math.abs(c.thr) < 0.02 ? 1 : 0);   // hold height when throttle centred
+      if (Math.abs(c.thr) < 0.02) {                                       // hold height when throttle centred
+        if (s.zHold === null) s.zHold = s.p[2];
+        thrust += m * (4 * (s.zHold - s.p[2]) - 3 * s.v[2]);
+      } else s.zHold = null;
     } else {
       tau = [c.roll * 0.0006, c.pitch * 0.0006, c.yaw * 0.00004];        // open loop: sticks set torque directly
     }
@@ -83,9 +91,12 @@ export function mountQuad(host, THREE) {
       [0.25, 0.25 / a, -0.25 / a, 0.25 / k], [0.25, -0.25 / a, -0.25 / a, -0.25 / k],
       [0.25, -0.25 / a, 0.25 / a, 0.25 / k], [0.25, 0.25 / a, 0.25 / a, -0.25 / k]];
     const u = [thrust, tau[0], tau[1], tau[2]];
-    s.T = inv.map((r, i) => Math.max(0, Math.min(Tmax, r[0] * u[0] + r[1] * u[1] + r[2] * u[2] + r[3] * u[3])) * (i === 0 ? 1 - c.mis / 100 : 1));
+    s.Tcmd = inv.map(r => Math.max(0, Math.min(Tmax, r[0] * u[0] + r[1] * u[1] + r[2] * u[2] + r[3] * u[3])));
+    s.idle = s.p[2] <= 0.051 && s.v[2] <= 0 && c.thr <= -0.95;           // on the ground, throttle fully down: motors stop
+    if (s.idle) { s.Tcmd = [0, 0, 0, 0]; s.w = [0, 0, 0]; s.gust = [0, 0, 0]; }
+    s.T = s.Tcmd.map((f, i) => f * (i === 0 ? 1 - c.mis / 100 : 1));   // motor mismatch: front-left delivers less than commanded
     const [f1, f2, f3, f4] = s.T, Tt = f1 + f2 + f3 + f4;
-    const tb = [a * (f1 + f4 - f2 - f3), a * (f3 + f4 - f1 - f2), k * (f1 + f3 - f2 - f4)];
+    const tb = [a * (f1 + f4 - f2 - f3) + s.gust[0], a * (f3 + f4 - f1 - f2) + s.gust[1], k * (f1 + f3 - f2 - f4) + s.gust[2]];
     // rotational dynamics (Euler's equations) with light aerodynamic damping
     const w = s.w, Jw = [J[0] * w[0], J[1] * w[1], J[2] * w[2]];
     const cr = [w[1] * Jw[2] - w[2] * Jw[1], w[2] * Jw[0] - w[0] * Jw[2], w[0] * Jw[1] - w[1] * Jw[0]];
@@ -101,11 +112,10 @@ export function mountQuad(host, THREE) {
     const acc = [0, 1, 2].map(i => s.R[i][2] * Tt / m - (i === 2 ? g : 0) - 0.3 * s.v[i] / m);
     s.v = s.v.map((v, i) => v + acc[i] * dt); s.p = s.p.map((v, i) => v + s.v[i] * dt);
     for (let i = 0; i < 2; i++) { if (s.p[i] > 5) s.p[i] -= 10; if (s.p[i] < -5) s.p[i] += 10; }
-    if (s.p[2] < 0.05) { if (Math.abs(euler(s.R).roll) > 1 || Math.abs(euler(s.R).pitch) > 1 || s.v[2] < -4) { reset(); return; } s.p[2] = 0.05; s.v = [s.v[0] * 0.5, s.v[1] * 0.5, Math.max(0, s.v[2])]; }
+    if (s.p[2] < 0.05) { if (Math.abs(euler(s.R).roll) > 1 || Math.abs(euler(s.R).pitch) > 1 || s.v[2] < -6) { reset(); s.crashT = performance.now(); return; } s.p[2] = 0.05; s.v = [s.v[0] * 0.5, s.v[1] * 0.5, Math.max(0, s.v[2])]; }
     if (s.p[2] > 8) { s.p[2] = 8; s.v[2] = Math.min(0, s.v[2]); }
-    s.blade = s.blade.map((ang, i) => ang + spin[i] * Math.sqrt(s.T[i]) * 1.4);
   }
-  const fills = [...host.querySelectorAll(".qd-fill")], readout = host.querySelector(".qd-readout");
+  const fills = [...host.querySelectorAll(".qd-fill")], cmds = [...host.querySelectorAll(".qd-cmd")], readout = host.querySelector(".qd-readout");
   let th = 0.8, ph = 1.1, rad = 4.2, drag = false, lx = 0, ly = 0;
   const el = renderer.domElement;
   el.addEventListener("pointerdown", e => { drag = true; lx = e.clientX; ly = e.clientY; el.setPointerCapture(e.pointerId); });
@@ -116,18 +126,25 @@ export function mountQuad(host, THREE) {
   function loop(now) {
     if (!alive) return;
     if (!host.isConnected) { alive = false; renderer.dispose(); ro.disconnect(); return; }
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;   // first rAF time can precede "last"
     for (let i = 0; i < 20; i++) step(dt / 20);
     const M = new THREE.Matrix4().set(s.R[0][0], s.R[0][1], s.R[0][2], s.p[0], s.R[1][0], s.R[1][1], s.R[1][2], s.p[1], s.R[2][0], s.R[2][1], s.R[2][2], s.p[2], 0, 0, 0, 1);
     quad.matrixAutoUpdate = false; quad.matrix.copy(M);
+    // Real rotors turn ~150-300 rev/s, far faster than the frame rate, so the blades are drawn at a slowed rate that
+    // rises with thrust but stays below a quarter turn per frame; the disc's opacity also rises with thrust.
+    const Th = m * g / 4;
+    s.blade = s.blade.map((ang, i) => ang + spin[i] * Math.min(25, 14 * Math.sqrt(s.T[i] / Th)) * dt);
     discs.forEach((b, i) => b.rotation.z = s.blade[i]);
+    rotorDiscs.forEach((d, i) => d.material.opacity = 0.12 + 0.4 * Math.min(1, s.T[i] / Th));
     arrows.forEach((ar, i) => ar.setLength(Math.max(0.02, s.T[i] / Tmax * 1.2), 0.06, 0.04));
-    fills.forEach((f, i) => f.style.height = (100 * s.T[i] / Tmax).toFixed(0) + "%");
+    fills.forEach((f, i) => f.style.height = (100 * s.T[i] / Tmax).toFixed(1) + "%");
+    cmds.forEach((d, i) => d.style.bottom = (100 * s.Tcmd[i] / Tmax).toFixed(1) + "%");
     if (++frame % 3 === 0) {
       if (trailCount < trailN) trailCount++; else trailPos.copyWithin(0, 3);
       trailPos.set(s.p, (trailCount - 1) * 3); trailGeo.setDrawRange(0, trailCount); trailGeo.attributes.position.needsUpdate = true;
       const e = euler(s.R);
-      readout.innerHTML = `roll ${(e.roll / D2R).toFixed(0)}° · pitch ${(e.pitch / D2R).toFixed(0)}° · yaw ${(e.yaw / D2R).toFixed(0)}°<br>height ${s.p[2].toFixed(1)} m · speed ${Math.hypot(...s.v).toFixed(1)} m/s`;
+      const note = s.crashT && now - s.crashT < 2500 ? `<b>Crashed: restarted at 1.5 m</b><br>` : s.idle ? `<b>Landed: motors stopped</b><br>` : "";
+      readout.innerHTML = note + `roll ${(e.roll / D2R).toFixed(0)}° · pitch ${(e.pitch / D2R).toFixed(0)}° · yaw ${(e.yaw / D2R).toFixed(0)}°<br>height ${s.p[2].toFixed(1)} m · speed ${Math.hypot(...s.v).toFixed(1)} m/s${c.mis > 0 ? `<br>front-left: commanded ${s.Tcmd[0].toFixed(2)} N, delivered ${s.T[0].toFixed(2)} N; others ${((s.T[1] + s.T[2] + s.T[3]) / 3).toFixed(2)} N` : ""}`;
     }
     const tgt = new THREE.Vector3(s.p[0], s.p[2], -s.p[1]);
     cam.position.set(tgt.x + rad * Math.sin(ph) * Math.sin(th), tgt.y + rad * Math.cos(ph), tgt.z + rad * Math.sin(ph) * Math.cos(th));
