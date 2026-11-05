@@ -1,0 +1,399 @@
+---
+title: "The Kalman Filter"
+subtitle: "Estimating what you cannot measure directly: from fusing two noisy numbers to tracking, smoothing, tuning and nonlinear systems, derived step by step with interactive examples"
+description: "A comprehensive explainer on the Kalman filter: fusing Gaussian estimates, the predict–update cycle, the general linear state-space filter derived from Bayes' rule and from minimum variance, the Joseph form, observability, steady state and the Riccati equation, tuning and consistency tests, the Rauch–Tung–Striebel smoother, the extended and unscented filters, particle and ensemble filters, and where it is used."
+author: "Paul Milne"
+date: "2026-11-04"
+categories: [explainer, kalman-filter, estimation, statistics, control]
+image: thumbnail.png
+resources:
+  - kf.js
+format:
+  html:
+    toc: true
+    page-layout: article
+execute:
+  echo: false
+---
+
+```{=html}
+<style>
+.kf-panel { border: 1px solid var(--bs-border-color, #ddd); border-radius: 8px; padding: .6rem .8rem; margin: .75rem 0; background: var(--bs-body-bg, #fff); min-width: 0; }
+.kf-panel h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: .1rem 0 .5rem; opacity: .7; }
+.kf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+.kf-grid form { flex-wrap: wrap !important; }
+.kf-grid form > label { width: 100% !important; max-width: none !important; padding-bottom: .15rem; }
+.kf-grid form > div { width: 100% !important; max-width: none !important; flex: 1 1 100%; }
+.kf-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .4rem 1rem; font-variant-numeric: tabular-nums; }
+.kf-kpis .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.kf-kpis .v { font-size: 1.1rem; font-weight: 650; }
+.kf-kpis .s { font-size: .76rem; opacity: .7; }
+.kf-scroll { overflow-x: auto; max-width: 100%; }
+.kf-scroll table { min-width: 560px; }
+span.math.display { display: block; overflow-x: auto; max-width: 100%; }
+</style>
+```
+
+```{ojs}
+//| output: false
+K = import(new URL("kf.js", document.baseURI).href)
+fmt = (x, d = 0) => x.toLocaleString("en-GB", {maximumFractionDigits: d, minimumFractionDigits: d})
+gauss = (x, m, v) => Math.exp(-0.5 * (x - m) ** 2 / v) / Math.sqrt(2 * Math.PI * v)
+```
+
+A Kalman filter answers one question, over and over: *given everything measured so far, what is the best estimate of the state of a system, and how uncertain is it?* The state may be a position and velocity, an aircraft's attitude, the level of a reservoir, an economy's underlying growth rate. It is usually not measured directly, or not completely, or not without noise, and it changes between measurements in ways that are only partly predictable. The filter combines a model of how the state evolves with each new measurement as it arrives, and carries forward both an estimate and its uncertainty, so that each new measurement is weighted exactly as much as it deserves.
+
+This explainer builds it up from the smallest case, fusing two noisy numbers, to the general filter, derives it two ways, shows how to tune and test one, and covers smoothing and the nonlinear variants. The [quadcopter post](../../electronics/quadcopters-kalman/) applies it to attitude estimation; this one is about the filter itself.
+
+## Fusing two measurements
+
+Suppose two instruments measure the same quantity $x$. The first reads $z_1$ with error variance $\sigma_1^2$, the second $z_2$ with variance $\sigma_2^2$, and their errors are independent. What is the best combined estimate?
+
+Take any weighted average $\hat x = (1-k)z_1 + k z_2$. It is unbiased for any $k$, and its error variance is
+
+$$
+\operatorname{Var}(\hat x) = (1-k)^2\sigma_1^2 + k^2\sigma_2^2 .
+$$
+
+Setting the derivative with respect to $k$ to zero gives the minimum-variance weight and the resulting variance:
+
+$$
+k = \frac{\sigma_1^2}{\sigma_1^2 + \sigma_2^2}, \qquad
+\hat x = z_1 + k\,(z_2 - z_1), \qquad
+\sigma^2 = (1-k)\,\sigma_1^2 = \left(\frac{1}{\sigma_1^2} + \frac{1}{\sigma_2^2}\right)^{-1}.
+$$
+
+Three features of this little result are the whole Kalman filter in miniature. The estimate is the first value **corrected by a gain times the disagreement** $z_2 - z_1$. The gain is a ratio of uncertainties: if the second instrument is much better, $k \to 1$ and it dominates; if much worse, $k \to 0$. And the combined variance is smaller than either, because **precisions (inverse variances) add**. If the errors are Gaussian, the same answer falls out of Bayes' rule: the product of two Gaussian densities is proportional to a Gaussian with exactly this mean and variance, so $\hat x$ is not merely the best weighted average but the full posterior.
+
+```{ojs}
+viewof fuse = Inputs.form({
+  z1: Inputs.range([-5, 5], {value: -1, step: 0.1, label: "Measurement 1"}),
+  s1: Inputs.range([0.2, 4], {value: 1, step: 0.05, label: "Its standard deviation"}),
+  z2: Inputs.range([-5, 5], {value: 2, step: 0.1, label: "Measurement 2"}),
+  s2: Inputs.range([0.2, 4], {value: 2, step: 0.05, label: "Its standard deviation"})
+})
+```
+
+```{ojs}
+fusePlot = {
+  const {z1, s1, z2, s2} = fuse, v1 = s1 * s1, v2 = s2 * s2, k = v1 / (v1 + v2), m = z1 + k * (z2 - z1), v = (1 - k) * v1;
+  const xs = d3.range(-9, 9.01, 0.05), pts = xs.flatMap(x => [{x, y: gauss(x, z1, v1), c: "Measurement 1"}, {x, y: gauss(x, z2, v2), c: "Measurement 2"}, {x, y: gauss(x, m, v), c: "Fused estimate"}]);
+  return htl.html`<div class="kf-panel"><h4>Gain k = ${fmt(k, 2)} · fused estimate ${fmt(m, 2)} ± ${fmt(Math.sqrt(v), 2)}</h4>${Plot.plot({width: Math.min(width, 680), height: 230, marginLeft: 40,
+    x: {label: "x"}, y: {label: "Density", grid: true}, color: {legend: true, domain: ["Measurement 1", "Measurement 2", "Fused estimate"], range: ["#6fa8dc", "#e9c46a", "#1d3557"]},
+    marks: [Plot.areaY(pts.filter(d => d.c === "Fused estimate"), {x: "x", y: "y", fill: "#1d3557", fillOpacity: 0.12}), Plot.line(pts, {x: "x", y: "y", stroke: "c", strokeWidth: d => d.c === "Fused estimate" ? 2.6 : 1.6})]})}</div>`;
+}
+```
+
+However far apart the two measurements are, the fused estimate is narrower than either. That is a strength and a danger: the formula trusts the stated variances completely, so if one instrument's error is larger than claimed, the fused estimate is confidently wrong. Much of the practical art of Kalman filtering is about that.
+
+## Adding time: predict and update
+
+Now let the quantity change. Suppose it wanders as a random walk, $x_k = x_{k-1} + w_k$ with $w_k \sim \mathcal N(0, q)$, and at each step we measure it, $z_k = x_k + v_k$ with $v_k \sim \mathcal N(0, r)$. Keep a current estimate $\hat x_{k-1}$ with variance $P_{k-1}$. Each step has two halves.
+
+**Predict.** Before the new measurement, the best guess is the old estimate carried forward by the model. Because the state may have moved, the uncertainty grows:
+
+$$
+\hat x_{k|k-1} = \hat x_{k-1}, \qquad P_{k|k-1} = P_{k-1} + q .
+$$
+
+**Update.** The prediction and the new measurement are two estimates of the same thing, with variances $P_{k|k-1}$ and $r$. Fuse them exactly as above:
+
+$$
+K_k = \frac{P_{k|k-1}}{P_{k|k-1} + r}, \qquad \hat x_k = \hat x_{k|k-1} + K_k (z_k - \hat x_{k|k-1}), \qquad P_k = (1 - K_k) P_{k|k-1} .
+$$
+
+That is the scalar Kalman filter. Uncertainty grows during prediction and shrinks during update, and settles to a balance.
+
+::: {.kf-grid}
+
+```{ojs}
+viewof one = Inputs.form({
+  q: Inputs.range([0.001, 1], {value: 0.05, step: 0.001, label: "True process noise q"}),
+  r: Inputs.range([0.05, 5], {value: 1, step: 0.05, label: "True measurement noise r"}),
+  qF: Inputs.range([0.001, 1], {value: 0.05, step: 0.001, label: "Filter's assumed q"}),
+  seed: Inputs.range([1, 50], {value: 3, step: 1, label: "Seed"})
+})
+```
+
+:::
+
+```{ojs}
+oneRun = K.oneD({...one, rF: one.r})
+```
+
+```{ojs}
+onePlot = {
+  const band = oneRun.map(d => ({k: d.k, lo: d.xe - 2 * Math.sqrt(d.Pe), hi: d.xe + 2 * Math.sqrt(d.Pe)}));
+  const ss = K.steadyGain(one.qF, one.r);
+  const a = Plot.plot({width: Math.min(width, 700), height: 260, marginLeft: 40, grid: true, x: {label: "Step k"}, y: {label: "x"},
+    marks: [Plot.areaY(band, {x: "k", y1: "lo", y2: "hi", fill: "#1d3557", fillOpacity: 0.12}),
+            Plot.dot(oneRun, {x: "k", y: "z", r: 2.5, fill: "#e9c46a"}), Plot.line(oneRun, {x: "k", y: "x", stroke: "#222", strokeWidth: 2}),
+            Plot.line(oneRun, {x: "k", y: "xe", stroke: "#1d3557", strokeWidth: 1.8})]});
+  const b = Plot.plot({width: Math.min(width, 700), height: 150, marginLeft: 40, grid: true, x: {label: "Step k"}, y: {label: "Gain K", domain: [0, 1]},
+    marks: [Plot.line(oneRun, {x: "k", y: "K", stroke: "#e76f51", strokeWidth: 2}), Plot.ruleY([ss.K], {stroke: "#e76f51", strokeDasharray: "4 3"})]});
+  return htl.html`<div class="kf-panel"><h4>Truth (black), measurements (yellow), estimate with ±2σ band (blue); gain below, with its steady-state value ${fmt(ss.K, 3)} dashed</h4>${a}${b}</div>`;
+}
+```
+
+The gain starts high, because the initial guess is poor and the first measurements are worth more than it, and settles within a few steps to a constant. The steady-state value comes from requiring the variance to repeat from one cycle to the next, $P = (1-K)(P + q)$, which is a quadratic with solution
+
+$$
+P_{\infty|-} = \frac{q + \sqrt{q^2 + 4qr}}{2}, \qquad K_\infty = \frac{P_{\infty|-}}{P_{\infty|-} + r} .
+$$
+
+Only the ratio $q/r$ matters. Make the filter's assumed $q$ much smaller than the truth and it believes the state hardly moves: the gain falls, the estimate lags behind the real wandering, and the band claims more confidence than is warranted. Make it much larger and the estimate chases every noisy measurement. The constant-gain filter that results is an exponential moving average, $\hat x_k = (1-K)\hat x_{k-1} + K z_k$, so the Kalman filter can be read as the rule that sets a moving average's weight from the physics.
+
+## The general filter
+
+The general problem has a vector state, a linear model that may couple its components, and measurements of only some combination of them:
+
+$$
+\mathbf x_k = F_k \mathbf x_{k-1} + B_k \mathbf u_k + \mathbf w_k, \qquad \mathbf w_k \sim \mathcal N(\mathbf 0, Q_k),
+$$
+$$
+\mathbf z_k = H_k \mathbf x_k + \mathbf v_k, \qquad \mathbf v_k \sim \mathcal N(\mathbf 0, R_k).
+$$
+
+Here $F_k$ is the state transition, $\mathbf u_k$ a known input (a control, or a sensor treated as an input, like the gyroscope in the quadcopter post), $H_k$ maps the state to what is measured, and the noises are independent of each other and over time. The filter keeps a mean $\hat{\mathbf x}$ and covariance $P$:
+
+::: {.kf-scroll}
+| Step | Equation | Meaning |
+|---|---|---|
+| Predict state | $\hat{\mathbf x}_{k\mid k-1} = F_k \hat{\mathbf x}_{k-1} + B_k \mathbf u_k$ | Carry the estimate forward through the model |
+| Predict covariance | $P_{k\mid k-1} = F_k P_{k-1} F_k^\top + Q_k$ | Propagate the uncertainty, then add what the model cannot predict |
+| Innovation | $\mathbf y_k = \mathbf z_k - H_k \hat{\mathbf x}_{k\mid k-1}$ | What the measurement says that the prediction did not |
+| Innovation covariance | $S_k = H_k P_{k\mid k-1} H_k^\top + R_k$ | How large the innovation should be, if all is well |
+| Gain | $K_k = P_{k\mid k-1} H_k^\top S_k^{-1}$ | How much of the innovation to believe, for each state component |
+| Update state | $\hat{\mathbf x}_k = \hat{\mathbf x}_{k\mid k-1} + K_k \mathbf y_k$ | Correct the prediction |
+| Update covariance | $P_k = (I - K_k H_k) P_{k\mid k-1}$ | The uncertainty after the correction |
+:::
+
+Two features make this more than averaging. The covariance $P$ carries **correlations** between state components, so a measurement of one component corrects others: measure only position, and the filter also learns velocity, because the model ties successive positions to velocity. And the gain is a matrix, so each component is corrected by its own amount.
+
+### Derivation 1: Bayes' rule with Gaussians
+
+If the prior is Gaussian, $\mathbf x \sim \mathcal N(\hat{\mathbf x}_{k|k-1}, P_{k|k-1})$, and the measurement model is linear with Gaussian noise, then $\mathbf x$ and $\mathbf z$ are jointly Gaussian:
+
+$$
+\begin{pmatrix}\mathbf x \\ \mathbf z\end{pmatrix} \sim \mathcal N\!\left(\begin{pmatrix}\hat{\mathbf x}_{k|k-1} \\ H\hat{\mathbf x}_{k|k-1}\end{pmatrix}, \begin{pmatrix} P_{k|k-1} & P_{k|k-1}H^\top \\ HP_{k|k-1} & S \end{pmatrix}\right).
+$$
+
+The conditional distribution of one block of a joint Gaussian given the other is a standard result: the mean shifts by $\Sigma_{xz}\Sigma_{zz}^{-1}(\mathbf z - \boldsymbol\mu_z)$ and the covariance shrinks by $\Sigma_{xz}\Sigma_{zz}^{-1}\Sigma_{zx}$. With $\Sigma_{xz} = P_{k|k-1}H^\top$ and $\Sigma_{zz} = S$, that is precisely the update: the gain is $\Sigma_{xz}\Sigma_{zz}^{-1}$. The prediction step is the propagation of a Gaussian through a linear map plus independent Gaussian noise. So for linear-Gaussian systems the Kalman filter is **exact Bayesian inference**: the posterior is Gaussian at every step and the filter carries its mean and covariance.
+
+### Derivation 2: minimum variance, no Gaussians needed
+
+Drop the Gaussian assumption and ask only for the linear update $\hat{\mathbf x}_k = \hat{\mathbf x}_{k|k-1} + K\mathbf y_k$ that minimises the expected squared error, the trace of the error covariance. For any gain $K$ the error is $(I - KH)\mathbf e_{k|k-1} - K\mathbf v_k$, so
+
+$$
+P_k(K) = (I - KH)P_{k|k-1}(I - KH)^\top + KRK^\top .
+$$
+
+Differentiate the trace with respect to $K$, using $\partial\operatorname{tr}(KA)/\partial K = A^\top$ and $\partial\operatorname{tr}(KAK^\top)/\partial K = 2KA$ for symmetric $A$:
+
+$$
+\frac{\partial \operatorname{tr} P_k}{\partial K} = -2P_{k|k-1}H^\top + 2K\left(HP_{k|k-1}H^\top + R\right) = 0
+\quad\Rightarrow\quad K = P_{k|k-1}H^\top S^{-1}.
+$$
+
+So the same gain is the **best linear unbiased estimator** whatever the noise distributions, provided only their means and covariances are right. With Gaussian noise it is the best estimator of any kind.
+
+The expression for $P_k(K)$ above, the *Joseph form*, holds for any gain, and in floating point it stays symmetric and positive definite where the shorter $(I-KH)P$ can drift. Implementations that run for a long time, or with poorly conditioned covariances, use it, or propagate a square root of $P$ instead.
+
+### Observability
+
+A filter can only learn what the measurements and model together determine. The pair $(F, H)$ is **observable** if the state can be reconstructed from a long enough run of noise-free measurements, which for a time-invariant system means the matrix $\begin{pmatrix} H^\top & (HF)^\top & \cdots & (HF^{n-1})^\top\end{pmatrix}^\top$ has full rank $n$. Position measurements of a constant-velocity target are observable: two positions fix a velocity. A gyroscope bias with no absolute angle reference is not: nothing distinguishes a biased gyro from a slowly turning craft, which is why the quadcopter's filter needs the accelerometer. In an unobservable direction the filter's covariance grows without bound, which is the filter honestly reporting that it does not know.
+
+## Tracking: what the filter infers
+
+A target moves in a plane. The model is *constant velocity*, the state is position and velocity in each direction, and random accelerations are the process noise; the measurements are noisy position fixes only. Midway through, the target makes a turn the model knows nothing about.
+
+$$
+\mathbf x = \begin{pmatrix} p_x \\ v_x \\ p_y \\ v_y \end{pmatrix}, \quad
+F = \begin{pmatrix} 1 & \Delta t & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & \Delta t \\ 0 & 0 & 0 & 1 \end{pmatrix}, \quad
+H = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{pmatrix}, \quad
+Q = q\begin{pmatrix} \tfrac{\Delta t^3}{3} & \tfrac{\Delta t^2}{2} \\ \tfrac{\Delta t^2}{2} & \Delta t \end{pmatrix} \oplus (\text{the same for } y).
+$$
+
+The form of $Q$ comes from integrating white acceleration noise of intensity $q$ over one step: it perturbs velocity by $\Delta t$ worth and position by the integral of that.
+
+::: {.kf-grid}
+
+```{ojs}
+viewof tr = Inputs.form({
+  r: Inputs.range([0.5, 20], {value: 4, step: 0.5, label: "Measurement variance r (true)"}),
+  qF: Inputs.range([0.0005, 1], {value: 0.02, step: 0.0005, label: "Filter's process noise q"}),
+  rF: Inputs.range([0.1, 40], {value: 4, step: 0.1, label: "Filter's measurement variance r"}),
+  turn: Inputs.range([0, 2], {value: 1, step: 0.1, label: "Strength of the unmodelled turn"}),
+  seed: Inputs.range([1, 50], {value: 6, step: 1, label: "Seed"})
+})
+```
+
+:::
+
+```{ojs}
+viewof trShow = Inputs.checkbox(["Measurements", "Filter", "Ellipses", "Smoother"], {value: ["Measurements", "Filter", "Ellipses"], label: "Show"})
+```
+
+```{ojs}
+trRun = K.track({...tr, qTrue: 0.002})
+```
+
+```{ojs}
+trPlot = {
+  const R = trRun, N = R.truth.length;
+  const ell = trShow.includes("Ellipses") ? R.filt.filter((_, k) => k % 5 === 0).flatMap((f, j) => K.ellipse([f.x[0], f.x[2]], [[f.P[0][0], f.P[0][2]], [f.P[2][0], f.P[2][2]]], 2).map(([x, y]) => ({x, y, j}))) : [];
+  const marks = [Plot.line(R.truth.map(s => ({x: s[0], y: s[2]})), {x: "x", y: "y", stroke: "#222", strokeWidth: 2.4})];
+  if (trShow.includes("Measurements")) marks.push(Plot.dot(R.meas.map(([x, y]) => ({x, y})), {x: "x", y: "y", r: 2.2, fill: "#e9c46a"}));
+  if (trShow.includes("Filter")) marks.push(Plot.line(R.filt.map(f => ({x: f.x[0], y: f.x[2]})), {x: "x", y: "y", stroke: "#1d3557", strokeWidth: 1.6}));
+  if (trShow.includes("Ellipses")) marks.push(Plot.line(ell, {x: "x", y: "y", z: "j", stroke: "#1d3557", strokeOpacity: 0.45}));
+  if (trShow.includes("Smoother")) marks.push(Plot.line(R.smooth.map(f => ({x: f.x[0], y: f.x[2]})), {x: "x", y: "y", stroke: "#e76f51", strokeWidth: 1.8}));
+  return htl.html`<div class="kf-panel"><h4>Truth (black), position fixes (yellow), filter (blue, with 2σ ellipses every fifth step), smoother (red)</h4>
+    ${Plot.plot({width: Math.min(width, 700), marginLeft: 40, grid: true, aspectRatio: 1, x: {label: "x"}, y: {label: "y"}, marks})}
+    <div class="kf-kpis"><div><div class="k">RMS error, raw fixes</div><div class="v">${fmt(R.rms.meas, 2)}</div></div>
+      <div><div class="k">RMS error, filter</div><div class="v">${fmt(R.rms.filt, 2)}</div></div>
+      <div><div class="k">RMS error, smoother</div><div class="v">${fmt(R.rms.smooth, 2)}</div></div>
+      <div><div class="k">Mean NIS</div><div class="v" style="color:${R.nisMean > 3 || R.nisMean < 1.2 ? "#e76f51" : "inherit"}">${fmt(R.nisMean, 2)}</div><div class="s">should be near 2</div></div></div></div>`;
+}
+```
+
+```{ojs}
+velPlot = {
+  const R = trRun, pts = R.truth.flatMap((s, k) => [{k, v: Math.hypot(s[1], s[3]), c: "True speed"}, {k, v: Math.hypot(R.filt[k].x[1], R.filt[k].x[3]), c: "Filter's speed (never measured)"}]);
+  return Plot.plot({width: Math.min(width, 700), height: 180, marginLeft: 40, grid: true, x: {label: "Step"}, y: {label: "Speed"}, color: {legend: true, range: ["#1d3557", "#222"]},
+    marks: [Plot.line(pts, {x: "k", y: "v", stroke: "c", strokeWidth: 1.8})]});
+}
+```
+
+The filter's track is smoother and closer to the truth than the raw fixes, and it estimates speed, which is never measured, within a few steps. The ellipses shrink from the poor initial guess to a steady size. Through the turn the constant-velocity model is wrong, and the estimate lags on the outside of the curve until the innovations pull it back: a larger $q$ follows turns better at the price of more noise, which is the basic trade of tuning.
+
+## Tuning and testing a filter
+
+The filter is only as good as $Q$ and $R$. $R$ can usually be measured: record the sensor while the quantity is held fixed. $Q$ is harder, because it stands for everything the model leaves out, here the target's unknown accelerations. Fortunately the filter checks itself. If the model and noise levels are right, the innovations $\mathbf y_k$ have zero mean, covariance $S_k$, and are uncorrelated over time, so the **normalised innovation squared**
+
+$$
+\epsilon_k = \mathbf y_k^\top S_k^{-1} \mathbf y_k
+$$
+
+follows a chi-squared distribution with as many degrees of freedom as the measurement has components, here two. Its average over a run should be about 2. Above that, the innovations are larger than the filter expects: it is overconfident, with $Q$ or $R$ too small. Below, it is underconfident. The panel above shows the mean; set the filter's $r$ to a tenth of the truth and watch it climb, set $q$ far too large and watch it fall. In simulation, where the truth is known, the analogous test on the estimation error itself is the *normalised estimation error squared*; with real data the innovation test is the one available, and a whiteness test on the innovation sequence (no autocorrelation) checks for unmodelled dynamics.
+
+A practical heuristic follows. Get $R$ from data. Start $Q$ small, raise it until the innovations stop showing systematic structure and the normalised innovation squared averages to its degrees of freedom, then stop.
+
+## Steady state, the Riccati equation and a duality
+
+For a time-invariant, observable system, the predicted covariance obeys
+
+$$
+P_{k+1|k} = F\left(P_{k|k-1} - P_{k|k-1}H^\top (HP_{k|k-1}H^\top + R)^{-1}HP_{k|k-1}\right)F^\top + Q,
+$$
+
+the **discrete Riccati equation**. It converges to a fixed point, so the gain converges to a constant $K_\infty$ that can be computed once, in advance. Steady-state filters are what run in a great deal of embedded hardware: the scalar random walk above becomes an exponential moving average; the constant-velocity tracker becomes the classical *alpha–beta filter* used in radar since the 1950s; the two-state attitude filter becomes the complementary filter with an integral term.
+
+The same equation, run backwards in time, solves the **linear–quadratic regulator** problem of optimal control: minimise a quadratic cost of state and control. Kalman noticed that estimation and control are mathematical duals, with $F \leftrightarrow F^\top$, $H \leftrightarrow B^\top$, $Q \leftrightarrow$ the state cost and $R \leftrightarrow$ the control cost, and that observability is dual to controllability. Combining an optimal estimator with an optimal controller, the *separation principle*, gives the linear–quadratic–Gaussian controller.
+
+## Smoothing: using the future
+
+A filter estimates the state at time $k$ from measurements up to $k$. If the whole record is available, as in post-processing a survey or a flight log, the measurements after $k$ also carry information about $\mathbf x_k$. The **Rauch–Tung–Striebel smoother** (1965) runs the ordinary filter forwards, then a backward pass:
+
+$$
+C_k = P_{k|k} F^\top P_{k+1|k}^{-1}, \qquad
+\hat{\mathbf x}_{k|N} = \hat{\mathbf x}_{k|k} + C_k\left(\hat{\mathbf x}_{k+1|N} - \hat{\mathbf x}_{k+1|k}\right), \qquad
+P_{k|N} = P_{k|k} + C_k\left(P_{k+1|N} - P_{k+1|k}\right)C_k^\top .
+$$
+
+Each backward step corrects the filtered estimate by how much the next smoothed state differs from what was predicted for it. Turn the smoother on in the tracking example: it cuts the error substantially, and in particular removes the lag through the turn, because it knows the turn is coming.
+
+## Nonlinear systems
+
+Most real systems are nonlinear: $\mathbf x_k = f(\mathbf x_{k-1}, \mathbf u_k) + \mathbf w_k$ and $\mathbf z_k = h(\mathbf x_k) + \mathbf v_k$. A Gaussian pushed through a nonlinear function is no longer Gaussian, so the exact posterior has no finite description. The practical filters all approximate it by a Gaussian in different ways.
+
+**Extended Kalman filter.** Linearise $f$ and $h$ about the current estimate with their Jacobians $F_k = \partial f/\partial\mathbf x$ and $H_k = \partial h/\partial\mathbf x$, and run the linear equations with those; propagate the mean through the full nonlinear functions. It was developed by Stanley Schmidt's group at NASA Ames for Apollo's midcourse navigation, and it is still the workhorse: GPS receivers, inertial navigation systems and drone autopilots run extended filters.
+
+**Unscented Kalman filter.** Simon Julier and Jeffrey Uhlmann's alternative (1997) avoids derivatives. Choose $2n+1$ *sigma points* placed symmetrically around the mean at a distance set by the covariance, push each through the exact nonlinear function, and compute the mean and covariance of the results with fixed weights. This *unscented transform* captures the mean and covariance correctly to second order where linearisation is correct only to first.
+
+The difference is easy to see on the classic test: a sensor measures range and bearing, and we want the position in Cartesian coordinates. With a large bearing uncertainty the true distribution bends into a banana.
+
+::: {.kf-grid}
+
+```{ojs}
+viewof pol = Inputs.form({
+  range: Inputs.range([2, 20], {value: 10, step: 0.5, label: "Range"}),
+  sr: Inputs.range([0.05, 3], {value: 0.3, step: 0.05, label: "Range standard deviation"}),
+  sbDeg: Inputs.range([1, 45], {value: 20, step: 1, label: "Bearing standard deviation (°)"})
+})
+```
+
+:::
+
+```{ojs}
+polRun = K.polar({...pol, bearingDeg: 60})
+```
+
+```{ojs}
+polPlot = {
+  const R = polRun, ellLin = K.ellipse(R.lin.m, R.lin.P, 2).map(([x, y]) => ({x, y})), ellUt = K.ellipse(R.ut.m, R.ut.P, 2).map(([x, y]) => ({x, y})), ellMc = K.ellipse(R.mean, R.cov, 2).map(([x, y]) => ({x, y}));
+  const pad = 2, xs = R.mc.map(p => p[0]), ys = R.mc.map(p => p[1]);
+  return htl.html`<div class="kf-panel"><h4>Samples (grey), their true mean and 2σ ellipse (black), linearised (orange), unscented (blue) with its sigma points</h4>
+    ${Plot.plot({width: Math.min(width, 560), height: 440, marginLeft: 40, grid: true, x: {label: "x", domain: [d3.min(xs) - pad, d3.max(xs) + pad]}, y: {label: "y", domain: [d3.min(ys) - pad, d3.max(ys) + pad]},
+      marks: [Plot.dot(R.mc.map(([x, y]) => ({x, y})), {x: "x", y: "y", r: 1.2, fill: "#999", fillOpacity: 0.35}),
+              Plot.line(ellMc, {x: "x", y: "y", stroke: "#222", strokeWidth: 2.2}), Plot.dot([{x: R.mean[0], y: R.mean[1]}], {x: "x", y: "y", r: 5, fill: "#222"}),
+              Plot.line(ellLin, {x: "x", y: "y", stroke: "#e76f51", strokeWidth: 2, strokeDasharray: "5 3"}), Plot.dot([{x: R.lin.m[0], y: R.lin.m[1]}], {x: "x", y: "y", r: 5, fill: "#e76f51"}),
+              Plot.line(ellUt, {x: "x", y: "y", stroke: "#1d3557", strokeWidth: 2}), Plot.dot(R.ut.points.map(([x, y]) => ({x, y})), {x: "x", y: "y", r: 4, stroke: "#1d3557", fill: "white"})]})}
+    <div class="kf-kpis"><div><div class="k">Mean error, linearised</div><div class="v">${fmt(Math.hypot(R.lin.m[0] - R.mean[0], R.lin.m[1] - R.mean[1]), 2)}</div></div>
+      <div><div class="k">Mean error, unscented</div><div class="v">${fmt(Math.hypot(R.ut.m[0] - R.mean[0], R.ut.m[1] - R.mean[1]), 2)}</div></div></div></div>`;
+}
+```
+
+The linearised mean sits at the nominal range, on the outer edge of the banana; the true mean is pulled inwards, because averaging points on an arc gives a point inside it. The linearisation cannot see this, since a straight-line approximation has no curvature. The unscented transform's five points straddle the arc and recover most of the shift. At small bearing errors the two agree; raise the bearing uncertainty and the linearised estimate becomes biased and its ellipse misplaced, which inside a filter shows up as overconfidence and, in bad cases, divergence.
+
+**Beyond Gaussians.** When the posterior is genuinely non-Gaussian, multimodal for instance (is the robot in this corridor or the identical one next to it?), no single mean and covariance can describe it. *Particle filters* represent the distribution by a cloud of weighted samples, propagate each through the model, reweight by the measurement likelihood and resample; they handle anything given enough particles, and the number needed grows quickly with the dimension of the state. At the other extreme of scale, the *ensemble Kalman filter*, introduced by Geir Evensen in 1994, replaces the covariance matrix, impossibly large for a weather model with hundreds of millions of variables, by the sample covariance of a few dozen model runs. Ensemble and variational relatives of the Kalman filter assimilate observations into every operational weather forecast.
+
+## Where it is used
+
+::: {.kf-scroll}
+| Field | What the state is | What is measured |
+|---|---|---|
+| Spacecraft navigation (Apollo onwards) | Position, velocity | Star sightings, radar ranges, ground tracking |
+| GNSS receivers and inertial navigation | Position, velocity, attitude, clock and sensor biases | Satellite pseudoranges, accelerometers, gyroscopes |
+| Drones and robots | Attitude, velocity, position, sensor biases, wind | Inertial sensors, GNSS, barometer, cameras, lidar |
+| Weather forecasting | The state of the atmosphere on a global grid | Satellites, radiosondes, aircraft, surface stations |
+| Econometrics and time series | Unobserved trend, cycle and seasonal components | Published economic statistics |
+| Battery management | State of charge and health | Cell voltage, current, temperature |
+| Tracking (radar, sonar, sport) | Target positions and velocities | Noisy, intermittent detections |
+:::
+
+In time-series statistics the same equations appear under the name *state-space models*: the filter computes the likelihood of the data through the innovations, so the unknown parameters of $F$, $Q$ and $R$ can be estimated by maximum likelihood, and structural time-series models (trend plus seasonal plus noise) are fitted that way.
+
+## History
+
+Thorvald Thiele described a recursive least-squares estimator of this kind in 1880, and Peter Swerling one for satellite tracking in 1958, but the general discrete-time filter with its covariance recursion is Rudolf Kálmán's, published in 1960 as *A New Approach to Linear Filtering and Prediction Problems*, and its continuous-time form with Richard Bucy in 1961. Ruslan Stratonovich derived closely related nonlinear filtering results in the Soviet Union at about the same time. Kalman's paper replaced the frequency-domain Wiener filter of the 1940s, which needed stationary processes and a spectral factorisation, with a recursion in the time domain that handled time-varying systems and fitted the new digital computers. Within a few years Stanley Schmidt's group at NASA Ames had extended it to the nonlinear trajectory problem and it was flying to the Moon in the Apollo guidance computer.
+
+## Terminology and where it comes from
+
+::: {.kf-scroll}
+| Term | Meaning here | Origin |
+|---|---|---|
+| **State** | The variables that, with the model, determine the system's future | State-space methods of the 1950s and 1960s; Kalman made them central to control. |
+| **Innovation** | The new information in a measurement: measured minus predicted | From the theory of stochastic processes (the *innovations process*), Thomas Kailath's usage in the 1960s. |
+| **Gain** | The matrix that weights the innovation | From control engineering, where gain is amplification. |
+| **Process noise** | Randomness in the state's evolution, standing for unmodelled effects | Signal processing. |
+| **Covariance** | Expected product of deviations from the mean | Statistics, early 20th century. |
+| **Riccati equation** | The quadratic matrix recursion for the covariance | Jacopo Riccati, who studied the scalar differential equation in the 1720s. |
+| **Joseph form** | The covariance update valid for any gain, numerically robust | Peter Joseph, in Bucy and Joseph's 1968 book. |
+| **Smoother** | An estimator that uses measurements after the time of interest | Wiener's terminology, 1940s; the RTS form is Herbert Rauch, Frank Tung and Charlotte Striebel, 1965. |
+| **Unscented** | The sigma-point transform | A deliberately odd name chosen by Jeffrey Uhlmann in the mid-1990s, rather than a descriptive one. |
+| **Particle filter** | Sequential Monte Carlo filter | Gordon, Salmond and Smith's *bootstrap filter*, 1993; "particle filter" from Pierre Del Moral, 1996. |
+:::
+
+## Sources
+
+- R. E. Kalman, [*A New Approach to Linear Filtering and Prediction Problems*](https://www.cs.unc.edu/~welch/kalman/kalmanPaper.html), *Journal of Basic Engineering* 82, 1960. R. E. Kalman, R. S. Bucy, *New Results in Linear Filtering and Prediction Theory*, 1961.
+- L. A. McGee, S. F. Schmidt, [*Discovery of the Kalman Filter as a Practical Tool for Aerospace and Industry*](https://ntrs.nasa.gov/citations/19860003843), NASA TM-86847, 1985.
+- H. E. Rauch, F. Tung, C. T. Striebel, *Maximum Likelihood Estimates of Linear Dynamic Systems*, *AIAA Journal* 3, 1965.
+- S. J. Julier, J. K. Uhlmann, *A New Extension of the Kalman Filter to Nonlinear Systems*, SPIE AeroSense, 1997.
+- G. Evensen, *Sequential data assimilation with a nonlinear quasi-geostrophic model using Monte Carlo methods to forecast error statistics*, *Journal of Geophysical Research* 99, 1994.
+- N. J. Gordon, D. J. Salmond, A. F. M. Smith, *Novel approach to nonlinear/non-Gaussian Bayesian state estimation*, *IEE Proceedings F* 140, 1993.
+- Y. Bar-Shalom, X. R. Li, T. Kirubarajan, *Estimation with Applications to Tracking and Navigation*, Wiley, 2001: the consistency tests and the constant-velocity model.
+- S. L. Lauritzen, [*Time series analysis in 1880: a discussion of contributions made by T. N. Thiele*](https://www.math.ku.dk/bibliotek/arkivet/preprints-fra-ims/1981/preprint_1981_-_no._3_lauritzen__steffen_l._-_time_series_analysis_in_1980._a_descussion_of_contributions---.pdf), 1981; and *Thiele: Pioneer in Statistics*, Oxford, 2002.
+- G. Welch, G. Bishop, [*An Introduction to the Kalman Filter*](https://www.cs.unc.edu/~welch/kalman/), University of North Carolina.
+
+**Related:** [Quadcopters: Four Fixed Rotors, Cheap Sensors and the Kalman Filter](../../electronics/quadcopters-kalman/), which applies a two-state filter to attitude and compares it with a complementary filter.

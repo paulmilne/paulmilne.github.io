@@ -235,7 +235,7 @@ the gyroscope's angle through a high-pass filter, the accelerometer's through a 
 
 ### The Kalman filter
 
-Rudolf Kálmán's filter, published in 1960 and extended by Stanley Schmidt's group at NASA Ames into the form used for Apollo's navigation, answers the question the complementary filter leaves open: given models of how the state evolves and how noisy each sensor is, what blend is *best*? It treats the unknowns as random variables, keeps a mean and a covariance for them, and updates both each time step in two moves.
+Rudolf Kálmán's filter, published in 1960 and extended by Stanley Schmidt's group at NASA Ames into the form used for Apollo's navigation, answers the question the complementary filter leaves open: given models of how the state evolves and how noisy each sensor is, what blend is *best*? It treats the unknowns as random variables, keeps a mean and a covariance for them, and updates both each time step in two moves. (The [Kalman filter explainer](../../explainers/kalman-filter/) derives it in general, with tracking, tuning, smoothing and the nonlinear variants.)
 
 For attitude, make the gyroscope bias part of the state, so the filter can learn it:
 

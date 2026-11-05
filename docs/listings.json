@@ -17,6 +17,7 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/kalman-filter/index.html",
       "/explainers/einsum/index.html",
       "/explainers/apollo-11-frames-of-reference/index.html",
       "/explainers/accretion-disk-light/index.html",
