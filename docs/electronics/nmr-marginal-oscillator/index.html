@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-cdeaca919759a273429b302e89e25b84.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -348,10 +348,11 @@ window.Quarto = {
 main table { display: block; overflow-x: auto; max-width: 100%; }
 span.math.display { display: block; overflow-x: auto; max-width: 100%; }
 td code, th code { white-space: nowrap; }
+pre > code.sourceCode { white-space: pre-wrap; }  /* wrap code without a page-specific Bootstrap build */
 </style>
 <section id="overview" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Overview</h1>
-<p>This post describes a simulated continuous-wave (CW) proton NMR spectrometer built around a <strong>marginal oscillator</strong>: a JFET Hartley oscillator whose tank inductor is also the sample coil, run just above the threshold of oscillation. When the protons in the sample absorb RF energy, the tank loses Q, and the oscillation amplitude falls. A diode detector picks up that drop, an audio preamplifier amplifies it, and the result is shown on an oscilloscope or recovered with a lock-in amplifier.</p>
+<p>This post is a recreation of my undergraduate final year electronics project from 1984. Of course the technology available today, would have looked like pure science fiction back then, even if one had the imagination! The post describes a simulated continuous-wave (CW) proton NMR spectrometer built around a <strong>marginal oscillator</strong>: a JFET Hartley oscillator whose tank inductor is also the sample coil, run just above the threshold of oscillation. When the protons in the sample absorb RF energy, the tank loses Q, and the oscillation amplitude falls. A diode detector picks up that drop, an audio preamplifier amplifies it, and the result is shown on an oscilloscope or recovered with a lock-in amplifier.</p>
 <p>The project contains two independent implementations of the same physics; all the files are in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/nmr_hartley"><code>src/nmr_hartley</code></a> (see <a href="#sec-repro" class="quarto-xref">Section&nbsp;9</a>):</p>
 <table class="caption-top table">
 <colgroup>

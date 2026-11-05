@@ -8,14 +8,11 @@ categories: [electronics, nmr, oscillators, matlab, simulink]
 image: setup_3d_overview.png
 resources:
   - widgets/*
-format:
-  html:
-    toc: true
-    toc-depth: 3
-    number-sections: true
-    code-fold: false
-    code-overflow: wrap
-    fig-align: center
+toc: true
+toc-depth: 3
+number-sections: true
+code-fold: false
+fig-align: center
 execute:
   enabled: false
 ---
@@ -25,12 +22,13 @@ execute:
 main table { display: block; overflow-x: auto; max-width: 100%; }
 span.math.display { display: block; overflow-x: auto; max-width: 100%; }
 td code, th code { white-space: nowrap; }
+pre > code.sourceCode { white-space: pre-wrap; }  /* wrap code without a page-specific Bootstrap build */
 </style>
 ```
 
 # Overview
 
-This post describes a simulated continuous-wave (CW) proton NMR spectrometer
+This post is a recreation of my undergraduate final year electronics project from 1984. Of course the technology available today, would have looked like pure science fiction back then, even if one had the imagination!  The post describes a simulated continuous-wave (CW) proton NMR spectrometer
 built around a **marginal oscillator**: a JFET Hartley oscillator whose tank
 inductor is also the sample coil, run just above the threshold of oscillation.
 When the protons in the sample absorb RF energy, the tank loses Q, and the
