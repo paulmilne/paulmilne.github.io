@@ -22,4 +22,5 @@
 
 # source PDF dropped at repo root before being organized under papers/
 /M840-Dissertation-Paul_Milne-Final.pdf
+.posit/assistant
 _models/

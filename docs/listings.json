@@ -17,6 +17,7 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/dc-motor-propeller/index.html",
       "/explainers/kalman-filter/index.html",
       "/explainers/einsum/index.html",
       "/explainers/apollo-11-frames-of-reference/index.html",
@@ -65,6 +66,7 @@
   {
     "listing": "/electronics/index.html",
     "items": [
+      "/electronics/stampfly-digital-twin/index.html",
       "/electronics/nmr-marginal-oscillator/index.html",
       "/electronics/quadcopters-kalman/index.html"
     ]

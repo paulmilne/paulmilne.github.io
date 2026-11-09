@@ -158,7 +158,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/electronics/index.html</loc>
-    <lastmod>2026-11-04T10:30:05.079Z</lastmod>
+    <lastmod>2026-11-04T10:32:52.000Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/apollo-11-frames-of-reference/index.html</loc>
@@ -246,14 +246,22 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/electronics/nmr-marginal-oscillator/index.html</loc>
-    <lastmod>2026-11-04T10:41:51.947Z</lastmod>
+    <lastmod>2026-11-05T14:56:48.395Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/electronics/quadcopters-kalman/index.html</loc>
-    <lastmod>2026-11-04T21:32:44.591Z</lastmod>
+    <lastmod>2026-11-05T16:54:35.991Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/kalman-filter/index.html</loc>
     <lastmod>2026-11-04T21:32:44.543Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/electronics/stampfly-digital-twin/index.html</loc>
+    <lastmod>2026-11-09T08:07:15.406Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/explainers/dc-motor-propeller/index.html</loc>
+    <lastmod>2026-11-09T08:07:15.389Z</lastmod>
   </url>
 </urlset>

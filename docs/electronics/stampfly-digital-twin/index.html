@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-08">
+<meta name="description" content="Building a digital twin of a 35 g quadcopter from measurements, using it to rank fixes and choose gains before each flight, and the one prediction that failed: a 0.3 s rangefinder lag hidden in a sensor driver, found by comparing the twin with landing data.">
+
+<title>The Twin and the Drone – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Twin and the Drone – math-blog">
+<meta property="og:description" content="Building a digital twin of a 35 g quadcopter from measurements, using it to rank fixes and choose gains before each flight, and the one prediction that failed: a 0.3 s rangefinder lag hidden in a sensor driver, found by comparing the twin with landing data.">
+<meta property="og:image" content="https://paulmilne.github.io/electronics/stampfly-digital-twin/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="187">
+<meta property="og:image:width" content="562">
+<meta name="twitter:title" content="The Twin and the Drone – math-blog">
+<meta name="twitter:description" content="Building a digital twin of a 35 g quadcopter from measurements, using it to rank fixes and choose gains before each flight, and the one prediction that failed: a 0.3 s rangefinder lag hidden in a sensor driver, found by comparing the twin with landing data.">
+<meta name="twitter:image" content="https://paulmilne.github.io/electronics/stampfly-digital-twin/thumbnail.png">
+<meta name="twitter:image-height" content="187">
+<meta name="twitter:image-width" content="562">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../electronics/index.html"> 
+<span class="menu-text">Electronics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Twin and the Drone</h1>
+            <p class="subtitle lead">A MuJoCo model of an M5Stack StampFly, flown against the real thing: what the twin predicted, where it was wrong, and what the disagreement found</p>
+                  <div>
+        <div class="description">
+          Building a digital twin of a 35 g quadcopter from measurements, using it to rank fixes and choose gains before each flight, and the one prediction that failed: a 0.3 s rangefinder lag hidden in a sensor driver, found by comparing the twin with landing data.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">electronics</div>
+                <div class="quarto-category">control</div>
+                <div class="quarto-category">simulation</div>
+                <div class="quarto-category">mujoco</div>
+                <div class="quarto-category">drones</div>
+                <div class="quarto-category">kalman-filter</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 8, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-setup" id="toc-the-setup" class="nav-link active" data-scroll-target="#the-setup">The setup</a></li>
+  <li><a href="#building-the-twin-from-measurements" id="toc-building-the-twin-from-measurements" class="nav-link" data-scroll-target="#building-the-twin-from-measurements">Building the twin from measurements</a></li>
+  <li><a href="#what-the-twin-found-that-the-drone-was-hiding" id="toc-what-the-twin-found-that-the-drone-was-hiding" class="nav-link" data-scroll-target="#what-the-twin-found-that-the-drone-was-hiding">What the twin found that the drone was hiding</a></li>
+  <li><a href="#position-hold-calibrate-on-the-bench-tune-in-the-twin" id="toc-position-hold-calibrate-on-the-bench-tune-in-the-twin" class="nav-link" data-scroll-target="#position-hold-calibrate-on-the-bench-tune-in-the-twin">Position hold: calibrate on the bench, tune in the twin</a></li>
+  <li><a href="#the-prediction-that-failed" id="toc-the-prediction-that-failed" class="nav-link" data-scroll-target="#the-prediction-that-failed">The prediction that failed</a></li>
+  <li><a href="#finding-the-hidden-lag" id="toc-finding-the-hidden-lag" class="nav-link" data-scroll-target="#finding-the-hidden-lag">Finding the hidden lag</a></li>
+  <li><a href="#predictions-against-outcomes" id="toc-predictions-against-outcomes" class="nav-link" data-scroll-target="#predictions-against-outcomes">Predictions against outcomes</a></li>
+  <li><a href="#what-the-loop-taught" id="toc-what-the-loop-taught" class="nav-link" data-scroll-target="#what-the-loop-taught">What the loop taught</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Over two days of test flights, a MuJoCo model of my M5Stack StampFly predicted the hover throttle to three decimal places, ranked candidate fixes for a take-off overshoot in the order the real drone confirmed, and chose position-hold gains that worked first time. Then it recommended altitude gains that made the real drone oscillate until a safety cut dropped it. Working out why the twin was wrong turned up a 0.3 s lag inside the rangefinder’s driver. Removing it halved the altitude wander, and the gains that had failed then flew cleanly.</p>
+<p>This post follows on from <a href="../../electronics/quadcopters-kalman/index.html">Quadcopters: four fixed rotors, cheap sensors and the Kalman filter</a>, which covers the physics and the estimators. Here the subject is the loop between a simulation and a physical machine: what each one tells you that the other can’t.</p>
+<section id="the-setup" class="level2">
+<h2 class="anchored" data-anchor-id="the-setup">The setup</h2>
+<p>The StampFly is M5Stack’s 35.5 g open-source quadcopter: an ESP32-S3 controller, brushed coreless motors, a BMI270 gyroscope and accelerometer, a downward VL53L3CX time-of-flight rangefinder and a PMW3901 optical-flow sensor. Its firmware runs a 400 Hz loop with a Madgwick attitude filter, cascaded angle and rate PIDs, and a three-state Kalman filter (velocity, height, accelerometer bias) for altitude.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="stampfly.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>The M5Stack StampFly, with its StampS3A controller on top and the props in guards. Image: M5Stack.</figcaption>
+</figure>
+</div>
+<p>Two Claude sessions did the work, with me flying. One worked in VS Code with PlatformIO, changing the firmware, flashing it and running scripted test flights that log 100 Hz records to flash. The other built and ran the simulation and analysed the logs. They talked through a shared <code>NOTES.md</code> file in the repository: a flight log and a request went one way, a fitted model, a table of simulated cases and a recommendation came back. Each flight was a test of the previous recommendation.</p>
+</section>
+<section id="building-the-twin-from-measurements" class="level2">
+<h2 class="anchored" data-anchor-id="building-the-twin-from-measurements">Building the twin from measurements</h2>
+<p>Every parameter in the model came from a measurement, mine or someone else’s:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Part</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mass</td>
+<td>35.5 g (27 g airframe, 8.5 g battery)</td>
+<td>Weighed</td>
+</tr>
+<tr class="even">
+<td>Geometry</td>
+<td>Motors on a 46 mm square, 30 mm props</td>
+<td>Measured</td>
+</tr>
+<tr class="odd">
+<td>Inertia</td>
+<td>I<sub>xx</sub> 9.16, I<sub>yy</sub> 13.3, I<sub>zz</sub> 20.4 × 10⁻⁶ kg m²</td>
+<td>Bifilar pendulum, <a href="https://github.com/M5Fly-kanazawa/stampfly_ecosystem">M5Fly-kanazawa/stampfly_ecosystem</a></td>
+</tr>
+<tr class="even">
+<td>Motors and props</td>
+<td>DC motor model with a measured drive-circuit resistance table</td>
+<td>Bench identification, same repository</td>
+</tr>
+<tr class="odd">
+<td>Battery</td>
+<td>Open-circuit curve, 0.145 Ω + 0.06 Ω polarisation (τ 3 s)</td>
+<td>Fitted to my flight logs, 13–16 mV rms</td>
+</tr>
+<tr class="even">
+<td>Sensors</td>
+<td>Noise, bias, rates</td>
+<td>Fitted to ground runs and flights</td>
+</tr>
+<tr class="odd">
+<td>Firmware</td>
+<td>Filters, PIDs, mixer, take-off ramp</td>
+<td>Ported line by line</td>
+</tr>
+</tbody>
+</table>
+<p>The motor model integrates rotor speed from duty and battery voltage, rather than assuming thrust is proportional to duty squared:</p>
+<p><span class="math display">\[
+I = \frac{V - K_e\,\omega}{R_\text{out}(D)}, \qquad
+J\dot\omega = K_t I - C_q\omega^2 - K_t\left(I_{0a} + I_{0b}\,\omega^2\right), \qquad
+T = \eta\, C_t\, \omega^2 .
+\]</span></p>
+<p>The first equation is the motor’s electrical circuit, the second is the torque balance on the rotor, and the third gives the thrust; <a href="../../explainers/dc-motor-propeller/index.html">A DC motor and propeller model</a> derives each one. Per motor, with values from the Kanazawa bench identification:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(D\)</span></td>
+<td>PWM duty from the firmware’s mixer, 0–1</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(V\)</span></td>
+<td>Battery voltage at the board</td>
+<td>3.3–4.3 V</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\omega\)</span>, <span class="math inline">\(\dot\omega\)</span></td>
+<td>Rotor speed and its rate of change</td>
+<td>rad/s, rad/s²</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(I\)</span></td>
+<td>Motor current; zero below 1% duty</td>
+<td>A</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(K_e\)</span></td>
+<td>Back-EMF constant</td>
+<td>5.9 × 10⁻⁴ V·s/rad</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(K_t\)</span></td>
+<td>Torque constant (equal to <span class="math inline">\(K_e\)</span> in SI units)</td>
+<td>5.9 × 10⁻⁴ N·m/A</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(R_\text{out}(D)\)</span></td>
+<td>Effective resistance of the motor and its drive circuit, a measured table against duty</td>
+<td>26 Ω at 10% duty, 0.9 Ω at 90%</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(J\)</span></td>
+<td>Moment of inertia of the rotor and propeller</td>
+<td>1.54 × 10⁻⁸ kg·m²</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(C_q\)</span></td>
+<td>Propeller drag-torque coefficient: drag torque <span class="math inline">\(= C_q\omega^2\)</span>, which also yaws the body</td>
+<td>3.38 × 10⁻¹¹ N·m·s²</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(I_{0a}\)</span>, <span class="math inline">\(I_{0b}\)</span></td>
+<td>No-load current, constant and speed-squared parts (bearing and brush friction)</td>
+<td>0.044 A, 2.9 × 10⁻⁹ A·s²</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(C_t\)</span></td>
+<td>Propeller thrust coefficient</td>
+<td>7.6 × 10⁻⁹ N·s²</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\eta\)</span></td>
+<td>Thrust efficiency in flight relative to the bench</td>
+<td>0.976</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(T\)</span></td>
+<td>Thrust from one rotor</td>
+<td>N</td>
+</tr>
+</tbody>
+</table>
+<p>The drive circuit’s effective resistance <span class="math inline">\(R_\text{out}(D)\)</span> falls from 26 Ω at 10% duty to under 1 Ω at 90%, which flattens thrust against duty near hover. That turned out to matter: at duty 0.56 the drone still has 86% of its hover thrust, which explained a climb the firmware session had flagged as impossible.</p>
+<figure class="twin-fig figure">
+<style>
+.twin-fig { margin: 1.2rem 0; }
+.twin-fig svg { width: 100%; height: auto; max-width: 780px; display: block; margin: 0 auto; font-family: inherit; }
+.twin-fig .bx { fill: var(--bs-body-bg, #fff); stroke: var(--bs-border-color, #c9ccd1); stroke-width: 1.2; }
+.twin-fig .hd { fill: var(--bs-body-color, #222); font-size: 15px; font-weight: 650; }
+.twin-fig .sub { fill: var(--bs-secondary-color, #666); font-size: 11.5px; }
+.twin-fig .tx { fill: var(--bs-body-color, #333); font-size: 12.5px; }
+.twin-fig .lr { fill: #c8561f; font-size: 12.5px; font-weight: 600; }
+.twin-fig .ar { stroke: var(--bs-body-color, #444); stroke-width: 1.6; fill: none; marker-end: url(#tw-arrow); }
+.twin-fig .al { fill: var(--bs-body-color, #444); font-size: 12px; font-style: italic; }
+.twin-fig .loop { stroke: #c8561f; stroke-width: 1.4; stroke-dasharray: 5 4; fill: none; marker-end: url(#tw-arrow2); }
+.twin-fig figcaption { font-size: .9rem; opacity: .75; margin-top: .4rem; }
+</style>
+<svg viewbox="0 0 780 520" role="img" aria-label="Structure of the StampFly digital twin">
+<defs>
+<marker id="tw-arrow" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="7" markerheight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker>
+<marker id="tw-arrow2" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="7" markerheight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c8561f"></path></marker>
+</defs>
+<!-- Firmware port -->
+<rect class="bx" x="10" y="10" width="330" height="168" rx="8"></rect>
+<text class="hd" x="24" y="34">Firmware port (400 Hz)</text>
+<text class="sub" x="24" y="51">ported line by line from flight_control.cpp</text>
+<text class="tx" x="24" y="76">Madgwick attitude filter, β 0.1</text>
+<text class="tx" x="24" y="95">Altitude Kalman filter: velocity, height, bias</text>
+<text class="tx" x="24" y="114">Height → climb rate → thrust; angle → rate PIDs</text>
+<text class="lr" x="24" y="133">Accelerometer correction from duty</text>
+<text class="tx" x="24" y="152">Flow position hold; take-off ramp; mixer</text>
+<text class="tx" x="24" y="171">Thrust0 from the motor model</text>
+<!-- Motor + battery -->
+<rect class="bx" x="440" y="10" width="330" height="168" rx="8"></rect>
+<text class="hd" x="454" y="34">Motors and battery (Python)</text>
+<text class="sub" x="454" y="51">Kanazawa bench identification; battery fitted to logs</text>
+<text class="tx" x="454" y="76">Rotor speed ODE per motor, RK4 at 2 kHz</text>
+<text class="tx" x="454" y="95">Drive resistance R(D): 26 Ω at 10% → 0.9 Ω at 90%</text>
+<text class="tx" x="454" y="114">Thrust η·Ct·ω²; yaw torque Cq·ω² + J·dω/dt</text>
+<text class="tx" x="454" y="133">Battery: OCV − I·0.145 Ω − polarisation</text>
+<text class="tx" x="454" y="152">Hover duty 0.693 at 3.55 V, untuned</text>
+<!-- MuJoCo -->
+<rect class="bx" x="440" y="248" width="330" height="150" rx="8"></rect>
+<text class="hd" x="454" y="272">Rigid body (MuJoCo)</text>
+<text class="sub" x="454" y="289">0.5 ms steps; floor contact; ray-cast rangefinder</text>
+<text class="tx" x="454" y="314">35.5 g; motors on a 46 mm square</text>
+<text class="tx" x="454" y="333">Inertia 9.2 / 13.3 / 20.4 × 10⁻⁶ kg m² (bifilar)</text>
+<text class="tx" x="454" y="352">Rotor drag; random disturbance torque</text>
+<text class="tx" x="454" y="371">matched to hover rate noise</text>
+<!-- Sensors -->
+<rect class="bx" x="10" y="248" width="330" height="150" rx="8"></rect>
+<text class="hd" x="24" y="272">Sensor models</text>
+<text class="sub" x="24" y="289">noise and bias fitted to ground runs and flights</text>
+<text class="tx" x="24" y="314">Gyro and accelerometer noise, bias, drift</text>
+<text class="lr" x="24" y="333">Accelerometer error: −1.44 − 9.4 (duty − 0.65)</text>
+<text class="lr" x="24" y="352">Rangefinder: 22 Hz, histogram-merge lag</text>
+<text class="tx" x="24" y="371">Optical flow: 1.7 mrad/count, lost above 1 rad/s</text>
+<!-- arrows -->
+<path class="ar" d="M340,94 L438,94"></path><text class="al" x="352" y="86">4 duties</text>
+<path class="ar" d="M605,178 L605,246"></path><text class="al" x="612" y="217">thrust, torque</text>
+<path class="ar" d="M440,323 L342,323"></path><text class="al" x="352" y="315">true motion</text>
+<path class="ar" d="M175,248 L175,180"></path><text class="al" x="182" y="217">gyro, accel, range, flow</text>
+<!-- outer loop -->
+<path class="loop" d="M605,398 L605,440 L175,440 L175,400"></path>
+<text class="lr" x="390" y="462" text-anchor="middle">Each flight: log → fit the twin → simulate the options → flash the best → fly</text>
+<text class="sub" x="390" y="482" text-anchor="middle">orange: learned from flight logs, not from the bench or the datasheets</text>
+</svg>
+<figcaption>How the twin is built: four parts in a loop, each holding measured values. The orange items exist because a flight disagreed with the twin.</figcaption>
+</figure>
+<p>The first check, with nothing tuned: the twin hovers at duty <strong>0.693</strong> at 3.55 V. The real drone, averaged over the steady part of flight T2_1, hovered at <strong>0.693</strong> at 3.56 V.</p>
+</section>
+<section id="what-the-twin-found-that-the-drone-was-hiding" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-twin-found-that-the-drone-was-hiding">What the twin found that the drone was hiding</h2>
+<p>The early flights overshot their 0.3 m target to nearly 1 m. The logs showed the altitude filter’s velocity estimate going <em>negative</em> at lift-off, as if the drone were sinking while it climbed.</p>
+<p>Comparing the logged vertical acceleration with what the motor model says the duties must produce gave the reason. The accelerometer reads low in flight, and the error grows steeply with motor speed:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_accel_offset.png" class="img-fluid figure-img"></p>
+<figcaption>Accelerometer error against mean motor duty: logged vertical acceleration minus the acceleration the motor model gives for the logged duties.</figcaption>
+</figure>
+</div>
+<p>That is a positive feedback loop through the estimator. More thrust makes the accelerometer read lower, so the filter thinks the drone is sinking, so the climb-rate controller adds more thrust. Vibration rectification is the likely mechanism; the raw IMU stream will tell.</p>
+<p>With that error in the twin, five candidate fixes were simulated. Correcting the accelerometer from duty before the filter, plus setting the take-off thrust from the motor model instead of a voltage formula, cut the simulated peak from 0.72 m to 0.38 m. Lowering the altitude gains, the obvious fix, did nothing for the peak and slowed the recovery. The firmware session flashed the top pair. The next flight peaked at 0.43 m:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_t2_3.png" class="img-fluid figure-img"></p>
+<figcaption>Flight T2_3 with the two fixes, against the twin with the same firmware.</figcaption>
+</figure>
+</div>
+</section>
+<section id="position-hold-calibrate-on-the-bench-tune-in-the-twin" class="level2">
+<h2 class="anchored" data-anchor-id="position-hold-calibrate-on-the-bench-tune-in-the-twin">Position hold: calibrate on the bench, tune in the twin</h2>
+<p>The StampFly has no position hold out of the box and drifts metres in a few seconds. The optical-flow sensor measures image motion in counts. Its scale came from rocking the drone by hand over a patterned floor: during pure rotation the flow equals the rotation angle, so the gyro calibrates it. That gave 1.69 mrad per count, against the 2.22 used in the Kanazawa firmware, and a 30 cm sideways drift I saw in flight later read 0.33 m by flow.</p>
+<p>The twin chose the gains. It also ruled out a velocity low-pass filter, whose lag destabilised the loop, and the higher gain that Kanazawa used on their own controller. By the second flight with the hold it drifted 0.13 m each way; the last flight without it had drifted 1.1 m.</p>
+</section>
+<section id="the-prediction-that-failed" class="level2">
+<h2 class="anchored" data-anchor-id="the-prediction-that-failed">The prediction that failed</h2>
+<p>To tighten the altitude hold, the twin recommended a stronger climb-rate loop (gain 0.12, integral time 0.5 s). It held ±3–4 cm in simulation and survived a 40 ms stress delay. On the drone, flight T3_2 bobbed with a 2.5 s period and growing amplitude until it crossed 0.8 m and the test cut the motors.</p>
+<p>A twin that is wrong about stability is missing a delay or a state. The question was which one.</p>
+</section>
+<section id="finding-the-hidden-lag" class="level2">
+<h2 class="anchored" data-anchor-id="finding-the-hidden-lag">Finding the hidden lag</h2>
+<p>The landings answered it. When the firmware decides it has landed it stops the motors, and from then on the accelerometer shows whether the drone is in free fall or resting, while the gyro shows the touchdown knock. In the landings I checked, the drone was already on the floor while the rangefinder still read about 10 cm:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_landing.png" class="img-fluid figure-img"></p>
+<figcaption>Rangefinder readings around touchdown, with the driver’s histogram merge on and off.</figcaption>
+</figure>
+</div>
+<p>A cross-correlation over whole flights agreed: changes in thrust showed up in the rangefinder’s height about 0.32 s later, of which the motors account for perhaps 40 ms.</p>
+<p>The cause was in the sensor’s driver. The VL53L3CX sends raw photon-timing histograms to the host, and ST’s driver merges up to six successive histograms by default (<code>VL53LX_TUNINGPARM_HIST_MERGE</code>, maximum size 6) to cut noise. That is a moving average over about 0.28 s of 46 ms frames. The rangefinder also turned out to run at 22 Hz, not the 30 Hz the firmware assumed.</p>
+<p>With a six-frame merge and a further 130 ms of latency, the twin reproduced T3_2’s oscillation at a similar period. With the merge off, the same gains held. The firmware session switched the merge off with one call (<code>VL53LX_SetTuningParameter</code>), the landing lag fell from about 350 ms to under 70 ms, and with the old gains the altitude wander (standard deviation) fell from 0.10 m to 0.05 m. Then the gains that had failed in T3_2 were flown again as T3_5:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_t32_t35.png" class="img-fluid figure-img"></p>
+<figcaption>The same climb-rate gains with the merge on (T3_2) and off (T3_5), with the twin for each. The twin matches T3_2’s period and size but not its growth.</figcaption>
+</figure>
+</div>
+<p>T3_5 held a standard deviation of 4.6 cm, with the lowest take-off overshoot of any 0.5 m flight (+0.15 m), and landed normally. The twin had predicted 2.4–3.3 cm and a 0.65 m peak; the real peak was 0.65 m.</p>
+<p>The same lag explains several earlier puzzles. More than once the logs showed the drone climbing faster while its thrust fell, which looked impossible. The rangefinder was reporting where the drone had been a third of a second earlier.</p>
+</section>
+<section id="predictions-against-outcomes" class="level2">
+<h2 class="anchored" data-anchor-id="predictions-against-outcomes">Predictions against outcomes</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Twin’s prediction</th>
+<th>What the StampFly did</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hover duty 0.693 at 3.55 V, untuned</td>
+<td>0.693 at 3.56 V (T2_1)</td>
+</tr>
+<tr class="even">
+<td>Duty correction + motor-model take-off: peak 0.72 → 0.38 m</td>
+<td>about 1.0 → 0.43 m (T2_2 → T2_3)</td>
+</tr>
+<tr class="odd">
+<td>7% take-off thrust error on a part-charged pack: peak 0.72 m</td>
+<td>0.69 m (T2_5)</td>
+</tr>
+<tr class="even">
+<td>Velocity hold: metres of drift down to tens of centimetres</td>
+<td>1.1 m → 0.13 m (T2_4 → T2_6)</td>
+</tr>
+<tr class="odd">
+<td>Climb-rate gain 0.12 / 0.5 s is stable</td>
+<td><strong>Wrong</strong>: growing 2.5 s oscillation (T3_2)</td>
+</tr>
+<tr class="even">
+<td>With the driver’s 6-frame merge: oscillation, period ~2.8 s</td>
+<td>T3_2: ~2.5–2.7 s</td>
+</tr>
+<tr class="odd">
+<td>Merge off, same gains: 2.4–3.3 cm std, 0.65 m peak</td>
+<td>4.6 cm std, 0.65 m peak (T3_5)</td>
+</tr>
+</tbody>
+</table>
+<p>The twin runs slightly optimistic on altitude wander throughout, by about 1–2 cm. Some unmodelled disturbance is still missing.</p>
+</section>
+<section id="what-the-loop-taught" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-loop-taught">What the loop taught</h2>
+<p>The successes were mostly about ranking. The twin didn’t have to be exact to say that correcting the accelerometer would beat lowering the gains, or that a velocity filter would hurt. It only had to contain the mechanisms that mattered.</p>
+<p>The failure was more instructive. A model only reproduces behaviour it has the states and delays to produce. In Ashby’s terms, it needs the variety of the system it regulates. The twin had no rangefinder latency, so no amount of tuning inside it could have predicted T3_2. The real drone’s disagreement was the measurement that added that state. The comparison of the two found the fault; neither would have found it alone.</p>
+<p>There is still a gap to close. The same logs show each rangefinder read blocking the control loop for about 5 ms, so the “400 Hz” loop averages 336 Hz. Moving the read into a separate task on the ESP32-S3’s other core is next. Then the twin goes up a size: a 3D-printed, brushless 3-inch quad sized from motor bench data, with the same firmware and sensors.</p>
+<p><em>The physical model’s inertia and motor constants are from Kouhei Ito’s <a href="https://github.com/M5Fly-kanazawa/stampfly_ecosystem">stampfly_ecosystem</a> (MIT licence). Simulation in <a href="https://mujoco.org">MuJoCo</a>. See also the <a href="../../explainers/kalman-filter/index.html">Kalman filter explainer</a>.</em></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
