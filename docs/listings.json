@@ -17,6 +17,7 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/inverted-pendulum-walker/index.html",
       "/explainers/dc-motor-propeller/index.html",
       "/explainers/kalman-filter/index.html",
       "/explainers/einsum/index.html",
@@ -105,6 +106,14 @@
       "/space/apollo-11-part-2-translunar-coast/index.html",
       "/space/apollo-11-part-3-descent-and-landing/index.html",
       "/space/apollo-11-part-1-launch-to-tli/index.html"
+    ]
+  },
+  {
+    "listing": "/complexity/index.html",
+    "items": [
+      "/complexity/kuramoto-synchronisation/index.html",
+      "/complexity/millennium-bridge/index.html",
+      "/complexity/ott-antonsen-bimodal/index.html"
     ]
   }
 ]

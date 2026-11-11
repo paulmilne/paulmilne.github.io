@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-10">
+<meta name="description" content="Modelling the Millennium Bridge wobble as Kuramoto synchronisation coupled through a resonant structure (Strogatz et al., 2005): an Ott–Antonsen reduction of the walker–bridge system, a critical crowd size proportional to the bridge’s damping, a simulated crowd test, crowd force in phase with deck velocity as negative damping, and the later balance-based explanations that need no phase locking.">
+
+<title>A Bridge Full of Oscillators – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="A Bridge Full of Oscillators – math-blog">
+<meta property="og:description" content="Modelling the Millennium Bridge wobble as Kuramoto synchronisation coupled through a resonant structure (Strogatz et al., 2005): an Ott–Antonsen reduction of the walker–bridge system, a critical crowd size proportional to the bridge’s damping, a simulated crowd test, crowd force in phase with deck velocity as negative damping, and the later balance-based explanations that need no phase locking.">
+<meta property="og:image" content="https://paulmilne.github.io/complexity/millennium-bridge/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="930">
+<meta property="og:image:width" content="1125">
+<meta name="twitter:title" content="A Bridge Full of Oscillators – math-blog">
+<meta name="twitter:description" content="Modelling the Millennium Bridge wobble as Kuramoto synchronisation coupled through a resonant structure (Strogatz et al., 2005): an Ott–Antonsen reduction of the walker–bridge system, a critical crowd size proportional to the bridge’s damping, a simulated crowd test, crowd force in phase with deck velocity as negative damping, and the later balance-based explanations that need no phase locking.">
+<meta name="twitter:image" content="https://paulmilne.github.io/complexity/millennium-bridge/thumbnail.png">
+<meta name="twitter:image-height" content="930">
+<meta name="twitter:image-width" content="1125">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../electronics/index.html"> 
+<span class="menu-text">Electronics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../complexity/index.html"> 
+<span class="menu-text">Complexity</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">A Bridge Full of Oscillators</h1>
+            <p class="subtitle lead">Why London’s Millennium Bridge started swaying two days after it opened: the Kuramoto model with a bridge as the mean field, a critical crowd of about 165 people, and the argument over whether synchrony was the cause or the result</p>
+                  <div>
+        <div class="description">
+          Modelling the Millennium Bridge wobble as Kuramoto synchronisation coupled through a resonant structure (Strogatz et al., 2005): an Ott–Antonsen reduction of the walker–bridge system, a critical crowd size proportional to the bridge’s damping, a simulated crowd test, crowd force in phase with deck velocity as negative damping, and the later balance-based explanations that need no phase locking.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">complexity</div>
+                <div class="quarto-category">emergence</div>
+                <div class="quarto-category">synchronisation</div>
+                <div class="quarto-category">nonlinear-dynamics</div>
+                <div class="quarto-category">structures</div>
+                <div class="quarto-category">simulation</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 10, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-a-walker-does-to-a-bridge" id="toc-what-a-walker-does-to-a-bridge" class="nav-link active" data-scroll-target="#what-a-walker-does-to-a-bridge">What a walker does to a bridge</a></li>
+  <li><a href="#the-model" id="toc-the-model" class="nav-link" data-scroll-target="#the-model">The model</a></li>
+  <li><a href="#reducing-the-crowd" id="toc-reducing-the-crowd" class="nav-link" data-scroll-target="#reducing-the-crowd">Reducing the crowd</a></li>
+  <li><a href="#a-simulated-crowd-test" id="toc-a-simulated-crowd-test" class="nav-link" data-scroll-target="#a-simulated-crowd-test">A simulated crowd test</a></li>
+  <li><a href="#cause-or-effect" id="toc-cause-or-effect" class="nav-link" data-scroll-target="#cause-or-effect">Cause or effect?</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>London’s Millennium Bridge opened on 10 June 2000. Up to 100,000 people crossed it that day, with up to 2,000 on the deck at once, and the deck swayed sideways enough that people grabbed the handrails and walked with their feet apart. Two days later it was closed. It reopened in 2002 after the engineers, Arup, had fitted 37 fluid viscous dampers and a set of tuned mass dampers, at a cost reported as about £5 million.</p>
+<p>The bridge was not weak. It was the right stiffness for its load, and it would have been fine with a few people on it, or a few hundred. The wobble needed a crowd above a critical size, and once past that size it appeared suddenly. That is the signature of the transition in the <a href="../../complexity/kuramoto-synchronisation/index.html">previous</a> <a href="../../complexity/ott-antonsen-bimodal/index.html">two</a> posts, and in 2005 Steven Strogatz and colleagues published a Kuramoto model of it in <em>Nature</em>. This post rebuilds that model, reduces it with Ott and Antonsen’s method, and runs a simulated crowd test.</p>
+<section id="what-a-walker-does-to-a-bridge" class="level2">
+<h2 class="anchored" data-anchor-id="what-a-walker-does-to-a-bridge">What a walker does to a bridge</h2>
+<p>Walking is a controlled fall from one foot to the other. Each step pushes the body’s centre of mass sideways, so a walker presses on the ground with an alternating sideways force at half the step frequency: about 1 Hz for a normal pace of two steps a second, with an amplitude of some tens of newtons.</p>
+<p>On a rigid floor those forces from a crowd add up with random phases and largely cancel. The Millennium Bridge had lateral modes close to that 1 Hz, among them the north span’s at 1.05 Hz. A crowd’s random forces shake such a mode a little. The question is why a little became a lot.</p>
+<p>Arup’s measurements gave the engineering answer. On a swaying deck, the average sideways force from a pedestrian is proportional to the deck’s sideways <em>velocity</em>. A force in phase with velocity is a negative damping: it feeds energy into the motion every cycle. Each walker adds a little, and when the crowd’s negative damping exceeds the structure’s own damping, the sway grows. In a crowd test on the north span in December 2000, Arup added people in steps; the sway stayed small and then grew sharply at around 165 people.</p>
+</section>
+<section id="the-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-model">The model</h2>
+<p>Strogatz, Abrams, McRobie, Eckhardt and Ott asked where the velocity-proportional force comes from, and answered with synchronisation. They modelled one lateral mode of the bridge as a damped oscillator driven by the walkers:</p>
+<p><span class="math display">\[
+M\ddot X + B\dot X + K X = G\sum_{i=1}^{N}\sin\Theta_i ,
+\]</span></p>
+<p>where <span class="math inline">\(X\)</span> is the sideways displacement of the mode, <span class="math inline">\(M\)</span>, <span class="math inline">\(B\)</span> and <span class="math inline">\(K\)</span> its modal mass, damping and stiffness, and each walker <span class="math inline">\(i\)</span> pushes with a force <span class="math inline">\(G\sin\Theta_i\)</span> at gait phase <span class="math inline">\(\Theta_i\)</span>. Each walker has a natural frequency <span class="math inline">\(\Omega_i\)</span> and adjusts their gait to the motion underfoot:</p>
+<p><span class="math display">\[
+\dot\Theta_i = \Omega_i + C A \sin(\Psi - \Theta_i + \alpha) ,
+\]</span></p>
+<p>with the deck’s motion written as <span class="math inline">\(X = A\sin\Psi\)</span>, and <span class="math inline">\(C\)</span> a sensitivity: how strongly a sway of amplitude <span class="math inline">\(A\)</span> pulls a walker’s phase. With <span class="math inline">\(\alpha = \pi/2\)</span>, a walker locked to the bridge pushes a quarter-cycle ahead of the displacement, in phase with the velocity: exactly the negative damping Arup measured.</p>
+<p>Compare it with the Kuramoto model. The walkers are the oscillators, but they do not see each other; they see the bridge. The bridge sums their forces, so it plays the part of the order parameter. Unlike the Kuramoto mean field it has a mass and a resonance of its own, so it responds most to the component of the crowd’s force near its natural frequency.</p>
+<p>The values below are from the papers that built this model: modal mass and frequency for the north span mode, a force of 25 N per walker, and the sensitivity <span class="math inline">\(C\)</span> that Strogatz et al.&nbsp;estimated from the crowd-test data. Natural pacing frequencies are Lorentzian, centred on the bridge frequency, with a half-width of 0.074 Hz (7.2% of the frequency), and the damping ratio is 0.75% of critical.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(M\)</span></td>
+<td>Modal mass</td>
+<td>113,000 kg</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\Omega_0/2\pi\)</span></td>
+<td>Lateral mode frequency, <span class="math inline">\(\sqrt{K/M}\)</span></td>
+<td>1.03 Hz</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\zeta\)</span></td>
+<td>Damping ratio, <span class="math inline">\(B / 2\sqrt{KM}\)</span></td>
+<td>0.0075</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(G\)</span></td>
+<td>Peak sideways force per walker</td>
+<td>25 N</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(C\)</span></td>
+<td>Walker sensitivity to sway</td>
+<td>16 m⁻¹ s⁻¹</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\Delta\)</span></td>
+<td>Half-width of pacing frequencies</td>
+<td>0.072 <span class="math inline">\(\Omega_0\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\alpha\)</span></td>
+<td>Phase lag</td>
+<td><span class="math inline">\(\pi/2\)</span></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="reducing-the-crowd" class="level2">
+<h2 class="anchored" data-anchor-id="reducing-the-crowd">Reducing the crowd</h2>
+<p>The previous post’s Ott–Antonsen reduction applies with one change: the mean field that pulls each walker is the bridge’s motion, <span class="math inline">\(C A e^{i(\Psi + \alpha)}\)</span>, instead of <span class="math inline">\(K r e^{i\psi}\)</span>. For a Lorentzian crowd the walkers’ order parameter <span class="math inline">\(z = R e^{i\phi} = \langle e^{i\Theta}\rangle\)</span> obeys a single equation.</p>
+<p>The bridge is a lightly damped oscillator driven near resonance, so it can be described by a slowly varying complex amplitude <span class="math inline">\(a = A e^{i\Psi} = \dot X/\Omega_0 + iX\)</span>, keeping only the part of the crowd’s force that rotates with it. In the frame rotating at <span class="math inline">\(\Omega_0\)</span>, the whole system of a bridge and an infinite crowd becomes two complex equations:</p>
+<p><span class="math display">\[
+\dot a = -\zeta\Omega_0\, a - i\,\frac{G N}{2M\Omega_0}\, z, \qquad
+\dot z = -\Delta\, z + \frac{C}{2}\left(e^{i\alpha} a - e^{-i\alpha}\,\bar a\, z^2\right) .
+\]</span></p>
+<p>The first is the bridge: it decays at its damping rate, and the crowd’s coherent force drives it. The second is the crowd: the spread of pacing frequencies dephases it, and the bridge’s sway pulls it into step.</p>
+<p>Linearising about <span class="math inline">\(a = z = 0\)</span> gives a 2 × 2 problem. With <span class="math inline">\(\alpha = \pi/2\)</span> the product of the cross-couplings is positive, <span class="math inline">\(GNC/(4M\Omega_0)\)</span>, so it is a feedback loop that amplifies itself: sway recruits walkers, walkers drive sway. The quiet state loses stability when that loop gain exceeds the product of the two decay rates, <span class="math inline">\(\zeta\Omega_0\,\Delta\)</span>, which gives the critical crowd</p>
+<p><span class="math display">\[
+N_c = \frac{4 M \Omega_0^2\, \zeta\, \Delta}{G\, C} = \frac{4\,\zeta K}{\pi\, G C\, P(\Omega_0)} ,
+\]</span></p>
+<p>where <span class="math inline">\(P(\Omega_0) = 1/(\pi\Delta)\)</span> is the density of walkers whose natural pace matches the bridge. It has the same structure as the Kuramoto threshold <span class="math inline">\(K_c = 2/(\pi g(0))\)</span>, and with the values above it is <strong>165 people</strong>, the size of crowd at which the north span started to sway in the test.</p>
+<p>Each factor says something to a designer: - <span class="math inline">\(N_c \propto \zeta\)</span>. Doubling the damping doubles the crowd the bridge can carry. Arup’s fix raised the damping of the critical modes many times over. - <span class="math inline">\(N_c \propto K\)</span>. A stiffer deck needs a bigger crowd. But stiffening was the hard option for the long, shallow centre span, whose first lateral mode is at 0.49 Hz, so the fix added damping instead. - <span class="math inline">\(N_c \propto \Delta\)</span>. A crowd with a wider spread of paces is harder to recruit. - Below <span class="math inline">\(N_c\)</span> there is no warning. The crowd adds negative damping in proportion to its size, but the sway stays at the noise level until the total damping crosses zero.</p>
+</section>
+<section id="a-simulated-crowd-test" class="level2">
+<h2 class="anchored" data-anchor-id="a-simulated-crowd-test">A simulated crowd test</h2>
+<p>Simulating the full model, with walkers added in groups of ten every minute like the real test:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_crowd_test.png" class="img-fluid figure-img"></p>
+<figcaption>A simulated crowd test with 10 walkers added each minute. Top: crowd size, with the critical size from the reduction. Middle: the bridge’s sway amplitude. Bottom: the walkers’ order parameter.</figcaption>
+</figure>
+</div>
+<p>The sway and the walkers’ coherence rise together, the “dual aspects of a single instability” in Strogatz et al.’s words. Neither comes first. Before <span class="math inline">\(N_c\)</span>, <span class="math inline">\(R\)</span> sits at the <span class="math inline">\(1/\sqrt N\)</span> level of a random crowd: high when there are ten walkers, low when there are a hundred and fifty.</p>
+<p>The onset is also late. The crowd passes 165 at sixteen minutes, but the sway does not take off until about twenty-four. Just above threshold the growth rate is proportional to <span class="math inline">\(N - N_c\)</span>, so with a few people to spare the instability takes minutes to build. That is the critical slowing down of any continuous transition, and it makes the real crowd test harder to read than a threshold sounds: a group can stand above <span class="math inline">\(N_c\)</span> for a while before anything happens.</p>
+<p>Running the full model to a steady state at fixed crowd sizes, and comparing it with the two reduced equations:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_amplitude.png" class="img-fluid figure-img"></p>
+<figcaption>Steady sway amplitude and walker coherence against crowd size. Line: the Ott–Antonsen reduction. Points: simulations of N walkers on the bridge, 1,500 s each.</figcaption>
+</figure>
+</div>
+<p>The reduction matches the full simulation to within a millimetre. Just above <span class="math inline">\(N_c\)</span>, both the sway and the coherence grow as <span class="math inline">\((N - N_c)^{1/2}\)</span>: the mean-field exponent <span class="math inline">\(\beta = 1/2\)</span> from the <a href="../../complexity/kuramoto-synchronisation/index.html">first post</a> and from the table of critical exponents in section 2.1.4 of <a href="../../papers/rg-critical-phenomena/milne-2022-rg-functional-equations-critical-phenomena.pdf#page=11">my MSc dissertation</a>. Further above, the sway grows nearly linearly with the crowd: each extra walker adds roughly the same amount, about 0.4 mm.</p>
+<p>In the locked state, the crowd’s net force tracks the deck’s velocity, not its displacement:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_force_velocity.png" class="img-fluid figure-img"></p>
+<figcaption>Steady state with 240 walkers. The crowd’s sideways force (orange) is in phase with the deck’s velocity (blue) and a quarter-cycle ahead of its displacement (grey).</figcaption>
+</figure>
+</div>
+<p>Their correlation is 0.998. In the steady state the crowd’s force exactly cancels the structural damping force, which is why the amplitude stops growing. The model reproduces Arup’s empirical rule, force proportional to velocity, from synchronisation.</p>
+</section>
+<section id="cause-or-effect" class="level2">
+<h2 class="anchored" data-anchor-id="cause-or-effect">Cause or effect?</h2>
+<p>The Kuramoto account is elegant, and it got the critical crowd right with one fitted parameter. It is not the last word.</p>
+<p>In 2009 John Macdonald modelled each pedestrian as an inverted pendulum (<a href="../../explainers/inverted-pendulum-walker/index.html">explainer</a>) who keeps their balance by choosing where to put each foot, a rule from biomechanics. On a moving deck, that balance strategy alone produces a sideways force with a component in phase with the deck’s velocity, without any change in the walker’s pace. In 2017 Igor Belykh and colleagues coupled such balance-based walkers to a bridge and found that wobbling could start without the crowd locking its phase: the onset involved many uncoordinated adjustments and phase slips, and lock-in became important only at larger amplitudes. On that reading, synchrony is mostly a consequence of the wobble rather than its cause.</p>
+<p>The two accounts agree on the feedback loop and the threshold: something the walkers do on a moving deck feeds energy back into the deck, and the bridge goes unstable when the total exceeds its damping. They disagree about what happens inside each walker. The phase model makes all of it a gait adjustment, the balance models make it mostly foot placement. Both predict a critical crowd proportional to the damping, which is why Arup’s dampers work either way.</p>
+<p>For this series, the bridge adds one thing to the Kuramoto model: the mean field can be a physical object with its own dynamics. Synchronisation through a shared medium, rather than direct mutual coupling, turns up elsewhere: in Huygens’ two pendulum clocks on one beam, in metronomes on a rolling board, and in the power grid, where generators stay in step through the network that connects them.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>P. Dallard, A. J. Fitzpatrick, A. Flint, S. Le Bourva, A. Low, R. M. Ridsdill Smith and M. Willford, <a href="https://www.istructe.org/journal/volumes/volume-79-(published-in-2001)/issue-22/the-london-millennium-footbridge/">“The London Millennium Footbridge”</a>, <em>The Structural Engineer</em> 79(22), 17–33 (2001).</li>
+<li><a href="https://ingenia.org.uk/articles/stabilising-the-london-millennium-bridge/">Stabilising the London Millennium Bridge</a>, <em>Ingenia</em> (Royal Academy of Engineering).</li>
+<li>S. H. Strogatz, D. M. Abrams, A. McRobie, B. Eckhardt and E. Ott, <a href="https://dmabrams.esam.northwestern.edu/pubs/Strogatz%20Abrams%20McRobie%20Eckhardt%20Ott%20-%20Crowd%20synchrony%20on%20the%20Millennium%20Bridge%20-%20Nature%202005.pdf">“Crowd synchrony on the Millennium Bridge”</a>, <em>Nature</em> 438, 43–44 (2005).</li>
+<li>B. Eckhardt, E. Ott, S. H. Strogatz, D. M. Abrams and A. McRobie, <a href="https://dmabrams.esam.northwestern.edu/pubs/Eckhardt%20et%20al%20-%20Modeling%20walker%20synchronization%20on%20the%20Millennium%20Bridge%20-%20PRE%202007.pdf">“Modeling walker synchronization on the Millennium Bridge”</a>, <em>Physical Review E</em> 75, 021110 (2007).</li>
+<li>M. M. Abdulrehem and E. Ott, <a href="https://arxiv.org/abs/0809.0358">“Low dimensional description of pedestrian-induced oscillation of the Millennium Bridge”</a>, <em>Chaos</em> 19, 013129 (2009).</li>
+<li>J. H. G. Macdonald, “Lateral excitation of bridges by balancing pedestrians”, <em>Proceedings of the Royal Society A</em> 465, 1055–1073 (2009).</li>
+<li>I. Belykh, R. Jeter and V. Belykh, <a href="https://ar5iv.labs.arxiv.org/html/1610.05366">“Foot force models of crowd dynamics on a wobbly bridge”</a>, <em>Science Advances</em> 3, e1701512 (2017).</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

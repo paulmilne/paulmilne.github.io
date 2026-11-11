@@ -1,0 +1,15 @@
+---
+title: "Complexity"
+description: "Complex systems: emergence, nonlinear dynamics, networks, self-organisation and cybernetics, modelled and simulated."
+listing:
+  contents: .
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---
+
+Complex systems: emergence, nonlinear dynamics, networks, self-organisation and cybernetics, modelled and simulated, worked through in code.

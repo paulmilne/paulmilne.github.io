@@ -14,6 +14,7 @@ project:
     - "sci-fi/**"
     - "mechanics/**"
     - "electronics/**"
+    - "complexity/**"
     - "papers/**"
     - "ai/**"
     - "space/**"
@@ -47,6 +48,8 @@ website:
         text: Mechanics
       - href: electronics/index.qmd
         text: Electronics
+      - href: complexity/index.qmd
+        text: Complexity
       - href: ai/index.qmd
         text: AI
       - href: space/index.qmd
