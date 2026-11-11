@@ -94,6 +94,10 @@
   {
     "listing": "/sci-fi/index.html",
     "items": [
+      "/sci-fi/endurance-docking/index.html",
+      "/sci-fi/tars-dials/index.html",
+      "/sci-fi/tars-walking/index.html",
+      "/sci-fi/tars-watch/index.html",
       "/sci-fi/gargantua/index.html",
       "/sci-fi/martian-tripod/index.html"
     ]
@@ -111,6 +115,7 @@
   {
     "listing": "/complexity/index.html",
     "items": [
+      "/complexity/esp32-fireflies/index.html",
       "/complexity/kuramoto-synchronisation/index.html",
       "/complexity/millennium-bridge/index.html",
       "/complexity/ott-antonsen-bimodal/index.html"

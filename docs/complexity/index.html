@@ -42,7 +42,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-7f537555e85d979099ed792706140d7e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -134,15 +134,15 @@ window.Quarto = {
 <link rel="stylesheet" href="../styles.css">
 <meta property="og:title" content="Complexity – math-blog">
 <meta property="og:description" content="Complex systems: emergence, nonlinear dynamics, networks, self-organisation and cybernetics, modelled and simulated.">
-<meta property="og:image" content="https://paulmilne.github.io/complexity/kuramoto-synchronisation/thumbnail.png">
+<meta property="og:image" content="https://paulmilne.github.io/complexity/esp32-fireflies/thumbnail.png">
 <meta property="og:site_name" content="math-blog">
-<meta property="og:image:height" content="495">
-<meta property="og:image:width" content="1350">
+<meta property="og:image:height" content="690">
+<meta property="og:image:width" content="1200">
 <meta name="twitter:title" content="Complexity – math-blog">
 <meta name="twitter:description" content="Complex systems: emergence, nonlinear dynamics, networks, self-organisation and cybernetics, modelled and simulated.">
-<meta name="twitter:image" content="https://paulmilne.github.io/complexity/kuramoto-synchronisation/thumbnail.png">
-<meta name="twitter:image-height" content="495">
-<meta name="twitter:image-width" content="1350">
+<meta name="twitter:image" content="https://paulmilne.github.io/complexity/esp32-fireflies/thumbnail.png">
+<meta name="twitter:image-height" content="690">
+<meta name="twitter:image-width" content="1200">
 <meta name="twitter:card" content="summary_large_image">
 </head>
 
@@ -261,7 +261,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(3)</span></div><div class="category" data-category="YmlmdXJjYXRpb25z">bifurcations <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Y29tcGxleGl0eQ==">complexity <span class="quarto-category-count">(3)</span></div><div class="category" data-category="ZW1lcmdlbmNl">emergence <span class="quarto-category-count">(3)</span></div><div class="category" data-category="bWVhbi1maWVsZA==">mean-field <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bm9ubGluZWFyLWR5bmFtaWNz">nonlinear-dynamics <span class="quarto-category-count">(3)</span></div><div class="category" data-category="cGhhc2UtdHJhbnNpdGlvbnM=">phase-transitions <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxhdGlvbg==">simulation <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c3RydWN0dXJlcw==">structures <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c3luY2hyb25pc2F0aW9u">synchronisation <span class="quarto-category-count">(3)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="YmlmdXJjYXRpb25z">bifurcations <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Y29tcGxleGl0eQ==">complexity <span class="quarto-category-count">(4)</span></div><div class="category" data-category="ZWxlY3Ryb25pY3M=">electronics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZW1lcmdlbmNl">emergence <span class="quarto-category-count">(4)</span></div><div class="category" data-category="ZXNwMzI=">esp32 <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bWVhbi1maWVsZA==">mean-field <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bm9ubGluZWFyLWR5bmFtaWNz">nonlinear-dynamics <span class="quarto-category-count">(3)</span></div><div class="category" data-category="cGhhc2UtdHJhbnNpdGlvbnM=">phase-transitions <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxhdGlvbg==">simulation <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c3RydWN0dXJlcw==">structures <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c3luY2hyb25pc2F0aW9u">synchronisation <span class="quarto-category-count">(4)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -276,7 +276,50 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ25vbmxpbmVhci1keW5hbWljcyUyQ21lYW4tZmllbGQlMkNwaGFzZS10cmFuc2l0aW9ucw==" data-listing-date-sort="1794268800000" data-listing-file-modified-sort="1794300026032" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="9" data-listing-word-count-sort="1705">
+<div class="quarto-post image-right" data-index="0" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ2VzcDMyJTJDc2ltdWxhdGlvbiUyQ2VsZWN0cm9uaWNz" data-listing-date-sort="1794355200000" data-listing-file-modified-sort="1794387600785" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1847">
+<div class="thumbnail"><a href="../complexity/esp32-fireflies/index.html" class="no-external">
+
+<img loading="lazy" src="../complexity/esp32-fireflies/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../complexity/esp32-fireflies/index.html" class="no-external">Fireflies on a Radio Link</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../complexity/esp32-fireflies/index.html" class="no-external">Pulse-coupled oscillators: how fireflies, heart cells and ESP32 boards fall into step by reacting to each other’s flashes, why a few milliseconds of delay can turn synchrony into an echo storm, and firmware to try it</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('Y29tcGxleGl0eQ=='); return false;">complexity</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZW1lcmdlbmNl'); return false;">emergence</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c3luY2hyb25pc2F0aW9u'); return false;">synchronisation</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZXNwMzI='); return false;">esp32</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c2ltdWxhdGlvbg=='); return false;">simulation</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZWxlY3Ryb25pY3M='); return false;">electronics</div>
+
+</div>
+<div class="delink listing-description"><a href="../complexity/esp32-fireflies/index.html" class="no-external">
+<p>The Mirollo–Strogatz model of pulse-coupled oscillators: a concave charging curve, the phase response curve and absorption; simulations of 20 nodes with radio delay, packet loss, clock spread, refractory periods and limited range; the coupling needed against the spread of clocks; and ESP-NOW firmware for ESP32 boards that flash in unison.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../complexity/esp32-fireflies/index.html" class="no-external">
+<div class="listing-date">
+Nov 11, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ25vbmxpbmVhci1keW5hbWljcyUyQ21lYW4tZmllbGQlMkNwaGFzZS10cmFuc2l0aW9ucw==" data-listing-date-sort="1794268800000" data-listing-file-modified-sort="1794387600804" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="9" data-listing-word-count-sort="1705">
 <div class="thumbnail"><a href="../complexity/kuramoto-synchronisation/index.html" class="no-external">
 
 <img loading="lazy" src="../complexity/kuramoto-synchronisation/thumbnail.png" class="thumbnail-image">
@@ -319,7 +362,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ25vbmxpbmVhci1keW5hbWljcyUyQ3N0cnVjdHVyZXMlMkNzaW11bGF0aW9u" data-listing-date-sort="1794268800000" data-listing-file-modified-sort="1794308628477" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1879">
+<div class="quarto-post image-right" data-index="2" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ25vbmxpbmVhci1keW5hbWljcyUyQ3N0cnVjdHVyZXMlMkNzaW11bGF0aW9u" data-listing-date-sort="1794268800000" data-listing-file-modified-sort="1794387600797" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1880">
 <div class="thumbnail"><a href="../complexity/millennium-bridge/index.html" class="no-external">
 
 <img loading="lazy" src="../complexity/millennium-bridge/thumbnail.png" class="thumbnail-image">
@@ -362,7 +405,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ25vbmxpbmVhci1keW5hbWljcyUyQ2JpZnVyY2F0aW9ucw==" data-listing-date-sort="1794268800000" data-listing-file-modified-sort="1794308628477" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1815">
+<div class="quarto-post image-right" data-index="3" data-categories="Y29tcGxleGl0eSUyQ2VtZXJnZW5jZSUyQ3N5bmNocm9uaXNhdGlvbiUyQ25vbmxpbmVhci1keW5hbWljcyUyQ2JpZnVyY2F0aW9ucw==" data-listing-date-sort="1794268800000" data-listing-file-modified-sort="1794387600815" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="10" data-listing-word-count-sort="1815">
 <div class="thumbnail"><a href="../complexity/ott-antonsen-bimodal/index.html" class="no-external">
 
 <img loading="lazy" src="../complexity/ott-antonsen-bimodal/thumbnail.png" class="thumbnail-image">

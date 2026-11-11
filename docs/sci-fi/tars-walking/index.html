@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-12">
+<meta name="description" content="Modelling TARS and CASE from Interstellar in MuJoCo: four slabs on a common axle, a crutch-walking gait in which the outer and inner pairs vault over each other, the inverted-pendulum speed limit on walking, the rimless-wheel impact law for the cartwheel, why a four-spoke cross stops dead while an eight-spoke star rolls, and the power needed to cartwheel through water on Miller’s planet.">
+
+<title>TARS, Part 1: Four Slabs That Walk and Roll – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="TARS, Part 1: Four Slabs That Walk and Roll – math-blog">
+<meta property="og:description" content="Modelling TARS and CASE from Interstellar in MuJoCo: four slabs on a common axle, a crutch-walking gait in which the outer and inner pairs vault over each other, the inverted-pendulum speed limit on walking, the rimless-wheel impact law for the cartwheel, why a four-spoke cross stops dead while an eight-spoke star rolls, and the power needed to cartwheel through water on Miller’s planet.">
+<meta property="og:image" content="https://paulmilne.github.io/sci-fi/tars-walking/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="583">
+<meta property="og:image:width" content="800">
+<meta name="twitter:title" content="TARS, Part 1: Four Slabs That Walk and Roll – math-blog">
+<meta name="twitter:description" content="Modelling TARS and CASE from Interstellar in MuJoCo: four slabs on a common axle, a crutch-walking gait in which the outer and inner pairs vault over each other, the inverted-pendulum speed limit on walking, the rimless-wheel impact law for the cartwheel, why a four-spoke cross stops dead while an eight-spoke star rolls, and the power needed to cartwheel through water on Miller’s planet.">
+<meta name="twitter:image" content="https://paulmilne.github.io/sci-fi/tars-walking/thumbnail.png">
+<meta name="twitter:image-height" content="583">
+<meta name="twitter:image-width" content="800">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../electronics/index.html"> 
+<span class="menu-text">Electronics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../complexity/index.html"> 
+<span class="menu-text">Complexity</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">TARS, Part 1: Four Slabs That Walk and Roll</h1>
+            <p class="subtitle lead">How a robot made of four hinged monoliths can walk, why it has to turn into a wheel to run, and why that wheel needs eight spokes, not four: a MuJoCo model of Interstellar’s robots</p>
+                  <div>
+        <div class="description">
+          Modelling TARS and CASE from Interstellar in MuJoCo: four slabs on a common axle, a crutch-walking gait in which the outer and inner pairs vault over each other, the inverted-pendulum speed limit on walking, the rimless-wheel impact law for the cartwheel, why a four-spoke cross stops dead while an eight-spoke star rolls, and the power needed to cartwheel through water on Miller’s planet.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">sci-fi</div>
+                <div class="quarto-category">robotics</div>
+                <div class="quarto-category">mujoco</div>
+                <div class="quarto-category">dynamics</div>
+                <div class="quarto-category">simulation</div>
+                <div class="quarto-category">three.js</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 12, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-real-robots-were-puppets" id="toc-the-real-robots-were-puppets" class="nav-link active" data-scroll-target="#the-real-robots-were-puppets">The real robots were puppets</a></li>
+  <li><a href="#a-model" id="toc-a-model" class="nav-link" data-scroll-target="#a-model">A model</a></li>
+  <li><a href="#walking-vaulting-over-a-pair-of-slabs" id="toc-walking-vaulting-over-a-pair-of-slabs" class="nav-link" data-scroll-target="#walking-vaulting-over-a-pair-of-slabs">Walking: vaulting over a pair of slabs</a></li>
+  <li><a href="#rolling-the-rimless-wheel-again" id="toc-rolling-the-rimless-wheel-again" class="nav-link" data-scroll-target="#rolling-the-rimless-wheel-again">Rolling: the rimless wheel again</a></li>
+  <li><a href="#cartwheeling-through-water-on-millers-planet" id="toc-cartwheeling-through-water-on-millers-planet" class="nav-link" data-scroll-target="#cartwheeling-through-water-on-millers-planet">Cartwheeling through water on Miller’s planet</a></li>
+  <li><a href="#watch-it" id="toc-watch-it" class="nav-link" data-scroll-target="#watch-it">Watch it</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.tr-view { width: 100%; height: 420px; border-radius: 6px; overflow: hidden; cursor: grab; touch-action: none; background: #dfe6ec; }
+.tr-hud { font-size: .8rem; margin: .45rem 0 .3rem; }
+.tr-controls { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-size: .85rem; }
+.tr-controls button { font-size: .8rem; padding: .12rem .55rem; border: 1px solid #999; border-radius: 5px; background: #fff; color: #222; cursor: pointer; }
+.tr-controls button.on { background: #1f5fa8; color: #fff; border-color: #1f5fa8; }
+.tr-gap { flex: 1; }
+@media (max-width: 600px) { .tr-view { height: 320px; } }
+</style>
+<div class="cell hidden">
+<div class="sourceCode cell-code" id="cb1" data-startfrom="31" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 30;"><span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>THREE <span class="op">=</span> <span class="pp">require</span>(<span class="st">"three@0.128.0/build/three.min.js"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The robots in <em>Interstellar</em> are not humanoid. TARS, CASE and KIPP are each four tall metal slabs joined by an axle through their middles, a little like a folded ruler stood on end. They talk, they joke, and they move in ways no one had seen a film robot move. They shuffle along by swinging pairs of slabs past each other, and on Miller’s planet CASE unfolds into a spinning star and cartwheels through the waves to carry Brand to safety.</p>
+<p>This is the first of three posts on TARS. It builds the robot in MuJoCo, makes it walk, makes it roll, and asks how much of what the film shows the physics allows. The next two posts look at TARS’s other talents: sending data through the second hand of a watch, and having its honesty set to 90%.</p>
+<section id="the-real-robots-were-puppets" class="level2">
+<h2 class="anchored" data-anchor-id="the-real-robots-were-puppets">The real robots were puppets</h2>
+<p>Most of what you see of TARS in the film was physically there. The production built puppets weighing about 200 lb (90 kg) each, about as tall as a person. Bill Irwin, who voiced TARS, walked behind them on set and worked them by hand, and was removed from the shots afterwards. The crew named three walks: an “ape walk”, a “crutch walk” in which the two outside slabs and the middle pair move through alternately, and one with the slabs moving independently. The cartwheel through the water was not a puppet. The splashes came from a water-wheel rig on a quad bike, and the robot was added digitally.</p>
+<p>That leaves a fair question for a simulation: could a real four-slab robot do it?</p>
+</section>
+<section id="a-model" class="level2">
+<h2 class="anchored" data-anchor-id="a-model">A model</h2>
+<p>The film gives no dimensions, so the model assumes some:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Assumed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Slabs</td>
+<td>4, each 1.6 m × 0.30 m × 0.22 m, 22.5 kg</td>
+</tr>
+<tr class="even">
+<td>Total mass</td>
+<td>90 kg (the puppet’s weight)</td>
+</tr>
+<tr class="odd">
+<td>Axle</td>
+<td>through the middle of every slab, 0.8 m above the ground when standing</td>
+</tr>
+<tr class="even">
+<td>Joints per slab</td>
+<td>a hinge about the axle, and a slide along the slab’s length (about 15 cm each way)</td>
+</tr>
+</tbody>
+</table>
+<p>The slide is what lets a slab lift its foot to swing past without scraping the ground. The puppet could do the same, and so could the 25 cm <em>TARS3D</em> robot that Aditya Sripada and Abhishek Warrier built in 2025, whose legs telescope.</p>
+<p>The four slabs act as two pairs, outer and inner. MuJoCo simulates the whole body with contacts at the slab ends and stiff position servos at every joint.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_configs.png" class="img-fluid figure-img"></p>
+<figcaption>The configurations, seen from the side. Standing, the four slabs overlap. Walking, the outer and inner pairs swing past each other. To roll, the slabs fan out into a cross or a star.</figcaption>
+</figure>
+</div>
+</section>
+<section id="walking-vaulting-over-a-pair-of-slabs" class="level2">
+<h2 class="anchored" data-anchor-id="walking-vaulting-over-a-pair-of-slabs">Walking: vaulting over a pair of slabs</h2>
+<p>In the crutch walk one pair is planted while the other swings forward, and then they swap. With its weight on the axle, the robot vaults over the planted pair like an inverted pendulum, which is the same mechanics as the falling walk in the <a href="../../explainers/falling-walk/index.html">Martian tripod explainers</a> and the <a href="../../explainers/inverted-pendulum-walker/index.html">inverted-pendulum walker</a>.</p>
+<p>The controller is short. The swing pair mirrors the stance pair about the vertical, so that it arrives ahead by as much as the stance pair is behind. It holds its slide up by 6 cm for most of the swing and lowers it at the end. Late in each stance, the planted pair extends by 2 cm to push off. When the swing pair touches down, the roles swap.</p>
+<p>With 15° steps the model settles into a steady gait: a step every 0.47 s, 0.41 m per step, <strong>0.87 m/s</strong>, about a human’s slow walk.</p>
+<p>Walking like this has a speed limit. A body vaulting over a leg of length <span class="math inline">\(\ell\)</span> follows an arc, and gravity can only hold it on the arc while the centripetal acceleration <span class="math inline">\(v^2/\ell\)</span> stays below <span class="math inline">\(g\)</span>. In practice animals change gait well before that. People break into a run at a Froude number <span class="math inline">\(v^2/(g\ell)\)</span> of about 0.5. For TARS, with <span class="math inline">\(\ell = 0.8\)</span> m, that is about 2 m/s on Earth and 2.3 m/s at Miller’s planet’s 1.3 g. To go faster it has to stop walking. A person runs. TARS turns into a wheel.</p>
+</section>
+<section id="rolling-the-rimless-wheel-again" class="level2">
+<h2 class="anchored" data-anchor-id="rolling-the-rimless-wheel-again">Rolling: the rimless wheel again</h2>
+<p>Fanned out, the slab ends become the spokes of a <strong>rimless wheel</strong>: a hub that vaults from spoke to spoke with no rim between them. The <a href="../../sci-fi/martian-tripod/index.html#can-a-tripod-roll-the-milking-stool-problem">Martian tripod post</a> used the impact law for this. Each time a spoke strikes the ground, angular momentum about the new foot is conserved, and the wheel keeps a fraction</p>
+<p><span class="math display">\[
+\frac{\omega^+}{\omega^-} = \frac{k^2 + \cos 2\alpha}{1 + k^2}
+\]</span></p>
+<p>of its angular velocity. Here <span class="math inline">\(2\alpha\)</span> is the angle between spokes and <span class="math inline">\(k\ell\)</span> the radius of gyration about the hub. TARS’s mass is spread along its slabs, so <span class="math inline">\(k^2 = 0.32\)</span>.</p>
+<p>How TARS fans out matters a great deal:</p>
+<ul>
+<li><strong>A cross</strong>, two slabs each way at right angles, has four spokes. Then <span class="math inline">\(\cos 2\alpha = \cos 90° = 0\)</span>, and only <span class="math inline">\(k^2/(1 + k^2) = 0.25\)</span> of the spin survives each footfall: <strong>6% of the energy</strong>.</li>
+<li><strong>A star</strong>, the four slabs at 45° to each other, has eight spokes. Now <span class="math inline">\(\cos 45° = 0.71\)</span>, and the wheel keeps 0.78 of its spin: <strong>61% of the energy</strong> per footfall.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_footfall.png" class="img-fluid figure-img"></p>
+<figcaption>The fraction of kinetic energy a rimless wheel keeps at each footfall, against its number of spokes. The stars are single footfalls simulated in MuJoCo with the full TARS model.</figcaption>
+</figure>
+</div>
+<p>MuJoCo agrees with the formula to within a few per cent (0.26 against 0.25 for the cross, 0.81 against 0.78 for the star), the difference coming from the rounded slab ends. Started rolling down the same 6° slope, the star settles into a steady 1.1 m/s. The cross stops within a metre:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_slope.png" class="img-fluid figure-img"></p>
+<figcaption>Speed down a 6° slope for the two configurations, from the same starting push.</figcaption>
+</figure>
+</div>
+<p>So a cartwheeling TARS has to be a star, as <em>TARS3D</em>’s designers also concluded: they modelled their rolling robot as an eight-spoke wheel.</p>
+</section>
+<section id="cartwheeling-through-water-on-millers-planet" class="level2">
+<h2 class="anchored" data-anchor-id="cartwheeling-through-water-on-millers-planet">Cartwheeling through water on Miller’s planet</h2>
+<p>On level ground nothing replaces the energy lost at each footfall except the robot’s own joints. Each slab can push as it lands, which is how <em>TARS3D</em> keeps rolling. Two things limit how fast a star can go.</p>
+<p><strong>Staying on the ground.</strong> The same arc limit applies to the hub vaulting over each spoke. Above about <strong>3.1 m/s</strong> at 1.3 g, the hub can no longer follow the arc and the wheel leaves the ground between footfalls. It bounds rather than rolls, and every landing costs more energy.</p>
+<p><strong>Power.</strong> Footfall losses grow as the cube of the speed, and so does the drag of water:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_power.png" class="img-fluid figure-img"></p>
+<figcaption>Power needed to keep the star rolling at a steady speed on Miller’s planet: footfall losses alone, with Brand’s 80 kg at the hub, and the drag of 0.5 m of water on the slabs.</figcaption>
+</figure>
+</div>
+<p>At 2 m/s the footfalls cost a few hundred watts. At 5 m/s they cost 5–10 kW, and pushing the slabs through half a metre of water adds another 40 kW. At the 10 m/s or so of a dash to outrun a wave, the total passes 300 kW, more than a sports car’s engine, in a 90 kg machine. Carrying Brand also helps the losses grow. Her mass sits at the hub, which lowers <span class="math inline">\(k^2\)</span> and makes each footfall more wasteful.</p>
+<p>It is not physically impossible, but CASE would need the power of a car in a body the size of a filing cabinet, and everything it does at speed would be a series of bounds. The film’s quad bike was the right engineering choice.</p>
+</section>
+<section id="watch-it" class="level2">
+<h2 class="anchored" data-anchor-id="watch-it">Watch it</h2>
+<p>The runs above, replayed from MuJoCo. Drag to orbit the camera and scroll to zoom.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb2" data-startfrom="152" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 151;"><span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a>tarsView <span class="op">=</span> {</span>
+<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div class="tr"&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"tars3d.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> mod<span class="op">.</span><span class="fu">mountTars</span>(host<span class="op">,</span> THREE<span class="op">,</span> <span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"tars_frames.json"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p><em>Next: the second hand of Murph’s watch as a communication channel.</em></p>
+<p><em>The model, gait controller and figure scripts are in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/tars"><code>src/tars</code></a>.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>A. Sripada and A. Warrier, <a href="https://arxiv.org/abs/2510.05001">“Walking, Rolling, and Beyond: First-Principles and RL Locomotion on a TARS-Inspired Robot”</a>, arXiv:2510.05001 (2025).</li>
+<li><a href="https://businessinsider.in/the-interstellar-robot-was-actually-a-200-pound-puppet-an-actor-carried-on-set/articleshow/46762281.cms">“The Interstellar robot was actually a 200-pound puppet an actor carried on set”</a>, Business Insider (2015): the puppets, the three walks and the water-wheel rig.</li>
+<li><a href="https://gizmodo.com/how-interstellars-robots-were-made-with-hardly-any-cgi-1661211650">“How Interstellar’s robots were made with hardly any CGI”</a>, Gizmodo (2014).</li>
+<li>T. McGeer, “Passive dynamic walking”, <em>International Journal of Robotics Research</em> 9(2), 62–82 (1990): the rimless wheel.</li>
+<li>R. McN. Alexander, “Optimization and gaits in the locomotion of vertebrates”, <em>Physiological Reviews</em> 69, 1199–1227 (1989): the Froude number and gait transitions.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlRIUkVFID0gcmVxdWlyZShcInRocmVlQDAuMTI4LjAvYnVpbGQvdGhyZWUubWluLmpzXCIpXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ0YXJzVmlldyA9IHtcbiAgY29uc3QgaG9zdCA9IGh0bC5odG1sYDxkaXYgY2xhc3M9XCJ0clwiPjwvZGl2PmA7XG4gIGNvbnN0IG1vZCA9IGF3YWl0IGltcG9ydChuZXcgVVJMKFwidGFyczNkLmpzXCIsIGRvY3VtZW50LmJhc2VVUkkpLmhyZWYpO1xuICBhd2FpdCBtb2QubW91bnRUYXJzKGhvc3QsIFRIUkVFLCBuZXcgVVJMKFwidGFyc19mcmFtZXMuanNvblwiLCBkb2N1bWVudC5iYXNlVVJJKS5ocmVmKTtcbiAgcmV0dXJuIGhvc3Q7XG59XG4ifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../sci-fi/tars-walking";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
