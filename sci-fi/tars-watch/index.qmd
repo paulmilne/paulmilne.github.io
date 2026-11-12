@@ -3,7 +3,7 @@ title: "TARS, Part 2: A Second Hand as a Data Link"
 subtitle: "Cooper and TARS send the quantum data out of the tesseract by twitching the second hand of Murph's watch in Morse code. How much can a watch hand carry? Shannon worked out the answer for Morse in 1948."
 description: "The watch-hand channel in Interstellar as an information-theory problem: Morse code's timing, Shannon's 1948 capacity of the telegraph (0.539 bits per unit time), how close Morse comes for English and how far for numbers, how long a page, a megabyte and a gigabyte would take, the cliff where timing jitter breaks the code, why a one-way message to a reader who might look later needs a carousel and error correction, and a watch to send your own message."
 author: "Paul Milne"
-date: "2026-11-12"
+date: "2026-11-05"
 categories: [sci-fi, information theory, coding, morse code, shannon]
 image: thumbnail.png
 resources:

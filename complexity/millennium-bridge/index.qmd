@@ -3,7 +3,7 @@ title: "A Bridge Full of Oscillators"
 subtitle: "Why London's Millennium Bridge started swaying two days after it opened: the Kuramoto model with a bridge as the mean field, a critical crowd of about 165 people, and the argument over whether synchrony was the cause or the result"
 description: "Modelling the Millennium Bridge wobble as Kuramoto synchronisation coupled through a resonant structure (Strogatz et al., 2005): an Ott–Antonsen reduction of the walker–bridge system, a critical crowd size proportional to the bridge's damping, a simulated crowd test, crowd force in phase with deck velocity as negative damping, and the later balance-based explanations that need no phase locking."
 author: "Paul Milne"
-date: "2026-11-10"
+date: "2026-11-08"
 categories: [complexity, emergence, synchronisation, nonlinear-dynamics, structures, simulation]
 image: thumbnail.png
 format:

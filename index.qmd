@@ -2,12 +2,45 @@
 title: "math-blog"
 description: "Mathematics, physics and engineering worked through in code: interactive models, explainers, paper reproductions and original research from Paul Milne."
 listing:
-  contents: posts
-  sort: "date desc"
-  type: default
-  categories: true
-  sort-ui: false
-  filter-ui: false
+  - id: latest
+    contents:
+      - "posts/*/index.qmd"
+      - "explainers/*/index.qmd"
+      - "papers/*/index.qmd"
+      - "probability/*/index.qmd"
+      - "cosmology/*/index.qmd"
+      - "astronomy/*/index.qmd"
+      - "sci-fi/*/index.qmd"
+      - "mechanics/*/index.qmd"
+      - "electronics/*/index.qmd"
+      - "complexity/*/index.qmd"
+      - "ai/*/index.qmd"
+      - "space/*/index.qmd"
+    sort: ["date desc", "title"]
+    type: grid
+    max-items: 6
+    fields: [image, date, title, description]
+    sort-ui: false
+    filter-ui: false
+  - id: posts
+    contents: posts
+    sort: "date desc"
+    type: default
+    categories: true
+    sort-ui: false
+    filter-ui: false
 page-layout: full
 title-block-banner: true
 ---
+
+## Latest
+
+::: {#latest}
+:::
+
+Everything else is in the sections along the top.
+
+## Posts
+
+::: {#posts}
+:::

@@ -61,6 +61,11 @@ Rangers dock. Production material lists four propulsion modules with three plasm
 detachable cargo modules, two crew habitats, a cryogenic bay and a command module. The ring turns at about 5.5 rpm
 for artificial gravity.
 
+The name is widely taken as a nod to Ernest Shackleton's ship *Endurance*, though the production does not seem to
+have said so. It fits. Shackleton's 1914 expedition is the classic story of a crew surviving far beyond help, and his
+*Endurance* was trapped and crushed by the ice of the Weddell Sea in 1915. Its namesake is broken over a planet of
+frozen cloud. The wreck of the real ship was found in 2022, 3,008 m down and remarkably intact.
+
 No masses were ever published, so this post assumes some. The results that matter depend only on how the masses
 compare, so the assumptions are set out here to be changed:
 

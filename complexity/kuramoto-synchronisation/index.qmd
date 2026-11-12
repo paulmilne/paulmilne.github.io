@@ -3,7 +3,7 @@ title: "Synchronisation from Nothing"
 subtitle: "The Kuramoto model: a crowd of oscillators, each with its own frequency, that falls into step once the coupling passes a threshold, and why that threshold behaves like a phase transition"
 description: "Simulating the Kuramoto model of globally coupled phase oscillators, deriving the critical coupling K_c = 2/(π g(0)) from a self-consistency argument, the exact Lorentzian result r = √(1 − K_c/K), locked and drifting oscillators, and the mean-field exponent β = 1/2 that links synchronisation to the Ising model and Landau theory."
 author: "Paul Milne"
-date: "2026-11-10"
+date: "2026-11-07"
 categories: [complexity, emergence, synchronisation, nonlinear-dynamics, mean-field, phase-transitions]
 image: thumbnail.png
 format:
