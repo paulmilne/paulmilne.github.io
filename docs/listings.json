@@ -9,10 +9,12 @@
   {
     "listing": "/index.html",
     "items": [
+      "/sci-fi/endurance-docking/index.html",
+      "/astronomy/caird-navigation/index.html",
+      "/probability/endurance-search/index.html",
       "/sci-fi/tars-dials/index.html",
       "/complexity/esp32-fireflies/index.html",
       "/explainers/inverted-pendulum-walker/index.html",
-      "/sci-fi/endurance-docking/index.html",
       "/complexity/ott-antonsen-bimodal/index.html",
       "/explainers/dc-motor-propeller/index.html",
       "/complexity/millennium-bridge/index.html",
@@ -107,6 +109,7 @@
   {
     "listing": "/astronomy/index.html",
     "items": [
+      "/astronomy/caird-navigation/index.html",
       "/astronomy/lx90-schmidt-cassegrain/index.html"
     ]
   },
@@ -145,6 +148,7 @@
   {
     "listing": "/probability/index.html",
     "items": [
+      "/probability/endurance-search/index.html",
       "/probability/pearl-causal-inference/index.html",
       "/probability/birthday-paradox/index.html",
       "/probability/prosecutors-fallacy/index.html"
@@ -178,6 +182,14 @@
       "/complexity/kuramoto-synchronisation/index.html",
       "/complexity/millennium-bridge/index.html",
       "/complexity/ott-antonsen-bimodal/index.html"
+    ]
+  },
+  {
+    "listing": "/origtest.html",
+    "items": [
+      "/posts/diffusion-phase-transition/index.html",
+      "/posts/rg-diffusion-phase-transitions/index.html",
+      "/posts/welcome/index.html"
     ]
   }
 ]

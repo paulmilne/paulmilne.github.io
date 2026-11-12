@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-12">
+<meta name="description" content="The navigation of the James Caird from Elephant Island to South Georgia in 1916: latitude from a noon sun sight, longitude from a chronometer, the errors of a sextant on a pitching boat, dead reckoning between four sights, a Monte Carlo of the voyage, and Shackleton’s decision to aim 30 miles down the coast rather than at the island’s tip, with an interactive simulation.">
+
+<title>Shackleton, Part 1: Finding South Georgia – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Shackleton, Part 1: Finding South Georgia – math-blog">
+<meta property="og:description" content="The navigation of the James Caird from Elephant Island to South Georgia in 1916: latitude from a noon sun sight, longitude from a chronometer, the errors of a sextant on a pitching boat, dead reckoning between four sights, a Monte Carlo of the voyage, and Shackleton’s decision to aim 30 miles down the coast rather than at the island’s tip, with an interactive simulation.">
+<meta property="og:image" content="https://paulmilne.github.io/astronomy/caird-navigation/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="520">
+<meta property="og:image:width" content="780">
+<meta name="twitter:title" content="Shackleton, Part 1: Finding South Georgia – math-blog">
+<meta name="twitter:description" content="The navigation of the James Caird from Elephant Island to South Georgia in 1916: latitude from a noon sun sight, longitude from a chronometer, the errors of a sextant on a pitching boat, dead reckoning between four sights, a Monte Carlo of the voyage, and Shackleton’s decision to aim 30 miles down the coast rather than at the island’s tip, with an interactive simulation.">
+<meta name="twitter:image" content="https://paulmilne.github.io/astronomy/caird-navigation/thumbnail.png">
+<meta name="twitter:image-height" content="520">
+<meta name="twitter:image-width" content="780">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../electronics/index.html"> 
+<span class="menu-text">Electronics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../complexity/index.html"> 
+<span class="menu-text">Complexity</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Shackleton, Part 1: Finding South Georgia</h1>
+            <p class="subtitle lead">Frank Worsley navigated a 7 m open boat 700 nautical miles across the Southern Ocean with a sextant, a chronometer and four sights of the sun. How celestial navigation works, how fast dead reckoning goes wrong, and why Shackleton aimed to miss</p>
+                  <div>
+        <div class="description">
+          The navigation of the James Caird from Elephant Island to South Georgia in 1916: latitude from a noon sun sight, longitude from a chronometer, the errors of a sextant on a pitching boat, dead reckoning between four sights, a Monte Carlo of the voyage, and Shackleton’s decision to aim 30 miles down the coast rather than at the island’s tip, with an interactive simulation.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">astronomy</div>
+                <div class="quarto-category">navigation</div>
+                <div class="quarto-category">probability</div>
+                <div class="quarto-category">history</div>
+                <div class="quarto-category">monte-carlo</div>
+                <div class="quarto-category">shackleton</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 12, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#position-from-the-sun" id="toc-position-from-the-sun" class="nav-link active" data-scroll-target="#position-from-the-sun">Position from the sun</a></li>
+  <li><a href="#between-sights-dead-reckoning" id="toc-between-sights-dead-reckoning" class="nav-link" data-scroll-target="#between-sights-dead-reckoning">Between sights: dead reckoning</a></li>
+  <li><a href="#a-monte-carlo-of-the-voyage" id="toc-a-monte-carlo-of-the-voyage" class="nav-link" data-scroll-target="#a-monte-carlo-of-the-voyage">A Monte Carlo of the voyage</a></li>
+  <li><a href="#aiming-to-miss" id="toc-aiming-to-miss" class="nav-link" data-scroll-target="#aiming-to-miss">Aiming to miss</a></li>
+  <li><a href="#try-it" id="toc-try-it" class="nav-link" data-scroll-target="#try-it">Try it</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.cd-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; align-items: start; }
+.cd-map { width: 100%; height: 360px; border-radius: 6px; }
+.cd-side { display: flex; flex-direction: column; gap: .4rem; font-size: .85rem; }
+.cd-side label { display: flex; flex-direction: column; }
+.cd-side input[type=range] { width: 100%; }
+.cd-sights { display: flex; flex-wrap: wrap; gap: .2rem .7rem; }
+.cd-sights label { flex-direction: row; gap: .25rem; }
+.cd-run { font-size: .85rem; padding: .15rem .8rem; border: 1px solid #1f5fa8; border-radius: 5px; background: #1f5fa8; color: #fff; cursor: pointer; align-self: flex-start; }
+.cd-out { font-size: .9rem; }
+@media (max-width: 700px) { .cd-grid { grid-template-columns: 1fr; } }
+</style>
+<p>In April 1916, the 28 men of Shackleton’s Imperial Trans-Antarctic Expedition were on Elephant Island, a glacier-covered rock off the tip of the Antarctic Peninsula. Their ship <em>Endurance</em> had been crushed in the Weddell Sea ice five months earlier. They had camped on the drifting floes, then rowed and sailed three open boats to the island. Nobody knew where they were, and nobody would come.</p>
+<p>So on 24 April, Shackleton and five men set off in the <em>James Caird</em>, a 7 m whaler that the carpenter Harry McNish had decked over with canvas and sledge runners, for the whaling stations on South Georgia. Port Stanley in the Falklands was nearer, at 540 miles, but against the prevailing north-westerly winds. South Georgia, about 700 nautical miles away in a straight line and 800 by the route they took, lay downwind in the belt of westerlies. It is also a 170 km island in an empty ocean. A boat that passed it could not beat back against the wind, and the next land was Africa.</p>
+<p>The navigator was Frank Worsley, the <em>Endurance</em>’s captain. This post works through how he found the island: the astronomy of a sun sight, the errors that build up between sights, and the decision about where to aim.</p>
+<section id="position-from-the-sun" class="level2">
+<h2 class="anchored" data-anchor-id="position-from-the-sun">Position from the sun</h2>
+<p>Worsley had a sextant, a chronometer that he had checked against the sun when they left, and tables. Those give a position in two halves.</p>
+<p><strong>Latitude from the noon sight.</strong> At local noon the sun crosses the meridian and reaches its highest altitude <span class="math inline">\(h\)</span>. Its angle from the zenith is then exactly the angle between the observer’s latitude and the sun’s declination <span class="math inline">\(\delta\)</span>, which the almanac gives for every day:</p>
+<p><span class="math display">\[
+\phi = \delta - (90^\circ - h) \qquad \text{(sun to the north, observer in the south).}
+\]</span></p>
+<p>In early May the sun’s declination is about 16° north. At 57° south, the noon sun is only about 17° above the horizon. One minute of arc of error in the altitude is one nautical mile of error in latitude.</p>
+<p><strong>Longitude from the clock.</strong> The sun crosses the Greenwich meridian at 12:00 Greenwich apparent time and moves west at 15° an hour. Timing local noon, or any sight away from noon, against a chronometer keeping Greenwich time gives longitude: four seconds of clock error is one minute of longitude. At 55° south, a minute of longitude is 0.57 nautical miles, so a chronometer that has drifted by 10 seconds puts the boat 1.4 nautical miles out. The clock was the smaller worry.</p>
+<p><strong>The sextant was the larger one.</strong> A sight measures the angle from the sea horizon to the sun. In the Southern Ocean in May, with waves several metres high, the horizon from a small boat is usually the next wave. Worsley knelt on a thwart with two men holding him, waited for the boat to rise on a crest, brought the sun down to what he hoped was the true horizon, and called “Stop!” so Shackleton could note the chronometer time. A few minutes of arc of error, a few nautical miles, was a good sight. The sun showed itself four times in fourteen days, on 26 April and on 3, 4 and 7 May.</p>
+</section>
+<section id="between-sights-dead-reckoning" class="level2">
+<h2 class="anchored" data-anchor-id="between-sights-dead-reckoning">Between sights: dead reckoning</h2>
+<p>The rest of the time, Worsley worked by dead reckoning: course steered, times speed, added up. Every term in the sum is uncertain. The compass can be misread in a pitching boat, and the boat makes leeway, sliding sideways down wind and sea. Speed comes from guesswork and the run of the sea. And the Antarctic Circumpolar Current sets the whole ocean eastward at an unknown rate of several miles a day.</p>
+<p>Errors in dead reckoning grow as the voyage goes on, and a steady bias grows fastest. A course error of just 5° held for 700 miles puts the boat 60 miles to one side of its intended track, more than the width of the target. A sight resets the position, to within its own error, and the uncertainty starts growing again from there. This predict-and-correct cycle is the structure of the Kalman filter in the <a href="../../electronics/quadcopters-kalman/index.html">quadcopter post</a>. Here the predictions run for days and the corrections come once or twice a week.</p>
+</section>
+<section id="a-monte-carlo-of-the-voyage" class="level2">
+<h2 class="anchored" data-anchor-id="a-monte-carlo-of-the-voyage">A Monte Carlo of the voyage</h2>
+<p>To see what those errors mean for landfall, simulate the voyage thousands of times. Each simulated boat:</p>
+<ul>
+<li>runs north for two days, as Shackleton did, to get clear of the pack ice, then steers for an aim point on South Georgia’s south-west coast;</li>
+<li>sails about 48 nautical miles a day through the water, with a 12% random error in speed;</li>
+<li>carries a steady steering bias drawn with a spread of 6°, plus random yawing;</li>
+<li>is set east by a current of 8 ± 4 nautical miles a day that the navigator cannot measure;</li>
+<li>takes sun sights on the four real dates, each with an error of 5 nautical miles in each direction, and steers from the corrected position afterwards;</li>
+<li>cannot sail back west into the westerlies once it has passed the island.</li>
+</ul>
+<p>The island is a simplified outline. All of these numbers are assumptions chosen to be plausible, not measurements from the voyage. Aiming 30 nautical miles down the coast, as Shackleton did:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_tracks.png" class="img-fluid figure-img"></p>
+<figcaption>One hundred and twenty simulated voyages from Point Wild, aiming 30 nautical miles down South Georgia’s south-west coast (star). Most reach the island (blue). A few pass north of it (orange) or south (brass) and are lost.</figcaption>
+</figure>
+</div>
+<p>About <strong>87%</strong> of these simulated voyages reach the island, and the sights are what make that possible. With dead reckoning alone, landfall falls to about 30%. With only the first sight it is 33%. The two May sights do most of the work: they come late enough that the error left to accumulate before landfall is small.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_sights.png" class="img-fluid figure-img"></p>
+<figcaption>Probability of landfall against the error of each sun sight, for different sets of sights.</figcaption>
+</figure>
+</div>
+<p>The result is not very sensitive to the quality of each sight. Going from 5 to 15 nautical miles of error per sight costs about 7 percentage points (87% to 80%), because a rough fix on 3 May still clears away ten days of dead-reckoning error. Having a sight at all mattered much more than having a good one.</p>
+</section>
+<section id="aiming-to-miss" class="level2">
+<h2 class="anchored" data-anchor-id="aiming-to-miss">Aiming to miss</h2>
+<p>Shackleton’s account explains his course. Missing the northern end of the island would have been fatal, because the westerlies would have carried the boat past with no way back, so he deliberately steered for a point about thirty miles down the coast. Navigators call this <strong>aiming off</strong>. When the uncertainty is wide compared with the target, aim where an error in the dangerous direction still hits.</p>
+<p>The simulation agrees with him:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_aim.png" class="img-fluid figure-img"></p>
+<figcaption>Probability of landfall and of missing the island to the north or south, against how far down the south-west coast the boat aims.</figcaption>
+</figure>
+</div>
+<p>Aiming at the north-western tip gives a coin toss: about 42% landfall, with half the boats passing north of the island. Aiming 30 nautical miles down the coast gives 87%, and the best in this model, about 35 to 45 nautical miles down, gives 89–90%. Aiming further still costs landfalls again, as the aim point nears the narrow south-eastern end. Shackleton’s choice was within a few per cent of the best this model can find, and he made it with a scrap of chart.</p>
+<p>The real voyage reached the island, after a hurricane that nearly drove them onto the cliffs. They landed in King Haakon Bay on the south-west coast on 10 May. That coast was the uninhabited side, so Shackleton, Worsley and Tom Crean then crossed the unmapped mountains of the interior in 36 hours to the whaling station at Stromness. Shackleton’s fourth rescue attempt reached Elephant Island on 30 August 1916, and every one of the 22 men left there survived.</p>
+</section>
+<section id="try-it" class="level2">
+<h2 class="anchored" data-anchor-id="try-it">Try it</h2>
+<p>Set the aim point and the errors, choose which sights to take, and run the voyage 300 times.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="145" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 144;"><span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a>cairdView <span class="op">=</span> {</span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"caird.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountCaird</span>(host)<span class="op">;</span></span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p><em>Next: <a href="../../probability/endurance-search/index.html">Part 2</a>, Worsley’s other famous position, the one where</em> Endurance <em>sank, and how it led to the wreck 106 years later.</em></p>
+<p><em>The simulation and figure scripts are in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/shackleton"><code>src/shackleton</code></a>.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>E. Shackleton, <a href="https://standardebooks.org/ebooks/ernest-shackleton/south/text/chapter-9"><em>South</em></a>, Heinemann (1919), chapter 9: the boat journey.</li>
+<li>F. A. Worsley, <em>Shackleton’s Boat Journey</em>, Hodder &amp; Stoughton (1933).</li>
+<li><a href="https://bigthink.com/the-past/endurance-captain-frank-worsley/">“Endurance captain Frank Worsley, Shackleton’s gifted navigator, knew how to stay the course”</a>, Big Think (2022).</li>
+<li><a href="https://jamescairdsociety.com/the-endurance-expedition/">The Endurance Expedition and the voyage of the James Caird</a>, James Caird Society: dates of the sights and the landing.</li>
+<li>N. Bowditch, <em>The American Practical Navigator</em>, US National Geospatial-Intelligence Agency (2019 edition): noon sights, time sights and dead reckoning.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNhaXJkVmlldyA9IHtcbiAgY29uc3QgaG9zdCA9IGh0bC5odG1sYDxkaXY+PC9kaXY+YDtcbiAgY29uc3QgbW9kID0gYXdhaXQgaW1wb3J0KG5ldyBVUkwoXCJjYWlyZC5qc1wiLCBkb2N1bWVudC5iYXNlVVJJKS5ocmVmKTtcbiAgbW9kLm1vdW50Q2FpcmQoaG9zdCk7XG4gIHJldHVybiBob3N0O1xufVxuIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../astronomy/caird-navigation";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

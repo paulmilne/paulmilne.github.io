@@ -19,6 +19,7 @@ listing:
     sort: ["date desc", "title"]
     type: grid
     max-items: 6
+    page-size: 200
     fields: [image, date, title, description]
     sort-ui: false
     filter-ui: false

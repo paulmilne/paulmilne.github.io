@@ -54,7 +54,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/index.html</loc>
-    <lastmod>2026-11-12T08:02:36.513Z</lastmod>
+    <lastmod>2026-11-12T08:29:05.255Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/statics-jacobian/index.html</loc>
@@ -70,7 +70,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/index.html</loc>
-    <lastmod>2026-09-06T11:35:33.871Z</lastmod>
+    <lastmod>2026-09-06T11:35:33.000Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/falling-walk/index.html</loc>
@@ -78,7 +78,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/cgle-pattern-morphology/index.html</loc>
-    <lastmod>2026-10-25T08:54:17.392Z</lastmod>
+    <lastmod>2026-10-25T08:54:17.000Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/bifurcation-vs-langevin/index.html</loc>
@@ -222,7 +222,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/probability/index.html</loc>
-    <lastmod>2026-10-17T10:53:59.000Z</lastmod>
+    <lastmod>2026-10-17T10:53:59.270Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/probability/prosecutors-fallacy/index.html</loc>
@@ -230,7 +230,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/sci-fi/index.html</loc>
-    <lastmod>2026-10-24T12:17:50.212Z</lastmod>
+    <lastmod>2026-10-24T12:17:50.000Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/space/apollo-11-part-1-launch-to-tli/index.html</loc>
@@ -266,11 +266,11 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/complexity/index.html</loc>
-    <lastmod>2026-11-11T09:00:00.809Z</lastmod>
+    <lastmod>2026-11-10T08:08:59.169Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/complexity/kuramoto-synchronisation/index.html</loc>
-    <lastmod>2026-11-12T08:09:35.390Z</lastmod>
+    <lastmod>2026-11-10T08:40:26.032Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/complexity/ott-antonsen-bimodal/index.html</loc>
@@ -278,7 +278,7 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/complexity/millennium-bridge/index.html</loc>
-    <lastmod>2026-11-12T08:10:35.718Z</lastmod>
+    <lastmod>2026-11-11T08:32:43.777Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/explainers/inverted-pendulum-walker/index.html</loc>
@@ -286,22 +286,34 @@
   </url>
   <url>
     <loc>https://paulmilne.github.io/complexity/esp32-fireflies/index.html</loc>
-    <lastmod>2026-11-11T09:00:00.785Z</lastmod>
+    <lastmod>2026-11-11T08:59:37.937Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/sci-fi/endurance-docking/index.html</loc>
-    <lastmod>2026-11-12T08:07:58.533Z</lastmod>
+    <lastmod>2026-11-12T08:15:28.132Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/sci-fi/tars-walking/index.html</loc>
-    <lastmod>2026-11-12T08:06:08.761Z</lastmod>
+    <lastmod>2026-11-11T22:33:34.167Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/sci-fi/tars-watch/index.html</loc>
-    <lastmod>2026-11-12T08:06:44.129Z</lastmod>
+    <lastmod>2026-11-11T22:38:32.182Z</lastmod>
   </url>
   <url>
     <loc>https://paulmilne.github.io/sci-fi/tars-dials/index.html</loc>
-    <lastmod>2026-11-11T22:43:28.129Z</lastmod>
+    <lastmod>2026-11-11T22:43:14.669Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/astronomy/caird-navigation/index.html</loc>
+    <lastmod>2026-11-12T08:29:05.259Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/probability/endurance-search/index.html</loc>
+    <lastmod>2026-11-12T08:29:05.284Z</lastmod>
+  </url>
+  <url>
+    <loc>https://paulmilne.github.io/origtest.html</loc>
+    <lastmod>2026-11-12T08:27:32.945Z</lastmod>
   </url>
 </urlset>
