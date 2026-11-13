@@ -18,6 +18,7 @@ project:
     - "papers/**"
     - "ai/**"
     - "space/**"
+    - "geb/**"
     - "!dl/"                # research working tree, not a site page
     - "!GEMINI.md"          # assistant notes, not a site page
     - "!CLASS_option_evaluation.qmd"  # needs local Excel data, not a site page
@@ -29,6 +30,7 @@ website:
   open-graph: true
   twitter-card: true
   navbar:
+    collapse-below: xl     # 13 sections no longer fit on one line below 1200px
     left:
       - href: index.qmd
         text: Posts
@@ -54,6 +56,8 @@ website:
         text: AI
       - href: space/index.qmd
         text: Space
+      - href: geb/index.qmd
+        text: GEB
     right:
       - about.qmd
       - icon: linkedin

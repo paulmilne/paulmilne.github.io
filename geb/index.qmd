@@ -1,0 +1,15 @@
+---
+title: "GEB"
+description: "A series worked through while re-reading Douglas Hofstadter's Gödel, Escher, Bach: formal systems, self-reference, recursion, symmetry in music and art, and minds made of loops, with interactive models and machine-checked proofs."
+listing:
+  contents: .
+  sort: ["date desc", "title"]
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---
+
+Posts worked through while re-reading Douglas Hofstadter's *Gödel, Escher, Bach: an Eternal Golden Braid* (1979): formal systems and self-reference, recursion, symmetry in Bach's canons and Escher's prints, and how meaning can arise from patterns of patterns, built as interactive models and, where possible, checked by machine.

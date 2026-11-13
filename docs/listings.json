@@ -1,14 +1,112 @@
 [
   {
-    "listing": "/papers/index.html",
+    "listing": "/sci-fi/index.html",
     "items": [
-      "/papers/instrumenting-agent-cybernetics/index.html",
-      "/papers/rg-critical-phenomena/index.html"
+      "/sci-fi/endurance-docking/index.html",
+      "/sci-fi/tars-dials/index.html",
+      "/sci-fi/tars-watch/index.html",
+      "/sci-fi/tars-walking/index.html",
+      "/sci-fi/gargantua/index.html",
+      "/sci-fi/martian-tripod/index.html"
+    ]
+  },
+  {
+    "listing": "/mechanics/index.html",
+    "items": [
+      "/mechanics/sailing-part-2-tacking-gybing-tide/index.html",
+      "/mechanics/sailing-part-1-two-wings/index.html",
+      "/mechanics/lego-numbers/index.html",
+      "/mechanics/lego-orrery/index.html",
+      "/mechanics/lego-solar-system/index.html",
+      "/mechanics/meccano-shovel/index.html"
+    ]
+  },
+  {
+    "listing": "/explainers/index.html",
+    "items": [
+      "/explainers/decision-analysis/index.html",
+      "/explainers/eigenvectors/index.html",
+      "/explainers/pca/index.html",
+      "/explainers/inverted-pendulum-walker/index.html",
+      "/explainers/dc-motor-propeller/index.html",
+      "/explainers/kalman-filter/index.html",
+      "/explainers/einsum/index.html",
+      "/explainers/apollo-11-frames-of-reference/index.html",
+      "/explainers/accretion-disk-light/index.html",
+      "/explainers/black-hole-ray-tracing/index.html",
+      "/explainers/kerr-black-hole/index.html",
+      "/explainers/light-bending-schwarzschild/index.html",
+      "/explainers/cgle-pattern-morphology/index.html",
+      "/explainers/falling-walk/index.html",
+      "/explainers/forward-kinematics/index.html",
+      "/explainers/inverse-kinematics/index.html",
+      "/explainers/statics-jacobian/index.html",
+      "/explainers/bifurcation-vs-langevin/index.html",
+      "/explainers/markov-chains-diffusion/index.html",
+      "/explainers/mean-field-annealed-disorder/index.html",
+      "/explainers/toy-diffusion-model/index.html"
+    ]
+  },
+  {
+    "listing": "/cosmology/index.html",
+    "items": [
+      "/cosmology/many-worlds/index.html",
+      "/cosmology/rees-six-numbers/index.html",
+      "/cosmology/stellar-nucleosynthesis/index.html"
+    ]
+  },
+  {
+    "listing": "/complexity/index.html",
+    "items": [
+      "/complexity/esp32-fireflies/index.html",
+      "/complexity/ott-antonsen-bimodal/index.html",
+      "/complexity/millennium-bridge/index.html",
+      "/complexity/kuramoto-synchronisation/index.html"
+    ]
+  },
+  {
+    "listing": "/ai/index.html",
+    "items": [
+      "/ai/byte-pair-encoding-statistics/index.html",
+      "/ai/embeddings-part-1-words-to-vectors/index.html",
+      "/ai/embeddings-part-2-search-and-retrieval/index.html",
+      "/ai/scaling-laws-part-1-power-laws/index.html",
+      "/ai/scaling-laws-part-2-beyond-chinchilla/index.html",
+      "/ai/transformer-part-1-operation-by-operation/index.html",
+      "/ai/transformer-part-2-inside-gpt-2/index.html",
+      "/ai/transformer-part-3-advances/index.html"
+    ]
+  },
+  {
+    "listing": "/astronomy/index.html",
+    "items": [
+      "/astronomy/caird-navigation/index.html",
+      "/astronomy/lx90-schmidt-cassegrain/index.html"
+    ]
+  },
+  {
+    "listing": "/electronics/index.html",
+    "items": [
+      "/electronics/stampfly-digital-twin/index.html",
+      "/electronics/nmr-marginal-oscillator/index.html",
+      "/electronics/quadcopters-kalman/index.html"
+    ]
+  },
+  {
+    "listing": "/geb/index.html",
+    "items": [
+      "/geb/pq-system/index.html",
+      "/geb/mu-puzzle/index.html"
     ]
   },
   {
     "listing": "/index.html",
     "items": [
+      "/explainers/decision-analysis/index.html",
+      "/explainers/eigenvectors/index.html",
+      "/geb/pq-system/index.html",
+      "/explainers/pca/index.html",
+      "/geb/mu-puzzle/index.html",
       "/sci-fi/endurance-docking/index.html",
       "/astronomy/caird-navigation/index.html",
       "/probability/endurance-search/index.html",
@@ -76,73 +174,10 @@
     ]
   },
   {
-    "listing": "/explainers/index.html",
+    "listing": "/papers/index.html",
     "items": [
-      "/explainers/inverted-pendulum-walker/index.html",
-      "/explainers/dc-motor-propeller/index.html",
-      "/explainers/kalman-filter/index.html",
-      "/explainers/einsum/index.html",
-      "/explainers/apollo-11-frames-of-reference/index.html",
-      "/explainers/accretion-disk-light/index.html",
-      "/explainers/black-hole-ray-tracing/index.html",
-      "/explainers/kerr-black-hole/index.html",
-      "/explainers/light-bending-schwarzschild/index.html",
-      "/explainers/cgle-pattern-morphology/index.html",
-      "/explainers/falling-walk/index.html",
-      "/explainers/forward-kinematics/index.html",
-      "/explainers/inverse-kinematics/index.html",
-      "/explainers/statics-jacobian/index.html",
-      "/explainers/bifurcation-vs-langevin/index.html",
-      "/explainers/markov-chains-diffusion/index.html",
-      "/explainers/mean-field-annealed-disorder/index.html",
-      "/explainers/toy-diffusion-model/index.html"
-    ]
-  },
-  {
-    "listing": "/cosmology/index.html",
-    "items": [
-      "/cosmology/many-worlds/index.html",
-      "/cosmology/rees-six-numbers/index.html",
-      "/cosmology/stellar-nucleosynthesis/index.html"
-    ]
-  },
-  {
-    "listing": "/astronomy/index.html",
-    "items": [
-      "/astronomy/caird-navigation/index.html",
-      "/astronomy/lx90-schmidt-cassegrain/index.html"
-    ]
-  },
-  {
-    "listing": "/ai/index.html",
-    "items": [
-      "/ai/byte-pair-encoding-statistics/index.html",
-      "/ai/embeddings-part-1-words-to-vectors/index.html",
-      "/ai/embeddings-part-2-search-and-retrieval/index.html",
-      "/ai/scaling-laws-part-1-power-laws/index.html",
-      "/ai/scaling-laws-part-2-beyond-chinchilla/index.html",
-      "/ai/transformer-part-1-operation-by-operation/index.html",
-      "/ai/transformer-part-2-inside-gpt-2/index.html",
-      "/ai/transformer-part-3-advances/index.html"
-    ]
-  },
-  {
-    "listing": "/electronics/index.html",
-    "items": [
-      "/electronics/stampfly-digital-twin/index.html",
-      "/electronics/nmr-marginal-oscillator/index.html",
-      "/electronics/quadcopters-kalman/index.html"
-    ]
-  },
-  {
-    "listing": "/mechanics/index.html",
-    "items": [
-      "/mechanics/sailing-part-2-tacking-gybing-tide/index.html",
-      "/mechanics/sailing-part-1-two-wings/index.html",
-      "/mechanics/lego-numbers/index.html",
-      "/mechanics/lego-orrery/index.html",
-      "/mechanics/lego-solar-system/index.html",
-      "/mechanics/meccano-shovel/index.html"
+      "/papers/instrumenting-agent-cybernetics/index.html",
+      "/papers/rg-critical-phenomena/index.html"
     ]
   },
   {
@@ -155,17 +190,6 @@
     ]
   },
   {
-    "listing": "/sci-fi/index.html",
-    "items": [
-      "/sci-fi/endurance-docking/index.html",
-      "/sci-fi/tars-dials/index.html",
-      "/sci-fi/tars-walking/index.html",
-      "/sci-fi/tars-watch/index.html",
-      "/sci-fi/gargantua/index.html",
-      "/sci-fi/martian-tripod/index.html"
-    ]
-  },
-  {
     "listing": "/space/index.html",
     "items": [
       "/space/tindall-vent-bent-descent-lament/index.html",
@@ -173,23 +197,6 @@
       "/space/apollo-11-part-2-translunar-coast/index.html",
       "/space/apollo-11-part-3-descent-and-landing/index.html",
       "/space/apollo-11-part-1-launch-to-tli/index.html"
-    ]
-  },
-  {
-    "listing": "/complexity/index.html",
-    "items": [
-      "/complexity/esp32-fireflies/index.html",
-      "/complexity/kuramoto-synchronisation/index.html",
-      "/complexity/millennium-bridge/index.html",
-      "/complexity/ott-antonsen-bimodal/index.html"
-    ]
-  },
-  {
-    "listing": "/origtest.html",
-    "items": [
-      "/posts/diffusion-phase-transition/index.html",
-      "/posts/rg-diffusion-phase-transitions/index.html",
-      "/posts/welcome/index.html"
     ]
   }
 ]

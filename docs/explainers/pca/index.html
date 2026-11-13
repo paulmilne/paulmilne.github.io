@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-13">
+<meta name="description" content="An explainer on principal component analysis: variance along a direction, why maximising it gives the eigenvalue equation for the covariance matrix, PCA as the best-fitting line and the best low-rank approximation, the SVD route, standardising, scree plots and parallel analysis, scores, loadings and biplots, worked through on the wine and handwritten-digit datasets, with the pitfalls. With an interactive.">
+
+<title>Principal Component Analysis – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Principal Component Analysis – math-blog">
+<meta property="og:description" content="An explainer on principal component analysis: variance along a direction, why maximising it gives the eigenvalue equation for the covariance matrix, PCA as the best-fitting line and the best low-rank approximation, the SVD route, standardising, scree plots and parallel analysis, scores, loadings and biplots, worked through on the wine and handwritten-digit datasets, with the pitfalls. With an interactive.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/pca/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="492">
+<meta property="og:image:width" content="727">
+<meta name="twitter:title" content="Principal Component Analysis – math-blog">
+<meta name="twitter:description" content="An explainer on principal component analysis: variance along a direction, why maximising it gives the eigenvalue equation for the covariance matrix, PCA as the best-fitting line and the best low-rank approximation, the SVD route, standardising, scree plots and parallel analysis, scores, loadings and biplots, worked through on the wine and handwritten-digit datasets, with the pitfalls. With an interactive.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/pca/thumbnail.png">
+<meta name="twitter:image-height" content="492">
+<meta name="twitter:image-width" content="727">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-xl " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../probability/index.html"> 
+<span class="menu-text">Probability</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cosmology/index.html"> 
+<span class="menu-text">Cosmology</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../astronomy/index.html"> 
+<span class="menu-text">Astronomy</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../mechanics/index.html"> 
+<span class="menu-text">Mechanics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../electronics/index.html"> 
+<span class="menu-text">Electronics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../complexity/index.html"> 
+<span class="menu-text">Complexity</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../ai/index.html"> 
+<span class="menu-text">AI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../space/index.html"> 
+<span class="menu-text">Space</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../geb/index.html"> 
+<span class="menu-text">GEB</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Principal Component Analysis</h1>
+            <p class="subtitle lead">The eigenvectors of a covariance matrix are the directions in which data varies most. How that turns many correlated measurements into a few that matter, and where it misleads</p>
+                  <div>
+        <div class="description">
+          An explainer on principal component analysis: variance along a direction, why maximising it gives the eigenvalue equation for the covariance matrix, PCA as the best-fitting line and the best low-rank approximation, the SVD route, standardising, scree plots and parallel analysis, scores, loadings and biplots, worked through on the wine and handwritten-digit datasets, with the pitfalls. With an interactive.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">linear algebra</div>
+                <div class="quarto-category">eigenvalues</div>
+                <div class="quarto-category">statistics</div>
+                <div class="quarto-category">dimensionality reduction</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 13, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-variance-along-a-direction" id="toc-the-variance-along-a-direction" class="nav-link active" data-scroll-target="#the-variance-along-a-direction">The variance along a direction</a></li>
+  <li><a href="#try-it" id="toc-try-it" class="nav-link" data-scroll-target="#try-it">Try it</a></li>
+  <li><a href="#two-other-ways-to-see-it" id="toc-two-other-ways-to-see-it" class="nav-link" data-scroll-target="#two-other-ways-to-see-it">Two other ways to see it</a></li>
+  <li><a href="#how-it-is-computed" id="toc-how-it-is-computed" class="nav-link" data-scroll-target="#how-it-is-computed">How it is computed</a></li>
+  <li><a href="#a-worked-example-178-wines" id="toc-a-worked-example-178-wines" class="nav-link" data-scroll-target="#a-worked-example-178-wines">A worked example: 178 wines</a>
+  <ul class="collapse">
+  <li><a href="#scaling-matters" id="toc-scaling-matters" class="nav-link" data-scroll-target="#scaling-matters">Scaling matters</a></li>
+  <li><a href="#how-many-components-to-keep" id="toc-how-many-components-to-keep" class="nav-link" data-scroll-target="#how-many-components-to-keep">How many components to keep</a></li>
+  <li><a href="#reading-the-components-loadings-and-the-biplot" id="toc-reading-the-components-loadings-and-the-biplot" class="nav-link" data-scroll-target="#reading-the-components-loadings-and-the-biplot">Reading the components: loadings and the biplot</a></li>
+  </ul></li>
+  <li><a href="#another-example-compressing-handwritten-digits" id="toc-another-example-compressing-handwritten-digits" class="nav-link" data-scroll-target="#another-example-compressing-handwritten-digits">Another example: compressing handwritten digits</a></li>
+  <li><a href="#where-pca-misleads" id="toc-where-pca-misleads" class="nav-link" data-scroll-target="#where-pca-misleads">Where PCA misleads</a></li>
+  <li><a href="#where-it-is-used" id="toc-where-it-is-used" class="nav-link" data-scroll-target="#where-it-is-used">Where it is used</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.pc-grid { display: grid; grid-template-columns: auto 1fr; gap: 1.2rem; align-items: start; margin: 1rem 0; }
+.pc-canvas { border: 1px solid #d6dbe2; border-radius: 6px; touch-action: none; cursor: crosshair; }
+.pc-curve { border: 1px solid #e3e6ea; border-radius: 4px; }
+.pc-side { display: flex; flex-direction: column; gap: .5rem; font-size: .86rem; min-width: 0; }
+.pc-side label { display: flex; flex-direction: column; }
+.pc-side input[type=range] { width: 100%; max-width: 360px; }
+.pc-row { display: flex; flex-wrap: wrap; gap: .35rem; }
+.pc-row button { font-size: .8rem; padding: .12rem .55rem; border: 1px solid #999; border-radius: 5px; background: #fff; color: #222; cursor: pointer; }
+.pc-note { color: #777; font-size: .8rem; }
+.pc-info { display: flex; flex-direction: column; gap: .25rem; }
+.pc-m { font-family: ui-monospace, Menlo, monospace; font-size: .82rem; }
+.pc-dim { color: #666; font-size: .8rem; }
+@media (max-width: 700px) { .pc-grid { grid-template-columns: 1fr; } }
+</style>
+<p>Measure thirteen chemical properties of 178 wines and you have a table that is hard to look at. Many of the columns move together: wines high in one kind of phenol tend to be high in the others. Principal component analysis (PCA) finds new axes for the data, ordered by how much of its variation each one captures, so that a handful of them can stand in for all thirteen.</p>
+<p>The <a href="../../explainers/eigenvectors/index.html">eigenvectors explainer</a> ended with a cloud of points whose covariance matrix had eigenvectors along the axes of the cloud. PCA is that observation, turned into a method. Karl Pearson described it in 1901 as finding “lines and planes of closest fit”, and Harold Hotelling named the principal components in 1933.</p>
+<section id="the-variance-along-a-direction" class="level2">
+<h2 class="anchored" data-anchor-id="the-variance-along-a-direction">The variance along a direction</h2>
+<p>Centre the data, so each variable has mean zero, and collect it in a matrix <span class="math inline">\(X\)</span> with one row per observation. Its covariance matrix is <span class="math display">\[
+\Sigma = \frac{1}{n-1} X^\mathsf{T} X ,
+\]</span> with each variable’s variance on the diagonal and the covariances off it.</p>
+<p>Now pick a direction, a unit vector <span class="math inline">\(u\)</span>, and project every point onto it. The projected values are <span class="math inline">\(Xu\)</span>, and their variance is <span class="math display">\[
+\operatorname{Var}(Xu) = \frac{1}{n-1}\,(Xu)^\mathsf{T}(Xu) = u^\mathsf{T} \Sigma\, u .
+\]</span></p>
+<p><strong>PCA asks for the direction that makes this as large as possible</strong>, with <span class="math inline">\(u\)</span> kept at length 1. Using a Lagrange multiplier <span class="math inline">\(\lambda\)</span> for the constraint <span class="math inline">\(u^\mathsf{T} u = 1\)</span> and setting the derivative to zero gives <span class="math display">\[
+\frac{\partial}{\partial u}\left[u^\mathsf{T}\Sigma u - \lambda (u^\mathsf{T} u - 1)\right] = 2\Sigma u - 2\lambda u = 0
+\quad\Longrightarrow\quad
+\Sigma u = \lambda u .
+\]</span> So the best direction is an eigenvector of the covariance matrix. Multiplying both sides by <span class="math inline">\(u^\mathsf{T}\)</span> shows that the variance along it is <span class="math inline">\(u^\mathsf{T}\Sigma u = \lambda\)</span>. The direction with the most variance is the eigenvector with the <strong>largest eigenvalue</strong>: the first principal component.</p>
+<p>The second principal component is the direction of greatest variance perpendicular to the first, and it turns out to be the eigenvector with the second-largest eigenvalue. And so on. Because <span class="math inline">\(\Sigma\)</span> is symmetric, its eigenvectors are perpendicular and its eigenvalues are real and non-negative, so this always works. The eigenvalues add up to the total variance (the trace of <span class="math inline">\(\Sigma\)</span>), so <span class="math inline">\(\lambda_k / \sum_j \lambda_j\)</span> is the share of the variance that component <span class="math inline">\(k\)</span> explains.</p>
+</section>
+<section id="try-it" class="level2">
+<h2 class="anchored" data-anchor-id="try-it">Try it</h2>
+<p>Turn the orange line through the cloud. The small orange dots are the projections of the points onto it, and the plot on the right shows their variance as the line turns. The peak is at the first eigenvector, and its height is <span class="math inline">\(\lambda_1\)</span>; the trough is at the second, with height <span class="math inline">\(\lambda_2\)</span>. Shift-click to add an outlier and watch how far a single point can swing the components.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="84" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 83;"><span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>pcaView <span class="op">=</span> {</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"pca.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountPCA</span>(host)<span class="op">;</span></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+<section id="two-other-ways-to-see-it" class="level2">
+<h2 class="anchored" data-anchor-id="two-other-ways-to-see-it">Two other ways to see it</h2>
+<p><strong>Closest fit.</strong> For each point, the squared distance to the origin splits into a part along <span class="math inline">\(u\)</span> and a part perpendicular to it. The total is fixed, so making the variance along <span class="math inline">\(u\)</span> as large as possible is the same as making the perpendicular distances as small as possible. That was Pearson’s description: PC1 is the line that passes closest to the points. This is not the same as a regression line, which minimises vertical distances only and treats one variable as the thing to predict.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_lines.png" class="img-fluid figure-img"></p>
+<figcaption>Left: the first principal component and the perpendicular distance from each point to it. Right: regressing y on x and x on y give two different lines; PC1 lies between them and does not depend on which variable is called x.</figcaption>
+</figure>
+</div>
+<p><strong>Best approximation.</strong> Keep the first <span class="math inline">\(k\)</span> components and drop the rest, and you get an approximation to the data of rank <span class="math inline">\(k\)</span>. The Eckart–Young theorem says no other rank-<span class="math inline">\(k\)</span> approximation is closer. PCA is the best possible linear compression of the data to <span class="math inline">\(k\)</span> numbers per observation.</p>
+</section>
+<section id="how-it-is-computed" class="level2">
+<h2 class="anchored" data-anchor-id="how-it-is-computed">How it is computed</h2>
+<ol type="1">
+<li><strong>Centre</strong> each variable by subtracting its mean.</li>
+<li><strong>Standardise</strong> each variable by dividing by its standard deviation, if the variables are in different units (more on this below). This makes <span class="math inline">\(\Sigma\)</span> the correlation matrix.</li>
+<li><strong>Decompose.</strong> Find the eigenvectors and eigenvalues of <span class="math inline">\(\Sigma\)</span>, sorted from the largest eigenvalue down.</li>
+<li><strong>Project.</strong> The <em>scores</em>, <span class="math inline">\(Z = XV\)</span>, are the data in the new coordinates, where <span class="math inline">\(V\)</span> holds the eigenvectors as columns.</li>
+</ol>
+<p>In practice, libraries skip forming <span class="math inline">\(\Sigma\)</span> and take the singular value decomposition of the data directly, <span class="math inline">\(X = U S V^\mathsf{T}\)</span>. Its right singular vectors <span class="math inline">\(V\)</span> are the principal components, and the eigenvalues are <span class="math inline">\(s_k^2/(n-1)\)</span>. This is more accurate numerically, and it is what <code>sklearn.decomposition.PCA</code> does. The figures in this post compute PCA both ways and check that they agree.</p>
+</section>
+<section id="a-worked-example-178-wines" class="level2">
+<h2 class="anchored" data-anchor-id="a-worked-example-178-wines">A worked example: 178 wines</h2>
+<p>The wine dataset records thirteen measurements for wines from three grape cultivars grown in the same region of Italy: alcohol, acidity, phenols, colour, the amino acid proline and so on.</p>
+<section id="scaling-matters" class="level3">
+<h3 class="anchored" data-anchor-id="scaling-matters">Scaling matters</h3>
+<p>Run PCA on the raw numbers and the first component explains 99.8% of the variance. That sounds like a triumph, but the component is almost exactly the proline axis (its loading is 0.9998). Proline is measured in units that run into the hundreds and thousands, while most other variables are below 10, so its variance dwarfs everything else. PCA has found the variable with the biggest units.</p>
+<p>Standardising each variable first puts them on an equal footing. Then the first two components explain 36% and 19% of the variance, and the three cultivars separate cleanly, even though PCA was never told which wine came from which.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_scaling.png" class="img-fluid figure-img"></p>
+<figcaption>Scores on the first two principal components, coloured by cultivar. Left: raw units, where PC1 is just proline. Right: standardised variables, where the cultivars separate.</figcaption>
+</figure>
+</div>
+<p>The rule of thumb is to standardise when the variables are in different units, and to consider leaving them alone when they share units and their spread is itself meaningful, as with pixel intensities.</p>
+</section>
+<section id="how-many-components-to-keep" class="level3">
+<h3 class="anchored" data-anchor-id="how-many-components-to-keep">How many components to keep</h3>
+<p>No rule is definitive, but several are in common use:</p>
+<ul>
+<li><strong>Scree plot:</strong> plot the eigenvalues in order and look for the “elbow” where they level off.</li>
+<li><strong>Cumulative variance:</strong> keep enough components for a target share, such as 80%. For the wine data, that takes five.</li>
+<li><strong>Kaiser’s rule:</strong> with standardised data, keep components with <span class="math inline">\(\lambda &gt; 1\)</span>, those that carry more variance than a single original variable. That keeps three.</li>
+<li><strong>Parallel analysis:</strong> compare each eigenvalue with what you would get from random data of the same size, with no structure at all, and keep the components that beat it. This is usually the most reliable. It also keeps three.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_scree.png" class="img-fluid figure-img"></p>
+<figcaption>Left: eigenvalues of the standardised wine data, against the 95th percentile of eigenvalues from 200 random datasets of the same size. Three components rise above the noise. Right: the share of variance explained by each component, and cumulatively.</figcaption>
+</figure>
+</div>
+</section>
+<section id="reading-the-components-loadings-and-the-biplot" class="level3">
+<h3 class="anchored" data-anchor-id="reading-the-components-loadings-and-the-biplot">Reading the components: loadings and the biplot</h3>
+<p>A component is a weighted mix of the original variables, and the weights say what it means. The <strong>loadings</strong> are usually reported as the correlation between each original variable and the component’s scores. In the wine data:</p>
+<ul>
+<li><strong>PC1</strong> (36%) correlates strongly with flavanoids (0.92), total phenols (0.86) and the OD280/OD315 absorbance ratio (0.82), and negatively with nonflavanoid phenols (−0.65), malic acid (−0.53) and alcalinity of ash (−0.52). It is broadly a phenolic-content axis.</li>
+<li><strong>PC2</strong> (19%) correlates with colour intensity (0.84), alcohol (0.76) and proline (0.58), and negatively with hue (−0.44). It is broadly a body-and-colour axis.</li>
+</ul>
+<p>A <strong>biplot</strong> draws the observations and the variables on the same axes. Variables pointing the same way are positively correlated, those at right angles are roughly unrelated, and observations lie towards the variables they are high in.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_biplot.png" class="img-fluid figure-img"></p>
+<figcaption>Biplot of the standardised wine data. Arrows show each variable’s correlation with PC1 and PC2. Cultivar 1 sits towards high phenols, alcohol and proline; cultivar 3 towards high colour intensity and malic acid with low phenols; cultivar 2 towards low alcohol and colour.</figcaption>
+</figure>
+</div>
+<p>The sign of each component is arbitrary: <span class="math inline">\(-u\)</span> is as good an eigenvector as <span class="math inline">\(u\)</span>. Software can return either, so a component that “means” high phenols in one run can come out as low phenols in another. The convention here makes each component’s largest loading positive.</p>
+</section>
+</section>
+<section id="another-example-compressing-handwritten-digits" class="level2">
+<h2 class="anchored" data-anchor-id="another-example-compressing-handwritten-digits">Another example: compressing handwritten digits</h2>
+<p>Each of 1,797 handwritten digits is an 8 × 8 grey image: 64 numbers. PCA of the images gives components that are themselves images, and any digit can be rebuilt as the average digit plus a mix of them.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_digits.png" class="img-fluid figure-img"></p>
+<figcaption>Top: the average digit and the first seven principal components, red positive and blue negative. Bottom: one handwritten 5, rebuilt from the first k components, with the share of variance they explain. Ten components already give a recognisable 5.</figcaption>
+</figure>
+</div>
+<p>Thirteen components keep 80% of the variance and 21 keep 90%: a three-fold compression with little visible loss. The same idea applied to photographs of faces gave the “eigenfaces” of early face recognition.</p>
+</section>
+<section id="where-pca-misleads" class="level2">
+<h2 class="anchored" data-anchor-id="where-pca-misleads">Where PCA misleads</h2>
+<ul>
+<li><strong>Variance is not importance.</strong> PCA finds the directions in which the data varies most. Whether those directions matter for the question you care about is a separate matter. In the example below, two groups differ only along the direction with the <em>least</em> variance. Keeping PC1 alone would throw the difference away entirely. If you have an outcome to predict, methods that use it, such as linear discriminant analysis or partial least squares, are better suited.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_pitfall.png" class="img-fluid figure-img"></p>
+<figcaption>Two groups that differ only along the narrow direction. PC1 holds 90% of the variance but does not separate them at all; PC2, with 10%, separates them completely.</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>Scaling decides the answer.</strong> As the wine data showed, changing the units changes the components.</li>
+<li><strong>Outliers pull hard.</strong> Variance squares the distances, so a single extreme point can swing the components. The interactive above shows this.</li>
+<li><strong>It is linear.</strong> PCA finds flat subspaces. Data on a curved surface, like a spiral, needs nonlinear methods.</li>
+<li><strong>Components are not causes.</strong> A component is a convenient summary of correlated variables. It need not correspond to any single real factor, and naming it (“phenolic content”) is an interpretation, not a finding.</li>
+<li><strong>Small samples give unstable components.</strong> With few observations, components with similar eigenvalues can swap or rotate from one sample to the next. The <a href="../../explainers/decision-analysis/index.html">decision-analysis explainer</a> shows this with a bootstrap.</li>
+</ul>
+</section>
+<section id="where-it-is-used" class="level2">
+<h2 class="anchored" data-anchor-id="where-it-is-used">Where it is used</h2>
+<ul>
+<li><strong>Exploration:</strong> the first look at almost any table of many numeric variables.</li>
+<li><strong>Compression and noise reduction:</strong> keep the components above the noise, as with the digits.</li>
+<li><strong>Finance:</strong> the daily changes in interest rates across maturities are mostly explained by three components, which traders call level, slope and curvature (Litterman and Scheinkman, 1991).</li>
+<li><strong>Genetics:</strong> PCA of genetic variation across Europe reproduces a map of Europe (Novembre and colleagues, 2008).</li>
+<li><strong>Preprocessing:</strong> decorrelating or reducing inputs before regression or machine learning.</li>
+<li><strong>Decisions:</strong> reducing many correlated criteria for comparing options. That is the subject of the <a href="../../explainers/decision-analysis/index.html">next explainer</a>, together with the Analytic Hierarchy Process, which uses the principal eigenvector in a different way.</li>
+</ul>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>PCA finds the directions of greatest variance in data. They are the eigenvectors of the covariance matrix, and the eigenvalues are the variances along them.</li>
+<li>Equivalently, PC1 is the line of closest fit, and the first <span class="math inline">\(k\)</span> components give the best rank-<span class="math inline">\(k\)</span> approximation.</li>
+<li>Standardise variables in different units; otherwise the biggest units win.</li>
+<li>Choose the number of components with a scree plot or, better, parallel analysis.</li>
+<li>Interpret components through their loadings, with care: variance is not importance, signs are arbitrary, and outliers and small samples can mislead.</li>
+</ul>
+<p><em>The figure scripts are in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/pca"><code>src/pca</code></a>.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>K. Pearson, “On lines and planes of closest fit to systems of points in space”, <em>Philosophical Magazine</em> 2(11), 559–572 (1901).</li>
+<li>H. Hotelling, “Analysis of a complex of statistical variables into principal components”, <em>Journal of Educational Psychology</em> 24, 417–441 (1933).</li>
+<li>I. T. Jolliffe and J. Cadima, “Principal component analysis: a review and recent developments”, <em>Philosophical Transactions of the Royal Society A</em> 374, 20150202 (2016).</li>
+<li>J. L. Horn, “A rationale and test for the number of factors in factor analysis”, <em>Psychometrika</em> 30, 179–185 (1965).</li>
+<li>C. Eckart and G. Young, “The approximation of one matrix by another of lower rank”, <em>Psychometrika</em> 1, 211–218 (1936).</li>
+<li>R. Litterman and J. Scheinkman, “Common factors affecting bond returns”, <em>Journal of Fixed Income</em> 1(1), 54–61 (1991).</li>
+<li>J. Novembre et al., “Genes mirror geography within Europe”, <em>Nature</em> 456, 98–101 (2008).</li>
+<li>M. Turk and A. Pentland, “Eigenfaces for recognition”, <em>Journal of Cognitive Neuroscience</em> 3(1), 71–86 (1991).</li>
+<li>Wine and optical handwritten digits datasets, UCI Machine Learning Repository, as distributed with scikit-learn.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InBjYVZpZXcgPSB7XG4gIGNvbnN0IGhvc3QgPSBodGwuaHRtbGA8ZGl2PjwvZGl2PmA7XG4gIGNvbnN0IG1vZCA9IGF3YWl0IGltcG9ydChuZXcgVVJMKFwicGNhLmpzXCIsIGRvY3VtZW50LmJhc2VVUkkpLmhyZWYpO1xuICBtb2QubW91bnRQQ0EoaG9zdCk7XG4gIHJldHVybiBob3N0O1xufVxuIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../explainers/pca";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

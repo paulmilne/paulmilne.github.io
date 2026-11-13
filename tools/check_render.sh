@@ -3,6 +3,7 @@
 #   MISSING  the page has never been rendered
 #   STALE    the .qmd is newer than its page
 #   LISTING  (warning only) a post is newer than the home or section page that lists it
+#   CONFIG   (warning only) _quarto.yml or styles.css changed since pages were rendered
 # Which files count as pages comes from the project.render list in _quarto.yml.
 # Exit status 1 if anything is MISSING or STALE.
 cd "$(git rev-parse --show-toplevel)" || exit 2
@@ -45,6 +46,12 @@ while IFS= read -r q; do
     done ;;
   esac
 done < <(git ls-files -co --exclude-standard '*.qmd')
+
+# Site-wide settings (navbar, theme, render list) live in _quarto.yml and styles.css.
+# If they are newer than a page, that page shows the old settings until a full render.
+old=0
+while IFS= read -r h; do { [ _quarto.yml -nt "$h" ] || [ styles.css -nt "$h" ]; } && old=$((old+1)); done < <(find docs -name '*.html' -not -path 'docs/site_libs/*')
+[ $old -gt 0 ] && echo "CONFIG   _quarto.yml or styles.css is newer than $old page(s): run 'quarto render' for the whole site"
 
 if [ $fail = 1 ]; then
   echo; echo "Render these (or run 'quarto render' for the whole site), then commit again."
