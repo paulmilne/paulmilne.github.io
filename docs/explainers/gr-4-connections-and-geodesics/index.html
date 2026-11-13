@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-13">
+<meta name="description" content="Part 4 of a maths-first introduction to general relativity. The covariant derivative and its axioms, Christoffel symbols and why they are not a tensor, torsion, the fundamental theorem of Riemannian geometry with a derivation of the Levi-Civita connection, parallel transport and its path dependence (with an interactive holonomy demonstration and the Foucault pendulum), the geodesic equation derived two ways, normal coordinates, and the Newtonian limit of free fall.">
+
+<title>General Relativity from Scratch 4: Connections and Geodesics – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="General Relativity from Scratch 4: Connections and Geodesics – math-blog">
+<meta property="og:description" content="Part 4 of a maths-first introduction to general relativity. The covariant derivative and its axioms, Christoffel symbols and why they are not a tensor, torsion, the fundamental theorem of Riemannian geometry with a derivation of the Levi-Civita connection, parallel transport and its path dependence (with an interactive holonomy demonstration and the Foucault pendulum), the geodesic equation derived two ways, normal coordinates, and the Newtonian limit of free fall.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/gr-4-connections-and-geodesics/fig_triangle.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="840">
+<meta property="og:image:width" content="975">
+<meta name="twitter:title" content="General Relativity from Scratch 4: Connections and Geodesics – math-blog">
+<meta name="twitter:description" content="Part 4 of a maths-first introduction to general relativity. The covariant derivative and its axioms, Christoffel symbols and why they are not a tensor, torsion, the fundamental theorem of Riemannian geometry with a derivation of the Levi-Civita connection, parallel transport and its path dependence (with an interactive holonomy demonstration and the Foucault pendulum), the geodesic equation derived two ways, normal coordinates, and the Newtonian limit of free fall.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/gr-4-connections-and-geodesics/fig_triangle.png">
+<meta name="twitter:image-height" content="840">
+<meta name="twitter:image-width" content="975">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-xl " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-maths" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Maths</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-maths">    
+        <li>
+    <a class="dropdown-item" href="../../probability/index.html">
+ <span class="dropdown-text">Probability</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../geb/index.html">
+ <span class="dropdown-text">GEB</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../complexity/index.html">
+ <span class="dropdown-text">Complexity</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-physics--space" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Physics &amp; Space</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-physics--space">    
+        <li>
+    <a class="dropdown-item" href="../../cosmology/index.html">
+ <span class="dropdown-text">Cosmology</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../astronomy/index.html">
+ <span class="dropdown-text">Astronomy</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../space/index.html">
+ <span class="dropdown-text">Space</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../mechanics/index.html">
+ <span class="dropdown-text">Mechanics</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-engineering" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Engineering</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-engineering">    
+        <li>
+    <a class="dropdown-item" href="../../electronics/index.html">
+ <span class="dropdown-text">Electronics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../ai/index.html">
+ <span class="dropdown-text">AI</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../economics/index.html"> 
+<span class="menu-text">Economics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">General Relativity from Scratch 4: Connections and Geodesics</h1>
+            <p class="subtitle lead">How to differentiate a vector on a curved manifold, why there is exactly one natural way to do it, what it means to carry a vector without turning it, and how free fall becomes the straightest possible path</p>
+                  <div>
+        <div class="description">
+          Part 4 of a maths-first introduction to general relativity. The covariant derivative and its axioms, Christoffel symbols and why they are not a tensor, torsion, the fundamental theorem of Riemannian geometry with a derivation of the Levi-Civita connection, parallel transport and its path dependence (with an interactive holonomy demonstration and the Foucault pendulum), the geodesic equation derived two ways, normal coordinates, and the Newtonian limit of free fall.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">general relativity</div>
+                <div class="quarto-category">differential geometry</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 13, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-covariant-derivative" id="toc-the-covariant-derivative" class="nav-link active" data-scroll-target="#the-covariant-derivative">The covariant derivative</a></li>
+  <li><a href="#the-levi-civita-connection" id="toc-the-levi-civita-connection" class="nav-link" data-scroll-target="#the-levi-civita-connection">The Levi-Civita connection</a></li>
+  <li><a href="#parallel-transport" id="toc-parallel-transport" class="nav-link" data-scroll-target="#parallel-transport">Parallel transport</a></li>
+  <li><a href="#geodesics" id="toc-geodesics" class="nav-link" data-scroll-target="#geodesics">Geodesics</a></li>
+  <li><a href="#normal-coordinates-and-the-equivalence-principle" id="toc-normal-coordinates-and-the-equivalence-principle" class="nav-link" data-scroll-target="#normal-coordinates-and-the-equivalence-principle">Normal coordinates and the equivalence principle</a></li>
+  <li><a href="#free-fall-the-law-of-motion" id="toc-free-fall-the-law-of-motion" class="nav-link" data-scroll-target="#free-fall-the-law-of-motion">Free fall: the law of motion</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.gx-wrap { display: grid; grid-template-columns: auto minmax(220px, 1fr); gap: 1rem; align-items: start; margin: 1rem 0; }
+.gx-canvas { display: block; border: 1px solid #ddd; border-radius: 6px; background: #fff; touch-action: none; }
+.gx-side { display: flex; flex-direction: column; gap: .6rem; font-size: .86rem; }
+.gx-lab { display: flex; flex-direction: column; gap: .2rem; } .gx-lab input { width: 100%; }
+.gx-out { display: flex; flex-direction: column; gap: .25rem; } .gx-dim { color: #777; font-size: .8rem; }
+@media (max-width: 700px) { .gx-wrap { grid-template-columns: 1fr; } }
+</style>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+General Relativity from Scratch
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><a href="../../explainers/gr-1-manifolds/">Manifolds</a></li>
+<li><a href="../../explainers/gr-2-tensors/">Tensors</a></li>
+<li><a href="../../explainers/gr-3-metric-and-spacetime/">The metric and spacetime</a></li>
+<li><strong>Connections and geodesics</strong> (this part)</li>
+<li><a href="../../explainers/gr-5-curvature/">Curvature</a></li>
+<li><a href="../../explainers/gr-6-einstein-equations/">Einstein’s equations</a></li>
+<li><a href="../../explainers/gr-7-de-sitter-solved/">de Sitter and anti-de Sitter, solved</a></li>
+</ol>
+</div>
+</div>
+<p>Part 2 ended with a problem: the partial derivatives <span class="math inline">\(\partial_\mu V^\nu\)</span> of a vector field are not the components of a tensor, because they compare vectors in different tangent spaces. This part fixes that, and the fix leads directly to the law of motion in general relativity.</p>
+<section id="the-covariant-derivative" class="level2">
+<h2 class="anchored" data-anchor-id="the-covariant-derivative">The covariant derivative</h2>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Definition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A <strong>connection</strong> (or covariant derivative) <span class="math inline">\(\nabla\)</span> takes two vector fields <span class="math inline">\(X\)</span>, <span class="math inline">\(Y\)</span> and gives a vector field <span class="math inline">\(\nabla_X Y\)</span>, the derivative of <span class="math inline">\(Y\)</span> in the direction <span class="math inline">\(X\)</span>, such that for all functions <span class="math inline">\(f\)</span>:</p>
+<ol type="1">
+<li><span class="math inline">\(\nabla_{fX + Z} Y = f\,\nabla_X Y + \nabla_Z Y\)</span> (it is a tensor in <span class="math inline">\(X\)</span>: it depends only on <span class="math inline">\(X\)</span> at the point);</li>
+<li><span class="math inline">\(\nabla_X (Y + Z) = \nabla_X Y + \nabla_X Z\)</span>;</li>
+<li><span class="math inline">\(\nabla_X (fY) = (Xf)\,Y + f\,\nabla_X Y\)</span> (the Leibniz rule).</li>
+</ol>
+<p>It is extended to all tensors by requiring the Leibniz rule for tensor products and contractions, and <span class="math inline">\(\nabla_X f = Xf\)</span> on functions.</p>
+</div>
+</div>
+<p>In a chart, the connection is determined by what it does to basis vectors. Define the <strong>connection coefficients</strong> <span class="math inline">\(\Gamma^\lambda_{\mu\nu}\)</span> by</p>
+<p><span class="math display">\[
+\nabla_{\partial_\mu}\partial_\nu = \Gamma^\lambda_{\mu\nu}\,\partial_\lambda .
+\]</span></p>
+<p>The Leibniz rule then gives, for <span class="math inline">\(V = V^\nu\partial_\nu\)</span> and a covector <span class="math inline">\(\omega\)</span>,</p>
+<p><span class="math display">\[
+\nabla_\mu V^\nu = \partial_\mu V^\nu + \Gamma^\nu_{\mu\lambda}V^\lambda,
+\qquad
+\nabla_\mu \omega_\nu = \partial_\mu \omega_\nu - \Gamma^\lambda_{\mu\nu}\omega_\lambda ,
+\]</span></p>
+<p>with one <span class="math inline">\(+\Gamma\)</span> term for each upper index and one <span class="math inline">\(-\Gamma\)</span> term for each lower index of a general tensor. The covector rule follows from requiring <span class="math inline">\(\nabla_\mu(\omega_\nu V^\nu) = \partial_\mu(\omega_\nu V^\nu)\)</span>.</p>
+<p>The <span class="math inline">\(\Gamma\)</span> correction accounts for the basis itself changing from point to point. In polar coordinates, <span class="math inline">\(\partial_\phi\)</span> grows in length and turns as you move, and <span class="math inline">\(\nabla\)</span> subtracts that change off.</p>
+<p><strong>The <span class="math inline">\(\Gamma\)</span>s are not a tensor.</strong> Under a change of coordinates,</p>
+<p><span class="math display">\[
+\Gamma'^\lambda_{\mu\nu}
+= \frac{\partial x'^\lambda}{\partial x^\alpha}\frac{\partial x^\beta}{\partial x'^\mu}\frac{\partial x^\gamma}{\partial x'^\nu}\Gamma^\alpha_{\beta\gamma}
+\;-\; \frac{\partial x^\beta}{\partial x'^\mu}\frac{\partial x^\gamma}{\partial x'^\nu}\frac{\partial^2 x'^\lambda}{\partial x^\beta\,\partial x^\gamma} .
+\]</span></p>
+<p>The second term cancels exactly the non-tensorial term in <span class="math inline">\(\partial_\mu V^\nu\)</span> found in Part 2, which is what makes <span class="math inline">\(\nabla_\mu V^\nu\)</span> a tensor. And since the <span class="math inline">\(\Gamma\)</span>s are not a tensor, they can be zero in one chart without being zero in another.</p>
+</section>
+<section id="the-levi-civita-connection" class="level2">
+<h2 class="anchored" data-anchor-id="the-levi-civita-connection">The Levi-Civita connection</h2>
+<p>The definition allows infinitely many connections. Two conditions pick out one.</p>
+<p><strong>Torsion-free.</strong> The torsion tensor is <span class="math inline">\(T(X, Y) = \nabla_X Y - \nabla_Y X - [X, Y]\)</span>. In components, <span class="math inline">\(T^\lambda_{\mu\nu} = \Gamma^\lambda_{\mu\nu} - \Gamma^\lambda_{\nu\mu}\)</span>, so a torsion-free connection has symmetric coefficients.</p>
+<p><strong>Metric-compatible.</strong> <span class="math inline">\(\nabla g = 0\)</span>. Then the inner product of two vectors that are both carried along a curve without change (below) stays constant: parallel transport preserves lengths and angles.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+The fundamental theorem of Riemannian geometry
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>On a manifold with a metric, there is exactly one connection that is torsion-free and metric-compatible, the <strong>Levi-Civita connection</strong>. Its coefficients, the <strong>Christoffel symbols</strong>, are <span class="math display">\[
+\Gamma^\lambda_{\mu\nu} = \tfrac12\,g^{\lambda\sigma}\left(\partial_\mu g_{\sigma\nu} + \partial_\nu g_{\sigma\mu} - \partial_\sigma g_{\mu\nu}\right).
+\]</span></p>
+</div>
+</div>
+<p><strong>Proof.</strong> Metric compatibility in components is</p>
+<p><span class="math display">\[
+\nabla_\rho g_{\mu\nu} = \partial_\rho g_{\mu\nu} - \Gamma^\lambda_{\rho\mu}g_{\lambda\nu} - \Gamma^\lambda_{\rho\nu}g_{\mu\lambda} = 0 .
+\]</span></p>
+<p>Write this three times, with the indices <span class="math inline">\((\rho, \mu, \nu)\)</span> cycled to <span class="math inline">\((\mu, \nu, \rho)\)</span> and <span class="math inline">\((\nu, \rho, \mu)\)</span>. Subtract the second and third from the first, and use the symmetry <span class="math inline">\(\Gamma^\lambda_{\mu\nu} = \Gamma^\lambda_{\nu\mu}\)</span>. All but two terms cancel, leaving</p>
+<p><span class="math display">\[
+\partial_\rho g_{\mu\nu} - \partial_\mu g_{\nu\rho} - \partial_\nu g_{\rho\mu} + 2\Gamma^\lambda_{\mu\nu}g_{\lambda\rho} = 0 .
+\]</span></p>
+<p>Multiply by <span class="math inline">\(g^{\sigma\rho}\)</span> to isolate <span class="math inline">\(\Gamma\)</span>. The formula is forced, so the connection is unique, and it is easily checked to satisfy both conditions, so it exists. <span class="math inline">\(\blacksquare\)</span></p>
+<p>General relativity uses this connection. Every Christoffel symbol quoted in this series is computed from the formula by the SymPy library in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr"><code>src/gr</code></a>.</p>
+<p><strong>Examples.</strong></p>
+<ul>
+<li><em>The plane in polar coordinates</em>, <span class="math inline">\(ds^2 = dr^2 + r^2d\phi^2\)</span>: the non-zero symbols are <span class="math inline">\(\Gamma^r_{\phi\phi} = -r\)</span> and <span class="math inline">\(\Gamma^\phi_{r\phi} = \Gamma^\phi_{\phi r} = 1/r\)</span>. Applied to the constant field <span class="math inline">\(\partial_x\)</span>, whose polar components <span class="math inline">\((\cos\phi, -\sin\phi/r)\)</span> vary from point to point, they give <span class="math inline">\(\nabla_\mu(\partial_x)^\nu = 0\)</span> for every component, as they should. Part 2’s problem is solved.</li>
+<li><em>The sphere</em>, <span class="math inline">\(ds^2 = a^2(d\theta^2 + \sin^2\theta\,d\phi^2)\)</span>: <span class="math inline">\(\Gamma^\theta_{\phi\phi} = -\sin\theta\cos\theta\)</span> and <span class="math inline">\(\Gamma^\phi_{\theta\phi} = \cot\theta\)</span>.</li>
+</ul>
+</section>
+<section id="parallel-transport" class="level2">
+<h2 class="anchored" data-anchor-id="parallel-transport">Parallel transport</h2>
+<p>A vector field <span class="math inline">\(V\)</span> along a curve <span class="math inline">\(x^\mu(\lambda)\)</span> is <strong>parallel transported</strong> if its covariant derivative along the curve vanishes:</p>
+<p><span class="math display">\[
+\frac{DV^\mu}{d\lambda} \equiv \frac{dV^\mu}{d\lambda} + \Gamma^\mu_{\nu\rho}\frac{dx^\nu}{d\lambda}V^\rho = 0 .
+\]</span></p>
+<p>This is a first-order linear differential equation, so given <span class="math inline">\(V\)</span> at the start there is a unique solution: the vector carried along the curve “without turning”. With the Levi-Civita connection, its length is preserved.</p>
+<p>On a curved manifold, the result depends on the path. Carry a vector from the north pole down to the equator, a quarter of the way round the equator, and back up to the pole. Every leg is a great circle, and every corner is a right angle:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_triangle.png" class="img-fluid figure-img"></p>
+<figcaption>Parallel transport round a geodesic triangle on a sphere. The vector starts at the north pole pointing down the first meridian, and keeps its angle to each great circle it follows. It returns turned through 90°. The triangle covers an eighth of the sphere, an area of πa²/2, and the angle in radians is that area divided by a².</figcaption>
+</figure>
+</div>
+<p>The angle by which the vector turns, the <strong>holonomy</strong> of the loop, equals the area enclosed divided by <span class="math inline">\(a^2\)</span>. That is a special case of the Gauss–Bonnet theorem: for a small loop on any surface, the holonomy angle is the integral of the Gaussian curvature over the area enclosed. On a flat plane it is always zero. Curvature is, in this sense, the failure of parallel transport to be path-independent, which Part 5 makes precise.</p>
+<p>Try it on a circle of latitude. Unlike the triangle, this path is not a geodesic (except on the equator), but parallel transport is still defined:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="169" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 168;"><span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a>transportView <span class="op">=</span> {</span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"transport.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountTransport</span>(host)<span class="op">;</span></span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Along the circle at colatitude <span class="math inline">\(\theta_0\)</span>, the transport equation with the sphere’s Christoffel symbols reduces to a rotation: in the unit frame <span class="math inline">\((\hat e_\theta, \hat e_\phi)\)</span> the vector turns at a rate of <span class="math inline">\(\cos\theta_0\)</span> radians per radian of longitude. After one circuit it has turned by <span class="math inline">\(2\pi\cos\theta_0\)</span> relative to the frame, which is <span class="math inline">\(2\pi(1 - \cos\theta_0)\)</span> relative to its starting direction, equal to the area of the polar cap divided by <span class="math inline">\(a^2\)</span>.</p>
+<p>This is the <strong>Foucault pendulum</strong>. The plane of a pendulum’s swing is parallel transported as the Earth carries it round its circle of latitude once a day, and so turns relative to the ground by <span class="math inline">\(2\pi\cos\theta_0 = 2\pi\sin(\text{latitude})\)</span> a day. In Paris, at 48.85° north, that is 271° a day, a full turn in about 32 hours, which Léon Foucault demonstrated at the Panthéon in 1851.</p>
+</section>
+<section id="geodesics" class="level2">
+<h2 class="anchored" data-anchor-id="geodesics">Geodesics</h2>
+<p>A <strong>geodesic</strong> is a curve that parallel transports its own tangent vector: it never turns. With <span class="math inline">\(u^\mu = dx^\mu/d\lambda\)</span>,</p>
+<p><span class="math display">\[
+\boxed{\frac{d^2x^\mu}{d\lambda^2} + \Gamma^\mu_{\nu\rho}\frac{dx^\nu}{d\lambda}\frac{dx^\rho}{d\lambda} = 0 .}
+\]</span></p>
+<p>This is the <strong>geodesic equation</strong>: a second-order ODE, so a point and an initial velocity determine a unique geodesic. The parameter <span class="math inline">\(\lambda\)</span> is fixed up to <span class="math inline">\(\lambda \to a\lambda + b\)</span>, and is called <strong>affine</strong>. Since parallel transport preserves length, <span class="math inline">\(g_{\mu\nu}u^\mu u^\nu\)</span> is constant along a geodesic, so a geodesic that starts timelike, null or spacelike stays that way.</p>
+<p><strong>The same curves extremise length.</strong> The geodesic equation also follows from a variational principle. Take the Lagrangian <span class="math inline">\(L = \frac12 g_{\mu\nu}(x)\,\dot x^\mu\dot x^\nu\)</span>, with dots for <span class="math inline">\(d/d\lambda\)</span>. Its Euler–Lagrange equation is</p>
+<p><span class="math display">\[
+\frac{d}{d\lambda}\left(g_{\mu\nu}\dot x^\nu\right) - \tfrac12\,\partial_\mu g_{\nu\rho}\,\dot x^\nu\dot x^\rho
+= g_{\mu\nu}\ddot x^\nu + \partial_\rho g_{\mu\nu}\dot x^\rho\dot x^\nu - \tfrac12\partial_\mu g_{\nu\rho}\dot x^\nu\dot x^\rho = 0 .
+\]</span></p>
+<p>Symmetrising the middle term and multiplying by <span class="math inline">\(g^{\sigma\mu}\)</span> gives exactly the geodesic equation with the Christoffel symbols. Extremising this energy functional is equivalent to extremising length with an affine parameter. In Riemannian geometry, short enough geodesics minimise length. For timelike curves in spacetime, they <strong>maximise</strong> proper time, as the twin paradox of Part 3 showed.</p>
+<p>This variational form is often the fastest way to find Christoffel symbols: write down <span class="math inline">\(L\)</span>, read the coefficients off its Euler–Lagrange equations.</p>
+<p><strong>On the sphere</strong> the geodesic equations are</p>
+<p><span class="math display">\[
+\ddot\theta - \sin\theta\cos\theta\,\dot\phi^2 = 0, \qquad \ddot\phi + 2\cot\theta\,\dot\theta\dot\phi = 0 ,
+\]</span></p>
+<p>and their solutions are great circles. Integrating them numerically, from the library’s Christoffel symbols, confirms it:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_geodesics.png" class="img-fluid figure-img"></p>
+<figcaption>Three solutions of the sphere’s geodesic equation, integrated numerically from different starting points and directions. Left: in latitude and longitude, where they look curved. Right: each stays within 10⁻¹⁰ of the great circle through its starting point and direction, the integrator’s accuracy.</figcaption>
+</figure>
+</div>
+</section>
+<section id="normal-coordinates-and-the-equivalence-principle" class="level2">
+<h2 class="anchored" data-anchor-id="normal-coordinates-and-the-equivalence-principle">Normal coordinates and the equivalence principle</h2>
+<p>At any point <span class="math inline">\(p\)</span>, follow each geodesic from <span class="math inline">\(p\)</span> with initial velocity <span class="math inline">\(V\)</span> for a unit of affine parameter. This defines the <strong>exponential map</strong> <span class="math inline">\(\exp_p: T_pM \to M\)</span>, which is a diffeomorphism near the origin. Using it as a chart, with coordinates the components of <span class="math inline">\(V\)</span>, gives <strong>Riemann normal coordinates</strong>. In them, geodesics through <span class="math inline">\(p\)</span> are straight lines, so, from the geodesic equation, <span class="math inline">\(\Gamma^\lambda_{\mu\nu}(p) = 0\)</span>, and with an orthonormal basis, <span class="math inline">\(g_{\mu\nu}(p) = \eta_{\mu\nu}\)</span>.</p>
+<p>These are the locally inertial coordinates of Part 3, constructed explicitly. Physically they are the frame of a freely falling observer: at <span class="math inline">\(p\)</span>, there is no gravitational force. The connection coefficients are what an observer reads as gravity, and the equivalence principle says they can be transformed away at any single point. Curvature, built from their derivatives, cannot.</p>
+</section>
+<section id="free-fall-the-law-of-motion" class="level2">
+<h2 class="anchored" data-anchor-id="free-fall-the-law-of-motion">Free fall: the law of motion</h2>
+<p>General relativity’s law of motion is now one sentence: <strong>a freely falling body follows a timelike geodesic</strong>, and light follows a null geodesic. There is no gravitational force term.</p>
+<p>The Newtonian limit shows that this contains Newton’s law. Take a weak, static field with metric</p>
+<p><span class="math display">\[
+ds^2 = -\left(1 + \frac{2\Phi}{c^2}\right)c^2dt^2 + \left(1 - \frac{2\Phi}{c^2}\right)\left(dx^2 + dy^2 + dz^2\right),
+\qquad |\Phi| \ll c^2 ,
+\]</span></p>
+<p>and a slow particle, <span class="math inline">\(dx^i/d\tau \ll c\)</span>, so that <span class="math inline">\(dt/d\tau \approx 1\)</span>. The geodesic equation reduces to</p>
+<p><span class="math display">\[
+\frac{d^2x^i}{dt^2} \approx -\Gamma^i_{00}\,c^2 = -\partial_i\Phi ,
+\]</span></p>
+<p>since, to first order, <span class="math inline">\(\Gamma^i_{00} = \partial_i\Phi/c^2\)</span> (checked in <code>check34.py</code>). This is Newton’s law, with <span class="math inline">\(\Phi\)</span> the Newtonian potential. Newtonian gravity is the time–time part of the metric, and the “force” is a Christoffel symbol. Part 6 finds the field equation that determines <span class="math inline">\(\Phi\)</span>, and its relativistic completion.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>A connection defines the derivative of tensors on a manifold. Its coefficients are not a tensor.</li>
+<li>There is exactly one torsion-free, metric-compatible connection. Its coefficients are the Christoffel symbols.</li>
+<li>Parallel transport carries a vector along a curve without turning it. Round a loop, it comes back rotated by the enclosed curvature: on the sphere, by the area divided by <span class="math inline">\(a^2\)</span>.</li>
+<li>Geodesics parallel transport their own tangent. They extremise length, and in spacetime maximise proper time.</li>
+<li>Free fall is geodesic motion. Newton’s law is the slow, weak-field limit.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>S. M. Carroll, <em>Spacetime and Geometry</em>, chapter 3.</li>
+<li>R. M. Wald, <em>General Relativity</em>, section 3.1–3.3.</li>
+<li>J. M. Lee, <em>Introduction to Riemannian Manifolds</em>, 2nd edition (Springer, 2018), chapters 4–6.</li>
+<li>C. W. Misner, K. S. Thorne and J. A. Wheeler, <em>Gravitation</em>, chapters 10–11.</li>
+</ul>
+<p><em>Code: <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr"><code>src/gr</code></a>: <code>gr.py</code> (the library), <code>figs34.py</code>, <code>check34.py</code>. The interactive is <code>transport.js</code> in this post’s folder.</em></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InRyYW5zcG9ydFZpZXcgPSB7XG4gIGNvbnN0IGhvc3QgPSBodGwuaHRtbGA8ZGl2PjwvZGl2PmA7XG4gIGNvbnN0IG1vZCA9IGF3YWl0IGltcG9ydChuZXcgVVJMKFwidHJhbnNwb3J0LmpzXCIsIGRvY3VtZW50LmJhc2VVUkkpLmhyZWYpO1xuICBtb2QubW91bnRUcmFuc3BvcnQoaG9zdCk7XG4gIHJldHVybiBob3N0O1xufVxuIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../explainers/gr-4-connections-and-geodesics";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

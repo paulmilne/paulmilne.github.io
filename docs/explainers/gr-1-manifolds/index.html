@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-13">
+<meta name="description" content="Part 1 of a seven-part maths-first introduction to general relativity, leading to de Sitter space. Why gravity forces spacetime to be a manifold, the definitions of a topological and a smooth manifold, charts, atlases and transition maps (with the two stereographic charts of the sphere worked in full), smooth functions and curves, and tangent vectors defined as directional derivatives, with their transformation law derived from the chain rule.">
+
+<title>General Relativity from Scratch 1: Manifolds – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="General Relativity from Scratch 1: Manifolds – math-blog">
+<meta property="og:description" content="Part 1 of a seven-part maths-first introduction to general relativity, leading to de Sitter space. Why gravity forces spacetime to be a manifold, the definitions of a topological and a smooth manifold, charts, atlases and transition maps (with the two stereographic charts of the sphere worked in full), smooth functions and curves, and tangent vectors defined as directional derivatives, with their transformation law derived from the chain rule.">
+<meta property="og:image" content="https://paulmilne.github.io/explainers/gr-1-manifolds/fig_charts.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="630">
+<meta property="og:image:width" content="1650">
+<meta name="twitter:title" content="General Relativity from Scratch 1: Manifolds – math-blog">
+<meta name="twitter:description" content="Part 1 of a seven-part maths-first introduction to general relativity, leading to de Sitter space. Why gravity forces spacetime to be a manifold, the definitions of a topological and a smooth manifold, charts, atlases and transition maps (with the two stereographic charts of the sphere worked in full), smooth functions and curves, and tangent vectors defined as directional derivatives, with their transformation law derived from the chain rule.">
+<meta name="twitter:image" content="https://paulmilne.github.io/explainers/gr-1-manifolds/fig_charts.png">
+<meta name="twitter:image-height" content="630">
+<meta name="twitter:image-width" content="1650">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-xl " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-maths" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Maths</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-maths">    
+        <li>
+    <a class="dropdown-item" href="../../probability/index.html">
+ <span class="dropdown-text">Probability</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../geb/index.html">
+ <span class="dropdown-text">GEB</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../complexity/index.html">
+ <span class="dropdown-text">Complexity</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-physics--space" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Physics &amp; Space</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-physics--space">    
+        <li>
+    <a class="dropdown-item" href="../../cosmology/index.html">
+ <span class="dropdown-text">Cosmology</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../astronomy/index.html">
+ <span class="dropdown-text">Astronomy</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../space/index.html">
+ <span class="dropdown-text">Space</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../mechanics/index.html">
+ <span class="dropdown-text">Mechanics</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-engineering" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Engineering</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-engineering">    
+        <li>
+    <a class="dropdown-item" href="../../electronics/index.html">
+ <span class="dropdown-text">Electronics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../ai/index.html">
+ <span class="dropdown-text">AI</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../economics/index.html"> 
+<span class="menu-text">Economics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">General Relativity from Scratch 1: Manifolds</h1>
+            <p class="subtitle lead">Spacetime is a smooth manifold: a space that looks like ordinary coordinates up close, but need not be one set of coordinates globally. Charts, atlases, smooth structure, and tangent vectors as derivatives</p>
+                  <div>
+        <div class="description">
+          Part 1 of a seven-part maths-first introduction to general relativity, leading to de Sitter space. Why gravity forces spacetime to be a manifold, the definitions of a topological and a smooth manifold, charts, atlases and transition maps (with the two stereographic charts of the sphere worked in full), smooth functions and curves, and tangent vectors defined as directional derivatives, with their transformation law derived from the chain rule.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">explainer</div>
+                <div class="quarto-category">general relativity</div>
+                <div class="quarto-category">differential geometry</div>
+                <div class="quarto-category">manifolds</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 13, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#why-gravity-needs-a-new-kind-of-space" id="toc-why-gravity-needs-a-new-kind-of-space" class="nav-link active" data-scroll-target="#why-gravity-needs-a-new-kind-of-space">Why gravity needs a new kind of space</a></li>
+  <li><a href="#charts-and-atlases" id="toc-charts-and-atlases" class="nav-link" data-scroll-target="#charts-and-atlases">Charts and atlases</a>
+  <ul class="collapse">
+  <li><a href="#worked-example-the-sphere-needs-two-charts" id="toc-worked-example-the-sphere-needs-two-charts" class="nav-link" data-scroll-target="#worked-example-the-sphere-needs-two-charts">Worked example: the sphere needs two charts</a></li>
+  </ul></li>
+  <li><a href="#smooth-functions-and-curves" id="toc-smooth-functions-and-curves" class="nav-link" data-scroll-target="#smooth-functions-and-curves">Smooth functions and curves</a></li>
+  <li><a href="#tangent-vectors" id="toc-tangent-vectors" class="nav-link" data-scroll-target="#tangent-vectors">Tangent vectors</a>
+  <ul class="collapse">
+  <li><a href="#how-components-change-with-the-chart" id="toc-how-components-change-with-the-chart" class="nav-link" data-scroll-target="#how-components-change-with-the-chart">How components change with the chart</a></li>
+  </ul></li>
+  <li><a href="#vector-fields-and-their-brackets" id="toc-vector-fields-and-their-brackets" class="nav-link" data-scroll-target="#vector-fields-and-their-brackets">Vector fields and their brackets</a></li>
+  <li><a href="#spacetime-as-a-manifold" id="toc-spacetime-as-a-manifold" class="nav-link" data-scroll-target="#spacetime-as-a-manifold">Spacetime as a manifold</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+General Relativity from Scratch
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><strong>Manifolds</strong> (this part)</li>
+<li><a href="../../explainers/gr-2-tensors/">Tensors</a></li>
+<li><a href="../../explainers/gr-3-metric-and-spacetime/">The metric and spacetime</a></li>
+<li><a href="../../explainers/gr-4-connections-and-geodesics/">Connections and geodesics</a></li>
+<li><a href="../../explainers/gr-5-curvature/">Curvature</a></li>
+<li><a href="../../explainers/gr-6-einstein-equations/">Einstein’s equations</a></li>
+<li><a href="../../explainers/gr-7-de-sitter-solved/">de Sitter and anti-de Sitter, solved</a></li>
+</ol>
+<p>The series builds the mathematics of general relativity from definitions, and ends by deriving de Sitter and anti-de Sitter space (<a href="../../explainers/de-sitter-and-anti-de-sitter/">the explainer</a>) from Einstein’s equations. Every formula for a specific geometry is checked with a small SymPy library in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr"><code>src/gr</code></a>.</p>
+</div>
+</div>
+<section id="why-gravity-needs-a-new-kind-of-space" class="level2">
+<h2 class="anchored" data-anchor-id="why-gravity-needs-a-new-kind-of-space">Why gravity needs a new kind of space</h2>
+<p>Newton’s gravity is a force acting in a fixed, flat space. Einstein’s starting point was an observation that Newton treated as a coincidence: <strong>all bodies fall the same way</strong>. A feather and a hammer dropped on the Moon land together; Apollo 15’s David Scott did it on camera. The ratio of gravitational to inertial mass is the same for all materials, to about one part in <span class="math inline">\(10^{15}\)</span> (the MICROSCOPE satellite, 2022).</p>
+<p>So an observer falling freely in a small enough laboratory cannot detect gravity at all: everything floats together. This is the <strong>equivalence principle</strong>. Its consequence is that gravity is not a force in spacetime, but a property of spacetime: freely falling bodies follow the straightest possible paths, and gravity is the way those paths converge and diverge.</p>
+<p>This needs a space that:</p>
+<ul>
+<li><strong>looks flat close up</strong>, because a small freely falling laboratory sees special relativity;</li>
+<li><strong>need not be flat on a large scale</strong>, because tides, the relative acceleration of nearby falling bodies, are real;</li>
+<li><strong>has no preferred coordinates</strong>, because no one observer’s grid is privileged.</li>
+</ul>
+<p>The mathematical object with these properties is a <strong>smooth manifold</strong>. The earth’s surface is the everyday example: any small region can be mapped onto a flat page with little distortion, but no single flat map covers the whole globe without tearing or infinite stretching.</p>
+</section>
+<section id="charts-and-atlases" class="level2">
+<h2 class="anchored" data-anchor-id="charts-and-atlases">Charts and atlases</h2>
+<p>A manifold is built from flat pieces glued together smoothly. The pieces are charts.</p>
+<p><strong>What a chart is, informally.</strong> A chart is a way of putting coordinates on one patch of the manifold. The word comes from map-making: a chart is one page of an atlas. It takes each point in its patch and gives it a list of <span class="math inline">\(n\)</span> numbers, its coordinates, faithfully: no two points get the same numbers, and points that are close on the manifold get close numbers, and vice versa. It is a flattening of a piece of the space onto ordinary coordinate space without tearing it.</p>
+<p>The reason to want one is that a manifold, on its own, has no numbers attached to its points, so there is nothing to differentiate. Calculus lives in <span class="math inline">\(\mathbb{R}^n\)</span>, and a chart lets the manifold borrow it: to differentiate a function on the manifold, differentiate it as a function of the chart’s coordinates.</p>
+<p>A chart only has to cover its own patch, and many manifolds cannot be covered by one. Every flat map of the whole Earth either tears the globe somewhere, like the edge of a Mercator map, or stretches some point to infinity, like Mercator’s poles. So an atlas uses several overlapping pages. A point in an overlap has two sets of coordinates, one from each page, and the rule converting one into the other is called the <strong>transition map</strong>. Requiring every transition map to be smooth guarantees that a derivative calculated on one page agrees with the same derivative calculated on any other.</p>
+<p>In general relativity this matters because coordinates are only labels, and most coordinate systems for spacetime cover only part of it. When a metric “blows up”, the question is always whether the chart has failed or the space has.</p>
+<p>The precise definitions follow. They rely on the language of open sets and continuity, which the companion explainer <a href="../../explainers/topology-and-open-sets/">Topology and Open Sets</a> introduces from the beginning.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Definitions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A <strong>topological manifold</strong> of dimension <span class="math inline">\(n\)</span> is a topological space <span class="math inline">\(M\)</span> that is Hausdorff and second countable, and in which every point has an open neighbourhood homeomorphic to an open subset of <span class="math inline">\(\mathbb{R}^n\)</span>.</p>
+<p>A <strong>chart</strong> <span class="math inline">\((U, \varphi)\)</span> is an open set <span class="math inline">\(U \subseteq M\)</span> with a homeomorphism <span class="math inline">\(\varphi: U \to \varphi(U) \subseteq \mathbb{R}^n\)</span>. The components of <span class="math inline">\(\varphi(p) = (x^1(p), \dots, x^n(p))\)</span> are the <strong>coordinates</strong> of <span class="math inline">\(p\)</span>.</p>
+<p>An <strong>atlas</strong> is a collection of charts whose domains cover <span class="math inline">\(M\)</span>.</p>
+<p>Where two charts <span class="math inline">\((U, \varphi)\)</span> and <span class="math inline">\((V, \psi)\)</span> overlap, the <strong>transition map</strong> <span class="math inline">\(\psi \circ \varphi^{-1}: \varphi(U \cap V) \to \psi(U \cap V)\)</span> is a map between open subsets of <span class="math inline">\(\mathbb{R}^n\)</span>. An atlas is <strong>smooth</strong> if all its transition maps are infinitely differentiable (<span class="math inline">\(C^\infty\)</span>).</p>
+<p>A <strong>smooth manifold</strong> is a topological manifold with a maximal smooth atlas: every chart compatible with the atlas belongs to it.</p>
+</div>
+</div>
+<p>The conditions in the first definition rule out pathologies. Hausdorff means distinct points have disjoint neighbourhoods, which excludes a line with two origins. Second countable means the topology has a countable base, which guarantees partitions of unity, needed in Part 3 to show that every smooth manifold carries a metric.</p>
+<p>Smoothness is the point of the construction. Calculus is defined in <span class="math inline">\(\mathbb{R}^n\)</span>, and a manifold borrows it through charts. A function is differentiable on <span class="math inline">\(M\)</span> if it is differentiable in a chart, and smooth transition maps guarantee that the answer doesn’t depend on which chart is used.</p>
+<section id="worked-example-the-sphere-needs-two-charts" class="level3">
+<h3 class="anchored" data-anchor-id="worked-example-the-sphere-needs-two-charts">Worked example: the sphere needs two charts</h3>
+<p>The unit sphere <span class="math inline">\(S^2 = \{(x, y, z) \in \mathbb{R}^3 : x^2 + y^2 + z^2 = 1\}\)</span> is a 2-dimensional manifold. It cannot be covered by a single chart: <span class="math inline">\(S^2\)</span> is compact, and a homeomorphism would make the open set <span class="math inline">\(\varphi(S^2) \subseteq \mathbb{R}^2\)</span> compact too, but a non-empty open subset of <span class="math inline">\(\mathbb{R}^2\)</span> is never compact.</p>
+<p>Two charts are enough. <strong>Stereographic projection</strong> from the north pole <span class="math inline">\(N = (0, 0, 1)\)</span> draws a line from <span class="math inline">\(N\)</span> through a point <span class="math inline">\(p\)</span> of the sphere, and records where it meets the plane <span class="math inline">\(z = 0\)</span>:</p>
+<p><span class="math display">\[
+\varphi_N(x, y, z) = (u, v) = \left(\frac{x}{1 - z}, \frac{y}{1 - z}\right), \qquad U_N = S^2 \setminus \{N\}.
+\]</span></p>
+<p>Projection from the south pole gives <span class="math inline">\(\varphi_S(x, y, z) = \left(\frac{x}{1 + z}, \frac{y}{1 + z}\right)\)</span> on <span class="math inline">\(U_S = S^2 \setminus \{S\}\)</span>. Together they cover the sphere.</p>
+<p>On the overlap, which is the sphere without both poles, the transition map follows from <span class="math inline">\(u^2 + v^2 = \frac{x^2 + y^2}{(1 - z)^2} = \frac{1 - z^2}{(1 - z)^2} = \frac{1 + z}{1 - z}\)</span>:</p>
+<p><span class="math display">\[
+\varphi_S \circ \varphi_N^{-1}(u, v) = \frac{(u, v)}{u^2 + v^2}.
+\]</span></p>
+<p>This is inversion in the unit circle. It is smooth everywhere except at <span class="math inline">\((0, 0)\)</span>, which is the image of <span class="math inline">\(S\)</span> and is not in the overlap. So the two charts form a smooth atlas.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_charts.png" class="img-fluid figure-img"></p>
+<figcaption>The two stereographic charts of the sphere. A curve (purple) is drawn on the sphere and in each chart. Projection from the north pole sends points near N off towards infinity, which is why a second chart, projecting from the south pole, is needed there.</figcaption>
+</figure>
+</div>
+<p>Latitude and longitude <span class="math inline">\((\theta, \phi)\)</span> are another chart, but not a global one. They fail at the poles, where <span class="math inline">\(\phi\)</span> is undefined, and along the meridian where <span class="math inline">\(\phi\)</span> jumps from <span class="math inline">\(2\pi\)</span> to <span class="math inline">\(0\)</span>. The same failures will appear in spacetime: Schwarzschild’s coordinates break down at a black hole’s horizon, and many of de Sitter space’s coordinate systems cover only part of it (Part 7). A coordinate singularity is a failure of a chart, not of the manifold.</p>
+</section>
+</section>
+<section id="smooth-functions-and-curves" class="level2">
+<h2 class="anchored" data-anchor-id="smooth-functions-and-curves">Smooth functions and curves</h2>
+<p>A function <span class="math inline">\(f: M \to \mathbb{R}\)</span> is <strong>smooth</strong> if <span class="math inline">\(f \circ \varphi^{-1}\)</span> is smooth for every chart. Write <span class="math inline">\(C^\infty(M)\)</span> for the smooth functions on <span class="math inline">\(M\)</span>.</p>
+<p>A <strong>smooth curve</strong> is a smooth map <span class="math inline">\(\gamma: I \to M\)</span> from an open interval <span class="math inline">\(I \subseteq \mathbb{R}\)</span>, meaning that each coordinate <span class="math inline">\(x^\mu(\gamma(t))\)</span> is a smooth function of <span class="math inline">\(t\)</span>.</p>
+<p>In general relativity, the history of a particle is a curve in spacetime: its <strong>world line</strong>. The parameter <span class="math inline">\(t\)</span> is just a label. Part 3 will pick out a physical one, the time read by a clock carried along the curve.</p>
+</section>
+<section id="tangent-vectors" class="level2">
+<h2 class="anchored" data-anchor-id="tangent-vectors">Tangent vectors</h2>
+<p>On a curved manifold, there is no ambient space to hold arrows. An arrow drawn on the sphere sticks out of it into <span class="math inline">\(\mathbb{R}^3\)</span>, but spacetime is not embedded in anything. So a tangent vector has to be defined from the manifold itself.</p>
+<p>The answer is to define a vector by <strong>what it does</strong>. A velocity at <span class="math inline">\(p\)</span> tells you the rate of change of any function along the direction of motion. That operation characterises the vector completely.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Definition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A <strong>tangent vector</strong> at <span class="math inline">\(p \in M\)</span> is a linear map <span class="math inline">\(V: C^\infty(M) \to \mathbb{R}\)</span> that satisfies the Leibniz rule <span class="math display">\[
+V(fg) = f(p)\,V(g) + g(p)\,V(f).
+\]</span> Such maps are called <strong>derivations at <span class="math inline">\(p\)</span></strong>. They form a vector space, the <strong>tangent space</strong> <span class="math inline">\(T_pM\)</span>.</p>
+</div>
+</div>
+<p>Every smooth curve through <span class="math inline">\(p\)</span> gives one: if <span class="math inline">\(\gamma(0) = p\)</span>, its velocity is</p>
+<p><span class="math display">\[
+\gamma'(0)(f) = \left.\frac{d}{dt} f(\gamma(t))\right|_{t=0}.
+\]</span></p>
+<p>The Leibniz rule holds because it holds for ordinary derivatives.</p>
+<p><strong>A basis from a chart.</strong> Given coordinates <span class="math inline">\(x^\mu\)</span> near <span class="math inline">\(p\)</span>, the partial derivatives</p>
+<p><span class="math display">\[
+\partial_\mu \big|_p : f \mapsto \left.\frac{\partial (f \circ \varphi^{-1})}{\partial x^\mu}\right|_{\varphi(p)}
+\]</span></p>
+<p>are derivations. A standard result, proved with Taylor’s theorem with remainder, is that they form a basis of <span class="math inline">\(T_pM\)</span>, so <span class="math inline">\(\dim T_pM = \dim M = n\)</span>. Any vector can be written <span class="math inline">\(V = V^\mu \partial_\mu\)</span>, with components <span class="math inline">\(V^\mu = V(x^\mu)\)</span>. Here, and from now on, a repeated index, once up and once down, is summed (the <strong>Einstein summation convention</strong>).</p>
+<p>For a curve, the chain rule gives the familiar form:</p>
+<p><span class="math display">\[
+\gamma'(0)(f) = \frac{\partial f}{\partial x^\mu}\frac{dx^\mu}{dt}
+\quad\Longrightarrow\quad
+\gamma'(0) = \frac{dx^\mu}{dt}\,\partial_\mu .
+\]</span></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_tangent.png" class="img-fluid figure-img"></p>
+<figcaption>The tangent space at a point p of the sphere. The coordinate basis vectors ∂θ and ∂φ come from the latitude–longitude chart. A curve through p has velocity γ′(0), a combination of the two. The plane is drawn in ℝ³ for illustration only: the definition never needs it.</figcaption>
+</figure>
+</div>
+<section id="how-components-change-with-the-chart" class="level3">
+<h3 class="anchored" data-anchor-id="how-components-change-with-the-chart">How components change with the chart</h3>
+<p>Change to new coordinates <span class="math inline">\(x'^\mu\)</span>. The vector <span class="math inline">\(V\)</span> itself, a derivation, does not change. Its components do. By the chain rule <span class="math inline">\(\partial_\nu = \frac{\partial x'^\mu}{\partial x^\nu}\partial'_\mu\)</span>, so</p>
+<p><span class="math display">\[
+V = V^\nu \partial_\nu = V^\nu \frac{\partial x'^\mu}{\partial x^\nu} \partial'_\mu
+\quad\Longrightarrow\quad
+\boxed{V'^\mu = \frac{\partial x'^\mu}{\partial x^\nu} V^\nu .}
+\]</span></p>
+<p>This is the <strong>vector transformation law</strong>. Older textbooks use it as the definition of a vector: “a set of <span class="math inline">\(n\)</span> numbers that transform like this”. The derivation above shows why it holds.</p>
+<p>For example, on the plane with Cartesian coordinates <span class="math inline">\((x, y)\)</span> and polar coordinates <span class="math inline">\((r, \phi)\)</span>, the vector <span class="math inline">\(\partial_x\)</span> has components <span class="math inline">\((1, 0)\)</span>. Its polar components are <span class="math inline">\(\left(\frac{\partial r}{\partial x}, \frac{\partial\phi}{\partial x}\right)\)</span>, so</p>
+<p><span class="math display">\[
+\partial_x = \cos\phi\,\partial_r - \frac{\sin\phi}{r}\,\partial_\phi .
+\]</span></p>
+<p>The coefficient <span class="math inline">\(1/r\)</span> appears because <span class="math inline">\(\partial_\phi\)</span> is not a unit vector: moving one radian in <span class="math inline">\(\phi\)</span> covers a distance <span class="math inline">\(r\)</span>. Coordinate basis vectors need not be unit length or perpendicular. Lengths and angles need a metric, the subject of Part 3.</p>
+</section>
+</section>
+<section id="vector-fields-and-their-brackets" class="level2">
+<h2 class="anchored" data-anchor-id="vector-fields-and-their-brackets">Vector fields and their brackets</h2>
+<p>The tangent spaces of all points together form the <strong>tangent bundle</strong> <span class="math inline">\(TM\)</span>, itself a smooth manifold of dimension <span class="math inline">\(2n\)</span>. A <strong>vector field</strong> <span class="math inline">\(X\)</span> assigns a tangent vector <span class="math inline">\(X_p\)</span> to each point, smoothly. It acts on a function to give another function, <span class="math inline">\((Xf)(p) = X_p(f)\)</span>.</p>
+<p>Two vector fields can be composed, but <span class="math inline">\(XY\)</span> is not a vector field: it is a second-order operator, and fails the Leibniz rule. The difference of the two orders is a vector field, the <strong>Lie bracket</strong>:</p>
+<p><span class="math display">\[
+[X, Y] f = X(Yf) - Y(Xf), \qquad [X, Y]^\mu = X^\nu \partial_\nu Y^\mu - Y^\nu \partial_\nu X^\mu .
+\]</span></p>
+<p>The second-derivative terms cancel because partial derivatives commute. Coordinate basis fields always commute, <span class="math inline">\([\partial_\mu, \partial_\nu] = 0\)</span>, and that property characterises them: a set of <span class="math inline">\(n\)</span> independent vector fields comes from some chart if and only if their brackets all vanish. The bracket will reappear in Part 5, where curvature measures the failure of a different kind of derivative to commute.</p>
+</section>
+<section id="spacetime-as-a-manifold" class="level2">
+<h2 class="anchored" data-anchor-id="spacetime-as-a-manifold">Spacetime as a manifold</h2>
+<p>General relativity’s arena is a <strong>4-dimensional smooth manifold</strong> <span class="math inline">\(M\)</span>, whose points are events. Nothing more is assumed yet: no distances, no time, no notion of a straight line. Each will be added as extra structure:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Part</th>
+<th style="text-align: left;">Structure added</th>
+<th style="text-align: left;">What it provides</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">smooth manifold</td>
+<td style="text-align: left;">events, coordinates, smooth curves, vectors</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">tensors</td>
+<td style="text-align: left;">quantities defined independently of coordinates</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">metric</td>
+<td style="text-align: left;">distance, time, light cones</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">connection</td>
+<td style="text-align: left;">parallel transport, straight lines (geodesics)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">curvature</td>
+<td style="text-align: left;">tides, the failure of parallel transport to commute</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">Einstein’s equations</td>
+<td style="text-align: left;">how matter curves spacetime</td>
+</tr>
+</tbody>
+</table>
+<p>Since physics cannot depend on how events are labelled, every law must be written in a form that holds in all charts. The objects that make this possible are tensors, the subject of Part 2.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>The equivalence principle makes spacetime locally flat but not globally flat: a smooth manifold.</li>
+<li>A manifold is covered by charts, with smooth transition maps. The sphere needs at least two.</li>
+<li>Coordinate singularities, like those at the poles in latitude and longitude, are failures of charts, not of the space.</li>
+<li>Tangent vectors are directional derivatives. A chart gives the basis <span class="math inline">\(\partial_\mu\)</span>, and components transform as <span class="math inline">\(V'^\mu = (\partial x'^\mu/\partial x^\nu)V^\nu\)</span>.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>S. M. Carroll, <em>Spacetime and Geometry</em> (Addison-Wesley, 2004; Cambridge, 2019), chapter 2.</li>
+<li>J. M. Lee, <em>Introduction to Smooth Manifolds</em>, 2nd edition (Springer, 2013), chapters 1–3 and 8.</li>
+<li>R. M. Wald, <em>General Relativity</em> (Chicago, 1984), chapter 2.</li>
+<li>C. W. Misner, K. S. Thorne and J. A. Wheeler, <em>Gravitation</em> (Freeman, 1973), chapters 8–9.</li>
+<li>P. Touboul et al.&nbsp;(MICROSCOPE), <a href="https://arxiv.org/abs/2209.15487">“MICROSCOPE mission: final results of the test of the equivalence principle”</a>, <em>Physical Review Letters</em> 129, 121102 (2022).</li>
+</ul>
+<p><em>Code: <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr"><code>src/gr</code></a>: <code>figs12.py</code> for the figures, <code>check12.py</code> for the transition map and the change of basis.</em></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

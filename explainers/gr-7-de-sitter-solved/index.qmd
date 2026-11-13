@@ -1,0 +1,258 @@
+---
+title: "General Relativity from Scratch 7: de Sitter and Anti-de Sitter, Solved"
+subtitle: "Solve Einstein's equations with nothing but a cosmological constant, and the answer is a hyperboloid. Deriving de Sitter and anti-de Sitter space, their coordinate systems, their horizons and boxes, and their place in cosmology and in brane worlds"
+description: "Part 7 of a maths-first introduction to general relativity. Solving the vacuum Einstein equations with a cosmological constant: maximally symmetric spacetimes, the curvature fixed by Λ = 3/ℓ², de Sitter space as a hyperboloid in five-dimensional Minkowski space, its global, flat and static coordinates (each derived from the embedding and checked against the field equations with SymPy), geodesics, the cosmic horizon and its temperature, and anti-de Sitter space with its global, Poincaré and Randall–Sundrum coordinates."
+image: fig_ds_charts.png
+author: "Paul Milne"
+date: "2026-11-13"
+categories: [explainer, general relativity, cosmology, de sitter]
+format:
+  html:
+    toc: true
+---
+
+::: {.callout-note appearance="simple"}
+## General Relativity from Scratch
+
+1. [Manifolds](/explainers/gr-1-manifolds/)
+2. [Tensors](/explainers/gr-2-tensors/)
+3. [The metric and spacetime](/explainers/gr-3-metric-and-spacetime/)
+4. [Connections and geodesics](/explainers/gr-4-connections-and-geodesics/)
+5. [Curvature](/explainers/gr-5-curvature/)
+6. [Einstein's equations](/explainers/gr-6-einstein-equations/)
+7. **de Sitter and anti-de Sitter, solved** (this part)
+:::
+
+The [de Sitter and anti-de Sitter explainer](/explainers/de-sitter-and-anti-de-sitter/) described these two spacetimes
+and what they mean for our universe and for brane worlds. This part derives them, using every piece of the series:
+the field equations (Part 6), constant curvature (Part 5), geodesics (Part 4), metrics induced from an embedding
+(Part 3), and charts that cover only part of a manifold (Part 1). Every metric below is checked against Einstein's
+equations by the SymPy library in [`src/gr`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr).
+
+## The equations with only Λ
+
+Take Einstein's equations with no matter, but a cosmological constant (units $c = 1$):
+
+$$
+G_{\mu\nu} + \Lambda g_{\mu\nu} = 0 .
+$$
+
+Taking the trace in four dimensions, $-R + 4\Lambda = 0$, so $R = 4\Lambda$, and substituting back gives
+
+$$
+R_{\mu\nu} = \Lambda\,g_{\mu\nu} .
+$$
+
+A metric with Ricci tensor proportional to itself is called an **Einstein metric**. The equations allow many, including
+black holes in a universe with $\Lambda$. The simplest assume the most symmetry possible: the same at every event and in
+every direction. Part 5 showed that such spaces have constant curvature,
+$R_{\rho\sigma\mu\nu} = K(g_{\rho\mu}g_{\sigma\nu} - g_{\rho\nu}g_{\sigma\mu})$, with Ricci tensor $R_{\mu\nu} = 3K\,g_{\mu\nu}$ in four
+dimensions. Comparing,
+
+$$
+K = \frac{\Lambda}{3}, \qquad \ell = \sqrt{\frac{3}{|\Lambda|}} ,
+$$
+
+where $\ell$ is the radius of curvature. A standard theorem says that maximally symmetric spaces of the same dimension,
+signature and $K$ are locally isometric. So there are exactly three cases:
+
+| $\Lambda$ | Spacetime |
+|:--|:--|
+| $= 0$ | Minkowski |
+| $> 0$ | **de Sitter**, $K = 1/\ell^2$ |
+| $< 0$ | **anti-de Sitter**, $K = -1/\ell^2$ |
+
+What remains is to construct them.
+
+## de Sitter space as a hyperboloid
+
+A sphere of radius $\ell$ has constant positive curvature, and is the set of points at distance $\ell$ from the origin of
+flat space. The Lorentzian analogue uses five-dimensional Minkowski space, with metric
+$-dT^2 + dX_1^2 + dX_2^2 + dX_3^2 + dX_4^2$, and the "sphere"
+
+$$
+-T^2 + X_1^2 + X_2^2 + X_3^2 + X_4^2 = \ell^2 .
+$$
+
+This hyperboloid is a 4-dimensional manifold, and it inherits a Lorentzian metric (Part 3). It is maximally symmetric
+because the Lorentz group of the five-dimensional space, which has the maximum $5 \times 4/2 = 10$ generators, maps it to
+itself. So it has constant curvature, and the curvature works out to $1/\ell^2$. This is **de Sitter space**.
+
+Different ways of putting coordinates on the hyperboloid give different-looking metrics, each covering a different
+region. The library derives each induced metric from its embedding (`check567.py`, `check7.py`), then confirms it has
+constant curvature $1/\ell^2$ and satisfies $G_{\mu\nu} + \Lambda g_{\mu\nu} = 0$ with $\Lambda = 3/\ell^2$ (`examples.py`).
+
+![Two-dimensional de Sitter space, drawn as a hyperboloid in three-dimensional Minkowski space, with three coordinate systems. Left: global coordinates, whose time slices (circles) cover everything. Centre: the flat slicing, whose time slices are the parabolas, covering only the half with T + X₂ > 0; its edge, the black lines, is made of light rays. Right: the static patch, the quarter X₂ > |T|, whose curves are observers at fixed distance from the centre, bounded by their horizons.](fig_ds_charts.png)
+
+### Global coordinates
+
+Set $T = \ell\sinh(t/\ell)$ and $(X_1, \dots, X_4) = \ell\cosh(t/\ell)\,\hat n$, where $\hat n$ is a unit vector in four
+dimensions, written with angles $(\chi, \theta, \phi)$. The induced metric is
+
+$$
+ds^2 = -dt^2 + \ell^2\cosh^2(t/\ell)\left[d\chi^2 + \sin^2\chi\left(d\theta^2 + \sin^2\theta\,d\phi^2\right)\right].
+$$
+
+Space at each moment is a 3-sphere of radius $\ell\cosh(t/\ell)$. It contracts from infinite size, reaches a minimum
+radius $\ell$ at $t = 0$, and re-expands without limit. These coordinates cover the whole hyperboloid.
+
+### Flat slicing: the expanding universe
+
+Set, with $|\vec x|^2 = x_1^2 + x_2^2 + x_3^2$,
+
+$$
+T = \ell\sinh\frac{t}{\ell} + \frac{|\vec x|^2}{2\ell}e^{t/\ell}, \qquad
+X_i = e^{t/\ell}x_i, \qquad
+X_4 = \ell\cosh\frac{t}{\ell} - \frac{|\vec x|^2}{2\ell}e^{t/\ell} .
+$$
+
+The library confirms these lie on the hyperboloid, and the induced metric is
+
+$$
+\boxed{ds^2 = -dt^2 + e^{2t/\ell}\left(dx_1^2 + dx_2^2 + dx_3^2\right).}
+$$
+
+This is the Friedmann universe of Part 6 with scale factor $a(t) = e^{Ht}$, constant Hubble rate $H = 1/\ell = \sqrt{\Lambda/3}$,
+and flat space at each moment. Since $T + X_4 = \ell e^{t/\ell} > 0$, these coordinates cover only half of the
+hyperboloid. Their boundary, $T + X_4 = 0$, is a null surface.
+
+Observers at fixed $\vec x$, the galaxies of this universe, follow geodesics: for the four-velocity $u = \partial_t$, every
+component of $\Gamma^\mu_{\nu\rho}u^\nu u^\rho$ vanishes. Their proper separation grows as $e^{t/\ell}$, so any two of them
+eventually recede faster than light.
+
+### The static patch: horizons
+
+Set $X_1, X_2, X_3 = r\,\hat n$ (three dimensions), $T = \sqrt{\ell^2 - r^2}\,\sinh(t/\ell)$ and
+$X_4 = \sqrt{\ell^2 - r^2}\,\cosh(t/\ell)$, for $r < \ell$. The induced metric is
+
+$$
+ds^2 = -\left(1 - \frac{r^2}{\ell^2}\right)dt^2 + \frac{dr^2}{1 - r^2/\ell^2} + r^2\left(d\theta^2 + \sin^2\theta\,d\phi^2\right).
+$$
+
+It does not depend on $t$, so the observer at $r = 0$ sees an unchanging universe. It looks like the Schwarzschild metric
+with $1 - 2M/r$ replaced by $1 - r^2/\ell^2$, and has the same kind of coordinate singularity: at $r = \ell$, $g_{tt} = 0$.
+That surface is the observer's **cosmic event horizon**. Events beyond it can never send them a signal. This patch covers
+a quarter of the hyperboloid, $X_4 > |T|$.
+
+Gibbons and Hawking showed in 1977 that, like a black hole's horizon, a de Sitter horizon radiates, at temperature
+
+$$
+T_\text{dS} = \frac{\hbar H}{2\pi k_B} .
+$$
+
+For our universe's eventual Hubble rate, about 56 km/s/Mpc, that is $2 \times 10^{-30}$ K.
+
+### Geodesics
+
+Geodesics of de Sitter space have a simple description: they are the intersections of the hyperboloid with planes
+through the origin of the five-dimensional space, just as great circles are the intersections of a sphere with planes
+through its centre. A timelike geodesic is the intersection with a plane containing a timelike direction, a hyperbola.
+Null geodesics are straight lines lying in the hyperboloid, like the black lines in the figure. That the hyperboloid
+contains straight lines at all is a feature of hyperboloids of one sheet.
+
+### Our universe
+
+With $\Omega_\Lambda = 0.685$ and $H_0 = 67.4$ km/s/Mpc (Planck 2018), our universe tends to the flat slicing with
+$H = H_0\sqrt{\Omega_\Lambda} \approx 56$ km/s/Mpc. That gives
+
+$$
+\ell = c/H \approx 17.5 \text{ billion light-years}, \qquad \Lambda = 3/\ell^2 \approx 1.1 \times 10^{-52}\ \text{m}^{-2} .
+$$
+
+If dark energy is a true cosmological constant, the far future of our universe is this patch of de Sitter space.
+
+## Anti-de Sitter space
+
+For $\Lambda < 0$, the construction needs a five-dimensional flat space with **two** time directions, metric
+$-dU^2 - dV^2 + dX_1^2 + dX_2^2 + dX_3^2$, and the hyperboloid
+
+$$
+-U^2 - V^2 + X_1^2 + X_2^2 + X_3^2 = -\ell^2 .
+$$
+
+Its induced metric is Lorentzian, with constant curvature $-1/\ell^2$.
+
+### Global coordinates
+
+Set $U = \ell\cosh\rho\cos t$, $V = \ell\cosh\rho\sin t$, and $\vec X = \ell\sinh\rho\,\hat n$. Then
+
+$$
+ds^2 = \ell^2\left(-\cosh^2\!\rho\;dt^2 + d\rho^2 + \sinh^2\!\rho\left(d\theta^2 + \sin^2\theta\,d\phi^2\right)\right).
+$$
+
+Time $t$ is an angle: on the hyperboloid itself, $t$ and $t + 2\pi$ are the same event, so an observer at rest at
+$\rho = 0$ follows a closed timelike curve. That is unphysical, so one "unwraps" $t$ to run over the whole real line. The
+result, the universal covering space, is what physicists mean by anti-de Sitter space. The factor $\cosh^2\rho$ in
+$g_{tt}$ acts like a gravitational potential growing in every direction from the centre, which is why bodies always fall
+back, after a time $\pi\ell/c$, and light reaches the infinitely distant boundary in a finite time
+([the explainer](/explainers/de-sitter-and-anti-de-sitter/#anti-de-sitter-space-a-box)).
+
+### Poincaré coordinates
+
+Set $V = \ell t/z$, $X_i = \ell x_i/z$ for $i = 1, 2$, and
+
+$$
+U = \frac{z}{2}\left(1 + \frac{\ell^2 + x_1^2 + x_2^2 - t^2}{z^2}\right), \qquad
+X_3 = \frac{z}{2}\left(1 - \frac{\ell^2 - x_1^2 - x_2^2 + t^2}{z^2}\right),
+$$
+
+with $z > 0$. The library confirms these lie on the hyperboloid, with induced metric
+
+$$
+ds^2 = \frac{\ell^2}{z^2}\left(-dt^2 + dx_1^2 + dx_2^2 + dz^2\right).
+$$
+
+Each slice of constant $z$ is a copy of flat Minkowski spacetime, rescaled by $\ell/z$. The boundary is at $z \to 0$.
+These coordinates cover only part of the space, the Poincaré patch.
+
+### The Randall–Sundrum form
+
+Finally, change variable to $z = \ell\,e^{y/\ell}$. Then $dz = e^{y/\ell}dy$, so $(\ell^2/z^2)\,dz^2 = dy^2$ and
+
+$$
+\boxed{ds^2 = e^{-2y/\ell}\left(-dt^2 + dx_1^2 + dx_2^2\right) + dy^2 .}
+$$
+
+This is the warped bulk of Randall and Sundrum in [Branes and the Bulk](/explainers/branes-and-the-bulk/), here in one
+fewer dimension: anti-de Sitter space sliced into flat copies of spacetime, each rescaled by the warp factor $e^{-2y/\ell}$.
+A brane placed at $y = 0$, with the space on both sides cut off and glued symmetrically ($y \to |y|$), traps gravity
+near it. That is the geometry Kip Thorne uses for the "AdS layer" around our brane in *Interstellar*
+([Interstellar's Bulk](/sci-fi/interstellar-bulk/)). Gluing the two sides introduces a kink, which by the field equations
+needs a source: the brane's own tension, a stress-energy concentrated on the brane.
+
+## What the series has shown
+
+Starting from the observation that all bodies fall alike, the series built:
+
+1. a manifold, because spacetime is flat only locally;
+2. tensors, so that physical laws do not depend on coordinates;
+3. a metric, giving lengths, times and light cones;
+4. a connection, giving free fall as geodesic motion;
+5. curvature, the part of gravity no coordinates remove: tides;
+6. Einstein's equations, the only consistent way for matter to curve spacetime;
+
+and has solved those equations for empty space with a cosmological constant. The answer is a hyperboloid, sliced in
+different ways: an expanding universe with horizons, which is where ours is heading, or a box with walls at infinity,
+which warps a brane world's bulk.
+
+## Summary
+
+- With only $\Lambda$, Einstein's equations become $R_{\mu\nu} = \Lambda g_{\mu\nu}$. The maximally symmetric solutions
+  have $K = \Lambda/3$.
+- de Sitter space is the hyperboloid $-T^2 + \sum X_i^2 = \ell^2$ in five-dimensional Minkowski space. Its global, flat and
+  static coordinates cover all, half and a quarter of it.
+- The flat slicing is the exponentially expanding universe, $a \propto e^{t/\ell}$. The static patch has a horizon at
+  $r = \ell$, which radiates at $\hbar H/2\pi k_B$.
+- Anti-de Sitter space is the hyperboloid $-U^2 - V^2 + \sum X_i^2 = -\ell^2$, with two time directions in the embedding.
+  Its Poincaré coordinates become the Randall–Sundrum warped metric under $z = \ell e^{y/\ell}$.
+
+## References
+
+- S. W. Hawking and G. F. R. Ellis, *The Large Scale Structure of Space-Time*, section 5.2.
+- S. M. Carroll, *Spacetime and Geometry*, sections 3.9 and 8.
+- G. W. Gibbons and S. W. Hawking, "Cosmological event horizons, thermodynamics, and particle creation", *Physical Review D* 15, 2738 (1977).
+- M. Spradlin, A. Strominger and A. Volovich, ["Les Houches lectures on de Sitter space"](https://arxiv.org/abs/hep-th/0110007) (2001).
+- O. Aharony, S. S. Gubser, J. Maldacena, H. Ooguri and Y. Oz, ["Large N field theories, string theory and gravity"](https://arxiv.org/abs/hep-th/9905111), *Physics Reports* 323, 183 (2000), section 2.2.
+- L. Randall and R. Sundrum, ["An alternative to compactification"](https://arxiv.org/abs/hep-th/9906064), *Physical Review Letters* 83, 4690 (1999).
+
+*Code: [`src/gr`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr): `examples.py` (curvature and field equations for every chart), `check567.py` and `check7.py` (the embeddings), `figs567.py`.*

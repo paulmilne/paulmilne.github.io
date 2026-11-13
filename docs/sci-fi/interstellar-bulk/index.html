@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-13">
+<meta name="description" content="The physics behind Interstellar’s story, in the order the film tells it: a wormhole near Saturn, held open by the bulk; gravity as the only messenger that crosses the bulk; the Lazarus missions; the time dilation on Miller’s planet, calculated exactly from Kip Thorne’s specification of Gargantua (one hour = seven years needs a spin within 1.3 × 10⁻¹⁴ of the maximum); and the tesseract. With a render of the film’s wormhole from its published equations and an interactive time-dilation calculator.">
+
+<title>Interstellar’s Bulk: Wormholes, Gravity Messages and Miller’s Planet – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Interstellar’s Bulk: Wormholes, Gravity Messages and Miller’s Planet – math-blog">
+<meta property="og:description" content="The physics behind Interstellar’s story, in the order the film tells it: a wormhole near Saturn, held open by the bulk; gravity as the only messenger that crosses the bulk; the Lazarus missions; the time dilation on Miller’s planet, calculated exactly from Kip Thorne’s specification of Gargantua (one hour = seven years needs a spin within 1.3 × 10⁻¹⁴ of the maximum); and the tesseract. With a render of the film’s wormhole from its published equations and an interactive time-dilation calculator.">
+<meta property="og:image" content="https://paulmilne.github.io/sci-fi/interstellar-bulk/fig_wormhole.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="906">
+<meta property="og:image:width" content="900">
+<meta name="twitter:title" content="Interstellar’s Bulk: Wormholes, Gravity Messages and Miller’s Planet – math-blog">
+<meta name="twitter:description" content="The physics behind Interstellar’s story, in the order the film tells it: a wormhole near Saturn, held open by the bulk; gravity as the only messenger that crosses the bulk; the Lazarus missions; the time dilation on Miller’s planet, calculated exactly from Kip Thorne’s specification of Gargantua (one hour = seven years needs a spin within 1.3 × 10⁻¹⁴ of the maximum); and the tesseract. With a render of the film’s wormhole from its published equations and an interactive time-dilation calculator.">
+<meta name="twitter:image" content="https://paulmilne.github.io/sci-fi/interstellar-bulk/fig_wormhole.png">
+<meta name="twitter:image-height" content="906">
+<meta name="twitter:image-width" content="900">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-xl " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-maths" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Maths</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-maths">    
+        <li>
+    <a class="dropdown-item" href="../../probability/index.html">
+ <span class="dropdown-text">Probability</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../geb/index.html">
+ <span class="dropdown-text">GEB</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../complexity/index.html">
+ <span class="dropdown-text">Complexity</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-physics--space" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Physics &amp; Space</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-physics--space">    
+        <li>
+    <a class="dropdown-item" href="../../cosmology/index.html">
+ <span class="dropdown-text">Cosmology</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../astronomy/index.html">
+ <span class="dropdown-text">Astronomy</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../space/index.html">
+ <span class="dropdown-text">Space</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../mechanics/index.html">
+ <span class="dropdown-text">Mechanics</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-engineering" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Engineering</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-engineering">    
+        <li>
+    <a class="dropdown-item" href="../../electronics/index.html">
+ <span class="dropdown-text">Electronics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../ai/index.html">
+ <span class="dropdown-text">AI</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../economics/index.html"> 
+<span class="menu-text">Economics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Interstellar’s Bulk: Wormholes, Gravity Messages and Miller’s Planet</h1>
+            <p class="subtitle lead">How a fifth dimension ties together the wormhole near Saturn, the ghost in Murph’s bedroom, the Lazarus signals and the tesseract, and which parts are established physics, which are serious speculation, and which are the film’s licence</p>
+                  <div>
+        <div class="description">
+          The physics behind Interstellar’s story, in the order the film tells it: a wormhole near Saturn, held open by the bulk; gravity as the only messenger that crosses the bulk; the Lazarus missions; the time dilation on Miller’s planet, calculated exactly from Kip Thorne’s specification of Gargantua (one hour = seven years needs a spin within 1.3 × 10⁻¹⁴ of the maximum); and the tesseract. With a render of the film’s wormhole from its published equations and an interactive time-dilation calculator.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">sci-fi</div>
+                <div class="quarto-category">interstellar</div>
+                <div class="quarto-category">general relativity</div>
+                <div class="quarto-category">wormholes</div>
+                <div class="quarto-category">black holes</div>
+                <div class="quarto-category">extra dimensions</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 13, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-storys-starting-point-a-wormhole-near-saturn" id="toc-the-storys-starting-point-a-wormhole-near-saturn" class="nav-link active" data-scroll-target="#the-storys-starting-point-a-wormhole-near-saturn">The story’s starting point: a wormhole near Saturn</a>
+  <ul class="collapse">
+  <li><a href="#what-the-wormhole-looks-like" id="toc-what-the-wormhole-looks-like" class="nav-link" data-scroll-target="#what-the-wormhole-looks-like">What the wormhole looks like</a></li>
+  <li><a href="#where-the-bulk-comes-in" id="toc-where-the-bulk-comes-in" class="nav-link" data-scroll-target="#where-the-bulk-comes-in">Where the bulk comes in</a></li>
+  </ul></li>
+  <li><a href="#gravity-as-the-messenger" id="toc-gravity-as-the-messenger" class="nav-link" data-scroll-target="#gravity-as-the-messenger">Gravity as the messenger</a></li>
+  <li><a href="#the-lazarus-missions" id="toc-the-lazarus-missions" class="nav-link" data-scroll-target="#the-lazarus-missions">The Lazarus missions</a></li>
+  <li><a href="#millers-planet-one-hour-seven-years" id="toc-millers-planet-one-hour-seven-years" class="nav-link" data-scroll-target="#millers-planet-one-hour-seven-years">Miller’s planet: one hour, seven years</a></li>
+  <li><a href="#the-tesseract-and-plan-a" id="toc-the-tesseract-and-plan-a" class="nav-link" data-scroll-target="#the-tesseract-and-plan-a">The tesseract and Plan A</a></li>
+  <li><a href="#what-is-real-what-is-speculation-what-is-licence" id="toc-what-is-real-what-is-speculation-what-is-licence" class="nav-link" data-scroll-target="#what-is-real-what-is-speculation-what-is-licence">What is real, what is speculation, what is licence</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.ml-box { display: flex; flex-direction: column; gap: .55rem; max-width: 640px; margin: 1rem 0; padding: .9rem 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: .9rem; }
+.ml-lab { display: flex; flex-direction: column; gap: .2rem; } .ml-lab input { width: 100%; }
+.ml-out { display: flex; flex-direction: column; gap: .3rem; padding-top: .3rem; border-top: 1px solid #eee; }
+.ml-ok { color: #2a9d6f; font-weight: 600; } .ml-no { color: #d9622b; font-weight: 600; }
+</style>
+<p><em>Interstellar</em> is built on one big idea that is mentioned only in passing: our universe is a membrane, a <strong>brane</strong>, in a larger space with an extra dimension, the <strong>bulk</strong>. Nearly every mystery in the film depends on it: where the wormhole came from, why the “ghost” in Murph’s bedroom acts through gravity, and how Cooper sends a message back through time from inside a black hole.</p>
+<p>This post follows the story in order and checks the physics at each step. Two explainers cover the background: <a href="../../explainers/branes-and-the-bulk/">Branes and the Bulk</a>, on extra dimensions and why only gravity can cross them, and <a href="../../explainers/de-sitter-and-anti-de-sitter/">de Sitter and Anti-de Sitter Space</a>, on the curved geometry that Kip Thorne uses to build the film’s bulk. Most of the physical detail comes from Thorne’s book <em>The Science of Interstellar</em>. Thorne was the film’s scientific adviser and an executive producer.</p>
+<section id="the-storys-starting-point-a-wormhole-near-saturn" class="level2">
+<h2 class="anchored" data-anchor-id="the-storys-starting-point-a-wormhole-near-saturn">The story’s starting point: a wormhole near Saturn</h2>
+<p>About half a century before the film begins, a wormhole appeared near Saturn. The film never says how it was found. Thorne’s book discusses how a wormhole could be detected through gravitational waves, and it would also be hard to miss once seen: through a telescope it is a sphere showing a different sky.</p>
+<p>The wormhole is not natural. Professor Brand says that someone put it there. “They”, whoever they are, appear to be looking out for us. The film eventually implies that they are humans from the far future, who have evolved or engineered their way into the bulk.</p>
+<section id="what-the-wormhole-looks-like" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-wormhole-looks-like">What the wormhole looks like</h3>
+<p>Double Negative, the effects company that rendered the black hole Gargantua (rebuilt on this blog in <a href="../../sci-fi/gargantua/">Gargantua</a>), designed the wormhole with Thorne and published its equations. In their model, space around the wormhole has the shape</p>
+<p><span class="math display">\[
+ds^2 = -dt^2 + d\ell^2 + r(\ell)^2\left(d\theta^2 + \sin^2\theta\,d\phi^2\right),
+\]</span></p>
+<p>where <span class="math inline">\(\ell\)</span> is distance along the axis through the wormhole and <span class="math inline">\(r(\ell)\)</span> is the circumference of the sphere at that distance, divided by <span class="math inline">\(2\pi\)</span>. Going inwards, <span class="math inline">\(r\)</span> shrinks to the throat radius <span class="math inline">\(\rho\)</span> and then grows again on the far side: a different region of the universe. Christopher Nolan chose a short wormhole, with a throat length of 1% of its radius, and a gentle “lensing width” of 5% of its radius, so that the images would not confuse an audience with multiple copies of each star.</p>
+<p>With those parameters, tracing light rays backwards from a camera gives this:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_wormhole.png" class="img-fluid figure-img"></p>
+<figcaption>Interstellar’s wormhole rendered from its published equations (James, von Tunzelmann, Franklin and Thorne, 2015), with the film’s length and lensing width. Top: from six throat radii away. Bottom: from 2.2 throat radii, where it fills 39% of the view. The sphere shows the sky on the far side, compressed; at its rim, the near side’s stars are smeared into arcs, and Saturn is drawn out round the edge. The skies here are made up: a blue-white one on the Saturn side and a warmer one with a dense galactic band on the far side.</figcaption>
+</figure>
+</div>
+<p>The wormhole is a crystal ball. Everything on the far side appears in the sphere, and our own sky is bent round its rim. Wormholes are valid solutions of Einstein’s equations, but there is a serious catch: a wormhole held open by ordinary matter pinches off faster than light could cross it. Michael Morris and Thorne showed in 1988 that keeping one open needs <strong>exotic matter</strong>, with negative energy density as measured by a passing light ray. Small amounts of negative energy exist in quantum physics (the Casimir effect), but nobody knows whether enough could be gathered in one place to hold a wormhole open.</p>
+</section>
+<section id="where-the-bulk-comes-in" class="level3">
+<h3 class="anchored" data-anchor-id="where-the-bulk-comes-in">Where the bulk comes in</h3>
+<p>Thorne’s answer for the film is the bulk. In his version:</p>
+<ul>
+<li>our universe is a brane with one extra space dimension beyond it;</li>
+<li>around our brane is a layer of <strong>anti-de Sitter</strong> warping, sandwiched between two confining branes. This keeps gravity on our brane following Newton’s inverse square law;</li>
+<li>the confining branes would buckle and collide with ours, destroying the universe, unless a field in the bulk holds them in shape;</li>
+<li>the same kind of bulk field, controlled by the bulk beings, holds the wormhole open, so no exotic matter is needed.</li>
+</ul>
+<p>The wormhole joins two places that are enormously far apart within our universe, near Saturn and near Gargantua in another galaxy. Romilly’s explanation in the film, folding a sheet of paper and pushing a pencil through, is the standard picture: the throat does not run through our space at all.</p>
+</section>
+</section>
+<section id="gravity-as-the-messenger" class="level2">
+<h2 class="anchored" data-anchor-id="gravity-as-the-messenger">Gravity as the messenger</h2>
+<p>If they live in the bulk, why don’t the beings just send a message? Because, in brane-world physics, light and matter are confined to our brane. Gravity alone can cross the bulk (<a href="../../explainers/branes-and-the-bulk/#a-universe-on-a-membrane">why</a>). So anything that reaches us from the bulk must arrive as gravity.</p>
+<p>That is how the film’s ghost works:</p>
+<ul>
+<li>books fall from Murph’s shelf in a pattern that turns out to be Morse code;</li>
+<li>dust settles on her bedroom floor in stripes that encode, in binary, the coordinates of NASA’s hidden base. That is how Cooper finds NASA, and how the mission begins;</li>
+<li>later, a watch’s second hand twitches to carry, in Morse code, the quantum data Murph needs.</li>
+</ul>
+<p>In the film, the scientists call these “gravitational anomalies”, and NASA has been studying them. The twist, revealed at the end, is that the ghost is Cooper himself, reaching back through the bulk.</p>
+</section>
+<section id="the-lazarus-missions" class="level2">
+<h2 class="anchored" data-anchor-id="the-lazarus-missions">The Lazarus missions</h2>
+<p>Beyond the wormhole, NASA found a system of planets around Gargantua, a supermassive black hole. Several looked as if they might support life. About ten years before the film, the Lazarus missions sent twelve astronauts through, each alone, each to a different candidate world. Each was to send back a simple signal, yes or no, and then hibernate until rescue.</p>
+<p>Three kept sending positive signals: Miller, Edmunds and Mann. The Endurance mission is sent to visit them. The film then gives each signal a twist. Mann’s was deliberately faked. Miller’s looked recent but was not, because time on her planet runs about 60,000 times slower than outside.</p>
+</section>
+<section id="millers-planet-one-hour-seven-years" class="level2">
+<h2 class="anchored" data-anchor-id="millers-planet-one-hour-seven-years">Miller’s planet: one hour, seven years</h2>
+<blockquote class="blockquote">
+<p>“Every hour we spend on that planet will be seven years back on Earth.”</p>
+</blockquote>
+<p>Thorne writes that Nolan treated this as non-negotiable, so Thorne had to find a black hole that allows it. Time slows near a black hole, but a planet must stay in a stable orbit, and around a non-spinning black hole the closest stable orbit is too far out: clocks there run only about 1.4 times slower. The answer is spin. Around a spinning black hole, stable orbits can go much closer to the horizon. Thorne gives Gargantua a mass of 100 million Suns and a spin short of the maximum possible by one part in 100 trillion, <span class="math inline">\(1 - a/M = 10^{-14}\)</span>.</p>
+<p>That claim can be checked exactly. For a circular orbit in the equatorial plane of a spinning (Kerr) black hole, with <span class="math inline">\(G = c = M = 1\)</span>, the ratio of time far away to time on the planet is</p>
+<p><span class="math display">\[
+\frac{dt}{d\tau} = \frac{r^{3/2} + a}{r^{3/4}\sqrt{r^{3/2} - 3r^{1/2} + 2a}} ,
+\]</span></p>
+<p>from Bardeen, Press and Teukolsky (1972). The orbit must also lie outside the <strong>innermost stable circular orbit</strong>, inside which it would spiral into the hole (<a href="../../explainers/kerr-black-hole/">Kerr black hole explainer</a>). The largest dilation possible is therefore at that innermost orbit. Spins this close to the maximum need about 40 significant digits, so the calculation uses arbitrary precision arithmetic:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_miller.png" class="img-fluid figure-img"></p>
+<figcaption>Left: the greatest time dilation possible in a stable orbit, against how close Gargantua’s spin is to the maximum. The film’s factor of 61,362 (seven years per hour) needs 1 − a/M below 1.33 × 10⁻¹⁴, so Thorne’s 10⁻¹⁴ just clears it. Real black holes are thought to spin no faster than a = 0.998 (Thorne’s own 1974 limit), which allows a factor of about 11 (10.8). Right: for Thorne’s spin, the dilation falls quickly as the orbit moves out, so Miller’s planet must sit almost exactly at the innermost stable orbit.</figcaption>
+</figure>
+</div>
+<p>The results:</p>
+<ul>
+<li><strong>Thorne’s spin works, with almost no margin.</strong> The film needs a factor of 61,362. With <span class="math inline">\(1 - a/M = 10^{-14}\)</span>, the innermost stable orbit gives 67,526, so Miller’s planet can orbit just outside it, where the dilation has fallen to exactly 61,362. Any spin less than <span class="math inline">\(1 - 1.33 \times 10^{-14}\)</span> could not do it at all.</li>
+<li><strong>The dilation grows as the cube root of the spin’s closeness to maximum.</strong> Each factor of 1,000 closer gives a factor of 10 more dilation.</li>
+<li><strong>The planet is moving fast.</strong> Relative to the space around it, which is itself being dragged round by the black hole’s spin, the planet moves at half the speed of light. Seen from far away it circles Gargantua every 1.7 hours. By the planet’s own clocks, that orbit takes a tenth of a second.</li>
+<li><strong>Real black holes don’t spin this fast.</strong> Gas falling in would spin a black hole up to about <span class="math inline">\(a = 0.998\)</span>, as Thorne himself calculated in 1974, beyond which radiation from the disk slows it. That allows a time dilation of about 11 at most. Thorne acknowledges the film’s spin is extreme.</li>
+</ul>
+<p>Try other spins, and other lengths of stay:</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="158" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 157;"><span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a>millerView <span class="op">=</span> {</span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"miller.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountMiller</span>(host)<span class="op">;</span></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>The default stay of 3 hours 20 minutes reproduces the film: at the film’s factor, it costs 23 years, and when Cooper and Brand return to the Endurance, Romilly has waited 23 years.</p>
+</section>
+<section id="the-tesseract-and-plan-a" class="level2">
+<h2 class="anchored" data-anchor-id="the-tesseract-and-plan-a">The tesseract and Plan A</h2>
+<p>Professor Brand’s Plan A is to lift humanity off the dying Earth by controlling gravity. That needs a quantum theory of gravity, and the data to build it exists only at a black hole’s singularity, hidden behind the horizon. Cooper falls into Gargantua, and instead of being destroyed he is caught in the <strong>tesseract</strong>: a structure built by the bulk beings, in which time in Murph’s bedroom is laid out like a dimension of space. He can move to any moment, but act only through gravity. He sends the data TARS collected, through the watch’s second hand. Decades later, Murph uses it to solve the equation, and humanity leaves Earth.</p>
+<p>Thorne’s book explains the tesseract as a structure in the bulk, with one more dimension than our space, whose faces open onto the bedroom at different times. He is clear that this part of the film is speculation. Nobody knows what happens deep inside a black hole: that is precisely what a quantum theory of gravity would have to explain.</p>
+<p>The story also closes a loop. Cooper’s messages from the tesseract send his younger self to NASA, which sends him to Gargantua, which puts him in the tesseract. The film suggests the bulk beings set the loop up, which raises the usual question of who started it.</p>
+</section>
+<section id="what-is-real-what-is-speculation-what-is-licence" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-real-what-is-speculation-what-is-licence">What is real, what is speculation, what is licence</h2>
+<p>Thorne sorted the film’s science into three kinds, and the same sorting works here:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Element</th>
+<th style="text-align: left;">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Gargantua’s appearance, gravitational lensing</td>
+<td style="text-align: left;"><strong>Established</strong>: general relativity, tested many times</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Time dilation near a black hole</td>
+<td style="text-align: left;"><strong>Established</strong>, but the film’s factor needs an unrealistically fast spin</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Wormholes as solutions of Einstein’s equations</td>
+<td style="text-align: left;"><strong>Established</strong> as mathematics</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A traversable wormhole</td>
+<td style="text-align: left;"><strong>Speculation</strong>: needs exotic matter, or Thorne’s bulk fields</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Our universe as a brane in a bulk</td>
+<td style="text-align: left;"><strong>Speculation</strong>, serious: brane-world models of 1998–99, limited by experiment to extra dimensions smaller than about 30 micrometres</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gravity as the only thing crossing the bulk</td>
+<td style="text-align: left;"><strong>Speculation</strong>, serious: a feature of brane-world models</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bulk beings, the tesseract, messages into the past</td>
+<td style="text-align: left;"><strong>Licence</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Measuring quantum gravity data inside a black hole</td>
+<td style="text-align: left;"><strong>Licence</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The film’s achievement is that the licence sits on top of real physics. The wormhole’s appearance follows from its equations, Miller’s dilation follows from Thorne’s black hole, and the idea that a message from the bulk would arrive as gravity follows from how brane-world models work.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>The bulk is the film’s unifying idea: a larger space in which our universe is a brane.</li>
+<li>The wormhole is a passage through the bulk, which looks like a sphere showing another sky. Thorne holds it open with bulk fields rather than exotic matter.</li>
+<li>Only gravity crosses the bulk, so the ghost, the dust and the watch all act through gravity.</li>
+<li>One hour on Miller’s planet equals seven years outside only if Gargantua spins within <span class="math inline">\(1.33 \times 10^{-14}\)</span> of its maximum. Thorne’s choice, <span class="math inline">\(10^{-14}\)</span>, just works. A realistic spin gives a factor of about 11.</li>
+</ul>
+<p><em>Code: <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/interstellar"><code>src/interstellar</code></a>, with <code>wormhole.py</code> (the wormhole renderer), <code>miller.py</code> (time dilation at 60-digit precision) and <code>figs.py</code>.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>K. S. Thorne, <em>The Science of Interstellar</em> (W. W. Norton, 2014).</li>
+<li>O. James, E. von Tunzelmann, P. Franklin and K. S. Thorne, <a href="https://arxiv.org/abs/1502.03809">“Visualizing <em>Interstellar</em>’s wormhole”</a>, <em>American Journal of Physics</em> 83, 486 (2015).</li>
+<li>M. S. Morris and K. S. Thorne, “Wormholes in spacetime and their use for interstellar travel: a tool for teaching general relativity”, <em>American Journal of Physics</em> 56, 395 (1988).</li>
+<li>J. M. Bardeen, W. H. Press and S. A. Teukolsky, “Rotating black holes: locally nonrotating frames, energy extraction, and scalar synchrotron radiation”, <em>Astrophysical Journal</em> 178, 347 (1972).</li>
+<li>K. S. Thorne, “Disk-accretion onto a black hole. II. Evolution of the hole”, <em>Astrophysical Journal</em> 191, 507 (1974).</li>
+<li>J.-P. Luminet, <a href="https://arxiv.org/abs/1503.08305">“The warped science of <em>Interstellar</em>”</a> (2015).</li>
+<li>L. Randall and R. Sundrum, <a href="https://arxiv.org/abs/hep-th/9906064">“An alternative to compactification”</a>, <em>Physical Review Letters</em> 83, 4690 (1999).</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Im1pbGxlclZpZXcgPSB7XG4gIGNvbnN0IGhvc3QgPSBodGwuaHRtbGA8ZGl2PjwvZGl2PmA7XG4gIGNvbnN0IG1vZCA9IGF3YWl0IGltcG9ydChuZXcgVVJMKFwibWlsbGVyLmpzXCIsIGRvY3VtZW50LmJhc2VVUkkpLmhyZWYpO1xuICBtb2QubW91bnRNaWxsZXIoaG9zdCk7XG4gIHJldHVybiBob3N0O1xufVxuIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../sci-fi/interstellar-bulk";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

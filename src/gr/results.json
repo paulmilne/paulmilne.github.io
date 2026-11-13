@@ -1,0 +1,268 @@
+{
+ "plane_polar": {
+  "name": "flat plane, polar coordinates",
+  "coords": [
+   "r",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}1 & 0\\\\0 & r^{2}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,1,1": "- r",
+   "1,0,1": "\\frac{1}{r}"
+  },
+  "ricci": "\\left[\\begin{matrix}0 & 0\\\\0 & 0\\end{matrix}\\right]",
+  "R": "0",
+  "einstein": "\\left[\\begin{matrix}0 & 0\\\\0 & 0\\end{matrix}\\right]"
+ },
+ "sphere": {
+  "name": "sphere of radius a",
+  "coords": [
+   "\\theta",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}a^{2} & 0\\\\0 & a^{2} \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,1,1": "- \\frac{\\sin{\\left(2 \\theta \\right)}}{2}",
+   "1,0,1": "\\frac{1}{\\tan{\\left(\\theta \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}1 & 0\\\\0 & \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "R": "\\frac{2}{a^{2}}",
+  "einstein": "\\left[\\begin{matrix}0 & 0\\\\0 & 0\\end{matrix}\\right]",
+  "max_symmetric_K": "\\frac{1}{a^{2}}",
+  "is_max_symmetric": true
+ },
+ "hyperbolic_plane": {
+  "name": "hyperbolic plane",
+  "coords": [
+   "r",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}1 & 0\\\\0 & a^{2} \\sinh^{2}{\\left(\\frac{r}{a} \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,1,1": "- \\frac{a \\sinh{\\left(\\frac{2 r}{a} \\right)}}{2}",
+   "1,0,1": "\\frac{1}{a \\tanh{\\left(\\frac{r}{a} \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}- \\frac{1}{a^{2}} & 0\\\\0 & - \\sinh^{2}{\\left(\\frac{r}{a} \\right)}\\end{matrix}\\right]",
+  "R": "- \\frac{2}{a^{2}}",
+  "einstein": "\\left[\\begin{matrix}0 & 0\\\\0 & 0\\end{matrix}\\right]",
+  "max_symmetric_K": "- \\frac{1}{a^{2}}",
+  "is_max_symmetric": true
+ },
+ "minkowski": {
+  "name": "Minkowski",
+  "coords": [
+   "t",
+   "x",
+   "y",
+   "z"
+  ],
+  "metric": "\\left[\\begin{matrix}-1 & 0 & 0 & 0\\\\0 & 1 & 0 & 0\\\\0 & 0 & 1 & 0\\\\0 & 0 & 0 & 1\\end{matrix}\\right]",
+  "christoffel": {},
+  "ricci": "\\left[\\begin{matrix}0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\end{matrix}\\right]",
+  "R": "0",
+  "einstein": "\\left[\\begin{matrix}0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\end{matrix}\\right]",
+  "max_symmetric_K": "0",
+  "is_max_symmetric": true
+ },
+ "schwarzschild": {
+  "name": "Schwarzschild",
+  "coords": [
+   "t",
+   "r",
+   "\\theta",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}\\frac{2 M}{r} - 1 & 0 & 0 & 0\\\\0 & \\frac{1}{- \\frac{2 M}{r} + 1} & 0 & 0\\\\0 & 0 & r^{2} & 0\\\\0 & 0 & 0 & r^{2} \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,0,1": "\\frac{M}{r \\left(- 2 M + r\\right)}",
+   "1,0,0": "\\frac{M \\left(- 2 M + r\\right)}{r^{3}}",
+   "1,1,1": "\\frac{M}{r \\left(2 M - r\\right)}",
+   "1,2,2": "2 M - r",
+   "1,3,3": "\\left(2 M - r\\right) \\sin^{2}{\\left(\\theta \\right)}",
+   "2,1,2": "\\frac{1}{r}",
+   "2,3,3": "- \\frac{\\sin{\\left(2 \\theta \\right)}}{2}",
+   "3,1,3": "\\frac{1}{r}",
+   "3,2,3": "\\frac{1}{\\tan{\\left(\\theta \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\end{matrix}\\right]",
+  "R": "0",
+  "einstein": "\\left[\\begin{matrix}0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\\\0 & 0 & 0 & 0\\end{matrix}\\right]",
+  "kretschmann": "\\frac{48 M^{2}}{r^{6}}"
+ },
+ "frw_flat": {
+  "name": "flat FRW",
+  "coords": [
+   "t",
+   "x",
+   "y",
+   "z"
+  ],
+  "metric": "\\left[\\begin{matrix}-1 & 0 & 0 & 0\\\\0 & a^{2}{\\left(t \\right)} & 0 & 0\\\\0 & 0 & a^{2}{\\left(t \\right)} & 0\\\\0 & 0 & 0 & a^{2}{\\left(t \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,1,1": "a{\\left(t \\right)} \\frac{d}{d t} a{\\left(t \\right)}",
+   "0,2,2": "a{\\left(t \\right)} \\frac{d}{d t} a{\\left(t \\right)}",
+   "0,3,3": "a{\\left(t \\right)} \\frac{d}{d t} a{\\left(t \\right)}",
+   "1,0,1": "\\frac{\\frac{d}{d t} a{\\left(t \\right)}}{a{\\left(t \\right)}}",
+   "2,0,2": "\\frac{\\frac{d}{d t} a{\\left(t \\right)}}{a{\\left(t \\right)}}",
+   "3,0,3": "\\frac{\\frac{d}{d t} a{\\left(t \\right)}}{a{\\left(t \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}- \\frac{3 \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)}}{a{\\left(t \\right)}} & 0 & 0 & 0\\\\0 & a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} + 2 \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2} & 0 & 0\\\\0 & 0 & a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} + 2 \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2} & 0\\\\0 & 0 & 0 & a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} + 2 \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2}\\end{matrix}\\right]",
+  "R": "\\frac{6 \\left(a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} + \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2}\\right)}{a^{2}{\\left(t \\right)}}",
+  "einstein": "\\left[\\begin{matrix}\\frac{3 \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2}}{a^{2}{\\left(t \\right)}} & 0 & 0 & 0\\\\0 & - 2 a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} - \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2} & 0 & 0\\\\0 & 0 & - 2 a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} - \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2} & 0\\\\0 & 0 & 0 & - 2 a{\\left(t \\right)} \\frac{d^{2}}{d t^{2}} a{\\left(t \\right)} - \\left(\\frac{d}{d t} a{\\left(t \\right)}\\right)^{2}\\end{matrix}\\right]"
+ },
+ "ds_flat": {
+  "name": "de Sitter, flat slicing",
+  "coords": [
+   "t",
+   "x",
+   "y",
+   "z"
+  ],
+  "metric": "\\left[\\begin{matrix}-1 & 0 & 0 & 0\\\\0 & e^{\\frac{2 t}{\\ell}} & 0 & 0\\\\0 & 0 & e^{\\frac{2 t}{\\ell}} & 0\\\\0 & 0 & 0 & e^{\\frac{2 t}{\\ell}}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,1,1": "\\frac{e^{\\frac{2 t}{\\ell}}}{\\ell}",
+   "0,2,2": "\\frac{e^{\\frac{2 t}{\\ell}}}{\\ell}",
+   "0,3,3": "\\frac{e^{\\frac{2 t}{\\ell}}}{\\ell}",
+   "1,0,1": "\\frac{1}{\\ell}",
+   "2,0,2": "\\frac{1}{\\ell}",
+   "3,0,3": "\\frac{1}{\\ell}"
+  },
+  "ricci": "\\left[\\begin{matrix}- \\frac{3}{\\ell^{2}} & 0 & 0 & 0\\\\0 & \\frac{3 e^{\\frac{2 t}{\\ell}}}{\\ell^{2}} & 0 & 0\\\\0 & 0 & \\frac{3 e^{\\frac{2 t}{\\ell}}}{\\ell^{2}} & 0\\\\0 & 0 & 0 & \\frac{3 e^{\\frac{2 t}{\\ell}}}{\\ell^{2}}\\end{matrix}\\right]",
+  "R": "\\frac{12}{\\ell^{2}}",
+  "einstein": "\\left[\\begin{matrix}\\frac{3}{\\ell^{2}} & 0 & 0 & 0\\\\0 & - \\frac{3 e^{\\frac{2 t}{\\ell}}}{\\ell^{2}} & 0 & 0\\\\0 & 0 & - \\frac{3 e^{\\frac{2 t}{\\ell}}}{\\ell^{2}} & 0\\\\0 & 0 & 0 & - \\frac{3 e^{\\frac{2 t}{\\ell}}}{\\ell^{2}}\\end{matrix}\\right]",
+  "max_symmetric_K": "\\frac{1}{\\ell^{2}}",
+  "is_max_symmetric": true,
+  "vacuum_with_Lambda": true
+ },
+ "ds_static": {
+  "name": "de Sitter, static patch",
+  "coords": [
+   "t",
+   "r",
+   "\\theta",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}-1 + \\frac{r^{2}}{\\ell^{2}} & 0 & 0 & 0\\\\0 & \\frac{1}{1 - \\frac{r^{2}}{\\ell^{2}}} & 0 & 0\\\\0 & 0 & r^{2} & 0\\\\0 & 0 & 0 & r^{2} \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,0,1": "\\frac{r}{- \\ell^{2} + r^{2}}",
+   "1,0,0": "\\frac{r \\left(- \\ell^{2} + r^{2}\\right)}{\\ell^{4}}",
+   "1,1,1": "\\frac{r}{\\ell^{2} - r^{2}}",
+   "1,2,2": "- r + \\frac{r^{3}}{\\ell^{2}}",
+   "1,3,3": "\\frac{r \\left(- \\ell^{2} + r^{2}\\right) \\sin^{2}{\\left(\\theta \\right)}}{\\ell^{2}}",
+   "2,1,2": "\\frac{1}{r}",
+   "2,3,3": "- \\frac{\\sin{\\left(2 \\theta \\right)}}{2}",
+   "3,1,3": "\\frac{1}{r}",
+   "3,2,3": "\\frac{1}{\\tan{\\left(\\theta \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}\\frac{3 \\left(- \\ell^{2} + r^{2}\\right)}{\\ell^{4}} & 0 & 0 & 0\\\\0 & \\frac{3}{\\ell^{2} - r^{2}} & 0 & 0\\\\0 & 0 & \\frac{3 r^{2}}{\\ell^{2}} & 0\\\\0 & 0 & 0 & \\frac{3 r^{2} \\sin^{2}{\\left(\\theta \\right)}}{\\ell^{2}}\\end{matrix}\\right]",
+  "R": "\\frac{12}{\\ell^{2}}",
+  "einstein": "\\left[\\begin{matrix}\\frac{3 \\left(\\ell^{2} - r^{2}\\right)}{\\ell^{4}} & 0 & 0 & 0\\\\0 & \\frac{3}{- \\ell^{2} + r^{2}} & 0 & 0\\\\0 & 0 & - \\frac{3 r^{2}}{\\ell^{2}} & 0\\\\0 & 0 & 0 & - \\frac{3 r^{2} \\sin^{2}{\\left(\\theta \\right)}}{\\ell^{2}}\\end{matrix}\\right]",
+  "max_symmetric_K": "\\frac{1}{\\ell^{2}}",
+  "is_max_symmetric": true,
+  "vacuum_with_Lambda": true
+ },
+ "ds_global": {
+  "name": "de Sitter, global",
+  "coords": [
+   "t",
+   "\\chi",
+   "\\theta",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}-1 & 0 & 0 & 0\\\\0 & \\ell^{2} \\cosh^{2}{\\left(\\frac{t}{\\ell} \\right)} & 0 & 0\\\\0 & 0 & \\ell^{2} \\sin^{2}{\\left(\\chi \\right)} \\cosh^{2}{\\left(\\frac{t}{\\ell} \\right)} & 0\\\\0 & 0 & 0 & \\ell^{2} \\sin^{2}{\\left(\\chi \\right)} \\sin^{2}{\\left(\\theta \\right)} \\cosh^{2}{\\left(\\frac{t}{\\ell} \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,1,1": "\\frac{\\ell \\sinh{\\left(\\frac{2 t}{\\ell} \\right)}}{2}",
+   "0,2,2": "\\frac{\\ell \\sin^{2}{\\left(\\chi \\right)} \\sinh{\\left(\\frac{2 t}{\\ell} \\right)}}{2}",
+   "0,3,3": "\\frac{\\ell \\sin^{2}{\\left(\\chi \\right)} \\sin^{2}{\\left(\\theta \\right)} \\sinh{\\left(\\frac{2 t}{\\ell} \\right)}}{2}",
+   "1,0,1": "\\frac{\\tanh{\\left(\\frac{t}{\\ell} \\right)}}{\\ell}",
+   "1,2,2": "- \\frac{\\sin{\\left(2 \\chi \\right)}}{2}",
+   "1,3,3": "- \\sin{\\left(\\chi \\right)} \\sin^{2}{\\left(\\theta \\right)} \\cos{\\left(\\chi \\right)}",
+   "2,0,2": "\\frac{\\tanh{\\left(\\frac{t}{\\ell} \\right)}}{\\ell}",
+   "2,1,2": "\\frac{1}{\\tan{\\left(\\chi \\right)}}",
+   "2,3,3": "- \\frac{\\sin{\\left(2 \\theta \\right)}}{2}",
+   "3,0,3": "\\frac{\\tanh{\\left(\\frac{t}{\\ell} \\right)}}{\\ell}",
+   "3,1,3": "\\frac{1}{\\tan{\\left(\\chi \\right)}}",
+   "3,2,3": "\\frac{1}{\\tan{\\left(\\theta \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}- \\frac{3}{\\ell^{2}} & 0 & 0 & 0\\\\0 & 3 \\cosh^{2}{\\left(\\frac{t}{\\ell} \\right)} & 0 & 0\\\\0 & 0 & \\left(\\frac{\\sinh{\\left(\\frac{2 t}{\\ell} \\right)} \\tanh{\\left(\\frac{t}{\\ell} \\right)}}{2} + \\cosh{\\left(\\frac{2 t}{\\ell} \\right)} + 2\\right) \\sin^{2}{\\left(\\chi \\right)} & 0\\\\0 & 0 & 0 & \\left(\\frac{\\sinh{\\left(\\frac{2 t}{\\ell} \\right)} \\tanh{\\left(\\frac{t}{\\ell} \\right)}}{2} + \\cosh{\\left(\\frac{2 t}{\\ell} \\right)} + 2\\right) \\sin^{2}{\\left(\\chi \\right)} \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "R": "\\frac{12}{\\ell^{2}}",
+  "einstein": "\\left[\\begin{matrix}\\frac{3}{\\ell^{2}} & 0 & 0 & 0\\\\0 & - 3 \\cosh^{2}{\\left(\\frac{t}{\\ell} \\right)} & 0 & 0\\\\0 & 0 & - \\left(- \\frac{\\sinh{\\left(\\frac{2 t}{\\ell} \\right)} \\tanh{\\left(\\frac{t}{\\ell} \\right)}}{2} + 2 \\cosh{\\left(\\frac{2 t}{\\ell} \\right)} + 1\\right) \\sin^{2}{\\left(\\chi \\right)} & 0\\\\0 & 0 & 0 & - \\left(- \\frac{\\sinh{\\left(\\frac{2 t}{\\ell} \\right)} \\tanh{\\left(\\frac{t}{\\ell} \\right)}}{2} + 2 \\cosh{\\left(\\frac{2 t}{\\ell} \\right)} + 1\\right) \\sin^{2}{\\left(\\chi \\right)} \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "max_symmetric_K": "\\frac{1}{\\ell^{2}}",
+  "is_max_symmetric": true,
+  "vacuum_with_Lambda": true
+ },
+ "ads_global": {
+  "name": "anti-de Sitter, global",
+  "coords": [
+   "t",
+   "\\rho",
+   "\\theta",
+   "\\phi"
+  ],
+  "metric": "\\left[\\begin{matrix}- \\ell^{2} \\cosh^{2}{\\left(\\rho \\right)} & 0 & 0 & 0\\\\0 & \\ell^{2} & 0 & 0\\\\0 & 0 & \\ell^{2} \\sinh^{2}{\\left(\\rho \\right)} & 0\\\\0 & 0 & 0 & \\ell^{2} \\sin^{2}{\\left(\\theta \\right)} \\sinh^{2}{\\left(\\rho \\right)}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,0,1": "\\tanh{\\left(\\rho \\right)}",
+   "1,0,0": "\\frac{\\sinh{\\left(2 \\rho \\right)}}{2}",
+   "1,2,2": "- \\frac{\\sinh{\\left(2 \\rho \\right)}}{2}",
+   "1,3,3": "- \\frac{\\sin^{2}{\\left(\\theta \\right)} \\sinh{\\left(2 \\rho \\right)}}{2}",
+   "2,1,2": "\\frac{1}{\\tanh{\\left(\\rho \\right)}}",
+   "2,3,3": "- \\frac{\\sin{\\left(2 \\theta \\right)}}{2}",
+   "3,1,3": "\\frac{1}{\\tanh{\\left(\\rho \\right)}}",
+   "3,2,3": "\\frac{1}{\\tan{\\left(\\theta \\right)}}"
+  },
+  "ricci": "\\left[\\begin{matrix}3 \\cosh^{2}{\\left(\\rho \\right)} & 0 & 0 & 0\\\\0 & -3 & 0 & 0\\\\0 & 0 & - 3 \\sinh^{2}{\\left(\\rho \\right)} & 0\\\\0 & 0 & 0 & - \\left(\\frac{\\sinh{\\left(2 \\rho \\right)} \\tanh{\\left(\\rho \\right)}}{2} + \\cosh{\\left(2 \\rho \\right)} - 1\\right) \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "R": "- \\frac{12}{\\ell^{2}}",
+  "einstein": "\\left[\\begin{matrix}- 3 \\cosh^{2}{\\left(\\rho \\right)} & 0 & 0 & 0\\\\0 & 3 & 0 & 0\\\\0 & 0 & 3 \\sinh^{2}{\\left(\\rho \\right)} & 0\\\\0 & 0 & 0 & - \\left(\\frac{\\sinh{\\left(2 \\rho \\right)} \\tanh{\\left(\\rho \\right)}}{2} - 2 \\cosh{\\left(2 \\rho \\right)} + 2\\right) \\sin^{2}{\\left(\\theta \\right)}\\end{matrix}\\right]",
+  "max_symmetric_K": "- \\frac{1}{\\ell^{2}}",
+  "is_max_symmetric": true,
+  "vacuum_with_Lambda": true
+ },
+ "ads_poincare": {
+  "name": "anti-de Sitter, Poincare",
+  "coords": [
+   "t",
+   "x",
+   "y",
+   "z"
+  ],
+  "metric": "\\left[\\begin{matrix}- \\frac{\\ell^{2}}{z^{2}} & 0 & 0 & 0\\\\0 & \\frac{\\ell^{2}}{z^{2}} & 0 & 0\\\\0 & 0 & \\frac{\\ell^{2}}{z^{2}} & 0\\\\0 & 0 & 0 & \\frac{\\ell^{2}}{z^{2}}\\end{matrix}\\right]",
+  "christoffel": {
+   "0,0,3": "- \\frac{1}{z}",
+   "1,1,3": "- \\frac{1}{z}",
+   "2,2,3": "- \\frac{1}{z}",
+   "3,0,0": "- \\frac{1}{z}",
+   "3,1,1": "\\frac{1}{z}",
+   "3,2,2": "\\frac{1}{z}",
+   "3,3,3": "- \\frac{1}{z}"
+  },
+  "ricci": "\\left[\\begin{matrix}\\frac{3}{z^{2}} & 0 & 0 & 0\\\\0 & - \\frac{3}{z^{2}} & 0 & 0\\\\0 & 0 & - \\frac{3}{z^{2}} & 0\\\\0 & 0 & 0 & - \\frac{3}{z^{2}}\\end{matrix}\\right]",
+  "R": "- \\frac{12}{\\ell^{2}}",
+  "einstein": "\\left[\\begin{matrix}- \\frac{3}{z^{2}} & 0 & 0 & 0\\\\0 & \\frac{3}{z^{2}} & 0 & 0\\\\0 & 0 & \\frac{3}{z^{2}} & 0\\\\0 & 0 & 0 & \\frac{3}{z^{2}}\\end{matrix}\\right]",
+  "max_symmetric_K": "- \\frac{1}{\\ell^{2}}",
+  "is_max_symmetric": true,
+  "vacuum_with_Lambda": true
+ },
+ "ads_rs": {
+  "name": "anti-de Sitter, Randall-Sundrum slicing (y>0)",
+  "coords": [
+   "t",
+   "x",
+   "z",
+   "y"
+  ],
+  "metric": "\\left[\\begin{matrix}- e^{- \\frac{2 y}{\\ell}} & 0 & 0 & 0\\\\0 & e^{- \\frac{2 y}{\\ell}} & 0 & 0\\\\0 & 0 & e^{- \\frac{2 y}{\\ell}} & 0\\\\0 & 0 & 0 & 1\\end{matrix}\\right]",
+  "christoffel": {
+   "0,0,3": "- \\frac{1}{\\ell}",
+   "1,1,3": "- \\frac{1}{\\ell}",
+   "2,2,3": "- \\frac{1}{\\ell}",
+   "3,0,0": "- \\frac{e^{- \\frac{2 y}{\\ell}}}{\\ell}",
+   "3,1,1": "\\frac{e^{- \\frac{2 y}{\\ell}}}{\\ell}",
+   "3,2,2": "\\frac{e^{- \\frac{2 y}{\\ell}}}{\\ell}"
+  },
+  "ricci": "\\left[\\begin{matrix}\\frac{3 e^{- \\frac{2 y}{\\ell}}}{\\ell^{2}} & 0 & 0 & 0\\\\0 & - \\frac{3 e^{- \\frac{2 y}{\\ell}}}{\\ell^{2}} & 0 & 0\\\\0 & 0 & - \\frac{3 e^{- \\frac{2 y}{\\ell}}}{\\ell^{2}} & 0\\\\0 & 0 & 0 & - \\frac{3}{\\ell^{2}}\\end{matrix}\\right]",
+  "R": "- \\frac{12}{\\ell^{2}}",
+  "einstein": "\\left[\\begin{matrix}- \\frac{3 e^{- \\frac{2 y}{\\ell}}}{\\ell^{2}} & 0 & 0 & 0\\\\0 & \\frac{3 e^{- \\frac{2 y}{\\ell}}}{\\ell^{2}} & 0 & 0\\\\0 & 0 & \\frac{3 e^{- \\frac{2 y}{\\ell}}}{\\ell^{2}} & 0\\\\0 & 0 & 0 & \\frac{3}{\\ell^{2}}\\end{matrix}\\right]",
+  "max_symmetric_K": "- \\frac{1}{\\ell^{2}}",
+  "is_max_symmetric": true
+ }
+}

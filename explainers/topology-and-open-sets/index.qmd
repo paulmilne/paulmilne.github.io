@@ -1,0 +1,290 @@
+---
+title: "Topology and Open Sets"
+subtitle: "How to talk about nearness, continuity and shape without measuring distance. Open sets, continuity, homeomorphism, gluing, and the three properties (Hausdorff, second countable, compact) that the definition of a manifold depends on"
+description: "A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as 'preimages of open sets are open' and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic, and what topology means for spacetime."
+image: fig_gluing.png
+author: "Paul Milne"
+date: "2026-11-13"
+categories: [explainer, topology, differential geometry, manifolds]
+resources:
+  - topo.js
+format:
+  html:
+    toc: true
+---
+
+```{=html}
+<style>
+.tp-wrap { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: 1.2rem; margin: 1rem 0; padding: .9rem 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: .9rem; }
+.tp-left { display: flex; flex-direction: column; gap: .3rem; } .tp-head { font-weight: 600; } .tp-fixed { color: #777; font-size: .8rem; }
+.tp-box { cursor: pointer; } .tp-presets { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+.tp-btn { font-size: .78rem; padding: .15rem .45rem; border: 1px solid #1f5fa8; border-radius: 4px; background: #fff; color: #1f5fa8; cursor: pointer; }
+.tp-out { display: flex; flex-direction: column; gap: .35rem; } .tp-out ul { margin: 0; padding-left: 1.2rem; }
+.tp-ok { color: #2a9d6f; font-weight: 600; } .tp-no { color: #d9622b; font-weight: 600; } .tp-count { color: #555; font-size: .82rem; margin-top: .3rem; }
+@media (max-width: 640px) { .tp-wrap { grid-template-columns: 1fr; } }
+</style>
+```
+
+The definition of a manifold in [Part 1 of General Relativity from Scratch](/explainers/gr-1-manifolds/) begins:
+"a topological space that is Hausdorff and second countable, in which every point has an open neighbourhood
+homeomorphic to an open subset of $\mathbb{R}^n$". Almost every word in that sentence is topology. This explainer
+builds the vocabulary from the start, with the manifold definition as the goal.
+
+Topology studies the properties of a space that survive stretching and bending, but not tearing or gluing. It keeps
+the idea of points being near each other, and throws away the idea of distance. A coffee cup and a doughnut are the
+same to a topologist; a sphere and a doughnut are not.
+
+## Open sets: nearness without distance
+
+Start where distance exists. In $\mathbb{R}^n$, the **open ball** of radius $\varepsilon$ around a point $p$ is the set of
+points closer than $\varepsilon$:
+
+$$
+B_\varepsilon(p) = \{\,q : |q - p| < \varepsilon\,\}.
+$$
+
+A set $U$ is **open** if every point of $U$ has some open ball around it that stays entirely inside $U$. Informally, an
+open set has no edge: wherever you stand in it, you can move a little in any direction and still be inside.
+
+![Left: the open disc. Every point, even one very close to the edge, has a small ball around it inside the disc, because the edge itself is not part of the set. Centre: the closed disc includes its edge, and no ball around an edge point fits inside, so it is not open. Right: sets can be neither open nor closed.](fig_open_closed.png)
+
+Open sets in $\mathbb{R}^n$ have three properties, each easy to check from the definition:
+
+1. the empty set $\varnothing$ and the whole space are open;
+2. any union of open sets, even infinitely many, is open;
+3. the intersection of **finitely** many open sets is open.
+
+The restriction to finite intersections matters. The intervals $(-1/n, 1/n)$ are all open, but their intersection, over
+every $n$, is the single point $\{0\}$, which is not open: no ball around 0 fits inside a single point.
+
+The insight of point-set topology, due largely to Felix Hausdorff in 1914, is that these three properties are all that is
+needed. Nearness, convergence and continuity can all be defined from the open sets alone, without the distances that
+were used to define them.
+
+## The definition of a topology
+
+::: {.callout-tip appearance="simple"}
+## Definition
+
+A **topology** on a set $X$ is a collection $\mathcal{T}$ of subsets of $X$, called the **open sets**, such that
+
+1. $\varnothing \in \mathcal{T}$ and $X \in \mathcal{T}$;
+2. any union of sets in $\mathcal{T}$ is in $\mathcal{T}$;
+3. any finite intersection of sets in $\mathcal{T}$ is in $\mathcal{T}$.
+
+The pair $(X, \mathcal{T})$ is a **topological space**. A **neighbourhood** of a point $p$ is any set containing an open
+set that contains $p$.
+:::
+
+The same set can carry many topologies. Two extremes exist on every set:
+
+- the **discrete topology**, in which every subset is open. Every point is isolated from every other;
+- the **indiscrete topology**, in which only $\varnothing$ and $X$ are open. No two points can be told apart.
+
+On a set of three points, there are exactly 29 topologies (a brute-force count in
+[`src/topology/count.py`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology) confirms the known
+sequence 1, 4, 29, 355 for one to four points). Try building them:
+
+```{ojs}
+//| echo: false
+topoView = {
+  const host = htl.html`<div></div>`;
+  const mod = await import(new URL("topo.js", document.baseURI).href);
+  mod.mountTopo(host);
+  return host;
+}
+```
+
+Finite topologies look strange, but they have a use: they are the natural setting for describing which states of a
+system can be reached from which. Every topology on a finite set corresponds to a preorder on its points.
+
+## Closed sets, closure and boundary
+
+A set is **closed** if its complement is open. Taking complements turns the axioms round: arbitrary intersections and
+finite unions of closed sets are closed.
+
+"Closed" is not the opposite of "open". In $\mathbb{R}$, $[0, 1]$ is closed, $(0, 1)$ is open, $[0, 1)$ is neither, and
+$\varnothing$ and $\mathbb{R}$ are both.
+
+For any set $A$:
+
+- its **interior** is the largest open set inside it, the union of all open subsets of $A$;
+- its **closure** $\bar A$ is the smallest closed set containing it, the intersection of all closed sets containing $A$;
+- its **boundary** is the closure minus the interior.
+
+A point $p$ is in the closure of $A$ exactly when every neighbourhood of $p$ meets $A$. This is "nearness" without
+distance: $p$ is arbitrarily close to $A$ if no open set can separate them. Similarly, a sequence $x_n$ **converges** to
+$p$ if every neighbourhood of $p$ contains all but finitely many of the $x_n$.
+
+## Continuity
+
+In analysis, $f$ is continuous at $p$ if for every $\varepsilon > 0$ there is a $\delta > 0$ such that points within
+$\delta$ of $p$ are sent within $\varepsilon$ of $f(p)$. Topology replaces this with a statement about open sets.
+
+::: {.callout-tip appearance="simple"}
+## Definition
+
+A function $f: X \to Y$ between topological spaces is **continuous** if the preimage of every open set is open:
+$$
+V \text{ open in } Y \;\Longrightarrow\; f^{-1}(V) = \{x : f(x) \in V\} \text{ open in } X .
+$$
+:::
+
+**For metric spaces, this is the same as the $\varepsilon$–$\delta$ definition.** Suppose preimages of open sets are
+open, and take $p$ and $\varepsilon$. The ball $B_\varepsilon(f(p))$ is open, so its preimage is an open set containing $p$,
+so it contains some ball $B_\delta(p)$, and that $\delta$ works. Conversely, suppose $f$ is $\varepsilon$–$\delta$
+continuous, $V$ is open, and $p \in f^{-1}(V)$. Some ball $B_\varepsilon(f(p))$ lies in $V$, and its $\delta$ gives a ball
+$B_\delta(p)$ that $f$ maps into $V$, so $f^{-1}(V)$ contains a ball round each of its points: it is open. $\blacksquare$
+
+It is preimages, not images, that behave: a continuous function can map an open set to a set that is not open. The
+constant function sends all of $\mathbb{R}$ to a single point.
+
+## Homeomorphism: when two spaces are the same
+
+::: {.callout-tip appearance="simple"}
+## Definition
+
+A **homeomorphism** is a continuous bijection $f: X \to Y$ whose inverse is also continuous. If one exists, $X$ and $Y$
+are **homeomorphic**: topologically, they are the same space.
+:::
+
+A homeomorphism matches open sets with open sets, so it preserves every property defined from them. Some results are
+surprising at first:
+
+![Left: the function tan(πx/2) is a homeomorphism from the open interval (−1, 1) to the whole real line. Length, boundedness and distance are not topological properties. Right: stereographic projection from the removed point N is a homeomorphism from a circle minus a point to the line. The same construction for the sphere gives the charts of Part 1.](fig_homeomorphisms.png)
+
+The inverse must be checked separately. The map $t \mapsto (\cos t, \sin t)$ from $[0, 2\pi)$ to the circle is a
+continuous bijection, but its inverse jumps from near $2\pi$ to 0 as you cross the starting point, so it is not
+continuous. A half-open interval and a circle are not homeomorphic.
+
+This is the word in the manifold definition: a chart is a homeomorphism from an open set of the manifold to an open
+subset of $\mathbb{R}^n$. It is what guarantees that coordinates assign nearby numbers to nearby points, and vice versa.
+
+## Making new spaces
+
+**Subspaces.** A subset $A \subseteq X$ inherits the **subspace topology**: its open sets are the sets $U \cap A$ with $U$
+open in $X$. The sphere gets its topology this way from $\mathbb{R}^3$, and a small open "cap" of the sphere, which is
+the intersection of the sphere with an open ball, is open in the sphere though not in $\mathbb{R}^3$. Openness depends on
+the space you are in.
+
+**Products.** $X \times Y$ has the **product topology**, generated by products $U \times V$ of open sets. With it,
+$\mathbb{R}^n$ is $\mathbb{R} \times \dots \times \mathbb{R}$, and a cylinder is a circle times a line.
+
+**Quotients.** Gluing is the most powerful construction. Given a way of identifying some points of $X$ with others, the
+**quotient topology** on the glued space declares a set open exactly when the set of all points glued into it was open in
+$X$. Starting from a square:
+
+![New spaces by gluing the edges of a square, arrows matching. One pair of edges gives a cylinder, or a Möbius strip if one edge is turned over. Two pairs give a torus, or a Klein bottle if one pair is turned over. Folding the edges in pairs from opposite corners, like closing an envelope, gives a sphere.](fig_gluing.png)
+
+The Klein bottle cannot be built in three-dimensional space without passing through itself, yet as a topological space
+it is perfectly well defined. This is one reason topology works with abstract spaces, not subsets of $\mathbb{R}^3$. The
+same freedom lets spacetime be a manifold that is not embedded in anything.
+
+## The three conditions in the manifold definition
+
+### Hausdorff
+
+A space is **Hausdorff** if any two distinct points have disjoint neighbourhoods. All metric spaces are: if $p$ and $q$
+are distance $d$ apart, the balls of radius $d/2$ around them do not meet. Its most important consequence is that limits
+are unique, since a sequence cannot eventually lie inside two disjoint sets at once.
+
+Without it, strange things satisfy the rest of the manifold definition. Take two copies of the real line and glue them
+together at every point except 0:
+
+![The line with two origins. Away from zero it is an ordinary line; at zero there are two points, A and B. Each has neighbourhoods that look like an interval, so the space is locally like ℝ. But every neighbourhood of A meets every neighbourhood of B, so the sequence 1/n converges to both. The Hausdorff condition rules this out.](fig_two_origins.png)
+
+In physics this would mean a world line that could end up at two different events, so the condition is assumed.
+
+### Second countable
+
+A space is **second countable** if its topology has a countable **base**: a countable collection of open sets such that
+every open set is a union of some of them. For $\mathbb{R}^n$, balls with rational centres and rational radii form one.
+
+The condition rules out manifolds that are "too big", such as the **long line**, made by gluing uncountably many
+intervals end to end. The long line is locally like $\mathbb{R}$, and Hausdorff, but it is so long that no sequence can
+reach its end. Second countability guarantees **partitions of unity**: families of smooth functions that let local
+constructions, made chart by chart, be glued into global ones. That is how [Part 3](/explainers/gr-3-metric-and-spacetime/)
+puts a Riemannian metric on any smooth manifold.
+
+### Compactness
+
+A space is **compact** if every covering of it by open sets has a finite subcovering. In $\mathbb{R}^n$, by the
+**Heine–Borel theorem**, a set is compact exactly when it is closed and bounded. The sphere, the torus and $[0, 1]$ are
+compact. $\mathbb{R}$ and $(0, 1)$ are not: the open intervals $(1/n, 1)$ cover $(0, 1)$, and no finite number of them do.
+
+Compactness survives continuous maps: **the continuous image of a compact space is compact**. If $f: X \to Y$ is continuous
+and $\{V_i\}$ covers $f(X)$ by open sets, the preimages $f^{-1}(V_i)$ cover $X$. Finitely many of them do, so the
+corresponding finitely many $V_i$ cover $f(X)$. $\blacksquare$
+
+That one-line proof is the argument used in Part 1 to show that the sphere needs at least two charts. A single chart
+would be a homeomorphism from the compact sphere onto an open subset of $\mathbb{R}^2$, which would then have to be
+compact, and so closed and bounded. But the plane is connected (below), so the only non-empty subset of it that is both
+open and closed is the whole plane, which is not bounded. So no such chart exists.
+
+## Connectedness
+
+A space is **connected** if it cannot be split into two disjoint non-empty open sets. It is **path-connected** if any two
+points can be joined by a continuous path. Path-connected spaces are connected; the converse fails for the
+"topologist's sine curve", the graph of $\sin(1/x)$ for $x > 0$ together with the segment it oscillates towards at $x = 0$.
+For manifolds the two notions coincide.
+
+$\mathbb{R}$ is connected, which is the topological core of the intermediate value theorem: a continuous image of a
+connected space is connected, so a continuous real function cannot jump over a value.
+
+## Topological invariants
+
+To prove two spaces are **not** homeomorphic, find a property that one has and the other lacks. Compactness distinguishes
+the sphere from the plane. Connectedness distinguishes a line from a line with a point removed. Subtler invariants
+distinguish the sphere from the torus.
+
+The oldest is the **Euler characteristic**. Divide a surface into polygons with $V$ vertices, $E$ edges and $F$ faces;
+the number $\chi = V - E + F$ does not depend on how it is divided. For every convex polyhedron (all homeomorphic to a
+sphere) $\chi = 2$: the tetrahedron, cube, octahedron and icosahedron all give $4 - 6 + 4$, $8 - 12 + 6$, $6 - 12 + 8$ and
+$12 - 30 + 20$. For a torus, divided into a 3 by 3 grid of squares, $\chi = 9 - 18 + 9 = 0$. So a sphere and a torus are
+not homeomorphic.
+
+The Euler characteristic also controls vector fields. The **Poincaré–Hopf theorem** says that on a compact surface the
+zeros of any vector field, counted with signs, add up to $\chi$. On a sphere, $\chi = 2 \ne 0$, so every vector field has a
+zero: you cannot comb a hairy ball flat. That is the reason, given in [Part 3](/explainers/gr-3-metric-and-spacetime/), that
+a compact manifold carries a Lorentzian metric, the kind spacetime needs, only if its Euler characteristic is zero.
+
+## Topology and spacetime
+
+Einstein's equations are local: they relate curvature to matter at each point. They do not fix the global topology of
+spacetime, which has to be chosen or inferred. Some examples from the series:
+
+- **de Sitter space** ([Part 7](/explainers/gr-7-de-sitter-solved/)) has the topology $\mathbb{R} \times S^3$: a
+  3-sphere of space at each moment of time. Its flat slicing covers a region with topology $\mathbb{R}^4$, which is why
+  it can look like an ordinary expanding flat universe.
+- **Anti-de Sitter space**, as a hyperboloid, has topology $S^1 \times \mathbb{R}^3$, with time running round a circle.
+  The closed timelike curves this causes are removed by passing to the **universal cover**, which unwraps the circle into
+  a line: a purely topological step.
+- **Our universe** is consistent with flat space, but flat space need not be infinite: a flat 3-torus, made by gluing
+  opposite faces of a cube, would look the same locally. Searches for repeated patterns in the cosmic microwave
+  background have found none, which puts any such repetition scale beyond roughly the size of the observable universe.
+- **Wormholes** change topology: a space with a wormhole is not homeomorphic to ordinary space, because a loop through the
+  wormhole cannot be shrunk to a point.
+
+## Summary
+
+- A topology on a set is a collection of "open" sets closed under arbitrary unions and finite intersections, and
+  containing the empty set and the whole set.
+- Continuity means preimages of open sets are open; for metric spaces it is the $\varepsilon$–$\delta$ definition.
+- A homeomorphism is a continuous bijection with continuous inverse. Homeomorphic spaces are topologically identical. A
+  chart on a manifold is a homeomorphism onto an open subset of $\mathbb{R}^n$.
+- Subspaces, products and quotients make new spaces. Gluing a square gives the cylinder, Möbius strip, torus, Klein
+  bottle and sphere.
+- The manifold definition needs Hausdorff (unique limits; no line with two origins) and second countable (no long line;
+  partitions of unity exist).
+- Compactness, connectedness and the Euler characteristic are invariants: they tell spaces apart, and they constrain
+  what can live on them, including Lorentzian metrics.
+
+## References
+
+- J. R. Munkres, *Topology*, 2nd edition (Prentice Hall, 2000), chapters 2–3.
+- J. M. Lee, *Introduction to Topological Manifolds*, 2nd edition (Springer, 2011), chapters 2–4.
+- W. A. Sutherland, *Introduction to Metric and Topological Spaces*, 2nd edition (Oxford, 2009).
+- F. Hausdorff, *Grundzüge der Mengenlehre* (Veit, Leipzig, 1914).
+- OEIS, [A000798: number of different topologies on a set of n labelled elements](https://oeis.org/A000798).
+
+*Code: [`src/topology`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology): `count.py` (counting topologies, Euler characteristics), `figs.py`. The checker is `topo.js` in this post's folder.*

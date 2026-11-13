@@ -1,0 +1,244 @@
+---
+title: "General Relativity from Scratch 5: Curvature"
+subtitle: "The Riemann tensor measures what no choice of coordinates can remove: the failure of covariant derivatives to commute, the turning of vectors round loops, and the tides that pull falling bodies apart"
+description: "Part 5 of a maths-first introduction to general relativity. The Riemann curvature tensor defined from commuting covariant derivatives, its components and symmetries, why it has 20 independent components in four dimensions, Gaussian curvature, the Ricci tensor and scalar, the Weyl tensor, the geodesic deviation equation and tidal forces (checked against a black hole), the Bianchi identities, curvature invariants, and spaces of constant curvature, all computed with a SymPy library."
+image: fig_deviation.png
+author: "Paul Milne"
+date: "2026-11-13"
+categories: [explainer, general relativity, differential geometry]
+format:
+  html:
+    toc: true
+---
+
+::: {.callout-note appearance="simple"}
+## General Relativity from Scratch
+
+1. [Manifolds](/explainers/gr-1-manifolds/)
+2. [Tensors](/explainers/gr-2-tensors/)
+3. [The metric and spacetime](/explainers/gr-3-metric-and-spacetime/)
+4. [Connections and geodesics](/explainers/gr-4-connections-and-geodesics/)
+5. **Curvature** (this part)
+6. [Einstein's equations](/explainers/gr-6-einstein-equations/)
+7. [de Sitter and anti-de Sitter, solved](/explainers/gr-7-de-sitter-solved/)
+:::
+
+Part 3 found 20 second derivatives of the metric that no change of coordinates can remove. Part 4 found that carrying
+a vector round a loop on a sphere turns it. Both are measuring the same thing: curvature. In general relativity,
+curvature is gravity's observable part, the tides that a freely falling observer cannot transform away.
+
+## The Riemann tensor
+
+On a flat space, second derivatives commute. On a curved manifold, covariant derivatives do not, and the failure is the
+definition of curvature.
+
+::: {.callout-tip appearance="simple"}
+## Definition
+
+The **Riemann curvature tensor** is the map that takes vector fields $X, Y, Z$ to
+$$
+R(X, Y)Z = \nabla_X\nabla_Y Z - \nabla_Y\nabla_X Z - \nabla_{[X, Y]}Z .
+$$
+:::
+
+The last term makes $R(X, Y)Z$ depend only on the values of $X$, $Y$ and $Z$ at each point, not on their derivatives,
+so $R$ is a tensor of type $(1, 3)$. With coordinate basis vectors, which commute, its components
+$R^\rho{}_{\sigma\mu\nu}$, defined by $R(\partial_\mu, \partial_\nu)\partial_\sigma = R^\rho{}_{\sigma\mu\nu}\partial_\rho$,
+are
+
+$$
+R^\rho{}_{\sigma\mu\nu}
+= \partial_\mu\Gamma^\rho_{\nu\sigma} - \partial_\nu\Gamma^\rho_{\mu\sigma}
++ \Gamma^\rho_{\mu\lambda}\Gamma^\lambda_{\nu\sigma} - \Gamma^\rho_{\nu\lambda}\Gamma^\lambda_{\mu\sigma} ,
+$$
+
+and, for a torsion-free connection, acting on any vector field,
+
+$$
+[\nabla_\mu, \nabla_\nu]\,V^\rho = R^\rho{}_{\sigma\mu\nu}V^\sigma .
+$$
+
+Since it is built from first derivatives of the Christoffel symbols, and those from first derivatives of the metric,
+the Riemann tensor contains the metric's second derivatives, as Part 3's counting said it must.
+
+**Holonomy.** Carry a vector $V$ round a small closed loop spanned by displacements $\delta a^\mu$ and $\delta b^\nu$.
+To lowest order it returns changed by
+
+$$
+\delta V^\rho = -R^\rho{}_{\sigma\mu\nu}\,V^\sigma\,\delta a^\mu\,\delta b^\nu ,
+$$
+
+with the sign depending on the direction round the loop. A manifold is flat, meaning that near each point there are
+coordinates in which the metric is constant, if and only if the Riemann tensor vanishes. Then parallel transport is independent of
+path, at least on loops that can be shrunk to a point.
+
+## Symmetries and the count of 20
+
+Lower the first index with the metric, $R_{\rho\sigma\mu\nu} = g_{\rho\lambda}R^\lambda{}_{\sigma\mu\nu}$. For the
+Levi-Civita connection it has these symmetries:
+
+$$
+R_{\rho\sigma\mu\nu} = -R_{\sigma\rho\mu\nu} = -R_{\rho\sigma\nu\mu} = R_{\mu\nu\rho\sigma},
+\qquad
+R_{\rho\sigma\mu\nu} + R_{\rho\mu\nu\sigma} + R_{\rho\nu\sigma\mu} = 0 .
+$$
+
+The first two come from metric compatibility and the definition; the pair symmetry follows from the others; the cyclic
+identity, the **first Bianchi identity**, from zero torsion. Counting what they leave in $n$ dimensions gives
+
+$$
+\frac{n^2(n^2 - 1)}{12}\ \text{independent components:}\qquad 1 \ (n = 2),\quad 6\ (n = 3),\quad 20\ (n = 4).
+$$
+
+Four dimensions gives 20, matching the count of second derivatives that coordinates cannot remove. The library in
+[`src/gr`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr) checks all the symmetries component by
+component for the Schwarzschild black hole (`check567.py`).
+
+**Two dimensions.** With one independent component, the whole tensor is a single function, the **Gaussian curvature**
+$K$:
+
+$$
+R_{\rho\sigma\mu\nu} = K\,(g_{\rho\mu}g_{\sigma\nu} - g_{\rho\nu}g_{\sigma\mu}).
+$$
+
+For the sphere of radius $a$, the library finds $R_{\theta\phi\theta\phi} = a^2\sin^2\theta$, and since
+$g_{\theta\theta}g_{\phi\phi} = a^4\sin^2\theta$, $K = 1/a^2$, the same at every point. For the plane in polar
+coordinates, every component is zero: the Christoffel symbols are non-zero, but the curvature vanishes, because the
+curvature in polar coordinates was only ever a feature of the coordinates.
+
+## Contractions: Ricci and Weyl
+
+The **Ricci tensor** and **Ricci scalar** are the contractions
+
+$$
+R_{\sigma\nu} = R^\rho{}_{\sigma\rho\nu}, \qquad R = g^{\sigma\nu}R_{\sigma\nu} .
+$$
+
+The Ricci tensor is symmetric, with 10 components in four dimensions. For a sphere, $R = 2K = 2/a^2$.
+
+In four dimensions, the Riemann tensor's 20 components split into the 10 of the Ricci tensor and 10 of the
+**Weyl tensor**, its trace-free part. They describe different physical effects, which geodesic deviation will make
+clear:
+
+- the Ricci part changes the **volume** of a small ball of freely falling particles;
+- the Weyl part changes its **shape** without changing its volume: tides and gravitational waves.
+
+In empty space the Ricci tensor vanishes (Part 6), so the gravity of the Sun, the Moon and black holes, outside the
+bodies themselves, is all Weyl curvature.
+
+## Geodesic deviation: curvature as tides
+
+Take a family of geodesics, with tangent $u^\mu$, and let $\xi^\mu$ be the separation vector to a neighbouring one.
+Commuting covariant derivatives with the Riemann tensor gives the **geodesic deviation equation**:
+
+$$
+\frac{D^2\xi^\mu}{d\tau^2} = -R^\mu{}_{\nu\rho\sigma}\,u^\nu\,\xi^\rho\,u^\sigma .
+$$
+
+Neighbouring free-fall paths accelerate relative to one another in proportion to the curvature. This is the
+coordinate-independent content of gravity: the equivalence principle removes the gravitational acceleration at a
+point, but not the difference in acceleration between nearby points.
+
+**On a surface** of constant curvature $K$, it reduces to $d^2\xi/ds^2 = -K\xi$. Geodesics that start parallel converge
+on a sphere, stay parallel on a plane, and diverge on a hyperbolic plane:
+
+![Left: the separation of two geodesics that start parallel, on surfaces of positive, zero and negative curvature. The dots are the actual distance between two meridians of a sphere that start parallel at the equator. They meet at the pole, a quarter of a great circle later, as the equation predicts. Right: a ring of freely falling particles near a mass, from the geodesic deviation equation with the Schwarzschild curvature. It is stretched along the radial direction and squeezed across it, keeping its area to first order.](fig_deviation.png)
+
+**Near a mass.** For an observer at radius $r$ outside a mass $M$ (the Schwarzschild solution, Part 6), the library
+gives, in the observer's own orthonormal frame,
+
+$$
+R^{\hat r}{}_{\hat t\hat r\hat t} = -\frac{2GM}{c^2r^3}, \qquad R^{\hat\theta}{}_{\hat t\hat\theta\hat t} = R^{\hat\phi}{}_{\hat t\hat\phi\hat t} = \frac{GM}{c^2r^3},
+$$
+
+so that, with $D^2\xi/d\tau^2 = -R\,\xi\,c^2$,
+
+$$
+\frac{d^2\xi^{\hat r}}{d\tau^2} = +\frac{2GM}{r^3}\,\xi^{\hat r}, \qquad
+\frac{d^2\xi^{\hat\theta}}{d\tau^2} = -\frac{GM}{r^3}\,\xi^{\hat\theta} .
+$$
+
+These are exactly Newton's tidal accelerations, the second derivatives $-\partial_i\partial_j\Phi$ of the potential
+$\Phi = -GM/r$: stretching by $2GM/r^3$ along the line to the mass, squeezing by $GM/r^3$ across it. They raise the
+oceans' tides, and near a small black hole they would pull a falling body into spaghetti. The trace is zero, so the
+volume is unchanged: this is pure Weyl curvature. For *Interstellar*'s Miller's planet, the tides scale as $M/r^3$,
+which is why Kip Thorne needed Gargantua to be huge, so that the tides at its horizon are mild
+([Interstellar's Bulk](/sci-fi/interstellar-bulk/)).
+
+## The Bianchi identity
+
+The Riemann tensor also satisfies a differential identity, the **second Bianchi identity**:
+
+$$
+\nabla_\lambda R_{\rho\sigma\mu\nu} + \nabla_\rho R_{\sigma\lambda\mu\nu} + \nabla_\sigma R_{\lambda\rho\mu\nu} = 0 .
+$$
+
+It is easiest to prove in normal coordinates at a point, where the Christoffel symbols vanish and each term becomes a
+combination of third derivatives of the metric that cancel in the cyclic sum. Contracting it twice gives the identity
+on which Part 6 is built:
+
+$$
+\nabla^\mu G_{\mu\nu} = 0, \qquad G_{\mu\nu} = R_{\mu\nu} - \tfrac12 R\,g_{\mu\nu} .
+$$
+
+$G_{\mu\nu}$ is the **Einstein tensor**. Its divergence vanishes identically, for any metric whatever. For example, for
+an expanding universe with metric $-dt^2 + a(t)^2(dx^2 + dy^2 + dz^2)$, the library computes $\nabla_\mu G^\mu{}_\nu$ for
+an arbitrary function $a(t)$ and finds zero in every component.
+
+## Invariants: telling real singularities from bad coordinates
+
+Components of the Riemann tensor depend on the chart. Full contractions do not. The **Kretschmann scalar** for the
+Schwarzschild black hole is
+
+$$
+R_{\rho\sigma\mu\nu}R^{\rho\sigma\mu\nu} = \frac{48\,G^2M^2}{c^4\,r^6} .
+$$
+
+It is finite at the horizon, $r = 2GM/c^2$, where the Schwarzschild metric's components blow up: the horizon is a
+coordinate singularity, a failure of the chart (Part 1). It diverges at $r = 0$, which is a true singularity of the
+geometry.
+
+## Constant curvature
+
+The simplest curved spaces have the same curvature at every point and in every direction. In any dimension, they are the
+spaces whose Riemann tensor takes the form
+
+$$
+\boxed{R_{\rho\sigma\mu\nu} = K\,(g_{\rho\mu}g_{\sigma\nu} - g_{\rho\nu}g_{\sigma\mu})}
+$$
+
+with $K$ constant. These are the **maximally symmetric spaces**: they have the largest possible number of independent
+symmetries, $n(n + 1)/2$. Contracting gives $R_{\sigma\nu} = (n - 1)K\,g_{\sigma\nu}$ and $R = n(n - 1)K$. The library
+checks this form, component by component, for these metrics:
+
+| Space | Dimension | $K$ | Ricci scalar $R$ |
+|:--|:--:|:--:|:--:|
+| sphere of radius $a$ | 2 | $1/a^2$ | $2/a^2$ |
+| hyperbolic plane | 2 | $-1/a^2$ | $-2/a^2$ |
+| Minkowski spacetime | 4 | 0 | 0 |
+| de Sitter spacetime, radius $\ell$ (three charts) | 4 | $1/\ell^2$ | $12/\ell^2$ |
+| anti-de Sitter spacetime, radius $\ell$ (three charts) | 4 | $-1/\ell^2$ | $-12/\ell^2$ |
+| Schwarzschild | 4 | not of this form | 0 |
+
+The last row is the contrast: Schwarzschild has zero Ricci curvature but non-zero Weyl curvature, so it is curved
+without being of constant curvature. De Sitter and anti-de Sitter space are to spacetime what the sphere and the
+hyperbolic plane are to surfaces. Part 7 derives them from Einstein's equations.
+
+## Summary
+
+- The Riemann tensor is the commutator of covariant derivatives. It measures the turning of vectors carried round
+  small loops, and vanishes exactly when space is flat.
+- Its symmetries leave $n^2(n^2 - 1)/12$ components: 20 in four dimensions, 10 Ricci and 10 Weyl.
+- Geodesic deviation turns curvature into relative acceleration: tides. Near a mass it reproduces Newton's tidal
+  forces exactly.
+- The Bianchi identity makes the Einstein tensor's divergence vanish identically.
+- Spaces of constant curvature have $R_{\rho\sigma\mu\nu} = K(g_{\rho\mu}g_{\sigma\nu} - g_{\rho\nu}g_{\sigma\mu})$.
+
+## References
+
+- S. M. Carroll, *Spacetime and Geometry*, chapter 3.
+- R. M. Wald, *General Relativity*, sections 3.2–3.3.
+- C. W. Misner, K. S. Thorne and J. A. Wheeler, *Gravitation*, chapters 11, 13–15.
+- J. M. Lee, *Introduction to Riemannian Manifolds*, chapter 7.
+
+*Code: [`src/gr`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/gr): `gr.py`, `examples.py`, `check567.py`, `figs567.py`.*
