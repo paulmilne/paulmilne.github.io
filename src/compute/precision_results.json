@@ -1,0 +1,69 @@
+{
+ "float64": {
+  "seconds": 2.48,
+  "rays_per_s": 20620,
+  "fates": [
+   26575,
+   7819,
+   16806,
+   0
+  ],
+  "mean_steps": 110.6
+ },
+ "float32": {
+  "seconds": 1.21,
+  "rays_per_s": 42209,
+  "fates": [
+   26575,
+   7819,
+   16806,
+   0
+  ],
+  "mean_steps": 110.6,
+  "fate_mismatch_pct": 0.0,
+  "sky_err_median_px": 0.00017422561709806988,
+  "sky_err_p99_px": 0.0016103135601961021,
+  "sky_err_max_px": 0.4658711861398481,
+  "disk_err_median": 3.3309907796486016e-06,
+  "disk_err_p99": 4.994978487178389e-05
+ },
+ "bfloat16": {
+  "seconds": 14.75,
+  "rays_per_s": 3471,
+  "fates": [
+   27453,
+   7940,
+   15794,
+   13
+  ],
+  "mean_steps": 114.2,
+  "fate_mismatch_pct": 5.723,
+  "sky_err_median_px": 31.222407491460025,
+  "sky_err_p99_px": 162.58779885153254,
+  "sky_err_max_px": 847.0664543719809,
+  "disk_err_median": 0.25122643954514157,
+  "disk_err_p99": 2.800047160934365
+ },
+ "float16": {
+  "seconds": 0.16,
+  "rays_per_s": 325523,
+  "fates": [
+   0,
+   51200,
+   0,
+   0
+  ],
+  "mean_steps": 1.0,
+  "fate_mismatch_pct": 84.729,
+  "sky_err_median_px": null,
+  "sky_err_p99_px": null,
+  "sky_err_max_px": null,
+  "disk_err_median": null,
+  "disk_err_p99": null
+ },
+ "float64_half_step": {
+  "fate_mismatch_pct": 0.008,
+  "sky_err_median_px": 0.23399316933339684,
+  "sky_err_p99_px": 0.788049668694808
+ }
+}

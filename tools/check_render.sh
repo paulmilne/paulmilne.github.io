@@ -49,8 +49,13 @@ done < <(git ls-files -co --exclude-standard '*.qmd')
 
 # Site-wide settings (navbar, theme, render list) live in _quarto.yml and styles.css.
 # If they are newer than a page, that page shows the old settings until a full render.
+# Only pages built from a .qmd count; files Quarto copies unchanged (verification files, embedded assets) keep their old dates.
 old=0
-while IFS= read -r h; do { [ _quarto.yml -nt "$h" ] || [ styles.css -nt "$h" ]; } && old=$((old+1)); done < <(find docs -name '*.html' -not -path 'docs/site_libs/*')
+while IFS= read -r q; do
+  wanted "$q" || continue
+  h="docs/${q%.qmd}.html"
+  [ -f "$h" ] && { [ _quarto.yml -nt "$h" ] || [ styles.css -nt "$h" ]; } && old=$((old+1))
+done < <(git ls-files -co --exclude-standard '*.qmd')
 [ $old -gt 0 ] && echo "CONFIG   _quarto.yml or styles.css is newer than $old page(s): run 'quarto render' for the whole site"
 
 if [ $fail = 1 ]; then

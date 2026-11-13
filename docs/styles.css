@@ -1,7 +1,4 @@
 /* css styles */
 
-/* Keep each menu item on one line; the navbar now has 13 sections */
-@media (min-width: 1200px) {
-  .navbar .navbar-nav .nav-link { padding-left: .3rem; padding-right: .3rem; }
-  .navbar .menu-text { white-space: nowrap; }
-}
+/* Keep each menu item on one line */
+.navbar .menu-text { white-space: nowrap; }

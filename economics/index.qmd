@@ -1,0 +1,15 @@
+---
+title: "Economics"
+description: "Economics worked through with public data and models: wealth and its distribution, feedback loops, markets and growth."
+listing:
+  contents: .
+  sort: ["date desc", "title"]
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---
+
+Economics worked through with public data and simple models. Each post states where its numbers come from, and the scripts that download the data and draw the figures are in the repository.

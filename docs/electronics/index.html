@@ -134,15 +134,15 @@ window.Quarto = {
 <link rel="stylesheet" href="../styles.css">
 <meta property="og:title" content="Electronics – math-blog">
 <meta property="og:description" content="Circuits, oscillators, radio and instrumentation: analogue and digital electronics, modelled and measured.">
-<meta property="og:image" content="https://paulmilne.github.io/electronics/stampfly-digital-twin/thumbnail.png">
+<meta property="og:image" content="https://paulmilne.github.io/electronics/compute-since-interstellar/thumbnail.png">
 <meta property="og:site_name" content="math-blog">
-<meta property="og:image:height" content="187">
-<meta property="og:image:width" content="562">
+<meta property="og:image:height" content="400">
+<meta property="og:image:width" content="800">
 <meta name="twitter:title" content="Electronics – math-blog">
 <meta name="twitter:description" content="Circuits, oscillators, radio and instrumentation: analogue and digital electronics, modelled and measured.">
-<meta name="twitter:image" content="https://paulmilne.github.io/electronics/stampfly-digital-twin/thumbnail.png">
-<meta name="twitter:image-height" content="187">
-<meta name="twitter:image-width" content="562">
+<meta name="twitter:image" content="https://paulmilne.github.io/electronics/compute-since-interstellar/thumbnail.png">
+<meta name="twitter:image-height" content="400">
+<meta name="twitter:image-width" content="800">
 <meta name="twitter:card" content="summary_large_image">
 </head>
 
@@ -175,45 +175,70 @@ window.Quarto = {
     <a class="nav-link" href="../papers/index.html"> 
 <span class="menu-text">Papers</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../probability/index.html"> 
-<span class="menu-text">Probability</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-maths" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Maths</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-maths">    
+        <li>
+    <a class="dropdown-item" href="../probability/index.html">
+ <span class="dropdown-text">Probability</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../cosmology/index.html"> 
-<span class="menu-text">Cosmology</span></a>
+        <li>
+    <a class="dropdown-item" href="../geb/index.html">
+ <span class="dropdown-text">GEB</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../complexity/index.html">
+ <span class="dropdown-text">Complexity</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-physics--space" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Physics &amp; Space</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-physics--space">    
+        <li>
+    <a class="dropdown-item" href="../cosmology/index.html">
+ <span class="dropdown-text">Cosmology</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../astronomy/index.html">
+ <span class="dropdown-text">Astronomy</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../space/index.html">
+ <span class="dropdown-text">Space</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../mechanics/index.html">
+ <span class="dropdown-text">Mechanics</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-engineering" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Engineering</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-engineering">    
+        <li>
+    <a class="dropdown-item" href="../electronics/index.html">
+ <span class="dropdown-text">Electronics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../ai/index.html">
+ <span class="dropdown-text">AI</span></a>
+  </li>  
+    </ul>
+  </li>
   <li class="nav-item">
-    <a class="nav-link" href="../astronomy/index.html"> 
-<span class="menu-text">Astronomy</span></a>
+    <a class="nav-link" href="../economics/index.html"> 
+<span class="menu-text">Economics</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../sci-fi/index.html"> 
 <span class="menu-text">Sci-Fi</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../mechanics/index.html"> 
-<span class="menu-text">Mechanics</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../electronics/index.html" aria-current="page"> 
-<span class="menu-text">Electronics</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../complexity/index.html"> 
-<span class="menu-text">Complexity</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../ai/index.html"> 
-<span class="menu-text">AI</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../space/index.html"> 
-<span class="menu-text">Space</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../geb/index.html"> 
-<span class="menu-text">GEB</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
@@ -265,7 +290,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(3)</span></div><div class="category" data-category="Y29udHJvbA==">control <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZHJvbmVz">drones <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZWxlY3Ryb25pY3M=">electronics <span class="quarto-category-count">(3)</span></div><div class="category" data-category="a2FsbWFuLWZpbHRlcg==">kalman-filter <span class="quarto-category-count">(2)</span></div><div class="category" data-category="bWF0bGFi">matlab <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bXVqb2Nv">mujoco <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bm1y">nmr <span class="quarto-category-count">(1)</span></div><div class="category" data-category="b3NjaWxsYXRvcnM=">oscillators <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2Vuc29ycw==">sensors <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxhdGlvbg==">simulation <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxpbms=">simulink <span class="quarto-category-count">(1)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="YmxhY2slMjBob2xlcw==">black holes <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Y29tcHV0aW5n">computing <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Y29udHJvbA==">control <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZHJvbmVz">drones <span class="quarto-category-count">(2)</span></div><div class="category" data-category="ZWxlY3Ryb25pY3M=">electronics <span class="quarto-category-count">(4)</span></div><div class="category" data-category="ZmxvYXRpbmclMjBwb2ludA==">floating point <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Z3B1">gpu <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW50ZXJzdGVsbGFy">interstellar <span class="quarto-category-count">(1)</span></div><div class="category" data-category="a2FsbWFuLWZpbHRlcg==">kalman-filter <span class="quarto-category-count">(2)</span></div><div class="category" data-category="bWF0bGFi">matlab <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bXVqb2Nv">mujoco <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bm1y">nmr <span class="quarto-category-count">(1)</span></div><div class="category" data-category="b3NjaWxsYXRvcnM=">oscillators <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2Vuc29ycw==">sensors <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxhdGlvbg==">simulation <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2ltdWxpbms=">simulink <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -280,7 +305,50 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="ZWxlY3Ryb25pY3MlMkNjb250cm9sJTJDc2ltdWxhdGlvbiUyQ211am9jbyUyQ2Ryb25lcyUyQ2thbG1hbi1maWx0ZXI=" data-listing-date-sort="1794096000000" data-listing-file-modified-sort="1794211635406" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="12" data-listing-word-count-sort="2395">
+<div class="quarto-post image-right" data-index="0" data-categories="ZWxlY3Ryb25pY3MlMkNjb21wdXRpbmclMkNncHUlMkNmbG9hdGluZyUyMHBvaW50JTJDYmxhY2slMjBob2xlcyUyQ2ludGVyc3RlbGxhcg==" data-listing-date-sort="1794528000000" data-listing-file-modified-sort="1794601059001" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="12" data-listing-word-count-sort="2359">
+<div class="thumbnail"><a href="../electronics/compute-since-interstellar/index.html" class="no-external">
+
+<img loading="lazy" src="../electronics/compute-since-interstellar/thumbnail.png" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../electronics/compute-since-interstellar/index.html" class="no-external">Twelve Years of Compute, Seen Through Gargantua</a>
+</h3>
+<div class="listing-subtitle">
+<a href="../electronics/compute-since-interstellar/index.html" class="no-external">In 2013 Interstellar’s black hole took hours per frame on a render farm. Today a browser can draw it in real time. What actually changed, why 2013 hardware could already have done it faster, and why most of the new computing power is useless for physics</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZWxlY3Ryb25pY3M='); return false;">electronics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Y29tcHV0aW5n'); return false;">computing</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Z3B1'); return false;">gpu</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZmxvYXRpbmclMjBwb2ludA=='); return false;">floating point</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('YmxhY2slMjBob2xlcw=='); return false;">black holes</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aW50ZXJzdGVsbGFy'); return false;">interstellar</div>
+
+</div>
+<div class="delink listing-description"><a href="../electronics/compute-since-interstellar/index.html" class="no-external">
+<p>How computing hardware changed between Interstellar (2013–14) and today, measured against one problem: rendering the black hole Gargantua. DNGR’s CPU render farm, the end of Dennard scaling, CPUs against GPUs from 2013 to 2025, Blinn’s law, a live WebGL Kerr ray tracer that benchmarks your own device, and an experiment on how much floating-point precision a black hole needs: 32-bit is ample, while the 16-bit formats that dominate AI hardware fail completely.</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../electronics/compute-since-interstellar/index.html" class="no-external">
+<div class="listing-date">
+Nov 13, 2026
+</div>
+<div class="listing-author">
+Paul Milne
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="ZWxlY3Ryb25pY3MlMkNjb250cm9sJTJDc2ltdWxhdGlvbiUyQ211am9jbyUyQ2Ryb25lcyUyQ2thbG1hbi1maWx0ZXI=" data-listing-date-sort="1794096000000" data-listing-file-modified-sort="1794211635406" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="12" data-listing-word-count-sort="2395">
 <div class="thumbnail"><a href="../electronics/stampfly-digital-twin/index.html" class="no-external">
 
 <img loading="lazy" src="../electronics/stampfly-digital-twin/thumbnail.png" class="thumbnail-image">
@@ -323,7 +391,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="ZWxlY3Ryb25pY3MlMkNubXIlMkNvc2NpbGxhdG9ycyUyQ21hdGxhYiUyQ3NpbXVsaW5r" data-listing-date-sort="1793750400000" data-listing-file-modified-sort="1793890608395" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="37" data-listing-word-count-sort="7289">
+<div class="quarto-post image-right" data-index="2" data-categories="ZWxlY3Ryb25pY3MlMkNubXIlMkNvc2NpbGxhdG9ycyUyQ21hdGxhYiUyQ3NpbXVsaW5r" data-listing-date-sort="1793750400000" data-listing-file-modified-sort="1793890608395" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="37" data-listing-word-count-sort="7289">
 <div class="thumbnail"><a href="../electronics/nmr-marginal-oscillator/index.html" class="no-external">
 
 <img loading="lazy" src="../electronics/nmr-marginal-oscillator/setup_3d_overview.png" class="thumbnail-image">
@@ -364,7 +432,7 @@ Paul Milne
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="ZWxlY3Ryb25pY3MlMkNjb250cm9sJTJDa2FsbWFuLWZpbHRlciUyQ3NlbnNvcnMlMkNkcm9uZXM=" data-listing-date-sort="1793750400000" data-listing-file-modified-sort="1793897675991" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="31" data-listing-word-count-sort="6019">
+<div class="quarto-post image-right" data-index="3" data-categories="ZWxlY3Ryb25pY3MlMkNjb250cm9sJTJDa2FsbWFuLWZpbHRlciUyQ3NlbnNvcnMlMkNkcm9uZXM=" data-listing-date-sort="1793750400000" data-listing-file-modified-sort="1793897675991" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="31" data-listing-word-count-sort="6019">
 <div class="thumbnail"><a href="../electronics/quadcopters-kalman/index.html" class="no-external">
 
 <img loading="lazy" src="../electronics/quadcopters-kalman/thumbnail.png" class="thumbnail-image">

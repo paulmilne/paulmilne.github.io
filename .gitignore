@@ -24,3 +24,12 @@
 /M840-Dissertation-Paul_Milne-Final.pdf
 .posit/assistant
 _models/
+
+# downloaded source data for the economics series (re-create with src/economics/fetch_data.py)
+/src/economics/data/
+
+**/*.quarto_ipynb
+
+# regenerable outputs of src/compute/precision.py
+/src/compute/*.npz
+__pycache__/

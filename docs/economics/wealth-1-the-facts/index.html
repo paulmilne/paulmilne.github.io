@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-13">
+<meta name="description" content="The first of a series on why wealth has concentrated in so few hands. Using the Federal Reserve’s Distributional Financial Accounts, the Forbes billionaire lists and the World Inequality Database, this part establishes the facts: the US top 0.1% share rose from 12.6% to 15.0% in ten years while the rest of the top 1% lost share; billionaire wealth doubled relative to world GDP; two-thirds of the gain was listed shares; and the top 1% share is flat in most countries.">
+
+<title>Wealth Concentration, Part 1: What the Data Shows – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Wealth Concentration, Part 1: What the Data Shows – math-blog">
+<meta property="og:description" content="The first of a series on why wealth has concentrated in so few hands. Using the Federal Reserve’s Distributional Financial Accounts, the Forbes billionaire lists and the World Inequality Database, this part establishes the facts: the US top 0.1% share rose from 12.6% to 15.0% in ten years while the rest of the top 1% lost share; billionaire wealth doubled relative to world GDP; two-thirds of the gain was listed shares; and the top 1% share is flat in most countries.">
+<meta property="og:image" content="https://paulmilne.github.io/economics/wealth-1-the-facts/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="600">
+<meta property="og:image:width" content="900">
+<meta name="twitter:title" content="Wealth Concentration, Part 1: What the Data Shows – math-blog">
+<meta name="twitter:description" content="The first of a series on why wealth has concentrated in so few hands. Using the Federal Reserve’s Distributional Financial Accounts, the Forbes billionaire lists and the World Inequality Database, this part establishes the facts: the US top 0.1% share rose from 12.6% to 15.0% in ten years while the rest of the top 1% lost share; billionaire wealth doubled relative to world GDP; two-thirds of the gain was listed shares; and the top 1% share is flat in most countries.">
+<meta name="twitter:image" content="https://paulmilne.github.io/economics/wealth-1-the-facts/thumbnail.png">
+<meta name="twitter:image-height" content="600">
+<meta name="twitter:image-width" content="900">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-xl " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-maths" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Maths</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-maths">    
+        <li>
+    <a class="dropdown-item" href="../../probability/index.html">
+ <span class="dropdown-text">Probability</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../geb/index.html">
+ <span class="dropdown-text">GEB</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../complexity/index.html">
+ <span class="dropdown-text">Complexity</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-physics--space" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Physics &amp; Space</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-physics--space">    
+        <li>
+    <a class="dropdown-item" href="../../cosmology/index.html">
+ <span class="dropdown-text">Cosmology</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../astronomy/index.html">
+ <span class="dropdown-text">Astronomy</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../space/index.html">
+ <span class="dropdown-text">Space</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../mechanics/index.html">
+ <span class="dropdown-text">Mechanics</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-engineering" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Engineering</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-engineering">    
+        <li>
+    <a class="dropdown-item" href="../../electronics/index.html">
+ <span class="dropdown-text">Electronics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../ai/index.html">
+ <span class="dropdown-text">AI</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../economics/index.html"> 
+<span class="menu-text">Economics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Wealth Concentration, Part 1: What the Data Shows</h1>
+            <p class="subtitle lead">Has wealth concentrated faster in the last ten years? At the very top, yes, and sharply. For the top 1% as a whole, hardly at all. Where the acceleration is, when it happened, and which assets carried it</p>
+                  <div>
+        <div class="description">
+          The first of a series on why wealth has concentrated in so few hands. Using the Federal Reserve’s Distributional Financial Accounts, the Forbes billionaire lists and the World Inequality Database, this part establishes the facts: the US top 0.1% share rose from 12.6% to 15.0% in ten years while the rest of the top 1% lost share; billionaire wealth doubled relative to world GDP; two-thirds of the gain was listed shares; and the top 1% share is flat in most countries.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">economics</div>
+                <div class="quarto-category">inequality</div>
+                <div class="quarto-category">wealth</div>
+                <div class="quarto-category">data</div>
+                <div class="quarto-category">pareto</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 13, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-short-answer" id="toc-the-short-answer" class="nav-link active" data-scroll-target="#the-short-answer">The short answer</a></li>
+  <li><a href="#three-sources" id="toc-three-sources" class="nav-link" data-scroll-target="#three-sources">Three sources</a></li>
+  <li><a href="#the-united-states-by-wealth-group" id="toc-the-united-states-by-wealth-group" class="nav-link" data-scroll-target="#the-united-states-by-wealth-group">The United States, by wealth group</a>
+  <ul class="collapse">
+  <li><a href="#explore-the-data" id="toc-explore-the-data" class="nav-link" data-scroll-target="#explore-the-data">Explore the data</a></li>
+  </ul></li>
+  <li><a href="#the-tops-share-follows-the-stock-market" id="toc-the-tops-share-follows-the-stock-market" class="nav-link" data-scroll-target="#the-tops-share-follows-the-stock-market">The top’s share follows the stock market</a></li>
+  <li><a href="#decomposing-the-rise-asset-mix-against-share-of-each-asset" id="toc-decomposing-the-rise-asset-mix-against-share-of-each-asset" class="nav-link" data-scroll-target="#decomposing-the-rise-asset-mix-against-share-of-each-asset">Decomposing the rise: asset mix against share of each asset</a></li>
+  <li><a href="#the-worlds-billionaires" id="toc-the-worlds-billionaires" class="nav-link" data-scroll-target="#the-worlds-billionaires">The world’s billionaires</a>
+  <ul class="collapse">
+  <li><a href="#where-the-growth-came-from" id="toc-where-the-growth-came-from" class="nav-link" data-scroll-target="#where-the-growth-came-from">Where the growth came from</a></li>
+  <li><a href="#the-shape-of-the-tail" id="toc-the-shape-of-the-tail" class="nav-link" data-scroll-target="#the-shape-of-the-tail">The shape of the tail</a></li>
+  </ul></li>
+  <li><a href="#other-countries" id="toc-other-countries" class="nav-link" data-scroll-target="#other-countries">Other countries</a></li>
+  <li><a href="#what-is-uncertain" id="toc-what-is-uncertain" class="nav-link" data-scroll-target="#what-is-uncertain">What is uncertain</a></li>
+  <li><a href="#what-needs-explaining" id="toc-what-needs-explaining" class="nav-link" data-scroll-target="#what-needs-explaining">What needs explaining</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.dfa-top { font-size: .9rem; margin-bottom: .4rem; } .dfa-top select { font-size: .9rem; }
+.dfa-checks { display: flex; flex-wrap: wrap; gap: .2rem .9rem; font-size: .84rem; margin-bottom: .3rem; }
+.dfa-checks label { display: flex; align-items: center; gap: .25rem; }
+.dfa-sw { width: .8rem; height: .8rem; border-radius: 2px; display: inline-block; }
+.dfa-canvas { border: 1px solid #e0e3e8; border-radius: 6px; display: block; }
+.dfa-read { font-size: .84rem; margin-top: .35rem; display: flex; flex-wrap: wrap; gap: .1rem .8rem; }
+.dfa-val { font-weight: 600; }
+.dfa-note { font-size: .78rem; color: #777; margin-top: .2rem; }
+</style>
+<p>It is widely said that wealth has been concentrating in fewer and fewer hands, faster than ever. This series tries to work out whether that is true, why it has happened, which feedback loops are involved, and what has ended such episodes in the past. The plan is:</p>
+<ol type="1">
+<li><strong>What the data shows</strong> (this part).</li>
+<li>The candidate causes, each tested against data: interest rates, superstar firms and network effects, private markets, tax, labour, globalisation, the pandemic and the AI boom.</li>
+<li>A model of the feedback loops, and what it predicts about the shape of the distribution.</li>
+<li>How concentrations of wealth have ended historically, and what would have to happen for this one to level off, reverse or persist.</li>
+<li>The strongest counter-arguments and the limits of the measurements.</li>
+</ol>
+<p>The series is about what happened and why. Whether it is a problem, and what if anything should be done, are separate questions on which people reasonably disagree, and I will try to keep them apart.</p>
+<section id="the-short-answer" class="level2">
+<h2 class="anchored" data-anchor-id="the-short-answer">The short answer</h2>
+<ul>
+<li><strong>At the very top, concentration has accelerated.</strong> The world’s billionaires went from $6.5 trillion in 2016 to $20.1 trillion in 2026, doubling relative to the world economy after rising by a quarter in the five years before. In the US, the share of household wealth held by the top 0.1% rose from 12.6% to a record 15.0%. That is faster than its long-run pace, though not unprecedented: the ten years to 2013 saw a larger rise.</li>
+<li><strong>Below the very top, it has not.</strong> The rest of the US top 1% <em>lost</em> share over the decade, the next 9% lost more, and the bottom half gained. In the World Inequality Database, the top 1% share of wealth is flat since 2015 for the world, the US and the UK.</li>
+<li><strong>It happened in two bursts</strong>, 2020–21 and 2023–26, not steadily.</li>
+<li><strong>It was carried by listed shares.</strong> Two-thirds of the top 0.1%’s gain was corporate equity, and most of the rise in their share comes from shares outgrowing every other kind of asset.</li>
+<li><strong>It is concentrated even among billionaires.</strong> Ten people account for a third of the gains of those who were billionaires throughout.</li>
+</ul>
+<p>So the claim in its usual form needs sharpening. Among billionaires the acceleration is clear and recent. In the broader US data it shows up as a record share for the top thousandth and a faster pace since 2020, while everyone else in the top 10% lost ground.</p>
+</section>
+<section id="three-sources" class="level2">
+<h2 class="anchored" data-anchor-id="three-sources">Three sources</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Source</th>
+<th style="text-align: left;">What it measures</th>
+<th style="text-align: left;">Covers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Federal Reserve, Distributional Financial Accounts (DFA)</td>
+<td style="text-align: left;">Net worth of US households by wealth group, by type of asset</td>
+<td style="text-align: left;">US, quarterly, 1989 to 2026 Q2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Forbes World’s Billionaires lists</td>
+<td style="text-align: left;">Estimated net worth of each billionaire</td>
+<td style="text-align: left;">World, annual (March), 2011 to 2026</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">World Inequality Database (WID), via Our World in Data</td>
+<td style="text-align: left;">Top wealth shares, estimated from tax, survey and national accounts data</td>
+<td style="text-align: left;">Many countries, annual, to 2024</td>
+</tr>
+</tbody>
+</table>
+<p>Each has weaknesses, covered <a href="#what-is-uncertain">at the end</a>. They measure different things, and where they disagree that is informative.</p>
+</section>
+<section id="the-united-states-by-wealth-group" class="level2">
+<h2 class="anchored" data-anchor-id="the-united-states-by-wealth-group">The United States, by wealth group</h2>
+<p>The DFA splits households into five groups by net worth: the top 0.1% (about 130,000 households), the next 0.9%, the next 9%, the next 40%, and the bottom half.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_us_shares.png" class="img-fluid figure-img"></p>
+<figcaption>Left: each group’s share of US household net worth, 1989 to 2026. Right: the change in each group’s share over four fixed periods ending in mid-2026. In 2016–26, only the top 0.1% and the bottom 50% gained share.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">1989</th>
+<th style="text-align: right;">2006</th>
+<th style="text-align: right;">2016</th>
+<th style="text-align: right;">2026</th>
+<th style="text-align: right;">Change 2016–26</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Top 0.1%</td>
+<td style="text-align: right;">8.6%</td>
+<td style="text-align: right;">10.9%</td>
+<td style="text-align: right;">12.6%</td>
+<td style="text-align: right;">15.0%</td>
+<td style="text-align: right;"><strong>+2.5</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Next 0.9%</td>
+<td style="text-align: right;">14.2%</td>
+<td style="text-align: right;">16.8%</td>
+<td style="text-align: right;">18.0%</td>
+<td style="text-align: right;">17.5%</td>
+<td style="text-align: right;">−0.6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Next 9%</td>
+<td style="text-align: right;">38.0%</td>
+<td style="text-align: right;">37.3%</td>
+<td style="text-align: right;">39.3%</td>
+<td style="text-align: right;">36.4%</td>
+<td style="text-align: right;">−2.9</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Next 40%</td>
+<td style="text-align: right;">35.7%</td>
+<td style="text-align: right;">32.6%</td>
+<td style="text-align: right;">28.9%</td>
+<td style="text-align: right;">28.8%</td>
+<td style="text-align: right;">−0.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bottom 50%</td>
+<td style="text-align: right;">3.5%</td>
+<td style="text-align: right;">2.4%</td>
+<td style="text-align: right;">1.2%</td>
+<td style="text-align: right;">2.3%</td>
+<td style="text-align: right;">+1.1</td>
+</tr>
+</tbody>
+</table>
+<p>Three things stand out.</p>
+<p><strong>The top 0.1% pulled away from the rest of the top 1%.</strong> In the decade to 2016, the whole of the top 10% gained together. In the decade since, only the top thousandth did. The top 1% as a whole rose from 30.6% to 32.5%, a <em>smaller</em> rise than in the previous decade (27.7% to 30.6%).</p>
+<p><strong>The pace is above average, but not a record.</strong> The top 0.1% share has risen by an average of 0.17 points a year since 1989, by 0.25 a year over the last decade, and by 0.40 a year since the end of 2019. The share is now the highest in the series. But the size of a ten-year change depends heavily on where the window starts. Measured from the trough after the dot-com crash, the ten years to early 2013 saw a rise of 3.2 points, more than the latest 2.5. On this source alone, the last decade is a strong continuation of a 35-year trend more than a break from it.</p>
+<p><strong>The bottom half gained, from a very low base.</strong> Its share bottomed out at 0.4% at the end of 2010, after the housing crash wiped out much of its home equity. It has since recovered to 2.3%, still below the 3.5% of 1989. In real terms its net worth nearly tripled between 2016 and 2026. The top 0.1%’s rose by a factor of 1.85, and the groups in between by about 1.5.</p>
+<p><strong>The timing was uneven.</strong> The top 0.1% share was flat from 2016 to the end of 2019 (12.6% to 12.4%). It rose 1.4 points in 2020–21, fell half a point in 2022, and rose another 1.7 points to mid-2026.</p>
+<p>All groups grew richer in real terms over the decade. Total household net worth went from $86 trillion to $186 trillion, against a 39% rise in prices. What changed is how the total was divided.</p>
+<section id="explore-the-data" class="level3">
+<h3 class="anchored" data-anchor-id="explore-the-data">Explore the data</h3>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="117" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 116;"><span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a>dfaView <span class="op">=</span> {</span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"dfa.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> mod<span class="op">.</span><span class="fu">mountDFA</span>(host)<span class="op">;</span></span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="the-tops-share-follows-the-stock-market" class="level2">
+<h2 class="anchored" data-anchor-id="the-tops-share-follows-the-stock-market">The top’s share follows the stock market</h2>
+<p>The top 0.1% share tracks the value of the stock market closely.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_us_equities.png" class="img-fluid figure-img"></p>
+<figcaption>Top: the top 0.1% share of US household net worth (orange) and the market value of US corporate equities as a percentage of GDP (blue). Bottom: the Federal Reserve’s policy interest rate.</figcaption>
+</figure>
+</div>
+<p>The value of US corporate equities was 54% of GDP in 1989, 135% in 2016 and 255% in mid-2026. The top 0.1% share moves with it: across quarters, the correlation between the change in the share and the percentage change in the equity ratio is 0.81. Both dips in the share during the last 25 years, in 2000–02 and 2008–09, were stock market falls, and so was the smaller one in 2022.</p>
+<p>The reason is in the portfolios. In 2026 the top 0.1% hold:</p>
+<ul>
+<li>25% of all directly held shares and mutual funds,</li>
+<li>29% of all private business equity,</li>
+<li>but only 4% of housing.</li>
+</ul>
+<p>Shares and funds make up 57% of their assets, up from 44% in 2016. The bottom half’s assets are 47% housing and 21% cars and other durables, with under 4% in shares. A rise in share prices relative to everything else raises the top’s share of wealth almost mechanically.</p>
+<p>One caution. The Fed builds the DFA by taking the national total for each asset class and dividing it between groups using a household survey that is run every three years. Between surveys, movements in the shares mostly reflect changes in asset prices applied to each group’s holdings. So some of that close fit is built into the method.</p>
+</section>
+<section id="decomposing-the-rise-asset-mix-against-share-of-each-asset" class="level2">
+<h2 class="anchored" data-anchor-id="decomposing-the-rise-asset-mix-against-share-of-each-asset">Decomposing the rise: asset mix against share of each asset</h2>
+<p>A group’s share of total assets can rise in two ways. The assets it holds most of can grow faster than other assets (<strong>asset mix</strong>). Or the group can come to hold a bigger share of each kind of asset (<strong>within</strong>). Writing <span class="math inline">\(w_a\)</span> for asset class <span class="math inline">\(a\)</span>’s share of all household assets and <span class="math inline">\(s_a\)</span> for the top 0.1%’s share of that class, the top’s overall share is <span class="math inline">\(\sum_a w_a s_a\)</span>, and its change splits exactly into</p>
+<p><span class="math display">\[
+\Delta \sum_a w_a s_a \;=\; \underbrace{\sum_a \Delta w_a \, \bar s_a}_{\text{asset mix}} \;+\; \underbrace{\sum_a \bar w_a \, \Delta s_a}_{\text{within}} ,
+\]</span></p>
+<p>where bars are averages of the start and end values.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_shiftshare.png" class="img-fluid figure-img"></p>
+<figcaption>The change in the top 0.1%’s share of all household assets, split by asset class into the asset-mix effect (blue) and the within-class effect (orange), for the decades to 2016 and to 2026.</figcaption>
+</figure>
+</div>
+<p>In the decade to 2016, the top 0.1%’s share of assets rose 1.7 points, of which 0.6 came from asset mix and 1.1 from holding more of each class. In the decade to 2026 it rose 2.7 points: <strong>1.8 from asset mix and 0.9 from within</strong>. The mix effect is all listed shares and funds, which grew as a proportion of all wealth (+2.7 points), partly offset by private business and other assets shrinking as a proportion.</p>
+<p>So the acceleration of the last decade was mainly a <em>revaluation</em>. The top did not suddenly capture a much bigger slice of each asset class. The class they already held most of, corporate equity, became worth far more relative to houses, pensions and deposits. Of the $17 trillion the top 0.1% gained, 66% was shares and funds, 12% private business and 6% housing.</p>
+<p>This says which asset carried the rise. It does not say why equities rose so much, or why so much of the equity is held by so few. Those are questions for Part 2.</p>
+</section>
+<section id="the-worlds-billionaires" class="level2">
+<h2 class="anchored" data-anchor-id="the-worlds-billionaires">The world’s billionaires</h2>
+<p>The Forbes list gives a view of the extreme top across the world.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_billionaires.png" class="img-fluid figure-img"></p>
+<figcaption>Left: total billionaire wealth and the number of billionaires. Centre: that wealth as a share of the previous year’s world GDP. Right: the share of all billionaire wealth held by the ten richest.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">2011</th>
+<th style="text-align: right;">2016</th>
+<th style="text-align: right;">2021</th>
+<th style="text-align: right;">2026</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Billionaires</td>
+<td style="text-align: right;">1,209</td>
+<td style="text-align: right;">1,811</td>
+<td style="text-align: right;">2,754</td>
+<td style="text-align: right;">3,428</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total wealth</td>
+<td style="text-align: right;">$4.5tn</td>
+<td style="text-align: right;">$6.5tn</td>
+<td style="text-align: right;">$13.1tn</td>
+<td style="text-align: right;">$20.1tn</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">As a share of world GDP</td>
+<td style="text-align: right;">6.7%</td>
+<td style="text-align: right;">8.6%</td>
+<td style="text-align: right;">15.1%</td>
+<td style="text-align: right;">16.9%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Held by the ten richest</td>
+<td style="text-align: right;">9.0%</td>
+<td style="text-align: right;">7.8%</td>
+<td style="text-align: right;">8.8%</td>
+<td style="text-align: right;">12.9%</td>
+</tr>
+</tbody>
+</table>
+<p>Relative to the world economy, billionaire wealth rose by a quarter in the five years to 2016 and then doubled in the ten years after. As in the US data, it came in bursts: a jump in the year to March 2021, a fall back to 11.9% by 2023, and a new high in 2026.</p>
+<section id="where-the-growth-came-from" class="level3">
+<h3 class="anchored" data-anchor-id="where-the-growth-came-from">Where the growth came from</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_billionaire_sources.png" class="img-fluid figure-img"></p>
+<figcaption>Left: billionaire wealth in 2016 and 2026, with the change split into those who left the list, the gains of those on both lists, and new names. Centre and right: totals by country of citizenship and by sector.</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>Those on both lists</strong> (1,068 people) saw their combined wealth rise from $4.0 trillion to $10.5 trillion, a factor of 2.6. Over 2011–16 the equivalent factor was 1.2. The typical member did less well, with a median factor of 1.7, because the gains were concentrated: <strong>the ten largest gainers account for 34% of the group’s gains, and one person for 13%.</strong></li>
+<li><strong>New names</strong> (2,359) hold $9.5 trillion. This overstates new fortunes, because heirs who inherit appear as new names, as do people whose names Forbes records differently between years.</li>
+<li><strong>By country</strong>, the US accounts for $6.0 trillion of the $13.6 trillion rise, and its share of billionaire wealth went from 37% to 42%. China added $1.6 trillion and India $0.8 trillion.</li>
+<li><strong>By sector</strong>, technology added $4.0 trillion and went from 13% to 24% of the total. Finance and investments added $2.3 trillion.</li>
+<li>Forbes classes about two-thirds of this wealth as self-made rather than inherited (63% in 2016, 68% in 2026).</li>
+</ul>
+<p>American billionaires, 541 people in 2016 and 991 in 2026, held wealth equal to 2.8% of US household net worth in 2016 and 4.9% in 2026. That two-point rise is about the same size as the whole rise in the top 0.1%’s share. The two sources are built differently and cannot simply be subtracted, but the comparison suggests that most of the top 0.1%’s gain is the gain of about a thousand people within it.</p>
+</section>
+<section id="the-shape-of-the-tail" class="level3">
+<h3 class="anchored" data-anchor-id="the-shape-of-the-tail">The shape of the tail</h3>
+<p>Among the very rich, wealth follows a <strong>Pareto distribution</strong>: the number of people with more than <span class="math inline">\(w\)</span> falls off as <span class="math inline">\(w^{-\alpha}\)</span>. On a plot of rank against wealth with both axes logarithmic, that is a straight line with slope <span class="math inline">\(-\alpha\)</span>. A smaller <span class="math inline">\(\alpha\)</span> means a fatter tail, with more of the total held by the few at the top.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_pareto.png" class="img-fluid figure-img"></p>
+<figcaption>Left: rank against wealth for the 1,000 richest people in 2016, 2020 and 2026, with wealth measured relative to the 1,000th fortune, on logarithmic axes. Right: the estimated Pareto exponent for the top 100, the top 1,000, and everyone above $1 billion.</figcaption>
+</figure>
+</div>
+<p>How the exponent is measured matters. Estimated over everyone above $1 billion, it fell from 1.13 in 2016 to 0.89 in 2026. That figure is misleading. The distribution is not an exact Pareto, and as the whole list grows richer past a fixed $1 billion line, the estimate drifts down whether or not the shape has changed.</p>
+<p>Measured over a fixed number of people, the picture is more specific:</p>
+<ul>
+<li>For the <strong>top 1,000</strong>, the exponent has barely moved since 2016 (1.35 to 1.27).</li>
+<li>For the <strong>top 100</strong>, it was about 1.8 before 2020 and has been about 1.4 since.</li>
+</ul>
+<p>On the left-hand chart the three years lie on top of one another from rank 1,000 up to about rank 100, and separate above it. The ten richest held 9.4% of the wealth of the top 1,000 in 2016, 10.7% in 2020 and 17.4% in 2026.</p>
+<p>So the change in shape is confined to roughly the hundred largest fortunes, and it dates from 2020. Below that, the world’s billionaires are distributed much as they were ten years ago. <a href="../../economics/wealth-3-the-model/index.html">Part 3</a> builds a model of why.</p>
+</section>
+</section>
+<section id="other-countries" class="level2">
+<h2 class="anchored" data-anchor-id="other-countries">Other countries</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_countries.png" class="img-fluid figure-img"></p>
+<figcaption>Top 1% share of household wealth for six countries and the world, from the World Inequality Database. The shaded area is 2015 onwards.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Top 1% share</th>
+<th style="text-align: right;">1995</th>
+<th style="text-align: right;">2005</th>
+<th style="text-align: right;">2015</th>
+<th style="text-align: right;">2024</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">World</td>
+<td style="text-align: right;">35.6%</td>
+<td style="text-align: right;">37.2%</td>
+<td style="text-align: right;">36.2%</td>
+<td style="text-align: right;">36.4%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">United States</td>
+<td style="text-align: right;">29.3%</td>
+<td style="text-align: right;">32.3%</td>
+<td style="text-align: right;">35.8%</td>
+<td style="text-align: right;">34.8%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">United Kingdom</td>
+<td style="text-align: right;">18.6%</td>
+<td style="text-align: right;">20.2%</td>
+<td style="text-align: right;">21.4%</td>
+<td style="text-align: right;">21.3%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">France</td>
+<td style="text-align: right;">20.7%</td>
+<td style="text-align: right;">23.8%</td>
+<td style="text-align: right;">26.1%</td>
+<td style="text-align: right;">27.7%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Germany</td>
+<td style="text-align: right;">24.7%</td>
+<td style="text-align: right;">27.9%</td>
+<td style="text-align: right;">27.7%</td>
+<td style="text-align: right;">27.8%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">China</td>
+<td style="text-align: right;">15.9%</td>
+<td style="text-align: right;">23.7%</td>
+<td style="text-align: right;">29.6%</td>
+<td style="text-align: right;">30.4%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">India</td>
+<td style="text-align: right;">17.2%</td>
+<td style="text-align: right;">27.3%</td>
+<td style="text-align: right;">33.2%</td>
+<td style="text-align: right;">40.1%</td>
+</tr>
+</tbody>
+</table>
+<p>On this measure, the large rises came <em>before</em> 2015: in the US from the 1980s, and in China and India from the 1990s. Since 2015 the top 1% share has been roughly flat for the world, the US, the UK and Germany. India is the exception.</p>
+<p>This is consistent with the US picture above. The recent change is not visible at the level of the top 1%. It is happening inside the top 1%, at the level of the top 0.1% and beyond.</p>
+<p>For the UK, a caution: the official Wealth and Assets Survey is known to under-record the very wealthy. The Resolution Foundation estimated in 2021 that the top 1% held almost £800 billion more than the survey showed. A later part will look at the UK in more detail.</p>
+</section>
+<section id="what-is-uncertain" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-uncertain">What is uncertain</h2>
+<ul>
+<li><strong>The sources disagree on levels.</strong> For the US top 1% in 2024, the DFA gives about 31% and WID about 35%. They use different methods and units (households against adults).</li>
+<li><strong>Estimating top wealth from tax data is contested.</strong> Wealth is not reported to tax authorities, so it is inferred from the income it generates. Saez and Zucman’s estimates show a large rise in the top 0.1% share since
+<ol start="1980" type="1">
+<li>Smith, Zidar and Zwick, allowing returns to differ between people, find a rise about half as large. A similar dispute exists for incomes between Piketty, Saez and Zucman on one side and Auten and Splinter on the other.</li>
+</ol></li>
+<li><strong>What counts as wealth matters.</strong> None of these sources counts the value of future state pensions. Catherine, Miller and Sarin estimate that including US Social Security entitlements removes most of the rise in top wealth shares since 1989, because those entitlements are large for ordinary households and have grown as interest rates fell. Whether an entitlement that cannot be sold or inherited is wealth in the same sense is itself debated.</li>
+<li><strong>The very top is the least well measured.</strong> The survey underlying the DFA excludes the Forbes 400 by design. Forbes’s figures are journalists’ estimates: reliable for stakes in listed companies, rough for private holdings.</li>
+<li><strong>These are valuations, not cash.</strong> A fortune held in one company’s shares can halve in a year. The 2022 fall shows the series can go down as well as up.</li>
+</ul>
+<p>None of these overturns the main finding, since the disputes concern levels and long-run trends more than the last decade at the extreme top. But they mean the numbers carry real uncertainty, and that the statement “inequality has risen” depends on which measure and which part of the distribution is meant.</p>
+</section>
+<section id="what-needs-explaining" class="level2">
+<h2 class="anchored" data-anchor-id="what-needs-explaining">What needs explaining</h2>
+<p>The data narrows the question for the rest of the series:</p>
+<ol type="1">
+<li>Why did listed equity become worth so much more relative to the economy, with the ratio nearly doubling in ten years?</li>
+<li>Why is so much of that equity held by so few, and why did a handful of founders’ stakes grow fastest of all?</li>
+<li>Why did the rise come in two bursts, in 2020–21 and 2023–26, after three flat years?</li>
+<li>Why is it most pronounced in the US, and in technology?</li>
+<li>Why did the hundred largest fortunes pull away from the rest after 2020 and not before?</li>
+</ol>
+<p><a href="../../economics/wealth-2-the-causes/index.html">Part 2</a> takes the candidate explanations one at a time and tests each against these facts.</p>
+<p><em>The data comes from public sources and is downloaded by <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/economics"><code>fetch_data.py</code></a>; the analysis and figures are in <code>part1.py</code> in the same folder.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Board of Governors of the Federal Reserve System, <a href="https://www.federalreserve.gov/releases/z1/dataviz/dfa/">Distributional Financial Accounts</a>, data to 2026 Q2. Method: M. Batty et al., “Introducing the Distributional Financial Accounts of the United States”, Finance and Economics Discussion Series 2019-017.</li>
+<li>Forbes, World’s Billionaires lists, 2011 to 2026.</li>
+<li>World Inequality Database, top 1% net personal wealth shares, via <a href="https://ourworldindata.org/grapher/wealth-share-richest-1-percent">Our World in Data</a>.</li>
+<li>World Bank, world GDP in current US dollars.</li>
+<li>E. Saez and G. Zucman, “Wealth inequality in the United States since 1913: evidence from capitalized income tax data”, <em>Quarterly Journal of Economics</em> 131(2), 519–578 (2016).</li>
+<li>M. Smith, O. Zidar and E. Zwick, <a href="https://zidar.princeton.edu/sites/g/files/toruqf3371/files/documents/wealth2023.pdf">“Top wealth in America: new estimates under heterogeneous returns”</a>, <em>Quarterly Journal of Economics</em> 138(1), 515–573 (2023).</li>
+<li>G. Auten and D. Splinter, “Income inequality in the United States: using tax data to measure long-term trends”, <em>Journal of Political Economy</em> 132(7) (2024); and the reply by T. Piketty, E. Saez and G. Zucman, <a href="https://gabriel-zucman.eu/files/PSZ2024.pdf">“Income inequality in the United States: a comment”</a> (2024).</li>
+<li>S. Catherine, M. Miller and N. Sarin, “Social Security and trends in wealth inequality”, <em>Journal of Finance</em> (2025).</li>
+<li>Resolution Foundation, <a href="https://www.resolutionfoundation.org/press-releases/top-1-per-cent-has-almost-800-billion-more-wealth-than-official-statistics-show/">“Top 1 per cent has almost £800 billion more wealth than official statistics show”</a> (2021).</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImRmYVZpZXcgPSB7XG4gIGNvbnN0IGhvc3QgPSBodGwuaHRtbGA8ZGl2PjwvZGl2PmA7XG4gIGNvbnN0IG1vZCA9IGF3YWl0IGltcG9ydChuZXcgVVJMKFwiZGZhLmpzXCIsIGRvY3VtZW50LmJhc2VVUkkpLmhyZWYpO1xuICBhd2FpdCBtb2QubW91bnRERkEoaG9zdCk7XG4gIHJldHVybiBob3N0O1xufVxuIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../economics/wealth-1-the-facts";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

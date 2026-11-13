@@ -22,29 +22,19 @@
     ]
   },
   {
-    "listing": "/explainers/index.html",
+    "listing": "/geb/index.html",
     "items": [
-      "/explainers/decision-analysis/index.html",
-      "/explainers/eigenvectors/index.html",
-      "/explainers/pca/index.html",
-      "/explainers/inverted-pendulum-walker/index.html",
-      "/explainers/dc-motor-propeller/index.html",
-      "/explainers/kalman-filter/index.html",
-      "/explainers/einsum/index.html",
-      "/explainers/apollo-11-frames-of-reference/index.html",
-      "/explainers/accretion-disk-light/index.html",
-      "/explainers/black-hole-ray-tracing/index.html",
-      "/explainers/kerr-black-hole/index.html",
-      "/explainers/light-bending-schwarzschild/index.html",
-      "/explainers/cgle-pattern-morphology/index.html",
-      "/explainers/falling-walk/index.html",
-      "/explainers/forward-kinematics/index.html",
-      "/explainers/inverse-kinematics/index.html",
-      "/explainers/statics-jacobian/index.html",
-      "/explainers/bifurcation-vs-langevin/index.html",
-      "/explainers/markov-chains-diffusion/index.html",
-      "/explainers/mean-field-annealed-disorder/index.html",
-      "/explainers/toy-diffusion-model/index.html"
+      "/geb/pq-system/index.html",
+      "/geb/mu-puzzle/index.html"
+    ]
+  },
+  {
+    "listing": "/electronics/index.html",
+    "items": [
+      "/electronics/compute-since-interstellar/index.html",
+      "/electronics/stampfly-digital-twin/index.html",
+      "/electronics/nmr-marginal-oscillator/index.html",
+      "/electronics/quadcopters-kalman/index.html"
     ]
   },
   {
@@ -85,18 +75,37 @@
     ]
   },
   {
-    "listing": "/electronics/index.html",
+    "listing": "/economics/index.html",
     "items": [
-      "/electronics/stampfly-digital-twin/index.html",
-      "/electronics/nmr-marginal-oscillator/index.html",
-      "/electronics/quadcopters-kalman/index.html"
+      "/economics/wealth-1-the-facts/index.html",
+      "/economics/wealth-2-the-causes/index.html",
+      "/economics/wealth-3-the-model/index.html"
     ]
   },
   {
-    "listing": "/geb/index.html",
+    "listing": "/explainers/index.html",
     "items": [
-      "/geb/pq-system/index.html",
-      "/geb/mu-puzzle/index.html"
+      "/explainers/decision-analysis/index.html",
+      "/explainers/eigenvectors/index.html",
+      "/explainers/pca/index.html",
+      "/explainers/inverted-pendulum-walker/index.html",
+      "/explainers/dc-motor-propeller/index.html",
+      "/explainers/kalman-filter/index.html",
+      "/explainers/einsum/index.html",
+      "/explainers/apollo-11-frames-of-reference/index.html",
+      "/explainers/accretion-disk-light/index.html",
+      "/explainers/black-hole-ray-tracing/index.html",
+      "/explainers/kerr-black-hole/index.html",
+      "/explainers/light-bending-schwarzschild/index.html",
+      "/explainers/cgle-pattern-morphology/index.html",
+      "/explainers/falling-walk/index.html",
+      "/explainers/forward-kinematics/index.html",
+      "/explainers/inverse-kinematics/index.html",
+      "/explainers/statics-jacobian/index.html",
+      "/explainers/bifurcation-vs-langevin/index.html",
+      "/explainers/markov-chains-diffusion/index.html",
+      "/explainers/mean-field-annealed-disorder/index.html",
+      "/explainers/toy-diffusion-model/index.html"
     ]
   },
   {
@@ -106,6 +115,10 @@
       "/explainers/eigenvectors/index.html",
       "/geb/pq-system/index.html",
       "/explainers/pca/index.html",
+      "/electronics/compute-since-interstellar/index.html",
+      "/economics/wealth-1-the-facts/index.html",
+      "/economics/wealth-2-the-causes/index.html",
+      "/economics/wealth-3-the-model/index.html",
       "/geb/mu-puzzle/index.html",
       "/sci-fi/endurance-docking/index.html",
       "/astronomy/caird-navigation/index.html",

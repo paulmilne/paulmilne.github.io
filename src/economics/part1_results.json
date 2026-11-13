@@ -1,0 +1,475 @@
+{
+ "last_quarter": "2026Q2",
+ "shares": {
+  "1989Q3": {
+   "Top 0.1%": 8.6,
+   "Next 0.9%": 14.2,
+   "Next 9%": 38.0,
+   "Next 40%": 35.7,
+   "Bottom 50%": 3.5
+  },
+  "1996Q2": {
+   "Top 0.1%": 11.4,
+   "Next 0.9%": 15.9,
+   "Next 9%": 34.2,
+   "Next 40%": 35.1,
+   "Bottom 50%": 3.4
+  },
+  "2006Q2": {
+   "Top 0.1%": 10.9,
+   "Next 0.9%": 16.8,
+   "Next 9%": 37.3,
+   "Next 40%": 32.6,
+   "Bottom 50%": 2.4
+  },
+  "2016Q2": {
+   "Top 0.1%": 12.6,
+   "Next 0.9%": 18.0,
+   "Next 9%": 39.3,
+   "Next 40%": 28.9,
+   "Bottom 50%": 1.2
+  },
+  "2026Q2": {
+   "Top 0.1%": 15.0,
+   "Next 0.9%": 17.5,
+   "Next 9%": 36.4,
+   "Next 40%": 28.8,
+   "Bottom 50%": 2.3
+  },
+  "2019Q4": {
+   "Top 0.1%": 12.4,
+   "Next 0.9%": 18.0,
+   "Next 9%": 39.5,
+   "Next 40%": 28.4,
+   "Bottom 50%": 1.7
+  },
+  "2021Q4": {
+   "Top 0.1%": 13.8,
+   "Next 0.9%": 17.1,
+   "Next 9%": 37.2,
+   "Next 40%": 29.6,
+   "Bottom 50%": 2.4
+  },
+  "2022Q4": {
+   "Top 0.1%": 13.3,
+   "Next 0.9%": 16.4,
+   "Next 9%": 36.5,
+   "Next 40%": 31.2,
+   "Bottom 50%": 2.6
+  }
+ },
+ "top1": {
+  "1989Q3": 22.8,
+  "1996Q2": 27.3,
+  "2006Q2": 27.7,
+  "2016Q2": 30.6,
+  "2026Q2": 32.5
+ },
+ "decade_change": {
+  "1989Q3-1996Q2": {
+   "Top 0.1%": 2.81,
+   "Next 0.9%": 1.64,
+   "Next 9%": -3.78,
+   "Next 40%": -0.6,
+   "Bottom 50%": -0.07
+  },
+  "1996Q2-2006Q2": {
+   "Top 0.1%": -0.47,
+   "Next 0.9%": 0.94,
+   "Next 9%": 3.06,
+   "Next 40%": -2.5,
+   "Bottom 50%": -1.03
+  },
+  "2006Q2-2016Q2": {
+   "Top 0.1%": 1.62,
+   "Next 0.9%": 1.25,
+   "Next 9%": 2.05,
+   "Next 40%": -3.72,
+   "Bottom 50%": -1.21
+  },
+  "2016Q2-2026Q2": {
+   "Top 0.1%": 2.46,
+   "Next 0.9%": -0.57,
+   "Next 9%": -2.89,
+   "Next 40%": -0.1,
+   "Bottom 50%": 1.1
+  }
+ },
+ "corr_level": 0.882,
+ "corr_diff": 0.805,
+ "equities_pct_gdp": {
+  "1989-07-01": 54,
+  "2016-04-01": 135,
+  "2026-04-01": 255
+ },
+ "shiftshare_2006Q2_2016Q2": {
+  "total": 1.72,
+  "mix": 0.63,
+  "within": 1.09,
+  "mix_shares": 0.97,
+  "within_shares": 0.46
+ },
+ "shiftshare_2016Q2_2026Q2": {
+  "total": 2.74,
+  "mix": 1.82,
+  "within": 0.92,
+  "mix_shares": 2.74,
+  "within_shares": 0.34
+ },
+ "top01_gain_tn": 17.2,
+ "top01_gain_by_asset_pct": {
+  "Real estate": 6.0,
+  "Durables": 1.4,
+  "Shares and funds": 66.1,
+  "DB pensions": 1.3,
+  "DC pensions": 0.2,
+  "Private business": 12.1,
+  "Other assets": 12.9
+ },
+ "top01_share_of_asset_2026": {
+  "Real estate": 3.9,
+  "Durables": 8.1,
+  "Shares and funds": 25.0,
+  "DB pensions": 1.6,
+  "DC pensions": 1.3,
+  "Private business": 28.5,
+  "Other assets": 13.4
+ },
+ "top01_composition_2026": {
+  "Real estate": 7.0,
+  "Durables": 2.6,
+  "Shares and funds": 57.3,
+  "DB pensions": 1.1,
+  "DC pensions": 0.8,
+  "Private business": 17.0,
+  "Other assets": 14.2
+ },
+ "top01_composition_2016": {
+  "Real estate": 8.5,
+  "Durables": 4.6,
+  "Shares and funds": 43.5,
+  "DB pensions": 0.7,
+  "DC pensions": 1.7,
+  "Private business": 24.6,
+  "Other assets": 16.2
+ },
+ "bottom50_composition_2026": {
+  "Real estate": 46.9,
+  "Durables": 21.1,
+  "Shares and funds": 3.6,
+  "DB pensions": 4.8,
+  "DC pensions": 8.0,
+  "Private business": 1.6,
+  "Other assets": 14.0
+ },
+ "total_networth_tn": {
+  "2016Q2": 86.4,
+  "2026Q2": 185.7
+ },
+ "real_growth": {
+  "2006Q2-2016Q2": {
+   "Top 0.1%": 1.35,
+   "Next 0.9%": 1.26,
+   "Next 9%": 1.24,
+   "Next 40%": 1.04,
+   "Bottom 50%": 0.59
+  },
+  "2016Q2-2026Q2": {
+   "Top 0.1%": 1.85,
+   "Next 0.9%": 1.5,
+   "Next 9%": 1.43,
+   "Next 40%": 1.54,
+   "Bottom 50%": 2.95
+  }
+ },
+ "inflation_2016_2026": 1.39,
+ "forbes": {
+  "2011": {
+   "n": 1209,
+   "total_tn": 4.5,
+   "pct_world_gdp": 6.7,
+   "top10_tn": 0.41,
+   "top10_share": 9.0,
+   "richest_bn": 74
+  },
+  "2016": {
+   "n": 1811,
+   "total_tn": 6.48,
+   "pct_world_gdp": 8.6,
+   "top10_tn": 0.51,
+   "top10_share": 7.8,
+   "richest_bn": 75
+  },
+  "2020": {
+   "n": 2094,
+   "total_tn": 8.04,
+   "pct_world_gdp": 9.1,
+   "top10_tn": 0.69,
+   "top10_share": 8.5,
+   "richest_bn": 113
+  },
+  "2021": {
+   "n": 2754,
+   "total_tn": 13.08,
+   "pct_world_gdp": 15.1,
+   "top10_tn": 1.15,
+   "top10_share": 8.8,
+   "richest_bn": 177
+  },
+  "2023": {
+   "n": 2640,
+   "total_tn": 12.21,
+   "pct_world_gdp": 11.9,
+   "top10_tn": 1.17,
+   "top10_share": 9.6,
+   "richest_bn": 211
+  },
+  "2026": {
+   "n": 3428,
+   "total_tn": 20.05,
+   "pct_world_gdp": 16.9,
+   "top10_tn": 2.59,
+   "top10_share": 12.9,
+   "richest_bn": 839
+  }
+ },
+ "decomp_2016_2026": {
+  "start": 6480.4,
+  "end": 20048.5,
+  "stayers": 1068.0,
+  "stay_start": 4047.4,
+  "stay_end": 10521.1,
+  "entrants": 2359.0,
+  "entrant_wealth": 9527.4,
+  "exits": 741.0,
+  "exit_wealth": 2433.0
+ },
+ "decomp_2011_2016": {
+  "start": 4493.8,
+  "end": 6480.4,
+  "stayers": 805.0,
+  "stay_start": 3300.6,
+  "stay_end": 3961.5,
+  "entrants": 1004.0,
+  "entrant_wealth": 2518.9,
+  "exits": 403.0,
+  "exit_wealth": 1193.2
+ },
+ "stayer_multiple": {
+  "2011-2016": 1.2,
+  "2016-2026": 2.6
+ },
+ "top10_gainers_share_of_stayer_gain": 34.3,
+ "top10_gainers": {
+  "Elon Musk": 828,
+  "Larry Page": 222,
+  "Sergey Brin": 203,
+  "Jeff Bezos": 179,
+  "Mark Zuckerberg": 177,
+  "Larry Ellison": 146,
+  "Bernard Arnault & family": 137,
+  "Michael Dell": 121,
+  "Steve Ballmer": 102,
+  "Alice Walton": 102
+ },
+ "median_stayer_multiple": 1.7,
+ "us_share": {
+  "2016": 37.0,
+  "2026": 42.1
+ },
+ "tech_share": {
+  "2016": 12.6,
+  "2026": 23.9
+ },
+ "selfmade_share": {
+  "2016": 63.1,
+  "2026": 67.5
+ },
+ "us_billionaires_pct_us_wealth": {
+  "2011": 2.41,
+  "2016": 2.83,
+  "2021": 3.45,
+  "2026": 4.87
+ },
+ "us_billionaires_n": {
+  "2016": 541,
+  "2026": 991
+ },
+ "gain_by_country": {
+  "United States": 6.03,
+  "China": 1.58,
+  "India": 0.77,
+  "Germany": 0.55,
+  "France": 0.42,
+  "Russia": 0.37,
+  "Canada": 0.34,
+  "Italy": 0.33
+ },
+ "gain_by_ind": {
+  "Technology": 3.97,
+  "Finance & Investments": 2.34,
+  "Fashion & Retail": 1.34,
+  "Manufacturing": 1.17,
+  "Diversified": 0.84,
+  "Food & Beverage": 0.74,
+  "Healthcare": 0.7,
+  "Metals & Mining": 0.53
+ },
+ "total_gain_tn": 13.57,
+ "pareto_alpha": {
+  "2011": {
+   "all": 1.09,
+   "top1000": 1.1,
+   "top100": 1.88
+  },
+  "2012": {
+   "all": 1.08,
+   "top1000": 1.17,
+   "top100": 1.82
+  },
+  "2013": {
+   "all": 1.07,
+   "top1000": 1.17,
+   "top100": 2.1
+  },
+  "2014": {
+   "all": 1.05,
+   "top1000": 1.24,
+   "top100": 1.88
+  },
+  "2015": {
+   "all": 1.07,
+   "top1000": 1.27,
+   "top100": 1.91
+  },
+  "2016": {
+   "all": 1.13,
+   "top1000": 1.35,
+   "top100": 1.74
+  },
+  "2017": {
+   "all": 1.1,
+   "top1000": 1.31,
+   "top100": 1.92
+  },
+  "2018": {
+   "all": 1.02,
+   "top1000": 1.37,
+   "top100": 1.83
+  },
+  "2019": {
+   "all": 1.04,
+   "top1000": 1.38,
+   "top100": 1.72
+  },
+  "2020": {
+   "all": 1.09,
+   "top1000": 1.35,
+   "top100": 1.73
+  },
+  "2021": {
+   "all": 0.96,
+   "top1000": 1.27,
+   "top100": 1.53
+  },
+  "2022": {
+   "all": 0.96,
+   "top1000": 1.32,
+   "top100": 1.43
+  },
+  "2023": {
+   "all": 0.98,
+   "top1000": 1.32,
+   "top100": 1.45
+  },
+  "2024": {
+   "all": 0.94,
+   "top1000": 1.29,
+   "top100": 1.39
+  },
+  "2025": {
+   "all": 0.92,
+   "top1000": 1.28,
+   "top100": 1.32
+  },
+  "2026": {
+   "all": 0.89,
+   "top1000": 1.27,
+   "top100": 1.41
+  }
+ },
+ "top10_of_top1000": {
+  "2011": 9.5,
+  "2012": 9.1,
+  "2013": 9.2,
+  "2014": 9.1,
+  "2015": 9.4,
+  "2016": 9.4,
+  "2017": 9.9,
+  "2018": 10.4,
+  "2019": 10.8,
+  "2020": 10.7,
+  "2021": 11.6,
+  "2022": 13.4,
+  "2023": 12.6,
+  "2024": 14.2,
+  "2025": 15.0,
+  "2026": 17.4
+ },
+ "top100_of_top1000": {
+  "2011": 40.0,
+  "2012": 39.7,
+  "2013": 38.3,
+  "2014": 38.3,
+  "2015": 38.5,
+  "2016": 38.0,
+  "2017": 38.5,
+  "2018": 39.3,
+  "2019": 40.2,
+  "2020": 39.8,
+  "2021": 42.0,
+  "2022": 43.8,
+  "2023": 43.3,
+  "2024": 46.0,
+  "2025": 45.3,
+  "2026": 47.7
+ },
+ "wid_top1": {
+  "1995": {
+   "United States": 29.3,
+   "United Kingdom": 18.6,
+   "France": 20.7,
+   "Germany": 24.7,
+   "China": 15.9,
+   "India": 17.2,
+   "World": 35.6
+  },
+  "2005": {
+   "United States": 32.3,
+   "United Kingdom": 20.2,
+   "France": 23.8,
+   "Germany": 27.9,
+   "China": 23.7,
+   "India": 27.3,
+   "World": 37.2
+  },
+  "2015": {
+   "United States": 35.8,
+   "United Kingdom": 21.4,
+   "France": 26.1,
+   "Germany": 27.7,
+   "China": 29.6,
+   "India": 33.2,
+   "World": 36.2
+  },
+  "2024": {
+   "United States": 34.8,
+   "United Kingdom": 21.3,
+   "France": 27.7,
+   "Germany": 27.8,
+   "China": 30.4,
+   "India": 40.1,
+   "World": 36.4
+  }
+ }
+}

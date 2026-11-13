@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Paul Milne">
+<meta name="dcterms.date" content="2026-11-13">
+<meta name="description" content="A model of wealth concentration at the top, built from the Forbes lists: multiplicative growth as the basic reinforcing loop, turnover as the balancing loop, why that combination produces a Pareto tail, a fixed-size simulation of the top 1,000 fortunes validated on 2011–2026, three regimes, projections under each, and what the model says about whether the process limits itself. With a causal loop diagram and an interactive simulation.">
+
+<title>Wealth Concentration, Part 3: The Feedback Loops – math-blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script data-goatcounter="https://pmilne.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Wealth Concentration, Part 3: The Feedback Loops – math-blog">
+<meta property="og:description" content="A model of wealth concentration at the top, built from the Forbes lists: multiplicative growth as the basic reinforcing loop, turnover as the balancing loop, why that combination produces a Pareto tail, a fixed-size simulation of the top 1,000 fortunes validated on 2011–2026, three regimes, projections under each, and what the model says about whether the process limits itself. With a causal loop diagram and an interactive simulation.">
+<meta property="og:image" content="https://paulmilne.github.io/economics/wealth-3-the-model/thumbnail.png">
+<meta property="og:site_name" content="math-blog">
+<meta property="og:image:height" content="600">
+<meta property="og:image:width" content="900">
+<meta name="twitter:title" content="Wealth Concentration, Part 3: The Feedback Loops – math-blog">
+<meta name="twitter:description" content="A model of wealth concentration at the top, built from the Forbes lists: multiplicative growth as the basic reinforcing loop, turnover as the balancing loop, why that combination produces a Pareto tail, a fixed-size simulation of the top 1,000 fortunes validated on 2011–2026, three regimes, projections under each, and what the model says about whether the process limits itself. With a causal loop diagram and an interactive simulation.">
+<meta name="twitter:image" content="https://paulmilne.github.io/economics/wealth-3-the-model/thumbnail.png">
+<meta name="twitter:image-height" content="600">
+<meta name="twitter:image-width" content="900">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-xl " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">math-blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../explainers/index.html"> 
+<span class="menu-text">Explainers</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../papers/index.html"> 
+<span class="menu-text">Papers</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-maths" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Maths</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-maths">    
+        <li>
+    <a class="dropdown-item" href="../../probability/index.html">
+ <span class="dropdown-text">Probability</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../geb/index.html">
+ <span class="dropdown-text">GEB</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../complexity/index.html">
+ <span class="dropdown-text">Complexity</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-physics--space" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Physics &amp; Space</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-physics--space">    
+        <li>
+    <a class="dropdown-item" href="../../cosmology/index.html">
+ <span class="dropdown-text">Cosmology</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../astronomy/index.html">
+ <span class="dropdown-text">Astronomy</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../space/index.html">
+ <span class="dropdown-text">Space</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../mechanics/index.html">
+ <span class="dropdown-text">Mechanics</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-engineering" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Engineering</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-engineering">    
+        <li>
+    <a class="dropdown-item" href="../../electronics/index.html">
+ <span class="dropdown-text">Electronics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../ai/index.html">
+ <span class="dropdown-text">AI</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../economics/index.html"> 
+<span class="menu-text">Economics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../sci-fi/index.html"> 
+<span class="menu-text">Sci-Fi</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/paulmilne/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/paulmilne"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Wealth Concentration, Part 3: The Feedback Loops</h1>
+            <p class="subtitle lead">Random growth alone concentrates wealth without limit; turnover holds it in check. A model fitted to fifteen years of billionaire lists shows a stable system until 2020, a wider spread of fortunes in 2020–22, and since 2023 a regime with no steady state</p>
+                  <div>
+        <div class="description">
+          A model of wealth concentration at the top, built from the Forbes lists: multiplicative growth as the basic reinforcing loop, turnover as the balancing loop, why that combination produces a Pareto tail, a fixed-size simulation of the top 1,000 fortunes validated on 2011–2026, three regimes, projections under each, and what the model says about whether the process limits itself. With a causal loop diagram and an interactive simulation.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">economics</div>
+                <div class="quarto-category">inequality</div>
+                <div class="quarto-category">wealth</div>
+                <div class="quarto-category">complexity</div>
+                <div class="quarto-category">simulation</div>
+                <div class="quarto-category">pareto</div>
+                <div class="quarto-category">feedback</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Paul Milne </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 13, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-loops" id="toc-the-loops" class="nav-link active" data-scroll-target="#the-loops">The loops</a></li>
+  <li><a href="#the-simplest-loop-concentrates-wealth-by-itself" id="toc-the-simplest-loop-concentrates-wealth-by-itself" class="nav-link" data-scroll-target="#the-simplest-loop-concentrates-wealth-by-itself">The simplest loop concentrates wealth by itself</a></li>
+  <li><a href="#measuring-the-loops" id="toc-measuring-the-loops" class="nav-link" data-scroll-target="#measuring-the-loops">Measuring the loops</a></li>
+  <li><a href="#a-model-of-the-top-1000" id="toc-a-model-of-the-top-1000" class="nav-link" data-scroll-target="#a-model-of-the-top-1000">A model of the top 1,000</a></li>
+  <li><a href="#three-regimes" id="toc-three-regimes" class="nav-link" data-scroll-target="#three-regimes">Three regimes</a></li>
+  <li><a href="#what-each-regime-implies" id="toc-what-each-regime-implies" class="nav-link" data-scroll-target="#what-each-regime-implies">What each regime implies</a></li>
+  <li><a href="#why-a-rising-share-is-not-exponential-for-ever" id="toc-why-a-rising-share-is-not-exponential-for-ever" class="nav-link" data-scroll-target="#why-a-rising-share-is-not-exponential-for-ever">Why a rising share is not exponential for ever</a></li>
+  <li><a href="#try-it" id="toc-try-it" class="nav-link" data-scroll-target="#try-it">Try it</a></li>
+  <li><a href="#what-the-model-leaves-out" id="toc-what-the-model-leaves-out" class="nav-link" data-scroll-target="#what-the-model-leaves-out">What the model leaves out</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.ws-grid { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 1.1rem; align-items: start; margin: 1rem 0; }
+.ws-canvas { border: 1px solid #e0e3e8; border-radius: 6px; display: block; margin-bottom: .4rem; }
+.ws-side { display: flex; flex-direction: column; gap: .5rem; font-size: .85rem; min-width: 0; }
+.ws-side label { display: flex; flex-direction: column; } .ws-side input[type=range] { width: 100%; max-width: 320px; }
+.ws-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.ws-row button { font-size: .8rem; padding: .12rem .55rem; border: 1px solid #999; border-radius: 5px; background: #fff; color: #222; cursor: pointer; }
+.ws-row button.ws-go { background: #1f5fa8; border-color: #1f5fa8; color: #fff; min-width: 4.2rem; }
+.ws-read { font-size: .88rem; } .ws-dim { color: #777; font-size: .8rem; }
+@media (max-width: 760px) { .ws-grid { grid-template-columns: 1fr; } }
+</style>
+<p><a href="../../economics/wealth-1-the-facts/index.html">Part 1</a> showed that wealth has concentrated among roughly the hundred largest fortunes since 2020, and <a href="../../economics/wealth-2-the-causes/index.html">Part 2</a> traced that to profits, valuations, a few dominant firms and founders who kept their stakes. This part asks the systems question. Which feedback loops are at work, how strong is each, and does the process limit itself?</p>
+<p>The approach is to build the simplest model that can reproduce the data, fit it to fifteen years of billionaire lists, check it against periods it was not tuned to, and then ask what it implies.</p>
+<section id="the-loops" class="level2">
+<h2 class="anchored" data-anchor-id="the-loops">The loops</h2>
+<p>A <strong>reinforcing loop</strong> amplifies whatever is already happening. A <strong>balancing loop</strong> pushes back towards some level. Whether a system grows without limit, settles, or collapses depends on which kind dominates.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+  W["Size of a fortune"] --&gt;|"more"| G["Growth in money terms&lt;br/&gt;(same % on a bigger base)"]
+  G --&gt;|"more"| W
+  W --&gt;|"more"| D["Dominance of the firm&lt;br/&gt;(scale, network effects)"]
+  D --&gt;|"more"| P["Profits and&lt;br/&gt;expected profits"]
+  P --&gt;|"more"| V["Share price"]
+  V --&gt;|"more"| W
+  V --&gt;|"more"| C["Cheap capital for&lt;br/&gt;acquisitions, talent, investment"]
+  C --&gt;|"more"| D
+  W --&gt;|"more"| I["Political influence"]
+  I -.-&gt;|"more (untested)"| K["Favourable tax and&lt;br/&gt;competition policy"]
+  K -.-&gt;|"more"| W
+  P --&gt;|"more"| E["Entry of competitors&lt;br/&gt;and new fortunes"]
+  E --&gt;|"less"| D
+  W --&gt;|"more"| X["Death, division among heirs,&lt;br/&gt;giving, diversification"]
+  X --&gt;|"less"| W
+  V --&gt;|"more"| M["Valuation above&lt;br/&gt;what profits support"]
+  M --&gt;|"less"| V
+  W --&gt;|"more"| B["Public and political&lt;br/&gt;reaction"]
+  B -.-&gt;|"less"| K
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p><em>Solid arrows are links supported by the data in Parts 1 and 2. Dotted arrows are plausible links this series has not tested. “More” means that more of the first leads to more of the second; “less” means it leads to less.</em></p>
+<p>Reading round the diagram:</p>
+<ul>
+<li><strong>Compounding</strong> (fortune → growth → fortune): a fortune grows by a percentage, so a larger one adds more in money terms. This is the basic reinforcing loop, and the model below is built on it.</li>
+<li><strong>Dominance</strong> (fortune → dominance → profits → share price → fortune): the superstar-firm loop from Part 2.</li>
+<li><strong>Cheap capital</strong> (share price → capital → dominance → profits → share price): a highly valued company can buy rivals, hire scarce people and fund large investments with its own shares.</li>
+<li><strong>Entry</strong> (profits → entry → dominance): high profits attract competitors and create new fortunes, which dilute the old ones. Balancing.</li>
+<li><strong>Division</strong> (fortune → death and division → fortune): fortunes are split among heirs, given away, taxed and diversified. Balancing.</li>
+<li><strong>Valuation</strong> (share price → overvaluation → share price): prices that run ahead of profits eventually correct. Balancing, but with long and irregular delays.</li>
+<li><strong>Politics</strong>: wealth may buy influence over the rules, and concentration may provoke a reaction. Untested here.</li>
+</ul>
+</section>
+<section id="the-simplest-loop-concentrates-wealth-by-itself" class="level2">
+<h2 class="anchored" data-anchor-id="the-simplest-loop-concentrates-wealth-by-itself">The simplest loop concentrates wealth by itself</h2>
+<p>Start with compounding alone. Take a thousand people with identical fortunes. Each year, every fortune changes by a random percentage, drawn from the same distribution for everyone. Nobody has any advantage. Nobody is more skilled. The typical spread of annual changes is 25%, which is what the Forbes lists show for 2011–19.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_gibrat.png" class="img-fluid figure-img"></p>
+<figcaption>A thousand equal fortunes, each growing by a random percentage each year, with the same odds for everyone. Orange: nothing else happens. Blue: in addition, about 15% of the thousand are replaced each year by newcomers near the bottom. Lines are medians of 40 runs; bands are 80% ranges.</figcaption>
+</figure>
+</div>
+<p>With nothing else going on, the ten richest hold 15% of the total after 25 years, 29% after 50 and over half after a century, and the share goes on rising for ever. This is a well-known result, sometimes called Gibrat’s law. Because the changes multiply, the <em>logarithm</em> of each fortune performs a random walk, and the spread between random walkers grows without limit. <strong>Equal odds, applied multiplicatively, produce unlimited inequality.</strong> No advantage for the rich is required.</p>
+<p>The blue line adds one balancing loop: turnover. Each year some members leave and newcomers arrive near the bottom. Now the share of the ten richest settles at about 12%. That is close to the actual figure for 2011–20, which was between 9% and 11%.</p>
+<p>This combination is where the Pareto distribution of Part 1 comes from. Random proportional growth spreads fortunes out; turnover removes them and restarts them near the bottom. The balance between the two is a power-law tail, with an exponent set by their relative strength. In the textbook version, where fortunes grow at average rate <span class="math inline">\(\mu\)</span> with volatility <span class="math inline">\(\sigma\)</span> relative to an entry threshold growing at rate <span class="math inline">\(g\)</span>, and are removed at rate <span class="math inline">\(\delta\)</span>, the exponent <span class="math inline">\(\alpha\)</span> solves</p>
+<p><span class="math display">\[
+\tfrac{1}{2}\sigma^2 \alpha^2 + \left(\mu - g - \tfrac{1}{2}\sigma^2\right)\alpha - \delta = 0 .
+\]</span></p>
+<p>The tail gets fatter (smaller <span class="math inline">\(\alpha\)</span>) when fortunes grow faster relative to the economy, when their growth is more volatile, or when turnover is slower. Piketty’s argument about the gap between the return on capital and the growth rate is the <span class="math inline">\(\mu - g\)</span> term in this equation. The equation also shows the two other levers, volatility and turnover, which get less attention.</p>
+</section>
+<section id="measuring-the-loops" class="level2">
+<h2 class="anchored" data-anchor-id="measuring-the-loops">Measuring the loops</h2>
+<p>The Forbes lists from 2011 to 2026 give the inputs directly. To avoid the measurement problem found in Part 1, everything here is defined by rank: the system is <strong>the 1,000 richest people</strong>, and wealth is measured relative to the 1,000th. A boom that lifts everyone equally then drops out, and only relative movement counts.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_inputs.png" class="img-fluid figure-img"></p>
+<figcaption>Left: the spread of one-year growth rates among the top 1,000, by year. Centre: the number of new members of the top 1,000 each year. Right: how much faster the ten richest grew than the rest of the top 1,000, with standard errors.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">2011–19</th>
+<th style="text-align: right;">2020–22</th>
+<th style="text-align: right;">2023–25</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Spread of annual growth (standard deviation)</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: right;">0.28</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">New members of the top 1,000 a year</td>
+<td style="text-align: right;">156</td>
+<td style="text-align: right;">205</td>
+<td style="text-align: right;">141</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Growth advantage of the ten richest, % a year</td>
+<td style="text-align: right;">2.1 ± 1.8</td>
+<td style="text-align: right;">4.5 ± 4.0</td>
+<td style="text-align: right;">10.5 ± 4.7</td>
+</tr>
+</tbody>
+</table>
+<p>Two further measurements matter:</p>
+<ul>
+<li><strong>Growth does not persist.</strong> People whose wealth grew fastest between 2020 and 2023 did no better than anyone else between 2023 and 2026: the correlation across 1,547 people is 0.005. Year to year it is slightly negative. There is no sign of a class of people who reliably outperform.</li>
+<li><strong>Within the top 1,000, size hardly matters to growth</strong>, except for the top ten in the most recent period.</li>
+</ul>
+</section>
+<section id="a-model-of-the-top-1000" class="level2">
+<h2 class="anchored" data-anchor-id="a-model-of-the-top-1000">A model of the top 1,000</h2>
+<p>The model takes the real list in a starting year and moves it forward one year at a time:</p>
+<ol type="1">
+<li>Every member draws a growth rate at random from the growth rates that members of the top 1,000 actually had that year. In the <strong>equal odds</strong> version, everyone draws from the same pool. In the <strong>by rank</strong> version, the top 10, ranks 11–100 and ranks 101–1,000 each draw from their own group’s pool.</li>
+<li>Members leave the list at the rate observed for their rank group.</li>
+<li>New members arrive, as many as actually joined the top 1,000 that year, with wealth drawn from those actual newcomers.</li>
+<li>The top 1,000 are kept.</li>
+</ol>
+<p>The model contains no assumptions about why growth rates are what they are. Its only free choice is whether size affects the draw. Running it from each starting year and comparing the result with what happened is therefore a test of one question: <strong>was this period consistent with equal odds?</strong></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_validation.png" class="img-fluid figure-img"></p>
+<figcaption>The share of the top 1,000’s wealth held by the ten richest at the end of four periods. Boxes show the range of 800 simulations (box: middle half; whiskers: 5th to 95th percentile) under equal odds and by rank group. The orange line is what happened; the dashed line is the starting value.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Period</th>
+<th style="text-align: right;">Start</th>
+<th style="text-align: right;">Actual end</th>
+<th style="text-align: right;">Equal odds: median</th>
+<th style="text-align: left;">Where the actual falls</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2011 → 2016</td>
+<td style="text-align: right;">9.5%</td>
+<td style="text-align: right;">9.4%</td>
+<td style="text-align: right;">10.6%</td>
+<td style="text-align: left;">22nd percentile</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2016 → 2020</td>
+<td style="text-align: right;">9.4%</td>
+<td style="text-align: right;">10.7%</td>
+<td style="text-align: right;">10.4%</td>
+<td style="text-align: left;">57th percentile</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2020 → 2023</td>
+<td style="text-align: right;">10.7%</td>
+<td style="text-align: right;">12.6%</td>
+<td style="text-align: right;">12.8%</td>
+<td style="text-align: left;">46th percentile</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2023 → 2026</td>
+<td style="text-align: right;">12.6%</td>
+<td style="text-align: right;">17.4%</td>
+<td style="text-align: right;">13.7%</td>
+<td style="text-align: left;"><strong>93rd percentile</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="three-regimes" class="level2">
+<h2 class="anchored" data-anchor-id="three-regimes">Three regimes</h2>
+<p><strong>2011 to 2020: a steady state.</strong> Equal odds reproduces the decade. Random growth spread the fortunes out, turnover of about 15% a year pulled them back, and the share of the ten richest stayed near 10%. The reinforcing and balancing loops were in balance.</p>
+<p><strong>2020 to 2023: the spread widened.</strong> The first burst is also consistent with equal odds. What changed was the <em>spread</em> of outcomes, which rose by 40%. In a multiplicative process, a wider spread concentrates wealth faster, in proportion to the square of the spread. That was enough to take the top-ten share from 10.7% to 12.6% with no advantage for the largest fortunes. Turnover rose too, which partly offset it.</p>
+<p>This fits Part 2’s account of the period. The pandemic and the policy response to it produced unusually large gains for some companies and losses for others. The wide spread of corporate outcomes became a wide spread of fortunes.</p>
+<p><strong>2023 to 2026: the top outgrew the rest.</strong> Equal odds fails here. The actual outcome is at the 93rd percentile of the simulations for the top ten, and the 97th for the top hundred. When the ten largest fortunes are given the growth rates that the ten largest actually had, the model fits. They outgrew the rest of the top 1,000 by about ten percentage points a year.</p>
+<p>That is the one period in which the data shows something beyond equal odds: a regime where <strong>size itself went with faster growth</strong>. It coincides with the AI-driven revaluation of the largest technology companies described in Part 2.</p>
+<p>A caution: this advantage is measured on ten people over three years. It is about two standard errors from zero. It could be a durable change in how the system works, or a run of luck for a few individuals whose companies were revalued together.</p>
+</section>
+<section id="what-each-regime-implies" class="level2">
+<h2 class="anchored" data-anchor-id="what-each-regime-implies">What each regime implies</h2>
+<p>The model can be run forward from the 2026 list under each set of conditions. These are not forecasts. Each line answers the question: <em>if these conditions persisted, where would they lead?</em></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_projection.png" class="img-fluid figure-img"></p>
+<figcaption>The share of the top 1,000’s wealth held by the ten richest: actual to 2026, then the model under four assumptions. Lines are medians of 500 runs; bands are 80% ranges.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">If these conditions persisted</th>
+<th style="text-align: right;">In 5 years</th>
+<th style="text-align: right;">In 10 years</th>
+<th style="text-align: right;">In 25 years</th>
+<th style="text-align: left;">Eventually</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2011–19 conditions</td>
+<td style="text-align: right;">17%</td>
+<td style="text-align: right;">17%</td>
+<td style="text-align: right;">15%</td>
+<td style="text-align: left;">settles near 13%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2020–22 conditions</td>
+<td style="text-align: right;">20%</td>
+<td style="text-align: right;">22%</td>
+<td style="text-align: right;">28%</td>
+<td style="text-align: left;">settles between 30% and 40%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2023–25 conditions</td>
+<td style="text-align: right;">25%</td>
+<td style="text-align: right;">33%</td>
+<td style="text-align: right;">62%</td>
+<td style="text-align: left;">no steady state</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">The ten richest lose half, then 2011–19 conditions</td>
+<td style="text-align: right;">13%</td>
+<td style="text-align: right;">13%</td>
+<td style="text-align: right;">13%</td>
+<td style="text-align: left;">settles near 13%</td>
+</tr>
+</tbody>
+</table>
+<p>Three conclusions follow.</p>
+<p><strong>Under the conditions of 2011–19, the system is stable.</strong> Left alone, it settles with the ten richest holding about 13% of the top 1,000’s wealth.</p>
+<p><strong>Under the conditions of 2023–25, it is not.</strong> With the largest fortunes growing ten points a year faster than the rest, there is no level at which turnover catches up. The share of the ten richest rises to a third in a decade and passes 60% in 25 years. In the model it approaches 100%. A reinforcing loop without an adequate balancing loop does this. The model does not say the conditions <em>will</em> persist. It says that if they did, the outcome would be one that cannot physically happen, so something outside the model would have to change first.</p>
+<p><strong>Concentration is sticky.</strong> If the conditions of 2011–19 returned tomorrow, the share would not fall back quickly. It would still be 17% in ten years and 15% in 25. Turnover erodes large fortunes slowly. The only fast route down is a fall in the value of the largest fortunes themselves: halve them, and the share drops to 12% at once.</p>
+</section>
+<section id="why-a-rising-share-is-not-exponential-for-ever" class="level2">
+<h2 class="anchored" data-anchor-id="why-a-rising-share-is-not-exponential-for-ever">Why a rising share is not exponential for ever</h2>
+<p>A group whose wealth grows faster than everyone else’s by a constant margin <span class="math inline">\(\Delta\)</span> does not see its <em>share</em> grow exponentially. If <span class="math inline">\(s\)</span> is the share, then</p>
+<p><span class="math display">\[
+\frac{ds}{dt} = \Delta\, s\,(1 - s), \qquad\text{so}\qquad s(t) = \frac{1}{1 + \frac{1-s_0}{s_0}\,e^{-\Delta t}} .
+\]</span></p>
+<p>This is the logistic curve. It looks exponential while the share is small, then bends over as the share approaches its ceiling, because there is less and less of everyone else’s wealth to outgrow. The ten richest went from 9.4% to 17.4% of the top 1,000 between 2016 and 2026, which corresponds to <span class="math inline">\(\Delta\)</span> of about 7% a year.</p>
+<p>So a share cannot explode. What the logistic curve leaves open is the more important question: what stops <span class="math inline">\(\Delta\)</span> itself? In the model, nothing does. In reality there are limits the model does not contain:</p>
+<ul>
+<li><strong>A company cannot be larger than its market.</strong> Profits cannot exceed GDP, and the profit share cannot rise indefinitely.</li>
+<li><strong>Valuations depend on expectations</strong>, which can reverse. Part 2 found that the second burst is largely capitalised expectation.</li>
+<li><strong>Dominant firms are displaced.</strong> Only five of the ten richest people of 2016 were still in the top ten in 2026.</li>
+<li><strong>Governments act.</strong> China’s billionaires’ wealth fell by a third relative to its economy after 2021.</li>
+</ul>
+<p>Whether a system like this ends in saturation, a sharp correction or a change of rules cannot be read off the model. It depends on which of those limits binds first. That is the subject of Part 4.</p>
+</section>
+<section id="try-it" class="level2">
+<h2 class="anchored" data-anchor-id="try-it">Try it</h2>
+<p>This is a simplified version of the model, with the measured inputs as sliders. The three buttons set the conditions of each period. It starts from the real 2026 list.</p>
+<div class="cell">
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="252" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 251;"><span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a>wsView <span class="op">=</span> {</span>
+<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"wealthsim.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> mod<span class="op">.</span><span class="fu">mountWealthSim</span>(host)<span class="op">;</span></span>
+<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Things to try:</p>
+<ul>
+<li>Set the conditions of 2011–19 and run. The share drifts down slowly.</li>
+<li>Set the conditions of 2023–25 and run. It climbs without settling.</li>
+<li>Set the extra growth of the ten richest to zero and raise the spread. Concentration rises with no advantage for anyone.</li>
+<li>Set new members to zero. With no turnover, even equal odds concentrates without limit.</li>
+<li>Press “Ten richest lose half” and watch how long the recovery takes under each set of conditions.</li>
+</ul>
+</section>
+<section id="what-the-model-leaves-out" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-model-leaves-out">What the model leaves out</h2>
+<ul>
+<li><strong>It describes the top 1,000 only</strong>, relative to each other. It says nothing about their share of all wealth, or about anyone else.</li>
+<li><strong>It takes growth rates as given.</strong> It does not model companies, prices or policy, so it cannot say why the spread widened or why the largest fortunes outgrew the rest. Part 2 is the evidence on that.</li>
+<li><strong>Fifteen years is a short record</strong>, and it contains only one period like 2023–25.</li>
+<li><strong>Forbes’s figures are estimates</strong>, and matching people between years by name is imperfect.</li>
+<li><strong>Projections hold conditions fixed.</strong> Real conditions change, partly in response to the concentration itself.</li>
+</ul>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>Multiplicative growth with equal odds is a reinforcing loop that concentrates wealth without limit. Turnover is the balancing loop that produces a stable Pareto tail.</li>
+<li>From 2011 to 2020 the two were in balance, with the ten richest holding about a tenth of the top 1,000’s wealth.</li>
+<li>In 2020–22 the spread of outcomes widened, which raised concentration with no advantage for the largest fortunes.</li>
+<li>In 2023–25 the largest fortunes grew about ten points a year faster than the rest. That is the only period that departs from equal odds, and it rests on few observations.</li>
+<li>If that last regime persisted, the model has no steady state. If earlier conditions returned, concentration would decline only slowly.</li>
+<li>The share follows a logistic curve, so it saturates. What limits the underlying advantage lies outside the model.</li>
+</ul>
+<p><em>Code: <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/economics"><code>src/economics</code></a>, in <code>wealth_model.py</code> and <code>part3.py</code>.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>R. Gibrat, <em>Les inégalités économiques</em>, Sirey (1931).</li>
+<li>D. Champernowne, “A model of income distribution”, <em>Economic Journal</em> 63, 318–351 (1953).</li>
+<li>X. Gabaix, “Zipf’s law for cities: an explanation”, <em>Quarterly Journal of Economics</em> 114(3), 739–767 (1999).</li>
+<li>W. Reed, “The Pareto, Zipf and other power laws”, <em>Economics Letters</em> 74(1), 15–19 (2001).</li>
+<li>J.-P. Bouchaud and M. Mézard, “Wealth condensation in a simple model of economy”, <em>Physica A</em> 282, 536–545 (2000).</li>
+<li>X. Gabaix, J.-M. Lasry, P.-L. Lions and B. Moll, “The dynamics of inequality”, <em>Econometrica</em> 84(6), 2071–2111 (2016).</li>
+<li>T. Piketty, <em>Capital in the Twenty-First Century</em>, Harvard University Press (2014).</li>
+<li>D. Meadows, <em>Thinking in Systems</em>, Chelsea Green (2008): reinforcing and balancing loops.</li>
+<li>Data: Forbes World’s Billionaires lists, 2011–2026.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IndzVmlldyA9IHtcbiAgY29uc3QgaG9zdCA9IGh0bC5odG1sYDxkaXY+PC9kaXY+YDtcbiAgY29uc3QgbW9kID0gYXdhaXQgaW1wb3J0KG5ldyBVUkwoXCJ3ZWFsdGhzaW0uanNcIiwgZG9jdW1lbnQuYmFzZVVSSSkuaHJlZik7XG4gIGF3YWl0IG1vZC5tb3VudFdlYWx0aFNpbShob3N0KTtcbiAgcmV0dXJuIGhvc3Q7XG59XG4ifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../economics/wealth-3-the-model";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/paulmilne\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
