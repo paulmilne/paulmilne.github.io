@@ -28,6 +28,13 @@ field, the stress inside a material, and the curvature of spacetime are all quan
 and return a number. Tensors are the general framework for such quantities, and the only one in which laws can be
 written without reference to a choice of coordinates.
 
+::: {.callout-tip appearance="simple"}
+## Background: metrics
+
+[Metrics: From Distance to the Metric Tensor](/explainers/metrics/) explains the two meanings of "metric", how an inner
+product becomes a matrix of components, and how the same space looks in different charts, with an interactive explorer.
+:::
+
 ## Covectors
 
 ::: {.callout-tip appearance="simple"}

@@ -8,7 +8,7 @@
 
 <meta name="author" content="Paul Milne">
 <meta name="dcterms.date" content="2026-11-13">
-<meta name="description" content="A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic, and what topology means for spacetime.">
+<meta name="description" content="A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic and the hairy ball theorem, which spaces can carry a spacetime metric, and what topology means for spacetime.">
 
 <title>Topology and Open Sets – math-blog</title>
 <style>
@@ -141,13 +141,13 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../styles.css">
 <meta property="og:title" content="Topology and Open Sets – math-blog">
-<meta property="og:description" content="A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic, and what topology means for spacetime.">
+<meta property="og:description" content="A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic and the hairy ball theorem, which spaces can carry a spacetime metric, and what topology means for spacetime.">
 <meta property="og:image" content="https://paulmilne.github.io/explainers/topology-and-open-sets/fig_gluing.png">
 <meta property="og:site_name" content="math-blog">
 <meta property="og:image:height" content="435">
 <meta property="og:image:width" content="1800">
 <meta name="twitter:title" content="Topology and Open Sets – math-blog">
-<meta name="twitter:description" content="A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic, and what topology means for spacetime.">
+<meta name="twitter:description" content="A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic and the hairy ball theorem, which spaces can carry a spacetime metric, and what topology means for spacetime.">
 <meta name="twitter:image" content="https://paulmilne.github.io/explainers/topology-and-open-sets/fig_gluing.png">
 <meta name="twitter:image-height" content="435">
 <meta name="twitter:image-width" content="1800">
@@ -279,7 +279,7 @@ window.Quarto = {
             <p class="subtitle lead">How to talk about nearness, continuity and shape without measuring distance. Open sets, continuity, homeomorphism, gluing, and the three properties (Hausdorff, second countable, compact) that the definition of a manifold depends on</p>
                   <div>
         <div class="description">
-          A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic, and what topology means for spacetime.
+          A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as ‘preimages of open sets are open’ and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic and the hairy ball theorem, which spaces can carry a spacetime metric, and what topology means for spacetime.
         </div>
       </div>
                           <div class="quarto-categories">
@@ -334,6 +334,11 @@ window.Quarto = {
   </ul></li>
   <li><a href="#connectedness" id="toc-connectedness" class="nav-link" data-scroll-target="#connectedness">Connectedness</a></li>
   <li><a href="#topological-invariants" id="toc-topological-invariants" class="nav-link" data-scroll-target="#topological-invariants">Topological invariants</a></li>
+  <li><a href="#combing-the-hairy-ball-theorem" id="toc-combing-the-hairy-ball-theorem" class="nav-link" data-scroll-target="#combing-the-hairy-ball-theorem">Combing: the hairy ball theorem</a>
+  <ul class="collapse">
+  <li><a href="#counting-the-zeros" id="toc-counting-the-zeros" class="nav-link" data-scroll-target="#counting-the-zeros">Counting the zeros</a></li>
+  <li><a href="#why-spacetime-needs-to-be-combable" id="toc-why-spacetime-needs-to-be-combable" class="nav-link" data-scroll-target="#why-spacetime-needs-to-be-combable">Why spacetime needs to be combable</a></li>
+  </ul></li>
   <li><a href="#topology-and-spacetime" id="toc-topology-and-spacetime" class="nav-link" data-scroll-target="#topology-and-spacetime">Topology and spacetime</a></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
@@ -378,7 +383,7 @@ B_\varepsilon(p) = \{\,q : |q - p| &lt; \varepsilon\,\}.
 <li>the intersection of <strong>finitely</strong> many open sets is open.</li>
 </ol>
 <p>The restriction to finite intersections matters. The intervals <span class="math inline">\((-1/n, 1/n)\)</span> are all open, but their intersection, over every <span class="math inline">\(n\)</span>, is the single point <span class="math inline">\(\{0\}\)</span>, which is not open: no ball around 0 fits inside a single point.</p>
-<p>The insight of point-set topology, due largely to Felix Hausdorff in 1914, is that these three properties are all that is needed. Nearness, convergence and continuity can all be defined from the open sets alone, without the distances that were used to define them.</p>
+<p>The insight of point-set topology, due largely to Felix Hausdorff in 1914, is that these three properties are all that is needed. Nearness, convergence and continuity can all be defined from the open sets alone, without the distances that were used to define them. (Distances themselves, and the many different ways to define them, are the subject of <a href="../../explainers/metrics/">Metrics: From Distance to the Metric Tensor</a>.)</p>
 </section>
 <section id="the-definition-of-a-topology" class="level2">
 <h2 class="anchored" data-anchor-id="the-definition-of-a-topology">The definition of a topology</h2>
@@ -408,12 +413,12 @@ Definition
 </ul>
 <p>On a set of three points, there are exactly 29 topologies (a brute-force count in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology"><code>src/topology/count.py</code></a> confirms the known sequence 1, 4, 29, 355 for one to four points). Try building them:</p>
 <div class="cell">
-<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="89" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 88;"><span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>topoView <span class="op">=</span> {</span>
-<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
-<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"topo.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
-<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountTopo</span>(host)<span class="op">;</span></span>
-<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
-<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="90" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 89;"><span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>topoView <span class="op">=</span> {</span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"topo.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountTopo</span>(host)<span class="op">;</span></span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div id="ojs-cell-1" data-nodetype="declaration">
 
@@ -528,14 +533,95 @@ Definition
 <h2 class="anchored" data-anchor-id="topological-invariants">Topological invariants</h2>
 <p>To prove two spaces are <strong>not</strong> homeomorphic, find a property that one has and the other lacks. Compactness distinguishes the sphere from the plane. Connectedness distinguishes a line from a line with a point removed. Subtler invariants distinguish the sphere from the torus.</p>
 <p>The oldest is the <strong>Euler characteristic</strong>. Divide a surface into polygons with <span class="math inline">\(V\)</span> vertices, <span class="math inline">\(E\)</span> edges and <span class="math inline">\(F\)</span> faces; the number <span class="math inline">\(\chi = V - E + F\)</span> does not depend on how it is divided. For every convex polyhedron (all homeomorphic to a sphere) <span class="math inline">\(\chi = 2\)</span>: the tetrahedron, cube, octahedron and icosahedron all give <span class="math inline">\(4 - 6 + 4\)</span>, <span class="math inline">\(8 - 12 + 6\)</span>, <span class="math inline">\(6 - 12 + 8\)</span> and <span class="math inline">\(12 - 30 + 20\)</span>. For a torus, divided into a 3 by 3 grid of squares, <span class="math inline">\(\chi = 9 - 18 + 9 = 0\)</span>. So a sphere and a torus are not homeomorphic.</p>
-<p>The Euler characteristic also controls vector fields. The <strong>Poincaré–Hopf theorem</strong> says that on a compact surface the zeros of any vector field, counted with signs, add up to <span class="math inline">\(\chi\)</span>. On a sphere, <span class="math inline">\(\chi = 2 \ne 0\)</span>, so every vector field has a zero: you cannot comb a hairy ball flat. That is the reason, given in <a href="../../explainers/gr-3-metric-and-spacetime/">Part 3</a>, that a compact manifold carries a Lorentzian metric, the kind spacetime needs, only if its Euler characteristic is zero.</p>
+<p>The Euler characteristic also controls what can live on a space, which the next section explores.</p>
+</section>
+<section id="combing-the-hairy-ball-theorem" class="level2">
+<h2 class="anchored" data-anchor-id="combing-the-hairy-ball-theorem">Combing: the hairy ball theorem</h2>
+<p>A <strong>tangent vector field</strong> on a surface assigns to each point an arrow lying along the surface, varying continuously: the wind on the Earth’s surface, or the direction of the hair on a head. The question is whether the arrows can be non-zero everywhere.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+The hairy ball theorem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Every continuous tangent vector field on the sphere <span class="math inline">\(S^2\)</span> is zero at some point.</p>
+</div>
+</div>
+<p>You cannot comb a hairy ball flat: there is always a crown or a bald spot. At any moment, somewhere on Earth, the horizontal wind speed is zero. A torus, by contrast, can be combed perfectly.</p>
+<p><strong>A proof.</strong> Suppose <span class="math inline">\(v\)</span> were a tangent vector field on <span class="math inline">\(S^2\)</span> with no zeros. Scale it to unit length, so that <span class="math inline">\(v(x)\)</span> is a unit vector perpendicular to <span class="math inline">\(x\)</span> for each <span class="math inline">\(x\)</span> on the unit sphere. Then</p>
+<p><span class="math display">\[
+H(x, t) = \cos(\pi t)\,x + \sin(\pi t)\,v(x), \qquad 0 \le t \le 1,
+\]</span></p>
+<p>stays on the sphere, because <span class="math inline">\(x\)</span> and <span class="math inline">\(v(x)\)</span> are perpendicular unit vectors. At <span class="math inline">\(t = 0\)</span> it is the identity map; at <span class="math inline">\(t = 1\)</span> it is the antipodal map <span class="math inline">\(x \mapsto -x\)</span>. So the two maps could be deformed into each other continuously. But a continuous deformation cannot change a map’s <strong>degree</strong>, the number of times it wraps the sphere round itself, counted with orientation. The identity has degree <span class="math inline">\(+1\)</span>. The antipodal map on <span class="math inline">\(S^n\)</span> reverses orientation when <span class="math inline">\(n\)</span> is even, so on <span class="math inline">\(S^2\)</span> it has degree <span class="math inline">\(-1\)</span>. The contradiction shows <span class="math inline">\(v\)</span> must vanish somewhere. <span class="math inline">\(\blacksquare\)</span></p>
+<p>The same argument works on every even-dimensional sphere. On odd-dimensional spheres it fails, and they can be combed: on <span class="math inline">\(S^3 \subset \mathbb{R}^4\)</span>, the field <span class="math inline">\(v(x_1, x_2, x_3, x_4) = (-x_2, x_1, -x_4, x_3)\)</span> is perpendicular to <span class="math inline">\(x\)</span> and never zero.</p>
+<section id="counting-the-zeros" class="level3">
+<h3 class="anchored" data-anchor-id="counting-the-zeros">Counting the zeros</h3>
+<p>At an isolated zero, the <strong>index</strong> is the number of times the arrows turn, anticlockwise, as you go once round a small loop about the zero:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_index.png" class="img-fluid figure-img"></p>
+<figcaption>Zeros of vector fields in the plane. Sources, sinks and vortices have index +1: the arrows turn once as you go round. A saddle has index −1: the arrows turn once the wrong way. A dipole, two zeros merged, has index +2.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+The Poincaré–Hopf theorem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>On a compact manifold, the indices of the zeros of any vector field with isolated zeros add up to the Euler characteristic <span class="math inline">\(\chi\)</span>.</p>
+</div>
+</div>
+<p>The sum is the same for <strong>every</strong> vector field, which is the remarkable part. On a sphere it is always 2: two vortices, or a source and a sink, or a dipole, or three sources and a saddle. On a torus it is 0, so zeros can come in cancelling pairs, or not at all.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig_hairy.png" class="img-fluid figure-img"></p>
+<figcaption>Left and centre: two vector fields on a sphere. Rotation about the axis has a vortex at each pole; flow from the south pole to the north has a source and a sink. Either way the indices add to 2. Right: a torus combed round its ring, with no zeros, as χ = 0 allows.</figcaption>
+</figure>
+</div>
+<p>Heinz Hopf proved the converse in 1926: a compact manifold has a vector field with <strong>no</strong> zeros if and only if <span class="math inline">\(\chi = 0\)</span>. Non-compact manifolds always have one.</p>
+</section>
+<section id="why-spacetime-needs-to-be-combable" class="level3">
+<h3 class="anchored" data-anchor-id="why-spacetime-needs-to-be-combable">Why spacetime needs to be combable</h3>
+<p>A Lorentzian metric, the kind spacetime has (<a href="../../explainers/gr-3-metric-and-spacetime/">Part 3</a>), and a nowhere-zero field of directions are, from the point of view of existence, the same thing.</p>
+<p><strong>From a metric to a direction field.</strong> At each point, a Lorentzian metric has a light cone, and the timelike directions inside it. With the help of any auxiliary positive-definite metric, one timelike direction can be chosen at each point, continuously: the eigenvector, relative to <span class="math inline">\(h\)</span>, of <span class="math inline">\(g\)</span>’s single negative eigenvalue (the solution of <span class="math inline">\(g_{ij}V^j = \lambda h_{ij}V^j\)</span> with <span class="math inline">\(\lambda &lt; 0\)</span>). So a manifold with a Lorentzian metric has a continuous field of directions that never vanishes. (It is a field of lines, without arrowheads. Choosing an arrowhead consistently everywhere, so that “future” makes sense globally, is called <strong>time orientation</strong>, and is a further condition.)</p>
+<p><strong>From a direction field to a metric.</strong> Conversely, suppose <span class="math inline">\(V\)</span> is a vector field with no zeros. Every manifold carries a positive-definite metric <span class="math inline">\(h\)</span> (glued together with a partition of unity). Define</p>
+<p><span class="math display">\[
+g = h - \frac{2\,(hV) \otimes (hV)}{h(V, V)}, \qquad \text{where } (hV)(W) = h(V, W) .
+\]</span></p>
+<p>In an <span class="math inline">\(h\)</span>-orthonormal basis whose first vector points along <span class="math inline">\(V\)</span>, this is <span class="math inline">\(\mathrm{diag}(-1, 1, 1, 1)\)</span>: it flips the sign of lengths along <span class="math inline">\(V\)</span> and leaves the perpendicular directions alone. So <span class="math inline">\(g\)</span> is Lorentzian, with <span class="math inline">\(V\)</span> timelike. (Checked in 10,000 random cases in <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology"><code>src/topology/check_lorentz.py</code></a>.)</p>
+<p>Putting the two together, with Hopf’s theorem:</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Which manifolds can be spacetimes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A manifold admits a Lorentzian metric if and only if it admits a nowhere-vanishing line field. Every non-compact manifold does. A compact manifold does if and only if its Euler characteristic is zero.</p>
+</div>
+</div>
+<p>So the 2-sphere and the 4-sphere, both with <span class="math inline">\(\chi = 2\)</span>, cannot be spacetimes, for the same reason a hairy ball cannot be combed. A torus can.</p>
+<p><strong>Compact spacetimes have time machines.</strong> Even where <span class="math inline">\(\chi = 0\)</span> allows a compact spacetime, Robert Geroch (1967) and Stephen Hawking showed that every compact spacetime contains a <strong>closed timelike curve</strong>: a world line that returns to its own past. The idea of the proof: the chronological futures of all the points (the events each one can reach on a timelike curve) are open sets that cover the spacetime. Compactness picks out finitely many that still cover it, and a short argument then shows that one of those points must lie in its own future. Since closed timelike curves raise the grandfather paradox, physically reasonable spacetimes are taken to be non-compact, with time, at least, running off to infinity.</p>
+</section>
 </section>
 <section id="topology-and-spacetime" class="level2">
 <h2 class="anchored" data-anchor-id="topology-and-spacetime">Topology and spacetime</h2>
 <p>Einstein’s equations are local: they relate curvature to matter at each point. They do not fix the global topology of spacetime, which has to be chosen or inferred. Some examples from the series:</p>
 <ul>
-<li><strong>de Sitter space</strong> (<a href="../../explainers/gr-7-de-sitter-solved/">Part 7</a>) has the topology <span class="math inline">\(\mathbb{R} \times S^3\)</span>: a 3-sphere of space at each moment of time. Its flat slicing covers a region with topology <span class="math inline">\(\mathbb{R}^4\)</span>, which is why it can look like an ordinary expanding flat universe.</li>
-<li><strong>Anti-de Sitter space</strong>, as a hyperboloid, has topology <span class="math inline">\(S^1 \times \mathbb{R}^3\)</span>, with time running round a circle. The closed timelike curves this causes are removed by passing to the <strong>universal cover</strong>, which unwraps the circle into a line: a purely topological step.</li>
+<li><strong>de Sitter space</strong> (<a href="../../explainers/gr-7-de-sitter-solved/">Part 7</a>) has the topology <span class="math inline">\(\mathbb{R} \times S^3\)</span>: a 3-sphere of space at each moment of time. Space is compact, but time is an infinite line, so the spacetime is not compact, and the 3-sphere, being odd-dimensional, can be combed anyway. Its flat slicing covers a region with topology <span class="math inline">\(\mathbb{R}^4\)</span>, which is why it can look like an ordinary expanding flat universe.</li>
+<li><strong>Anti-de Sitter space</strong>, as a hyperboloid, has topology <span class="math inline">\(S^1 \times \mathbb{R}^3\)</span>, with time running round a circle. The closed timelike curves this causes, which compact time directions tend to, are removed by passing to the <strong>universal cover</strong>, which unwraps the circle into a line: a purely topological step.</li>
 <li><strong>Our universe</strong> is consistent with flat space, but flat space need not be infinite: a flat 3-torus, made by gluing opposite faces of a cube, would look the same locally. Searches for repeated patterns in the cosmic microwave background have found none, which puts any such repetition scale beyond roughly the size of the observable universe.</li>
 <li><strong>Wormholes</strong> change topology: a space with a wormhole is not homeomorphic to ordinary space, because a loop through the wormhole cannot be shrunk to a point.</li>
 </ul>
@@ -548,7 +634,8 @@ Definition
 <li>A homeomorphism is a continuous bijection with continuous inverse. Homeomorphic spaces are topologically identical. A chart on a manifold is a homeomorphism onto an open subset of <span class="math inline">\(\mathbb{R}^n\)</span>.</li>
 <li>Subspaces, products and quotients make new spaces. Gluing a square gives the cylinder, Möbius strip, torus, Klein bottle and sphere.</li>
 <li>The manifold definition needs Hausdorff (unique limits; no line with two origins) and second countable (no long line; partitions of unity exist).</li>
-<li>Compactness, connectedness and the Euler characteristic are invariants: they tell spaces apart, and they constrain what can live on them, including Lorentzian metrics.</li>
+<li>Compactness, connectedness and the Euler characteristic are invariants: they tell spaces apart, and they constrain what can live on them.</li>
+<li>The hairy ball theorem: every vector field on the sphere vanishes somewhere. By Poincaré–Hopf, the zeros’ indices always add up to <span class="math inline">\(\chi\)</span>. A compact manifold can carry a Lorentzian metric only if <span class="math inline">\(\chi = 0\)</span>, and compact spacetimes always contain closed timelike curves.</li>
 </ul>
 </section>
 <section id="references" class="level2">
@@ -558,9 +645,12 @@ Definition
 <li>J. M. Lee, <em>Introduction to Topological Manifolds</em>, 2nd edition (Springer, 2011), chapters 2–4.</li>
 <li>W. A. Sutherland, <em>Introduction to Metric and Topological Spaces</em>, 2nd edition (Oxford, 2009).</li>
 <li>F. Hausdorff, <em>Grundzüge der Mengenlehre</em> (Veit, Leipzig, 1914).</li>
+<li>H. Hopf, “Vektorfelder in n-dimensionalen Mannigfaltigkeiten”, <em>Mathematische Annalen</em> 96, 225 (1926).</li>
+<li>R. Geroch, “Topology in general relativity”, <em>Journal of Mathematical Physics</em> 8, 782 (1967).</li>
+<li>S. W. Hawking and G. F. R. Ellis, <em>The Large Scale Structure of Space-Time</em>, sections 2.6 and 6.4 (Lorentz metrics and compact spacetimes).</li>
 <li>OEIS, <a href="https://oeis.org/A000798">A000798: number of different topologies on a set of n labelled elements</a>.</li>
 </ul>
-<p><em>Code: <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology"><code>src/topology</code></a>: <code>count.py</code> (counting topologies, Euler characteristics), <code>figs.py</code>. The checker is <code>topo.js</code> in this post’s folder.</em></p>
+<p><em>Code: <a href="https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology"><code>src/topology</code></a>: <code>count.py</code> (counting topologies, Euler characteristics), <code>check_lorentz.py</code> (the Lorentzian metric construction), <code>figs.py</code>, <code>figs_hairy.py</code>. The checker is <code>topo.js</code> in this post’s folder.</em></p>
 
 
 </section>

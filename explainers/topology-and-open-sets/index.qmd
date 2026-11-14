@@ -1,7 +1,7 @@
 ---
 title: "Topology and Open Sets"
 subtitle: "How to talk about nearness, continuity and shape without measuring distance. Open sets, continuity, homeomorphism, gluing, and the three properties (Hausdorff, second countable, compact) that the definition of a manifold depends on"
-description: "A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as 'preimages of open sets are open' and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic, and what topology means for spacetime."
+description: "A maths-first explainer on point-set topology, written as a companion to the General Relativity from Scratch series. Open sets in metric spaces, the axioms of a topology (with an interactive checker for all 29 topologies on three points), closed sets, closure and boundary, continuity as 'preimages of open sets are open' and its equivalence with epsilon-delta, homeomorphisms, subspace, product and quotient topologies, the Hausdorff property and the line with two origins, second countability, compactness and connectedness, the Euler characteristic and the hairy ball theorem, which spaces can carry a spacetime metric, and what topology means for spacetime."
 image: fig_gluing.png
 author: "Paul Milne"
 date: "2026-11-13"
@@ -59,7 +59,8 @@ every $n$, is the single point $\{0\}$, which is not open: no ball around 0 fits
 
 The insight of point-set topology, due largely to Felix Hausdorff in 1914, is that these three properties are all that is
 needed. Nearness, convergence and continuity can all be defined from the open sets alone, without the distances that
-were used to define them.
+were used to define them. (Distances themselves, and the many different ways to define them, are the subject of
+[Metrics: From Distance to the Metric Tensor](/explainers/metrics/).)
 
 ## The definition of a topology
 
@@ -243,10 +244,105 @@ sphere) $\chi = 2$: the tetrahedron, cube, octahedron and icosahedron all give $
 $12 - 30 + 20$. For a torus, divided into a 3 by 3 grid of squares, $\chi = 9 - 18 + 9 = 0$. So a sphere and a torus are
 not homeomorphic.
 
-The Euler characteristic also controls vector fields. The **Poincaré–Hopf theorem** says that on a compact surface the
-zeros of any vector field, counted with signs, add up to $\chi$. On a sphere, $\chi = 2 \ne 0$, so every vector field has a
-zero: you cannot comb a hairy ball flat. That is the reason, given in [Part 3](/explainers/gr-3-metric-and-spacetime/), that
-a compact manifold carries a Lorentzian metric, the kind spacetime needs, only if its Euler characteristic is zero.
+The Euler characteristic also controls what can live on a space, which the next section explores.
+
+## Combing: the hairy ball theorem
+
+A **tangent vector field** on a surface assigns to each point an arrow lying along the surface, varying continuously:
+the wind on the Earth's surface, or the direction of the hair on a head. The question is whether the arrows can be
+non-zero everywhere.
+
+::: {.callout-tip appearance="simple"}
+## The hairy ball theorem
+
+Every continuous tangent vector field on the sphere $S^2$ is zero at some point.
+:::
+
+You cannot comb a hairy ball flat: there is always a crown or a bald spot. At any moment, somewhere on Earth, the
+horizontal wind speed is zero. A torus, by contrast, can be combed perfectly.
+
+**A proof.** Suppose $v$ were a tangent vector field on $S^2$ with no zeros. Scale it to unit length, so that $v(x)$ is a
+unit vector perpendicular to $x$ for each $x$ on the unit sphere. Then
+
+$$
+H(x, t) = \cos(\pi t)\,x + \sin(\pi t)\,v(x), \qquad 0 \le t \le 1,
+$$
+
+stays on the sphere, because $x$ and $v(x)$ are perpendicular unit vectors. At $t = 0$ it is the identity map; at $t = 1$
+it is the antipodal map $x \mapsto -x$. So the two maps could be deformed into each other continuously. But a continuous
+deformation cannot change a map's **degree**, the number of times it wraps the sphere round itself, counted with
+orientation. The identity has degree $+1$. The antipodal map on $S^n$ reverses orientation when $n$ is even, so on $S^2$
+it has degree $-1$. The contradiction shows $v$ must vanish somewhere. $\blacksquare$
+
+The same argument works on every even-dimensional sphere. On odd-dimensional spheres it fails, and they can be combed:
+on $S^3 \subset \mathbb{R}^4$, the field $v(x_1, x_2, x_3, x_4) = (-x_2, x_1, -x_4, x_3)$ is perpendicular to $x$ and never zero.
+
+### Counting the zeros
+
+At an isolated zero, the **index** is the number of times the arrows turn, anticlockwise, as you go once round a small
+loop about the zero:
+
+![Zeros of vector fields in the plane. Sources, sinks and vortices have index +1: the arrows turn once as you go round. A saddle has index −1: the arrows turn once the wrong way. A dipole, two zeros merged, has index +2.](fig_index.png)
+
+::: {.callout-tip appearance="simple"}
+## The Poincaré–Hopf theorem
+
+On a compact manifold, the indices of the zeros of any vector field with isolated zeros add up to the Euler
+characteristic $\chi$.
+:::
+
+The sum is the same for **every** vector field, which is the remarkable part. On a sphere it is always 2: two vortices,
+or a source and a sink, or a dipole, or three sources and a saddle. On a torus it is 0, so zeros can come in cancelling
+pairs, or not at all.
+
+![Left and centre: two vector fields on a sphere. Rotation about the axis has a vortex at each pole; flow from the south pole to the north has a source and a sink. Either way the indices add to 2. Right: a torus combed round its ring, with no zeros, as χ = 0 allows.](fig_hairy.png)
+
+Heinz Hopf proved the converse in 1926: a compact manifold has a vector field with **no** zeros if and only if $\chi = 0$.
+Non-compact manifolds always have one.
+
+### Why spacetime needs to be combable
+
+A Lorentzian metric, the kind spacetime has ([Part 3](/explainers/gr-3-metric-and-spacetime/)), and a nowhere-zero field
+of directions are, from the point of view of existence, the same thing.
+
+**From a metric to a direction field.** At each point, a Lorentzian metric has a light cone, and the timelike directions
+inside it. With the help of any auxiliary positive-definite metric, one timelike direction can be chosen at each point,
+continuously: the eigenvector, relative to $h$, of $g$'s single negative eigenvalue (the solution of $g_{ij}V^j = \lambda h_{ij}V^j$
+with $\lambda < 0$). So a manifold with a Lorentzian metric has a
+continuous field of directions that never vanishes. (It is a field of lines, without arrowheads. Choosing an arrowhead
+consistently everywhere, so that "future" makes sense globally, is called **time orientation**, and is a further
+condition.)
+
+**From a direction field to a metric.** Conversely, suppose $V$ is a vector field with no zeros. Every manifold carries a
+positive-definite metric $h$ (glued together with a partition of unity). Define
+
+$$
+g = h - \frac{2\,(hV) \otimes (hV)}{h(V, V)}, \qquad \text{where } (hV)(W) = h(V, W) .
+$$
+
+In an $h$-orthonormal basis whose first vector points along $V$, this is $\mathrm{diag}(-1, 1, 1, 1)$: it flips the sign of
+lengths along $V$ and leaves the perpendicular directions alone. So $g$ is Lorentzian, with $V$ timelike. (Checked in
+10,000 random cases in [`src/topology/check_lorentz.py`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology).)
+
+Putting the two together, with Hopf's theorem:
+
+::: {.callout-tip appearance="simple"}
+## Which manifolds can be spacetimes
+
+A manifold admits a Lorentzian metric if and only if it admits a nowhere-vanishing line field. Every non-compact manifold
+does. A compact manifold does if and only if its Euler characteristic is zero.
+:::
+
+So the 2-sphere and the 4-sphere, both with $\chi = 2$, cannot be spacetimes, for the same reason a hairy ball cannot be
+combed. A torus can.
+
+**Compact spacetimes have time machines.** Even where $\chi = 0$ allows a compact spacetime, Robert Geroch (1967) and Stephen
+Hawking showed that every compact spacetime contains a **closed timelike curve**: a world line that returns to its own
+past. The idea of the proof: the chronological futures of all the points (the events each one can reach on a timelike
+curve) are open sets that cover the spacetime. Compactness picks out finitely many that still cover it, and a short
+argument then shows that one of those points must lie in its own future. Since closed timelike
+curves raise the grandfather paradox, physically reasonable spacetimes are taken to be non-compact, with time, at least,
+running off to infinity.
 
 ## Topology and spacetime
 
@@ -254,10 +350,11 @@ Einstein's equations are local: they relate curvature to matter at each point. T
 spacetime, which has to be chosen or inferred. Some examples from the series:
 
 - **de Sitter space** ([Part 7](/explainers/gr-7-de-sitter-solved/)) has the topology $\mathbb{R} \times S^3$: a
-  3-sphere of space at each moment of time. Its flat slicing covers a region with topology $\mathbb{R}^4$, which is why
+  3-sphere of space at each moment of time. Space is compact, but time is an infinite line, so the spacetime is not
+  compact, and the 3-sphere, being odd-dimensional, can be combed anyway. Its flat slicing covers a region with topology $\mathbb{R}^4$, which is why
   it can look like an ordinary expanding flat universe.
 - **Anti-de Sitter space**, as a hyperboloid, has topology $S^1 \times \mathbb{R}^3$, with time running round a circle.
-  The closed timelike curves this causes are removed by passing to the **universal cover**, which unwraps the circle into
+  The closed timelike curves this causes, which compact time directions tend to, are removed by passing to the **universal cover**, which unwraps the circle into
   a line: a purely topological step.
 - **Our universe** is consistent with flat space, but flat space need not be infinite: a flat 3-torus, made by gluing
   opposite faces of a cube, would look the same locally. Searches for repeated patterns in the cosmic microwave
@@ -277,7 +374,10 @@ spacetime, which has to be chosen or inferred. Some examples from the series:
 - The manifold definition needs Hausdorff (unique limits; no line with two origins) and second countable (no long line;
   partitions of unity exist).
 - Compactness, connectedness and the Euler characteristic are invariants: they tell spaces apart, and they constrain
-  what can live on them, including Lorentzian metrics.
+  what can live on them.
+- The hairy ball theorem: every vector field on the sphere vanishes somewhere. By Poincaré–Hopf, the zeros' indices always
+  add up to $\chi$. A compact manifold can carry a Lorentzian metric only if $\chi = 0$, and compact spacetimes always
+  contain closed timelike curves.
 
 ## References
 
@@ -285,6 +385,9 @@ spacetime, which has to be chosen or inferred. Some examples from the series:
 - J. M. Lee, *Introduction to Topological Manifolds*, 2nd edition (Springer, 2011), chapters 2–4.
 - W. A. Sutherland, *Introduction to Metric and Topological Spaces*, 2nd edition (Oxford, 2009).
 - F. Hausdorff, *Grundzüge der Mengenlehre* (Veit, Leipzig, 1914).
+- H. Hopf, "Vektorfelder in n-dimensionalen Mannigfaltigkeiten", *Mathematische Annalen* 96, 225 (1926).
+- R. Geroch, "Topology in general relativity", *Journal of Mathematical Physics* 8, 782 (1967).
+- S. W. Hawking and G. F. R. Ellis, *The Large Scale Structure of Space-Time*, sections 2.6 and 6.4 (Lorentz metrics and compact spacetimes).
 - OEIS, [A000798: number of different topologies on a set of n labelled elements](https://oeis.org/A000798).
 
-*Code: [`src/topology`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology): `count.py` (counting topologies, Euler characteristics), `figs.py`. The checker is `topo.js` in this post's folder.*
+*Code: [`src/topology`](https://github.com/paulmilne/paulmilne.github.io/tree/main/src/topology): `count.py` (counting topologies, Euler characteristics), `check_lorentz.py` (the Lorentzian metric construction), `figs.py`, `figs_hairy.py`. The checker is `topo.js` in this post's folder.*

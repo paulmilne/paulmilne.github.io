@@ -86,6 +86,7 @@
   {
     "listing": "/explainers/index.html",
     "items": [
+      "/explainers/metrics/index.html",
       "/explainers/branes-and-the-bulk/index.html",
       "/explainers/de-sitter-and-anti-de-sitter/index.html",
       "/explainers/decision-analysis/index.html",
@@ -122,6 +123,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/explainers/metrics/index.html",
       "/explainers/branes-and-the-bulk/index.html",
       "/explainers/decision-analysis/index.html",
       "/explainers/eigenvectors/index.html",

@@ -372,6 +372,19 @@ General Relativity from Scratch
 </div>
 </div>
 <p>A smooth manifold has no notion of size. A small circle and a large one, a second and a year, are indistinguishable until something measures them. In general relativity that something is the metric, and it is the field that describes gravity.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Background: metrics
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><a href="../../explainers/metrics/">Metrics: From Distance to the Metric Tensor</a> explains the two meanings of “metric”, how an inner product becomes a matrix of components, and how the same space looks in different charts, with an interactive explorer.</p>
+</div>
+</div>
 <section id="the-metric-tensor" class="level2">
 <h2 class="anchored" data-anchor-id="the-metric-tensor">The metric tensor</h2>
 <div class="callout callout-style-simple callout-tip callout-titled">
@@ -398,7 +411,7 @@ ds^2 = g_{\mu\nu}\,dx^\mu dx^\nu ,
 \]</span></p>
 <p>the squared length of an infinitesimal displacement <span class="math inline">\(dx^\mu\)</span>. The inner product of two vectors is <span class="math inline">\(g(U, V) = g_{\mu\nu}U^\mu V^\nu\)</span>.</p>
 <p>General relativity uses a Lorentzian metric of signature <span class="math inline">\((-, +, +, +)\)</span>, as in Misner, Thorne and Wheeler and in Carroll. Some books use <span class="math inline">\((+, -, -, -)\)</span>; the physics is the same, with signs moved around.</p>
-<p><strong>Existence.</strong> Every smooth manifold admits a Riemannian metric: build one in each chart and glue them with a partition of unity, using the second-countability assumed in Part 1. A Lorentzian metric is more demanding: it exists if and only if the manifold has a nowhere-vanishing vector field, which holds for every non-compact manifold, but rules out, for example, the 2-sphere (the hairy ball theorem).</p>
+<p><strong>Existence.</strong> Every smooth manifold admits a Riemannian metric: build one in each chart and glue them with a partition of unity, using the second-countability assumed in Part 1. A Lorentzian metric is more demanding: it exists if and only if the manifold has a nowhere-vanishing vector field, which holds for every non-compact manifold, but rules out, for example, the 2-sphere (<a href="../../explainers/topology-and-open-sets/#combing-the-hairy-ball-theorem">the hairy ball theorem</a>).</p>
 <section id="examples" class="level3">
 <h3 class="anchored" data-anchor-id="examples">Examples</h3>
 <p><strong>The plane in polar coordinates.</strong> From <span class="math inline">\(x = r\cos\phi\)</span>, <span class="math inline">\(y = r\sin\phi\)</span>, the Euclidean metric <span class="math inline">\(dx^2 + dy^2\)</span> becomes</p>
@@ -472,12 +485,12 @@ ct' = \gamma(ct - \beta x), \qquad x' = \gamma(x - \beta ct), \qquad \beta = v/c
 \]</span></p>
 <p>It is a hyperbolic rotation: with <span class="math inline">\(\beta = \tanh\eta\)</span>, it mixes <span class="math inline">\(ct\)</span> and <span class="math inline">\(x\)</span> with <span class="math inline">\(\cosh\eta\)</span> and <span class="math inline">\(\sinh\eta\)</span>, just as an ordinary rotation mixes <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> with cosines and sines. The invariant curves are hyperbolae <span class="math inline">\(-c^2t^2 + x^2 = \text{constant}\)</span>, in place of circles. Drag the event and change the speed:</p>
 <div class="cell">
-<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="178" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 177;"><span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>boostView <span class="op">=</span> {</span>
-<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
-<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"boost.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
-<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountBoost</span>(host)<span class="op">;</span></span>
-<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
-<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code hidden" id="cb1" data-startfrom="185" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 184;"><span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a>boostView <span class="op">=</span> {</span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> host <span class="op">=</span> htl<span class="op">.</span><span class="fu">html</span><span class="vs">`&lt;div&gt;&lt;/div&gt;`</span><span class="op">;</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> mod <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="kw">new</span> <span class="fu">URL</span>(<span class="st">"boost.js"</span><span class="op">,</span> <span class="bu">document</span><span class="op">.</span><span class="at">baseURI</span>)<span class="op">.</span><span class="at">href</span>)<span class="op">;</span></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a>  mod<span class="op">.</span><span class="fu">mountBoost</span>(host)<span class="op">;</span></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> host<span class="op">;</span></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div id="ojs-cell-1" data-nodetype="declaration">
 

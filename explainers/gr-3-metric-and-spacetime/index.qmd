@@ -40,6 +40,13 @@ A smooth manifold has no notion of size. A small circle and a large one, a secon
 until something measures them. In general relativity that something is the metric, and it is the field that
 describes gravity.
 
+::: {.callout-tip appearance="simple"}
+## Background: metrics
+
+[Metrics: From Distance to the Metric Tensor](/explainers/metrics/) explains the two meanings of "metric", how an inner
+product becomes a matrix of components, and how the same space looks in different charts, with an interactive explorer.
+:::
+
 ## The metric tensor
 
 ::: {.callout-tip appearance="simple"}
@@ -70,7 +77,7 @@ Some books use $(+, -, -, -)$; the physics is the same, with signs moved around.
 **Existence.** Every smooth manifold admits a Riemannian metric: build one in each chart and glue them with a partition
 of unity, using the second-countability assumed in Part 1. A Lorentzian metric is more demanding: it exists if and only
 if the manifold has a nowhere-vanishing vector field, which holds for every non-compact manifold, but rules out, for
-example, the 2-sphere (the hairy ball theorem).
+example, the 2-sphere ([the hairy ball theorem](/explainers/topology-and-open-sets/#combing-the-hairy-ball-theorem)).
 
 ### Examples
 
